@@ -1,16 +1,18 @@
 package mattw.youtube.commentsuite;
 
+import java.util.Date;
+
 public class Comment {
 	public String comment_id;
 	public Channel channel;
 	public String video_id;
-	public String comment_date;
+	public Date comment_date;
 	public String comment_text;
 	public long comment_likes, reply_count;
 	public boolean is_reply;
 	public String parent_id;
 	
-	public Comment(String comment_id, Channel channel, String video_id, String comment_date, String comment_text, long comment_likes, long reply_count, boolean is_reply, String parent_id) {
+	public Comment(String comment_id, Channel channel, String video_id, Date comment_date, String comment_text, long comment_likes, long reply_count, boolean is_reply, String parent_id) {
 		this.comment_id = comment_id;
 		this.channel = channel;
 		this.video_id = video_id;

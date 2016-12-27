@@ -1,7 +1,7 @@
 package mattw.youtube.commentsuite;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
 
@@ -12,16 +12,16 @@ public class Video {
 	public String video_id;
 	public Channel channel;
 	public Date grab_date;
-	public String publish_date;
+	public Date publish_date;
 	public String video_title, video_desc;
 	public long total_comments, total_likes, total_dislikes, total_views;
 	public String thumb_url;
+	
 	public ImageIcon thumbnail;
 	public ImageIcon small_thumb;
-	
 	private File thumbs = new File("Thumbs/");
 	
-	public Video(String video_id, Channel channel, Date grab_date, String publish_date, String video_title, String video_desc, long total_comments, long total_likes, long total_dislikes, long total_views, String thumb_url) {
+	public Video(String video_id, Channel channel, Date grab_date, Date publish_date, String video_title, String video_desc, long total_comments, long total_likes, long total_dislikes, long total_views, String thumb_url) {
 		this.video_id = video_id;
 		this.channel = channel;
 		this.grab_date = grab_date;
@@ -35,26 +35,22 @@ public class Video {
 		
 		thumbs.mkdirs();
 		File thumbFile = new File(thumbs, video_id+".png");
-		if(thumbFile.exists()) {
-			try {
+		try {
+			if(thumbFile.exists()) {
 				thumbnail = new ImageIcon(ImageIO.read(thumbFile));
-			} catch (IOException e) {
-				
+			} else {
+				if(thumb_url != null && !thumb_url.equals("")) {
+					System.out.println("Thumbnail not found ["+video_id+"]\n    Attempting to download from url.");
+					BufferedImage bi = ImageIO.read(new URL(thumb_url));
+					ImageIO.write(bi, "png", thumbFile);
+					thumbnail = new ImageIcon(bi);
+				}
 			}
-		} else {
-			System.out.println(video_id+".png doesn't exist");
-			System.out.println("    "+thumbFile.getAbsolutePath());
-			try {
-				thumbs.mkdirs();
-				System.out.println("    Downloading...");
-				ImageIO.write(ImageIO.read(new URL(thumb_url)), "png", thumbFile);
-				thumbnail = new ImageIcon(ImageIO.read(thumbFile));
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+		} catch (Throwable e) {
+			e.printStackTrace();
 		}
 		if(thumbnail == null) thumbnail = CommentSuite.window.imgThumbPlaceholder;
-		small_thumb = new ImageIcon(thumbnail.getImage().getScaledInstance(160, 90, 0));
+		small_thumb = new ImageIcon(thumbnail.getImage().getScaledInstance((int) (45.0 * thumbnail.getIconWidth() / thumbnail.getIconHeight())+1, 45, 0));
 	}
 	
 	public boolean equals(Object o) {

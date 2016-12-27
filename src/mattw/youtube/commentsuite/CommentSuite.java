@@ -60,6 +60,10 @@ import mattw.youtube.datav3.list.VideosList;
 
 public class CommentSuite extends JFrame implements ActionListener {
 	
+	/*
+	 * YoutubeData . getJson() uses 95% of the CPU time in VisualVM
+	 */
+	
 	private static final long serialVersionUID = -7765160087637880819L;
 	
 	public static CommentSuite window;
@@ -70,7 +74,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public String youtubeDataKey;
 	public Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.PRIVATE).create();
 	public YoutubeData data;
-	public SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+	public String dateFormatString = "yyyy-MM-dd hh:mm a";
 	public Font youtube_font = new Font("Arial", Font.PLAIN, 12);
 	public ElapsedTime timer = new ElapsedTime();
 	
@@ -83,6 +87,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public ImageIcon imgSettings = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/settings.png"));
 	public ImageIcon imgThumbPlaceholder = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/placeholder4.png"));
 	public ImageIcon imgBlankProfile = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/blank_profile.jpg"));
+	public ImageIcon imgBrowser = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/browser.png").getScaledInstance(16, 16, 0));
 	
 		/** Videos Panel Components **/
 	public JButton find, selectall, clearResults, addAsGroup, nextPage;
@@ -96,7 +101,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		/** Groups Panel Components **/
 	public JTable gTable;
 	public DefaultTableModel gModel;
-	public JButton deleteGroup, editName, refreshGroup;
+	public JButton addGroup, deleteGroup, editName, refreshGroup, addItem, deleteItem;
 	public JTabbedPane tabs;
 	public JTable groupItemTable;
 	public DefaultTableModel groupItemModel;
@@ -232,7 +237,6 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc.insets = margin;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.weighty = 1.0;
-		// videosPanel.add(new JLabel("Videos Panel"), gbc);
 		
 		gbc.weightx = 0.1;
 		gbc.gridx = 0;
@@ -253,7 +257,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc.gridx = 0;
 		first.add(find = new JButton(getScaledImageIcon(imgFind, 16, 16)), gbc);
 		find.addActionListener(this);
-		find.setBackground(Color.getHSBColor(0.99F, 0.35F, 1F));
+		find.setBackground(Color.getHSBColor(0.99F, 0.20F, 0.8F));
 		
 		gbc.gridx++;
 		gbc.weightx = 1.0;
@@ -376,17 +380,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 	
 	public void buildGroupsPanel() { // TODO
 		groupsPanel = new JPanel();
-		groupsPanel.setLayout(new GridBagLayout());
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.insets = margin;
-		gbc.fill = GridBagConstraints.BOTH;
-		gbc.weighty = 1.0;
+		groupsPanel.setLayout(new BorderLayout());
 		
-		gbc.weightx = 1;
-		gbc.gridx = 1;
+		JSplitPane split = new JSplitPane();
+		groupsPanel.add(split, BorderLayout.CENTER);
 		
 		JPanel first = new JPanel(new GridBagLayout());
-		groupsPanel.add(first, gbc);
+		split.setLeftComponent(first);
 		
 		GridBagConstraints gbc1 = new GridBagConstraints();
 		gbc1.insets = margin;
@@ -404,23 +404,29 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc2.insets = margin;
 		gbc2.fill = GridBagConstraints.HORIZONTAL;
 		
+		addGroup = new JButton("Add Group");
+		addGroup.addActionListener(this);
+		gbc2.gridy = 0;
+		gbc2.gridx = 0;
+		gbc2.weightx = 1.0;
+		groups.add(addGroup, gbc2);
+		
 		deleteGroup = new JButton("Delete Group");
 		deleteGroup.addActionListener(this);
 		deleteGroup.setEnabled(false);
-		gbc2.gridy = 0;
-		gbc2.weightx = 1.0;
+		gbc2.gridx = 1;
 		groups.add(deleteGroup, gbc2);
 		
 		editName = new JButton("Edit Name");
 		editName.addActionListener(this);
 		editName.setEnabled(false);
-		gbc2.gridx = 1;
+		gbc2.gridx = 2;
 		groups.add(editName, gbc2);
 		
 		refreshGroup = new JButton("Refresh Group");
 		refreshGroup.addActionListener(this);
 		gbc2.gridx = 0;
-		gbc2.gridwidth = 2;
+		gbc2.gridwidth = 3;
 		gbc2.gridy = 1;
 		groups.add(refreshGroup, gbc2);
 		
@@ -434,6 +440,20 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		gTable.setRowHeight(45);
 		gTable.setEnabled(false);
+		gTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer(){
+			private static final long serialVersionUID = 1L;
+			public Font ytfont = new Font("Arial", Font.PLAIN, 12);
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+				super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+				if(col == 0) {
+					setHorizontalAlignment(SwingConstants.LEADING);
+				} else {
+					setHorizontalAlignment(SwingConstants.CENTER);
+				}
+				setFont(ytfont);
+				return this;
+			}
+		});
 		gTable.addMouseListener(new MouseListener(){
 			public void mouseClicked(MouseEvent e) {}
 			public void mouseEntered(MouseEvent e) {}
@@ -466,22 +486,38 @@ public class CommentSuite extends JFrame implements ActionListener {
 			}
 		});
 		
-		gbc2.gridwidth = 2;
 		gbc2.gridy = 2;
 		gbc2.weighty = 1;
 		gbc2.fill = GridBagConstraints.BOTH;
 		groups.add(new JScrollPane(gTable), gbc2);
 		
-		
 		tabs = new JTabbedPane();
 		gbc1.weightx = 1;
-		first.add(tabs, gbc1);
+		split.setRightComponent(tabs);
 		
 		JPanel groupitems = new JPanel(new GridBagLayout());
 		tabs.addTab("Group Items [0]", groupitems);
 		
 		GridBagConstraints gbc3 = new GridBagConstraints();
 		gbc3.insets = margin;
+		gbc3.weightx = 0;
+		gbc3.fill = GridBagConstraints.HORIZONTAL;
+		
+		addItem = new JButton("Add Item");
+		addItem.addActionListener(this);
+		gbc3.gridx = 0;
+		gbc3.gridy = 0;
+		groupitems.add(addItem, gbc3);
+		
+		deleteItem = new JButton("Delete Item(s)");
+		deleteItem.addActionListener(this);
+		gbc3.gridx = 1;
+		gbc3.gridy = 0;
+		groupitems.add(deleteItem, gbc3);
+		
+		gbc3.weightx = 1;
+		gbc3.gridx = 3;
+		groupitems.add(new JLabel(), gbc3);
 		
 		groupItemModel = new DefaultTableModel(new String[]{"Type", "Thumb", "Title", "Published", "Last Checked"}, 0);
 		groupItemTable = new JTable(groupItemModel) {
@@ -501,7 +537,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		groupItemTable.setCellSelectionEnabled(true);
 		groupItemTable.getColumnModel().getColumn(1).setCellRenderer(new IconRenderer());
 		groupItemTable.getTableHeader().setReorderingAllowed(false);
-		int[] cols = new int[]{75, 130, -1, 180};
+		int[] cols = new int[]{75, 95, -1, 180};
 		for(int i=0; i<cols.length; i++) {
 			if(cols[i] != -1) {
 				groupItemTable.getColumnModel().getColumn(i).setMinWidth(cols[i]);
@@ -527,8 +563,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 		});
 		
 		gbc3.fill = GridBagConstraints.BOTH;
+		gbc3.gridy = 1;
+		gbc3.gridx = 0;
 		gbc3.weightx = 1;
 		gbc3.weighty = 1;
+		gbc3.gridwidth = 4;
 		groupitems.add(new JScrollPane(groupItemTable), gbc3);
 		
 		JPanel videolist = new JPanel(new GridBagLayout());
@@ -555,7 +594,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		groupVideoTable.setCellSelectionEnabled(true);
 		groupVideoTable.getColumnModel().getColumn(1).setCellRenderer(new IconRenderer());
 		groupVideoTable.getTableHeader().setReorderingAllowed(false);
-		int[] cols2 = new int[]{75, 130, -1, 180};
+		int[] cols2 = new int[]{75, 95, -1, 180};
 		for(int i=0; i<cols2.length; i++) {
 			if(cols2[i] != -1) {
 				groupVideoTable.getColumnModel().getColumn(i).setMinWidth(cols2[i]);
@@ -583,8 +622,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc4.fill = GridBagConstraints.BOTH;
 		gbc4.weightx = 1;
 		gbc4.weighty = 1;
+		gbc4.gridwidth = 4;
 		videolist.add(new JScrollPane(groupVideoTable), gbc4);
 		
+		split.setResizeWeight(0.0);
+		split.setDividerLocation(split.getMaximumDividerLocation());
 	}
 	
 	public void refreshGroupTable() throws SQLException, ParseException {
@@ -609,18 +651,20 @@ public class CommentSuite extends JFrame implements ActionListener {
 	}
 	
 	public void loadSelectedGroup(Group g) throws SQLException, ParseException {
+		SimpleDateFormat sdf = new SimpleDateFormat(dateFormatString);
 		System.out.println("Loading Group ["+g.group_name+"] ("+g.group_id+")");
 		List<GroupItem> gi = db.getGroupItems(g.group_name);
 		List<Video> videos = db.getVideos(g.group_name);
 		System.out.println(gi.size()+" group items / "+videos.size()+" videos");
 		tabs.setTitleAt(0, "Group Items ["+gi.size()+"]");
 		groupItemModel.setRowCount(0);
+		groupVideoModel.setRowCount(0);
 		for(GroupItem item : gi) {
-			String html = "<html><div style='text-align:right'>"+item.channel_title+"<br><div style='color:rgb(140,140,140)'>"+item.published+"</div></div></html>";
-			groupItemModel.addRow(new Object[]{item.type, item.thumbnail, item, html, item.last_checked});
+			String html = "<html><div style='text-align:right'>"+item.channel_title+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(item.published)+"</div></div></html>";
+			groupItemModel.addRow(new Object[]{item.type, item.thumbnail, item, html, item.last_checked.getTime() != 0 ? sdf.format(item.last_checked):""});
 		}
 		for(Video v : videos) {
-			String html = "<html><div style='text-align:right'>"+v.channel.channel_name+"<br><div style='color:rgb(140,140,140)'>"+v.publish_date+"</div></div></html>";
+			String html = "<html><div style='text-align:right'>"+v.channel.channel_name+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(v.publish_date)+"</div></div></html>";
 			groupVideoModel.addRow(new Object[]{"video", v.small_thumb, v, html, sdf.format(v.grab_date)});
 		}
 		tabs.setTitleAt(1, "Related Videos ["+videos.size()+"]");
@@ -756,11 +800,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 		
 		openVideo = new JMenuItem("Open Video");
 		openVideo.addActionListener(this);
-		openVideo.setIcon(new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/browser.png")));
+		openVideo.setIcon(imgBrowser);
 		
 		openProfile = new JMenuItem("Open Profile");
 		openProfile.addActionListener(this);
-		openProfile.setIcon(new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/browser.png")));
+		openProfile.setIcon(imgBrowser);
 		
 		backToResults = new JButton("Back to Results");
 		backToResults.addActionListener(this);
@@ -788,6 +832,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		cTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer(){
 			private static final long serialVersionUID = 1L;
 			public Font ytfont = new Font("Arial", Font.PLAIN, 12);
+			public Color likesColor = new Color(18, 142, 233);
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
 				super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
 				if(col == 0 || col == 3 || col == 4) {
@@ -811,7 +856,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 					setForeground(Color.LIGHT_GRAY);
 				} else if(col == 4) {
 					if(Integer.parseInt(value.toString()) > 0) {
-						setForeground(Color.GREEN);
+						setForeground(likesColor);
 					} else {
 						setForeground(Color.BLACK);
 					}
@@ -930,7 +975,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 					Group g = (Group) commentGroup.getSelectedItem();
 					if(g != null) {
 						itemGroup.removeAllItems();
-						itemGroup.addItem(new GroupItem(-1, null, null, "All Items", null, null, null, null));
+						itemGroup.addItem(new GroupItem(-1, null, null, "All Items", null, null, new Date(0), null));
 						try {
 							for(GroupItem gi : db.getGroupItems(g.group_name)) {
 								itemGroup.addItem(gi);
@@ -1098,7 +1143,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 	}
 	
 	public void addCommentToTable(Comment c) {
-		cModel.addRow(new Object[]{c.is_reply ? "Reply" : "Comment", c.channel, c, c.comment_date, c.comment_likes, c.reply_count > 0 ? c.reply_count : "", c.video_id});
+		SimpleDateFormat sdf = new SimpleDateFormat(dateFormatString);
+		cModel.addRow(new Object[]{c.is_reply ? "Reply" : "Comment", c.channel, c, sdf.format(c.comment_date), c.comment_likes, c.reply_count > 0 ? c.reply_count : "", c.video_id});
 	}
 	
 	public void setComponentsEnabled(boolean enable, Component... components) {
@@ -1157,6 +1203,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 			if(type == 2) t = SearchList.TYPE_CHANNEL;
 			if(type == 3) t = SearchList.TYPE_PLAYLIST;
 			slr = data.getSearch(term, SearchList.MAX_RESULTS, pageToken, order, t);
+			
+			SimpleDateFormat sdf = new SimpleDateFormat(dateFormatString);
 			for(SearchList.Item item : slr.items) {
 				if(item.hasSnippet()) {
 					String html = "<html><div style='text-align:right'>"+item.snippet.channelTitle+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(item.snippet.publishedAt)+"</div></div></html>";
@@ -1258,13 +1306,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 					if(item.id.videoId != null) youtube_id = item.id.videoId;
 					if(item.id.channelId != null) youtube_id = item.id.channelId;
 					if(item.id.playlistId != null) youtube_id = item.id.playlistId;
-					ImageIcon ico = null;
+					/*ImageIcon ico = null;
 					try {
 						ico = item.snippet.thumbnails.default_thumb.getImageIcon();
 					} catch (IOException e) {
 						e.printStackTrace();
-					}
-					gi.add(new GroupItem(type_id, kind, youtube_id, item.snippet.title, item.snippet.channelTitle, sdf.format(item.snippet.publishedAt), ico, null));
+					}*/
+					gi.add(new GroupItem(type_id, kind, youtube_id, item.snippet.title, item.snippet.channelTitle, item.snippet.publishedAt, new Date(0), item.snippet.thumbnails.default_thumb.url.toString()));
 					try {
 						refreshGroupTable();
 					} catch (SQLException | ParseException e) {
@@ -1322,7 +1370,22 @@ public class CommentSuite extends JFrame implements ActionListener {
 		/**
 		 * Manage Groups
 		 */
-		if(o.equals(deleteGroup)) {
+		if(o.equals(addGroup)) {
+			JXTextField name = new JXTextField("");
+			int code = JOptionPane.showConfirmDialog(this, name, "Choose a unique group name.", JOptionPane.OK_CANCEL_OPTION);
+			if(code == JOptionPane.OK_OPTION) {
+				try {
+					db.createGroup(name.getText());
+				} catch (SQLException e) {
+					JOptionPane.showMessageDialog(this, name.getText()+" is already a group.", "Choose a different name.", JOptionPane.ERROR_MESSAGE);
+				}
+				try {
+					refreshGroupTable();
+				} catch (SQLException | ParseException e) {
+					e.printStackTrace();
+				}
+			}
+		} else if(o.equals(deleteGroup)) {
 			String group_name = gTable.getValueAt(gTable.getSelectedRow(), 0).toString();
 			JOptionPane.showConfirmDialog(this, new JLabel("<html>Are you sure you want to delete <b>"+group_name+"</b> and all of its videos?</html>"), "Delete Group", JOptionPane.OK_CANCEL_OPTION);
 			try {
@@ -1608,7 +1671,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 					gitemPlaylists.add(gi);
 				}
 			}
-			db.updateGroupItemsChecked(existingGroupItems, sdf.format(new Date()));
+			db.updateGroupItemsChecked(existingGroupItems, new Date());
 		}
 		
 		public boolean videoListContainsId(List<Video> list, String id) {
@@ -1790,7 +1853,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 					File thumbFile = new File(thumb, itemSnip.id+".png");
 					ImageIO.write(ImageIO.read(itemSnip.snippet.thumbnails.medium.url), "png", thumbFile);
 				} catch (IOException e) {}
-				Video video = new Video(itemSnip.id, channel, new Date(), sdf.format(itemSnip.snippet.publishedAt), itemSnip.snippet.title, itemSnip.snippet.description, itemStat.statistics.commentCount, itemStat.statistics.likeCount, itemStat.statistics.dislikeCount, itemStat.statistics.viewCount, itemSnip.snippet.thumbnails.medium.url.toString());
+				Video video = new Video(itemSnip.id, channel, new Date(), itemSnip.snippet.publishedAt, itemSnip.snippet.title, itemSnip.snippet.description, itemStat.statistics.commentCount, itemStat.statistics.likeCount, itemStat.statistics.dislikeCount, itemStat.statistics.viewCount, itemSnip.snippet.thumbnails.medium.url.toString());
 				if(!existingVideoIds.contains(itemSnip.id) && !videoListContainsId(insertVideos, itemSnip.id) && !videoListContainsId(updateVideos, itemSnip.id)) {
 					insertVideos.add(video);
 				} else {
@@ -1847,7 +1910,6 @@ public class CommentSuite extends JFrame implements ActionListener {
 		public Comment createComment(CommentsList.Item item, boolean isReply, int replyCount) {
 			if(item.hasSnippet()) {
 				if(item.snippet.authorChannelId != null && item.snippet.authorChannelId.value != null) {
-					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm a"); // SimpleDateFormat is not threadsafe, this fixes it.
 					Channel channel;
 					String channelId = item.snippet.authorChannelId.value;
 					if(channelId == null) System.out.println("NULL CHANNELID");
@@ -1866,9 +1928,9 @@ public class CommentSuite extends JFrame implements ActionListener {
 					}
 					Comment comment = null;
 					if(isReply) {
-						comment = new Comment(item.id, channel, item.snippet.videoId, sdf.format(item.snippet.publishedAt), item.snippet.textDisplay, item.snippet.likeCount, replyCount, isReply, item.snippet.parentId);
+						comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, item.snippet.textDisplay, item.snippet.likeCount, replyCount, isReply, item.snippet.parentId);
 					} else {
-						comment = new Comment(item.id, channel, item.snippet.videoId, sdf.format(item.snippet.publishedAt), item.snippet.textDisplay, item.snippet.likeCount, replyCount, isReply, null);
+						comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, item.snippet.textDisplay, item.snippet.likeCount, replyCount, isReply, null);
 					}
 					return comment;
 				}

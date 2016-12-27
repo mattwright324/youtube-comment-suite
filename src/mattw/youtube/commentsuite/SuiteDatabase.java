@@ -44,8 +44,11 @@ public class SuiteDatabase {
 	public void dropAllTables() throws SQLException {
 		if(!con.getAutoCommit())
 			con.commit();
+		System.out.println(con.getAutoCommit());
 		con.setAutoCommit(true);
+		System.out.println(con.getAutoCommit());
 		con.setAutoCommit(true);
+		System.out.println(con.getAutoCommit());
 		for(String table : "gitem_type,gitem_list,groups,group_gitem,video_group,videos,comments,channels".split(","))
 			s.executeUpdate("DROP TABLE IF EXISTS "+table);
 	}
@@ -65,8 +68,8 @@ public class SuiteDatabase {
 				+ "title STRING,"
 				+ "channel_title STRING,"
 				+ "published DATE,"
-				+ "thumbnail BLOB,"
 				+ "last_checked DATE,"
+				+ "thumb_url STRING, "
 				+ "FOREIGN KEY(type_id) REFERENCES gitem_type(type_id));");
 		
 		s.executeUpdate("CREATE TABLE IF NOT EXISTS groups (group_id INTEGER PRIMARY KEY AUTOINCREMENT, group_name STRING UNIQUE);");
@@ -88,8 +91,8 @@ public class SuiteDatabase {
 		s.executeUpdate("CREATE TABLE IF NOT EXISTS videos ("
 				+ "video_id STRING PRIMARY KEY,"
 				+ "channel_id STRING,"
-				+ "grab_date DATE,"
-				+ "publish_date DATE,"
+				+ "grab_date INTEGER,"
+				+ "publish_date INTEGER,"
 				+ "video_title STRING,"
 				+ "total_comments INTEGER,"
 				+ "total_views INTEGER,"
@@ -103,12 +106,12 @@ public class SuiteDatabase {
 				+ "comment_id STRING PRIMARY KEY,"
 				+ "channel_id STRING,"
 				+ "video_id STRING,"
-				+ "comment_date DATE,"
-				+ "comment_text STRING,"
+				+ "comment_date INTEGER,"
 				+ "comment_likes INTEGER,"
 				+ "reply_count INTEGER,"
 				+ "is_reply BOOLEAN,"
-				+ "parent_id STRING," 
+				+ "parent_id STRING,"
+				+ "comment_text TEXT,"
 				+ "FOREIGN KEY(channel_id) REFERENCES channels(channel_id),"
 				+ "FOREIGN KEY(video_id) REFERENCES videos(video_id))");
 		
@@ -128,7 +131,7 @@ public class SuiteDatabase {
 				ps.setString(1, c.comment_id);
 				ps.setString(2, c.channel.channel_id);
 				ps.setString(3, c.video_id);
-				ps.setString(4, c.comment_date);
+				ps.setLong(4, c.comment_date.getTime());
 				ps.setString(5, c.comment_text);
 				ps.setLong(6, c.comment_likes);
 				ps.setLong(7, c.reply_count);
@@ -191,7 +194,7 @@ public class SuiteDatabase {
 				if(channel_profile != null) channel_profile = new ImageIcon(channel_profile.getImage().getScaledInstance(24, 24, 0));
 				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
 			}
-			Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), rs.getString("comment_date"), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
+			Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), new Date(rs.getLong("comment_date")), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
 			list.add(comment);
 		}
 		return list;
@@ -202,7 +205,7 @@ public class SuiteDatabase {
 		if(orderby == 1) order = "comment_date ASC ";
 		if(orderby == 2) order = "comment_likes DESC ";
 		if(orderby == 3) order = "reply_count DESC ";
-		if(orderby == 4) order = "display_name ASC, comment_date DESC ";
+		if(orderby == 4) order = "channel_name ASC, comment_date DESC ";
 		if(orderby == 5) order = "comment_text ASC ";
 		
 		String ctype = "";
@@ -253,7 +256,7 @@ public class SuiteDatabase {
 				if(channel_profile != null) channel_profile = new ImageIcon(channel_profile.getImage().getScaledInstance(24, 24, 0));
 				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
 			}
-			Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), rs.getString("comment_date"), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
+			Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), new Date(rs.getLong("comment_date")), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
 			list.add(comment);
 		}
 		return list;
@@ -295,7 +298,7 @@ public class SuiteDatabase {
 		if(rs.next()) {
 			ImageIcon channel_profile = bytesToImageIcon(rs.getBytes("channel_profile"));
 			Channel author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
-			Video video = new Video(rs.getString("video_id"), author, rs.getString("grab_date") != null ? sdf.parse(rs.getString("grab_date")) : new Date(0), rs.getString("publish_date"), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"));
+			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"));
 			return video;
 		}
 		return null;
@@ -324,7 +327,7 @@ public class SuiteDatabase {
 				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
 				channels.put(rs.getString("channel_id"), author);
 			}
-			Video video = new Video(rs.getString("video_id"), author, rs.getString("grab_date") != null ? sdf.parse(rs.getString("grab_date")) : new Date(0), rs.getString("publish_date"), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"));
+			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"));
 			list.add(video);
 		}
 		return list;
@@ -336,8 +339,8 @@ public class SuiteDatabase {
 		for(Video v : videos) {
 			ps.setString(1, v.video_id);
 			ps.setString(2, v.channel.channel_id);
-			ps.setString(3, sdf.format(v.grab_date));
-			ps.setString(4, v.publish_date);
+			ps.setLong(3, v.grab_date.getTime());
+			ps.setLong(4, v.publish_date.getTime());
 			ps.setString(5, v.video_title);
 			ps.setLong(6, v.total_comments);
 			ps.setLong(7, v.total_views);
@@ -363,7 +366,7 @@ public class SuiteDatabase {
 				+ "thumb_url = ? "
 				+ "WHERE video_id = ?");
 		for(Video v : videos) {
-			ps.setString(1, sdf.format(new Date()));
+			ps.setLong(1, System.currentTimeMillis());
 			ps.setString(2, v.video_title);
 			ps.setLong(3, v.total_comments);
 			ps.setLong(4, v.total_views);
@@ -386,11 +389,7 @@ public class SuiteDatabase {
 				ps.setString(1, c.channel_id);
 				ps.setString(2, c.channel_name);
 				ps.setString(3, c.channel_profile_url);
-				try {
-					ps.setBytes(4, c.channel_profile != null ? imageIconToBytes(c.channel_profile) : null);
-				} catch (IOException e) {
-					ps.setBytes(4, null);
-				}
+				ps.setBytes(4, imageIconToBytes(c.channel_profile));
 			} else {
 				System.out.println("NULL VALUE ON CHANNEL INSERT c:"+(c==null)+",ps:"+(ps==null)+"");
 			}
@@ -410,11 +409,7 @@ public class SuiteDatabase {
 		for(Channel c : channels) {
 			ps.setString(1, c.channel_name);
 			ps.setString(2, c.channel_profile_url);
-			try {
-				ps.setBytes(3, c.channel_profile != null ? imageIconToBytes(c.channel_profile) : null);
-			} catch (IOException e) {
-				ps.setBytes(3, null);
-			}
+			ps.setBytes(3, imageIconToBytes(c.channel_profile));
 			ps.addBatch();
 		}
 		System.out.println("Updating "+channels.size()+" channels");
@@ -434,10 +429,10 @@ public class SuiteDatabase {
 		System.out.println("Inserted "+video_groups.size()+" video groups");
 	}
 	
-	public void updateGroupItemsChecked(List<GroupItem> items, String date) throws SQLException {
+	public void updateGroupItemsChecked(List<GroupItem> items, Date date) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("UPDATE gitem_list SET last_checked = ? WHERE gitem_id = ?");
 		for(GroupItem gi : items) {
-			ps.setString(1, date);
+			ps.setLong(1, date.getTime());
 			ps.setInt(2, gi.gitem_id);
 			ps.addBatch();
 		}
@@ -449,7 +444,7 @@ public class SuiteDatabase {
 		if(g == null) g = getGroup(0);
 		int gitem_id = s.executeQuery("SELECT MAX(gitem_id) AS max_id FROM gitem_list").getInt("max_id") + 1;
 		System.out.println(gitem_id);
-		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO gitem_list (gitem_id, type_id, youtube_id, title, channel_title, published, thumbnail, last_checked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO gitem_list (gitem_id, type_id, youtube_id, title, channel_title, published, last_checked, thumb_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 		PreparedStatement ps1 = con.prepareStatement("INSERT INTO group_gitem (group_id, gitem_id) VALUES (?, ?)");
 		System.out.println("Inserting "+items.size()+" Group Items");
 		for(GroupItem gi : items) {
@@ -458,13 +453,10 @@ public class SuiteDatabase {
 			ps.setString(3, gi.youtube_id);
 			ps.setString(4, gi.title);
 			ps.setString(5, gi.channel_title);
-			ps.setString(6, gi.published);
-			try {
-				ps.setBytes(7, imageIconToBytes(gi.thumbnail));
-			} catch (IOException e) {
-				ps.setBytes(7, null);
-			}
-			ps.setString(8, gi.last_checked);
+			ps.setLong(6, gi.published.getTime());
+			// ps.setBytes(7, imageIconToBytes(gi.thumbnail));
+			ps.setLong(7, gi.last_checked.getTime());
+			ps.setString(8, gi.thumb_url);
 			ps.addBatch();
 			
 			ps1.setInt(1, g.group_id);
@@ -488,8 +480,8 @@ public class SuiteDatabase {
 		
 		List<GroupItem> list = new ArrayList<GroupItem>();
 		while(rs.next()) {
-			ImageIcon thumb = bytesToImageIcon(rs.getBytes("thumbnail"));
-			GroupItem gi = new GroupItem(rs.getInt("type_id"), rs.getString("name"), rs.getString("youtube_id"), rs.getString("title"), rs.getString("channel_title"), rs.getString("published"), thumb, rs.getString("last_checked"));
+			// ImageIcon thumb = bytesToImageIcon(rs.getBytes("thumbnail"));
+			GroupItem gi = new GroupItem(rs.getInt("type_id"), rs.getString("name"), rs.getString("youtube_id"), rs.getString("title"), rs.getString("channel_title"), new Date(rs.getLong("published")), new Date(rs.getLong("last_checked")), rs.getString("thumb_url"));
 			gi.setID(rs.getInt("gitem_id"));
 			list.add(gi);
 		}
@@ -564,14 +556,19 @@ public class SuiteDatabase {
 		}
 	}
 	
-	private byte[] imageIconToBytes(ImageIcon img) throws IOException {
+	private byte[] imageIconToBytes(ImageIcon img) {
+		if(img == null) return null;
 		BufferedImage bi = new BufferedImage(img.getIconWidth(), img.getIconHeight(), BufferedImage.TYPE_INT_RGB);
 		Graphics g = bi.createGraphics();
 		img.paintIcon(null, g, 0, 0);
 		g.dispose();
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ImageIO.write(bi, "png", baos);
+		try {
+			ImageIO.write(bi, "png", baos);
+		} catch (IOException e) {
+			return null;
+		}
 		return baos.toByteArray();
 	}
 }
