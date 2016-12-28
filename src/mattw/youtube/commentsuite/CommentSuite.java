@@ -31,19 +31,22 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.jdesktop.swingx.JXTextField;
 
 import com.google.gson.Gson;
@@ -71,6 +74,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 	
 	public Insets margin = new Insets(2, 4, 2, 4);
 	
+	public String title = "Youtube Comment Suite";
 	public String youtubeDataKey;
 	public Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.PRIVATE).create();
 	public YoutubeData data;
@@ -86,6 +90,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public ImageIcon imgSearch = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/search.png"));
 	public ImageIcon imgSettings = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/settings.png"));
 	public ImageIcon imgThumbPlaceholder = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/placeholder4.png"));
+	public ImageIcon imgThumbPlaceholderBlank = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/placeholder3.png"));
 	public ImageIcon imgBlankProfile = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/blank_profile.jpg"));
 	public ImageIcon imgBrowser = new ImageIcon(getImageResource("/mattw/youtube/commentsuite/images/browser.png").getScaledInstance(16, 16, 0));
 	
@@ -107,6 +112,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public DefaultTableModel groupItemModel;
 	public JTable groupVideoTable;
 	public DefaultTableModel groupVideoModel;
+	public JProgressBar groupLoad;
+	public JPanel groups;
 	
 		/** Comments Panel Components **/
 	public JPanel comment_list;
@@ -115,15 +122,17 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public JTextField videoTitle, videoAuthorName;
 	public JLabel videoStats;
 	public JEditorPane videoDesc;
-	public String defaultDescription = "Welcome to Youtube Comment Suite<br><br>This program will download all available comments and their profile images."
-			+ "<br>Everything is stored in the <b>commentsuite.db</b> file using Sqlite3."
+	public String defaultDescription = "<html>"
+			+ "Come visit the <a href='https://github.com/mattwright324'>Github Page<a> for the latest release!"
 			+ "<br>"
 			+ "<br>This program makes use of the following libraries:"
-			+ "<ul>"
-			+ "<li><a href=\"https://github.com/google/gson\">Google Gson 2.8.0</a></li>"
-			+ "<li><a href=\"https://java.net/projects/swingx/downloads/directory/releases\">SwingX 1.6.4</a></li>"
-			+ "<li><a href=\"https://bitbucket.org/xerial/sqlite-jdbc/downloads\">Sqlite JDBC 3.8.11.1<a></li>"
-			+ "</ul>";
+			+ "<ol>"
+			+ "<li><a href='https://github.com/google/gson'>Google Gson 2.8.0</a></li>"
+			+ "<li><a href='https://java.net/projects/swingx/downloads/directory/releases'>SwingX 1.6.4</a></li>"
+			+ "<li><a href='https://bitbucket.org/xerial/sqlite-jdbc/downloads'>Sqlite JDBC 3.8.11.1<a></li>"
+			+ "<li><a href='https://github.com/mattwright324/youtube-data-list'>youtube-data-list<a></li>"
+			+ "</ol>"
+			+ "</html>";
 	public JTable cTable;
 	public DefaultTableModel cModel;
 	public JXTextField fieldName, fieldText;
@@ -135,6 +144,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public List<Comment> foundComments;
 	public List<Comment> commentTree;
 	public JButton backToResults;
+	public JPanel searchComments;
+	public JButton random;
+	public JSpinner randomCount;
+	public SpinnerNumberModel numberModel = new SpinnerNumberModel(10,1,5000,1);
+	public JCheckBox isFair;
 	
 	
 		/** Settings Panel Components **/
@@ -157,6 +171,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 		bw.close();
 		youtubeDataKey = key;
 		data = new YoutubeData(youtubeDataKey);
+		if(youtubeDataKey.equals("")) {
+			setTitle(title+" - Data key not set.");
+		} else {
+			setTitle(title);
+		}
 	}
 	
 	public static void main(String[] args) {
@@ -169,7 +188,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 			new Thread(new Runnable(){
 				public void run() {
 					try {
-						db.setup();
+						db.create();
 						window.setupFromDatabase();
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
@@ -187,14 +206,14 @@ public class CommentSuite extends JFrame implements ActionListener {
 	}
 	
 	public CommentSuite() throws IOException {
-		youtubeDataKey = getKey();
-		data = new YoutubeData(youtubeDataKey);
-		
 		setTitle("Youtube Comment Suite");
 		setSize(1200, 600);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(new BorderLayout());
 		setIconImage(getImageResource("/mattw/youtube/commentsuite/images/icon.png"));
+		
+		youtubeDataKey = getKey();
+		data = new YoutubeData(youtubeDataKey);
 		
 		buildVideosPanel();
 		buildGroupsPanel();
@@ -226,6 +245,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		videoAuthorProfile.setToolTipText("");
 		videoDesc.setText(defaultDescription);
 		cModel.setRowCount(0);
+		searchComments.setBorder(BorderFactory.createTitledBorder("Comments"));
 		fieldName.setText("");
 		fieldText.setText("");
 	}
@@ -395,7 +415,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc1.weighty = 1.0;
 		
 		
-		JPanel groups = new JPanel(new GridBagLayout());
+		groups = new JPanel(new GridBagLayout());
 		groups.setBorder(BorderFactory.createTitledBorder("Select a Group"));
 		groups.setOpaque(false);
 		first.add(groups, gbc1);
@@ -466,22 +486,29 @@ public class CommentSuite extends JFrame implements ActionListener {
 			}
 			public void loadGroup(MouseEvent e) {
 				if(e.getClickCount() == 1) {
-					int row = gTable.getSelectedRow();
-					Group g = (Group) gTable.getValueAt(row, 0);
-					
-					setComponentsEnabled(row != 0 && !g.isRefreshing(), deleteGroup, editName);
-					setComponentsEnabled(!g.isRefreshing(), refreshGroup);
-					try {
-						tabs.setTitleAt(0, "Group Items [0]");
-						tabs.setTitleAt(1, "Group Items [0]");
-						groupItemModel.setRowCount(0);
-						groupVideoModel.setRowCount(0);
-						loadSelectedGroup(g);
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					} catch (ParseException e1) {
-						e1.printStackTrace();
-					}
+					Thread load = new Thread(new Runnable(){
+						public void run() {
+							gTable.setEnabled(false);
+							int row = gTable.getSelectedRow();
+							Group g = (Group) gTable.getValueAt(row, 0);
+							
+							setComponentsEnabled(row != 0 && !g.isRefreshing(), deleteGroup, editName);
+							setComponentsEnabled(!g.isRefreshing(), refreshGroup);
+							try {
+								tabs.setTitleAt(0, "Group Items [0]");
+								tabs.setTitleAt(1, "Related Videos [0]");
+								groupItemModel.setRowCount(0);
+								groupVideoModel.setRowCount(0);
+								loadSelectedGroup(g);
+							} catch (SQLException e1) {
+								e1.printStackTrace();
+							} catch (ParseException e1) {
+								e1.printStackTrace();
+							}
+							gTable.setEnabled(true);
+						}
+					});
+					load.start();
 				}
 			}
 		});
@@ -607,7 +634,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 			public Font ytfont = new Font("Arial", Font.PLAIN, 12);
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
 				super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
-				if(col == 0) {
+				if(col == 0 || col == 4) {
 					setHorizontalAlignment(SwingConstants.CENTER);
 				} else if(col == 3) {
 					setHorizontalAlignment(SwingConstants.TRAILING);
@@ -618,6 +645,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 				return this;
 			}
 		});
+		
+		groupLoad = new JProgressBar();
+		groupLoad.setStringPainted(true);
+		groupLoad.setString("");
+		groupLoad.setIndeterminate(true);
 		
 		gbc4.fill = GridBagConstraints.BOTH;
 		gbc4.weightx = 1;
@@ -651,12 +683,24 @@ public class CommentSuite extends JFrame implements ActionListener {
 	}
 	
 	public void loadSelectedGroup(Group g) throws SQLException, ParseException {
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridx = 0;
+		gbc.gridy = 3;
+		gbc.gridwidth = 3;
+		gbc.ipady = 7;
+		gbc.weightx = 1;
+		gbc.insets = margin;
+		groups.add(groupLoad, gbc);
+		groups.validate();
+		
 		SimpleDateFormat sdf = new SimpleDateFormat(dateFormatString);
 		System.out.println("Loading Group ["+g.group_name+"] ("+g.group_id+")");
 		List<GroupItem> gi = db.getGroupItems(g.group_name);
 		List<Video> videos = db.getVideos(g.group_name);
 		System.out.println(gi.size()+" group items / "+videos.size()+" videos");
 		tabs.setTitleAt(0, "Group Items ["+gi.size()+"]");
+		tabs.setTitleAt(1, "Related Videos ["+videos.size()+"]");
 		groupItemModel.setRowCount(0);
 		groupVideoModel.setRowCount(0);
 		for(GroupItem item : gi) {
@@ -665,9 +709,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 		}
 		for(Video v : videos) {
 			String html = "<html><div style='text-align:right'>"+v.channel.channel_name+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(v.publish_date)+"</div></div></html>";
-			groupVideoModel.addRow(new Object[]{"video", v.small_thumb, v, html, sdf.format(v.grab_date)});
+			String check_status = v.http_code == 200 ? v.comment_count+" comments" : "<div style='color:red'>"+(v.http_code == 403 ? "Comments Disabled" : "HTTP "+v.http_code)+"</div>";
+			String checked_html = "<html><div style='text-align:center'>"+sdf.format(v.grab_date)+"<br>"+check_status+"</div></html>";
+			groupVideoModel.addRow(new Object[]{"video", v.small_thumb, v, html, checked_html});
 		}
-		tabs.setTitleAt(1, "Related Videos ["+videos.size()+"]");
+		
+		groups.remove(groupLoad);
+		groups.validate();
 	}
 	
 	public void buildCommentsPanel() { // TODO
@@ -926,7 +974,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 					videoAuthorProfile.setIcon(profile);
 					videoAuthorProfile.setToolTipText(v.channel.channel_id);
 					videoStats.setText("<html><div style='text-align=center'>"+v.total_views+" views<br><a color=green>+"+v.total_likes+"</a> / <a color=red>-"+v.total_dislikes+"</a></div></html>");
-					videoDesc.setText(v.video_desc);
+					SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+					videoDesc.setText("<b>Published on "+sdf.format(v.publish_date)+"</b><br>"+v.video_desc);
 					videoDesc.setCaretPosition(0);
 				} catch (SQLException | ParseException e1) {
 					e1.printStackTrace();
@@ -953,6 +1002,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc3.fill = GridBagConstraints.HORIZONTAL;
 		gbc3.gridy = 0;
 		gbc3.gridx = 0;
+		gbc3.weightx = 1;
 		
 		JPanel searchGroup = new JPanel(new GridBagLayout());
 		searchGroup.setBorder(BorderFactory.createTitledBorder("Group"));
@@ -974,10 +1024,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 				if(last != commentGroup.getSelectedIndex()) {
 					Group g = (Group) commentGroup.getSelectedItem();
 					if(g != null) {
-						itemGroup.removeAllItems();
-						itemGroup.addItem(new GroupItem(-1, null, null, "All Items", null, null, new Date(0), null));
 						try {
-							for(GroupItem gi : db.getGroupItems(g.group_name)) {
+							List<GroupItem> items = db.getGroupItems(g.group_name);
+							itemGroup.removeAllItems();
+							itemGroup.addItem(new GroupItem(-1, null, null, "All Items ("+items.size()+")", null, null, new Date(0), null));
+							for(GroupItem gi : items) {
 								itemGroup.addItem(gi);
 							}
 						} catch (SQLException e) {}
@@ -992,7 +1043,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc4.gridy = 1;
 		searchGroup.add(itemGroup, gbc4);
 		
-		JPanel searchComments = new JPanel(new GridBagLayout());
+		searchComments = new JPanel(new GridBagLayout());
 		searchComments.setBorder(BorderFactory.createTitledBorder("Comments"));
 		gbc3.gridy = 1;
 		search.add(searchComments, gbc3);
@@ -1005,15 +1056,16 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc5.ipady = 7;
 		
 		type = new JComboBox<String>(new String[]{"Comments and Replies", "Comments Only", "Replies Only"});
-		gbc5.gridwidth = 2;
+		gbc5.gridwidth = 5;
 		gbc5.weightx = 1;
 		searchComments.add(type, gbc5);
 		
 		gbc5.gridy = 1;
 		gbc5.gridwidth = 1;
-		gbc5.weightx = 0.1;
+		gbc5.weightx = 0;
 		searchComments.add(new JLabel("Name"), gbc5);
 		gbc5.gridx = 1;
+		gbc5.gridwidth = 4;
 		gbc5.weightx = 1;
 		fieldName = new JXTextField("Name contains...");
 		searchComments.add(fieldName, gbc5);
@@ -1023,17 +1075,20 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc5.weightx = 0;
 		searchComments.add(new JLabel("Text"), gbc5);
 		gbc5.gridx = 1;
+		gbc5.gridwidth = 4;
 		gbc5.weightx = 1;
 		fieldText = new JXTextField("Comment contains...");
 		searchComments.add(fieldText, gbc5);
 		
 		gbc5.gridx = 0;
 		gbc5.gridy = 3;
+		gbc5.gridwidth = 1;
 		gbc5.weightx = 0;
 		searchComments.add(new JLabel("Sort By"), gbc5);
 		gbc5.gridx = 1;
+		gbc5.gridwidth = 4;
 		gbc5.weightx = 1;
-		orderBy = new JComboBox<String>(new String[]{"Most Recent", "Least Recent", "Most Likes", "Most Replies", "Names (A to Z)", "Comments (A to Z)"});
+		orderBy = new JComboBox<String>(new String[]{"Most Recent", "Least Recent", "Most Likes", "Most Replies", "Longest Comment", "Names (A to Z)", "Comments (A to Z)"});
 		searchComments.add(orderBy, gbc5);
 		
 		findComments = new JButton("Find Comments");
@@ -1042,8 +1097,33 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc5.gridx = 0;
 		gbc5.ipadx = 140;
 		gbc5.weightx = 1;
-		gbc5.gridwidth = 3;
+		gbc5.gridwidth = 5;
 		searchComments.add(findComments, gbc5);
+		
+		GridBagConstraints gbc6 = new GridBagConstraints();
+		gbc6.fill = GridBagConstraints.HORIZONTAL;
+		gbc6.gridy = 5;
+		gbc6.gridx = 0;
+		gbc6.insets = gbc5.insets;
+		gbc6.ipady = gbc5.ipady;
+		gbc6.weightx = 1;
+		
+		random = new JButton("Random");
+		random.addActionListener(this);
+		searchComments.add(random, gbc6);
+		
+		randomCount = new JSpinner(numberModel);
+		randomCount.setPreferredSize(new Dimension(25, 20));
+		randomCount.setToolTipText("How many random comments?");
+		gbc6.gridx = 1;
+		searchComments.add(randomCount, gbc6);
+		
+		isFair = new JCheckBox("Fair");
+		isFair.setPreferredSize(new Dimension(25, 20));
+		isFair.setToolTipText("Multiple comments do not improve chances. Everyone has an equal chance.");
+		gbc6.gridx = 2;
+		isFair.setSelected(true);
+		searchComments.add(isFair, gbc6);
 		
 		
 		gbc5.gridx = 0;
@@ -1051,7 +1131,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc5.fill = GridBagConstraints.BOTH;
 		gbc5.weightx = 1;
 		gbc5.weighty = 1;
-		search.add(Box.createHorizontalStrut(0), gbc5);
+		search.add(Box.createVerticalStrut(0), gbc5);
 		
 		split1.setResizeWeight(1.0);
 		split1.setDividerLocation(1.0);
@@ -1208,7 +1288,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 			for(SearchList.Item item : slr.items) {
 				if(item.hasSnippet()) {
 					String html = "<html><div style='text-align:right'>"+item.snippet.channelTitle+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(item.snippet.publishedAt)+"</div></div></html>";
-					vModel.addRow(new Object[]{false, item.id.kind.split("#")[1], item.snippet.thumbnails.default_thumb.getImageIcon(), item, html});
+					ImageIcon thumb = imgThumbPlaceholderBlank;
+					if(item.snippet.thumbnails != null && item.snippet.thumbnails.default_thumb != null) {
+						thumb = item.snippet.thumbnails.default_thumb.getImageIcon();
+					}
+					vModel.addRow(new Object[]{false, item.id.kind.split("#")[1], thumb, item, html});
 				}
 			}
 			if(slr.nextPageToken != null) {
@@ -1306,12 +1390,6 @@ public class CommentSuite extends JFrame implements ActionListener {
 					if(item.id.videoId != null) youtube_id = item.id.videoId;
 					if(item.id.channelId != null) youtube_id = item.id.channelId;
 					if(item.id.playlistId != null) youtube_id = item.id.playlistId;
-					/*ImageIcon ico = null;
-					try {
-						ico = item.snippet.thumbnails.default_thumb.getImageIcon();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}*/
 					gi.add(new GroupItem(type_id, kind, youtube_id, item.snippet.title, item.snippet.channelTitle, item.snippet.publishedAt, new Date(0), item.snippet.thumbnails.default_thumb.url.toString()));
 					try {
 						refreshGroupTable();
@@ -1349,19 +1427,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 			}
 		} else if(o.equals(videoOIB)) {
 			String type = vTable.getValueAt(vTable.getSelectedRow(), 1).toString();
-			SearchList.Item item = (SearchList.Item) vTable.getValueAt(vTable.getSelectedRow(), 2);
+			SearchList.Item item = (SearchList.Item) vTable.getValueAt(vTable.getSelectedRow(), 3);
 			if(type.equals("video")) {
 				openInBrowser("https://youtu.be/"+item.id.videoId);
 			} else if(type.equals("playlist")) {
-				/**
-				 * TODO
-				 * No direct link to playlist.
-				 * Get through API?
-				 * Requires all three inputs at end of link https://www.youtube.com/watch?v=?&playlist=?&index=?
-				 * 	v= First videoId
-				 * 	playlist= playlistId
-				 * 	index= 0
-				 */
+				openInBrowser("https://www.youtube.com/playlist?list="+item.id.playlistId);
 			} else if(type.equals("channel")) {
 				openInBrowser("https://www.youtube.com/channel/"+item.id.channelId);
 			}
@@ -1371,20 +1441,27 @@ public class CommentSuite extends JFrame implements ActionListener {
 		 * Manage Groups
 		 */
 		if(o.equals(addGroup)) {
-			JXTextField name = new JXTextField("");
-			int code = JOptionPane.showConfirmDialog(this, name, "Choose a unique group name.", JOptionPane.OK_CANCEL_OPTION);
-			if(code == JOptionPane.OK_OPTION) {
-				try {
-					db.createGroup(name.getText());
-				} catch (SQLException e) {
-					JOptionPane.showMessageDialog(this, name.getText()+" is already a group.", "Choose a different name.", JOptionPane.ERROR_MESSAGE);
+			Thread add = new Thread(new Runnable(){
+				public void run() {
+					addGroup.setEnabled(false);
+					JXTextField name = new JXTextField("");
+					int code = JOptionPane.showConfirmDialog(window, name, "Choose a unique group name.", JOptionPane.OK_CANCEL_OPTION);
+					if(code == JOptionPane.OK_OPTION) {
+						try {
+							db.createGroup(name.getText());
+						} catch (SQLException e) {
+							JOptionPane.showMessageDialog(window, name.getText()+" is already a group.", "Choose a different name.", JOptionPane.ERROR_MESSAGE);
+						}
+						try {
+							refreshGroupTable();
+						} catch (SQLException | ParseException e) {
+							e.printStackTrace();
+						}
+					}
+					addGroup.setEnabled(true);
 				}
-				try {
-					refreshGroupTable();
-				} catch (SQLException | ParseException e) {
-					e.printStackTrace();
-				}
-			}
+			});
+			add.start();
 		} else if(o.equals(deleteGroup)) {
 			String group_name = gTable.getValueAt(gTable.getSelectedRow(), 0).toString();
 			JOptionPane.showConfirmDialog(this, new JLabel("<html>Are you sure you want to delete <b>"+group_name+"</b> and all of its videos?</html>"), "Delete Group", JOptionPane.OK_CANCEL_OPTION);
@@ -1430,18 +1507,20 @@ public class CommentSuite extends JFrame implements ActionListener {
 		/**
 		 * Comments
 		 */
-		if(o.equals(findComments)) {
+		if(o.equals(findComments) || o.equals(random)) {
 			Thread find = new Thread(new Runnable(){
 				public void run() {
 					foundComments = new ArrayList<Comment>();
 					findComments.setEnabled(false);
 					try {
 						GroupItem gi = itemGroup.getSelectedIndex() != 0 ? (GroupItem) itemGroup.getSelectedItem() : null;
-						foundComments = db.getComments(commentGroup.getSelectedItem().toString(), orderBy.getSelectedIndex(), fieldName.getText(), fieldText.getText(), 5000, gi, type.getSelectedIndex());
+						CommentSearch cs = db.getComments(commentGroup.getSelectedItem().toString(), orderBy.getSelectedIndex(), fieldName.getText(), fieldText.getText(), 5000, gi, type.getSelectedIndex(), o.equals(random), Integer.parseInt(numberModel.getValue().toString()), isFair.isSelected());
+						foundComments = cs.results;
 						cModel.setRowCount(0);
 						for(Comment c : foundComments) {
 							addCommentToTable(c);
 						}
+						searchComments.setBorder(BorderFactory.createTitledBorder("Comments (Showing "+(foundComments.size() == 5000 ? "":"")+foundComments.size()+" / "+cs.total_results+")"));
 						System.out.println("Found "+foundComments.size()+" comments");
 					} catch (SQLException e) {
 						e.printStackTrace();
@@ -1535,8 +1614,6 @@ public class CommentSuite extends JFrame implements ActionListener {
 							}
 						} catch (SQLException e) {
 							e.printStackTrace();
-						} catch (ClassNotFoundException e) {
-							e.printStackTrace();
 						} catch (ParseException e) {
 							e.printStackTrace();
 						}
@@ -1614,20 +1691,19 @@ public class CommentSuite extends JFrame implements ActionListener {
 	
 	public class GroupChecker extends Thread {
 		
-		// TODO
-		
 		public int tableRow;
 		public Group group;
 		public ElapsedTime timer = new ElapsedTime();
 		public int commentProgress = 0;
 		
-		public List<String> existingVideoIds;
-		public List<String> existingCommentIds;
-		public List<String> existingChannelIds;
-		public List<VideoGroup> existingVideoGroups;
-		public List<GroupItem> existingGroupItems;
+		public Set<String> existingVideoIds = new HashSet<String>();
+		public Set<String> existingCommentIds = new HashSet<String>();
+		public Set<String> existingChannelIds = new HashSet<String>();
+		public List<VideoGroup> existingVideoGroups = new ArrayList<VideoGroup>();
+		public List<GroupItem> existingGroupItems = new ArrayList<GroupItem>();
 		
 		public List<CommentThread> commentThreadIds = new ArrayList<CommentThread>();
+		
 		public class CommentThread {
 			public String comment_id;
 			public String video_id;
@@ -1653,11 +1729,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 			this.tableRow = tableRow;
 			this.group = group;
 			
-			existingVideoIds = db.getAllVideoIds();
-			existingCommentIds = db.getCommentIDs(group.group_name);
-			existingChannelIds = db.getAllChannelIDs();
-			existingVideoGroups = db.getVideoGroups();
-			existingGroupItems = db.getGroupItems(group.group_name);
+			existingVideoIds.addAll(db.getAllVideoIds());
+			existingCommentIds.addAll(db.getCommentIDs(group.group_name));
+			existingChannelIds.addAll(db.getAllChannelIDs());
+			existingVideoGroups.addAll(db.getVideoGroups());
+			existingGroupItems.addAll(db.getGroupItems(group.group_name));
 			for(GroupItem gi : existingGroupItems) {
 				if(gi.type_id == 0) {
 					VideoGroup vg = new VideoGroup(gi.gitem_id, gi.youtube_id);
@@ -1692,8 +1768,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 			}
 		}
 		
-		public void clearAll(List<?>... lists) {
-			for(List<?> list : lists) {
+		public void clearAll(Collection<?>... lists) {
+			for(Collection<?> list : lists) {
 				list.clear();
 			}
 		}
@@ -1731,7 +1807,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 						List<Comment> comments = getComments(videoId);
 						if(comments.size() > 0)
 							db.insertComments(comments);
-					} catch (JsonSyntaxException | IOException | SQLException e) {
+					} catch (JsonSyntaxException | SQLException e) {
 						e.printStackTrace();
 					} catch (Throwable e) {
 						System.out.println("Something fucked up. "+videoId);
@@ -1740,6 +1816,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 					commentProgress++;
 					setStatus("Part 2 of 3. Grabbing top-level comments<br>Videos "+commentProgress+"/"+videosInGroup.size()+" ("+clock.getTimeString()+")");
 				});
+				setStatus("Part 2 of 3. Committing.");
+				db.con.commit();
 				
 				setStatus("Part 3 of 3. Grabbing replies.");
 				commentProgress = 0;
@@ -1750,7 +1828,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 						List<Comment> replies = getReplies(thread);
 						if(replies.size() > 0)
 							db.insertComments(replies);
-					} catch (JsonSyntaxException | IOException e) {
+					} catch (JsonSyntaxException e) {
 						e.printStackTrace();
 					} catch (SQLException e) {
 						e.printStackTrace();
@@ -1764,7 +1842,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 				
 				db.insertChannels(insertChannels);
 				db.updateChannels(updateChannels);
-				setStatus("Part 2 of 3. Commit.");
+				setStatus("Part 3 of 3. Commit.");
 				db.con.commit();
 				setStatus("Finished. "+timer.getTimeString());
 			} catch (SQLException e) {
@@ -1836,7 +1914,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 				} else {
 					ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_SNIPPET, itemSnip.snippet.channelId, 1);
 					ChannelsList.Item item = cl.items[0];
-					channel = new Channel(itemSnip.snippet.channelId, item.snippet.title, item.snippet.thumbnails.default_thumb.url.toString(), item.snippet.thumbnails.default_thumb.getImageIcon());
+					channel = new Channel(itemSnip.snippet.channelId, StringEscapeUtils.unescapeHtml4(item.snippet.title), item.snippet.thumbnails.default_thumb.url.toString(), true);
 					channels.put(itemSnip.snippet.channelId, channel);
 				}
 				if(!existingChannelIds.contains(itemSnip.snippet.channelId)) {
@@ -1847,13 +1925,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 						updateChannels.add(channel);
 				}
 				if(channel == null) System.out.println("NULL CHANNEL");
-				try {
-					File thumb = new File("Thumbs/");
-					thumb.mkdirs();
-					File thumbFile = new File(thumb, itemSnip.id+".png");
-					ImageIO.write(ImageIO.read(itemSnip.snippet.thumbnails.medium.url), "png", thumbFile);
-				} catch (IOException e) {}
-				Video video = new Video(itemSnip.id, channel, new Date(), itemSnip.snippet.publishedAt, itemSnip.snippet.title, itemSnip.snippet.description, itemStat.statistics.commentCount, itemStat.statistics.likeCount, itemStat.statistics.dislikeCount, itemStat.statistics.viewCount, itemSnip.snippet.thumbnails.medium.url.toString());
+				Video video = new Video(itemSnip.id, channel, new Date(), itemSnip.snippet.publishedAt, itemSnip.snippet.title, itemSnip.snippet.description, itemStat.statistics.commentCount, itemStat.statistics.likeCount, itemStat.statistics.dislikeCount, itemStat.statistics.viewCount, itemSnip.snippet.thumbnails.medium.url.toString(), 200);
 				if(!existingVideoIds.contains(itemSnip.id) && !videoListContainsId(insertVideos, itemSnip.id) && !videoListContainsId(updateVideos, itemSnip.id)) {
 					insertVideos.add(video);
 				} else {
@@ -1864,46 +1936,72 @@ public class CommentSuite extends JFrame implements ActionListener {
 			setStatus("Part 1 of 3. Searching for new videos.<br>"+insertVideos.size()+" new of "+(insertVideos.size()+updateVideos.size()));
 		}
 		
-		public List<Comment> getComments(final String videoId) throws JsonSyntaxException, IOException {
+		public List<Comment> getComments(final String videoId) throws JsonSyntaxException {
 			List<Comment> comments = new ArrayList<Comment>();
 			CommentThreadsList snippet = null;
-			//CommentThreadsList replies = null;
 			String snipToken = "";
+			int fails = 0;
 			do {
-				snippet = data.getCommentThreadsByVideoId(CommentThreadsList.PART_SNIPPET, videoId, CommentThreadsList.MAX_RESULTS, snipToken);
-				snipToken = snippet.nextPageToken;
-				
-				for(CommentThreadsList.Item item : snippet.items) {
-					if(item.hasSnippet()) {
-						if(item.snippet.totalReplyCount > 0) {
-							commentThreadIds.add(new CommentThread(item.id, videoId));
+				try {
+					snippet = data.getCommentThreadsByVideoId(CommentThreadsList.PART_SNIPPET, videoId, CommentThreadsList.MAX_RESULTS, snipToken);
+					snipToken = snippet.nextPageToken;
+					
+					for(CommentThreadsList.Item item : snippet.items) {
+						if(item.hasSnippet()) {
+							if(item.snippet.totalReplyCount > 0) {
+								commentThreadIds.add(new CommentThread(item.id, videoId));
+							}
+							if(!existingCommentIds.contains(item.id)) {
+								CommentsList.Item tlc = item.snippet.topLevelComment;
+								Comment c = createComment(tlc, false, item.snippet.totalReplyCount);
+								comments.add(c);
+							}
 						}
-						if(!existingCommentIds.contains(item.id)) {
-							CommentsList.Item tlc = item.snippet.topLevelComment;
-							Comment c = createComment(tlc, false, item.snippet.totalReplyCount);
-							comments.add(c);
+					}
+				} catch (IOException e) {
+					fails++;
+					if(e.getMessage().contains("HTTP response code")) {
+						if(e.getMessage().contains("403 for URL")) {
+							System.err.println("Forbidden/Comments Disabled "+e.getMessage());
+							try {
+								db.updateVideoHttpCode(videoId, 403);
+							} catch (SQLException e1) {}
+							break;
+						} else if(e.getMessage().contains("404 for URL")) {
+							System.err.println("Forbidden/Comments Disabled "+e.getMessage());
+							try {
+								db.updateVideoHttpCode(videoId, 403);
+							} catch (SQLException e1) {}
+							break;
+						} else {
+							System.err.println("Retry #"+fails+": "+e.getMessage());
 						}
 					}
 				}
-			} while (snippet.nextPageToken != null);
+			} while ((snippet == null || snippet.nextPageToken != null) && fails < 5);
 			return comments;
 		}
 		
-		public List<Comment> getReplies(final CommentThread thread) throws JsonSyntaxException, IOException {
+		public List<Comment> getReplies(final CommentThread thread) throws JsonSyntaxException {
 			List<Comment> replies = new ArrayList<Comment>();
 			CommentsList cl = null;
 			String pageToken = "";
+			int fails = 0;
 			do {
-				cl = data.getCommentsByParentId(thread.comment_id, CommentsList.MAX_RESULTS, pageToken);
-				pageToken = cl.nextPageToken;
-				for(CommentsList.Item reply : cl.items) {
-					if(!existingCommentIds.contains(reply.id)) {
-						Comment c = createComment(reply, true, -1);
-						c.video_id = thread.video_id;
-						replies.add(c);
+				try {
+					cl = data.getCommentsByParentId(thread.comment_id, CommentsList.MAX_RESULTS, pageToken);
+					pageToken = cl.nextPageToken;
+					for(CommentsList.Item reply : cl.items) {
+						if(!existingCommentIds.contains(reply.id)) {
+							Comment c = createComment(reply, true, -1);
+							c.video_id = thread.video_id;
+							replies.add(c);
+						}
 					}
+				} catch (IOException e) {
+					fails++;
 				}
-			} while (cl.nextPageToken != null);
+			} while (cl.nextPageToken != null && fails < 5);
 			return replies;
 		}
 		
@@ -1916,7 +2014,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 					if(channels.containsKey(channelId)) {
 						channel = channels.get(channelId);
 					} else {
-						channel = new Channel(channelId, item.snippet.authorDisplayName, item.snippet.authorProfileImageUrl, null);
+						channel = new Channel(channelId, StringEscapeUtils.unescapeHtml4(item.snippet.authorDisplayName), item.snippet.authorProfileImageUrl, false);
 						channels.put(channelId, channel);
 					}
 					if(!existingChannelIds.contains(channelId)) {
@@ -1928,9 +2026,9 @@ public class CommentSuite extends JFrame implements ActionListener {
 					}
 					Comment comment = null;
 					if(isReply) {
-						comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, item.snippet.textDisplay, item.snippet.likeCount, replyCount, isReply, item.snippet.parentId);
+						comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, StringEscapeUtils.unescapeHtml4(item.snippet.textDisplay), item.snippet.likeCount, replyCount, isReply, item.snippet.parentId);
 					} else {
-						comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, item.snippet.textDisplay, item.snippet.likeCount, replyCount, isReply, null);
+						comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, StringEscapeUtils.unescapeHtml4(item.snippet.textDisplay), item.snippet.likeCount, replyCount, isReply, null);
 					}
 					return comment;
 				}

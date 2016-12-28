@@ -32,7 +32,7 @@ public class GroupItem {
 		this.last_checked = last_checked;
 		
 		thumbs.mkdirs();
-		File thumbFile = new File(thumbs, youtube_id+".png");
+		File thumbFile = new File(thumbs, youtube_id+".jpg");
 		try {
 			if(thumbFile.exists()) {
 				thumbnail = new ImageIcon(ImageIO.read(thumbFile));
@@ -40,7 +40,7 @@ public class GroupItem {
 				if(thumb_url != null && !thumb_url.equals("")) {
 					System.out.println("Thumbnail not found ["+youtube_id+"]\n    Attempting to download from url.");
 					BufferedImage bi = ImageIO.read(new URL(thumb_url));
-					ImageIO.write(bi, "png", thumbFile);
+					ImageIO.write(bi, "jpg", thumbFile);
 					thumbnail = new ImageIcon(bi);
 				}
 			}

@@ -1,9 +1,5 @@
 package mattw.youtube.commentsuite;
 
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -13,13 +9,11 @@ import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 public class SuiteDatabase {
 	
@@ -33,31 +27,14 @@ public class SuiteDatabase {
 		dbfile = db;
 	}
 	
-	public void clean() throws SQLException {
-		if(!con.getAutoCommit())
-			con.commit();
-		con.setAutoCommit(true);
-		con.setAutoCommit(true);
-		s.execute("VACUUM");
-	}
-	
-	public void dropAllTables() throws SQLException {
-		if(!con.getAutoCommit())
-			con.commit();
-		System.out.println(con.getAutoCommit());
-		con.setAutoCommit(true);
-		System.out.println(con.getAutoCommit());
-		con.setAutoCommit(true);
-		System.out.println(con.getAutoCommit());
-		for(String table : "gitem_type,gitem_list,groups,group_gitem,video_group,videos,comments,channels".split(","))
-			s.executeUpdate("DROP TABLE IF EXISTS "+table);
-	}
-	
-	public void setup() throws ClassNotFoundException, SQLException {
+	public void create() throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
 		con = DriverManager.getConnection("jdbc:sqlite:"+dbfile);
 		s = con.createStatement();
-		
+		setup();
+	}
+	
+	public void setup() throws SQLException {
 		s.executeUpdate("CREATE TABLE IF NOT EXISTS gitem_type (type_id INTEGER PRIMARY KEY, name STRING);");
 		s.executeUpdate("INSERT OR IGNORE INTO gitem_type VALUES (0, 'video'),(1, 'channel'),(2, 'playlist');");
 		
@@ -100,6 +77,7 @@ public class SuiteDatabase {
 				+ "total_dislikes INTEGER,"
 				+ "video_desc STRING,"
 				+ "thumb_url STRING,"
+				+ "http_code int,"
 				+ "FOREIGN KEY(channel_id) REFERENCES channels(channel_id))");
 		
 		s.executeUpdate("CREATE TABLE IF NOT EXISTS comments ("
@@ -115,12 +93,28 @@ public class SuiteDatabase {
 				+ "FOREIGN KEY(channel_id) REFERENCES channels(channel_id),"
 				+ "FOREIGN KEY(video_id) REFERENCES videos(video_id))");
 		
-		// Removed channel_url as it saves space and can be done by just "https://youtube.com/channel/"+channel_id
 		s.executeUpdate("CREATE TABLE IF NOT EXISTS channels ("
 				+ "channel_id STRING PRIMARY KEY,"
 				+ "channel_name STRING,"
 				+ "channel_profile_url STRING,"
-				+ "channel_profile BLOB)");
+				+ "download_profile BOOLEAN)");
+	}
+	
+	public void clean() throws SQLException {
+		if(!con.getAutoCommit())
+			con.commit();
+		con.setAutoCommit(true);
+		s.execute("VACUUM");
+	}
+	
+	public void dropAllTables() throws SQLException {
+		if(!con.getAutoCommit())
+			con.commit();
+		System.out.println(con.getAutoCommit());
+		con.setAutoCommit(true);
+		System.out.println(con.getAutoCommit());
+		for(String table : "gitem_type,gitem_list,groups,group_gitem,video_group,videos,comments,channels".split(","))
+			s.executeUpdate("DROP TABLE IF EXISTS "+table);
 	}
 	
 	public void insertComments(List<Comment> comments) throws SQLException {
@@ -190,9 +184,7 @@ public class SuiteDatabase {
 			if(channels.containsKey(rs.getString("channel_id"))) {
 				author = channels.get(rs.getString("channel_id"));
 			} else {
-				ImageIcon channel_profile = bytesToImageIcon(rs.getBytes("channel_profile"));
-				if(channel_profile != null) channel_profile = new ImageIcon(channel_profile.getImage().getScaledInstance(24, 24, 0));
-				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
+				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), rs.getBoolean("download_profile"));
 			}
 			Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), new Date(rs.getLong("comment_date")), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
 			list.add(comment);
@@ -200,13 +192,18 @@ public class SuiteDatabase {
 		return list;
 	}
 	
-	public List<Comment> getComments(String group_name, int orderby, String name_like, String text_like, int limit, GroupItem gitem, int type) throws SQLException {
+	public CommentSearch getComments(String group_name, int orderby, String name_like, String text_like, int limit, GroupItem gitem, int type) throws SQLException {
+		return getComments(group_name, orderby, name_like, text_like, limit, gitem, type, false, 0, false);
+	}
+	
+	public CommentSearch getComments(String group_name, int orderby, String name_like, String text_like, int limit, GroupItem gitem, int type, boolean random, int rlimit, boolean fair) throws SQLException {
 		String order = "comment_date DESC ";
 		if(orderby == 1) order = "comment_date ASC ";
 		if(orderby == 2) order = "comment_likes DESC ";
 		if(orderby == 3) order = "reply_count DESC ";
-		if(orderby == 4) order = "channel_name ASC, comment_date DESC ";
-		if(orderby == 5) order = "comment_text ASC ";
+		if(orderby == 4) order = "LENGTH(comment_text) DESC ";
+		if(orderby == 5) order = "channel_name ASC, comment_date DESC ";
+		if(orderby == 6) order = "comment_text ASC ";
 		
 		String ctype = "";
 		if(type == 1) ctype = " AND is_reply = 0 ";
@@ -223,12 +220,10 @@ public class SuiteDatabase {
 					+ "    LEFT JOIN groups ON groups.group_id = group_gitem.group_id "
 					+ "    WHERE group_name = ?)"
 					+ "AND channel_name LIKE ? AND comment_text LIKE ? "+ctype
-					+ "ORDER BY "+order
-					+ "LIMIT ?");
+					+ "ORDER BY "+order);
 			ps.setString(1, group_name);
 			ps.setString(2, "%"+name_like+"%");
 			ps.setString(3, "%"+text_like+"%");
-			ps.setInt(4, limit);
 		} else {
 			ps = con.prepareStatement("SELECT * FROM comments "
 					+ "LEFT JOIN channels ON channels.channel_id = comments.channel_id "
@@ -236,30 +231,30 @@ public class SuiteDatabase {
 					+ "LEFT JOIN video_group ON video_group.video_id = videos.video_id "
 					+ "WHERE video_group.gitem_id = ? "
 					+ "AND channel_name LIKE ? AND comment_text LIKE ? "+ctype
-					+ "ORDER BY "+order
-					+ "LIMIT ?");
+					+ "ORDER BY "+order);
 			ps.setInt(1, gitem.gitem_id);
 			ps.setString(2, "%"+name_like+"%");
 			ps.setString(3, "%"+text_like+"%");
-			ps.setInt(4, limit);
 		}
 		ResultSet rs = ps.executeQuery();
 		
+		int count = 0;
 		List<Comment> list = new ArrayList<Comment>();
 		Map<String, Channel> channels = new HashMap<String, Channel>();
 		while(rs.next()) {
-			Channel author;
-			if(channels.containsKey(rs.getString("channel_id"))) {
-				author = channels.get(rs.getString("channel_id"));
-			} else {
-				ImageIcon channel_profile = bytesToImageIcon(rs.getBytes("channel_profile"));
-				if(channel_profile != null) channel_profile = new ImageIcon(channel_profile.getImage().getScaledInstance(24, 24, 0));
-				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
+			if(count < limit) {
+				Channel author;
+				if(channels.containsKey(rs.getString("channel_id"))) {
+					author = channels.get(rs.getString("channel_id"));
+				} else {
+					author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), rs.getBoolean("download_profile"));
+				}
+				Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), new Date(rs.getLong("comment_date")), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
+				list.add(comment);
 			}
-			Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), new Date(rs.getLong("comment_date")), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
-			list.add(comment);
+			count++;
 		}
-		return list;
+		return new CommentSearch(count, list);
 	}
 	
 	public List<String> getAllVideoIds() throws SQLException {
@@ -291,14 +286,16 @@ public class SuiteDatabase {
 	
 	public Video getVideo(String videoId) throws SQLException, ParseException {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos "
+				+ "LEFT JOIN (SELECT video_id, count(video_id) as comment_count FROM videos WHERE video_id = ?) AS cc ON cc.video_id = videos.video_id "
 				+ "LEFT JOIN channels ON channels.channel_id = videos.channel_id "
 				+ "WHERE videos.video_id = ?");
 		ps.setString(1, videoId);
+		ps.setString(2, videoId);
 		ResultSet rs = ps.executeQuery();
 		if(rs.next()) {
-			ImageIcon channel_profile = bytesToImageIcon(rs.getBytes("channel_profile"));
-			Channel author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
-			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"));
+			Channel author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), rs.getBoolean("download_profile"));
+			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"), rs.getInt("http_code"));
+			video.setCommentCount(rs.getLong("comment_count"));
 			return video;
 		}
 		return null;
@@ -306,6 +303,10 @@ public class SuiteDatabase {
 	
 	public List<Video> getVideos(String group_name) throws SQLException, ParseException {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos "
+				+ "LEFT JOIN (SELECT videos.video_id, count(videos.video_id) as comment_count FROM videos "
+				+ "    LEFT JOIN comments on videos.video_id = comments.video_id "
+				+ "    GROUP BY videos.video_id "
+				+ "    ORDER BY comment_count DESC) AS cc ON cc.video_id = videos.video_id "
 				+ "LEFT JOIN channels ON channels.channel_id = videos.channel_id "
 				+ "WHERE videos.video_id IN ( "
 				+ "    SELECT video_id FROM video_group "
@@ -323,11 +324,11 @@ public class SuiteDatabase {
 			if(channels.containsKey(rs.getString("channel_id"))) {
 				author = channels.get(rs.getString("channel_id"));
 			} else {
-				ImageIcon channel_profile = bytesToImageIcon(rs.getBytes("channel_profile"));
-				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), channel_profile);
+				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), rs.getBoolean("download_profile"));
 				channels.put(rs.getString("channel_id"), author);
 			}
-			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"));
+			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"), rs.getInt("http_code"));
+			video.setCommentCount(rs.getLong("comment_count"));
 			list.add(video);
 		}
 		return list;
@@ -335,7 +336,7 @@ public class SuiteDatabase {
 	
 	public void insertVideos(List<Video> videos) throws SQLException {
 		System.out.println("Inserting "+videos.size()+" videos");
-		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO videos (video_id, channel_id, grab_date, publish_date, video_title, total_comments, total_views, total_likes, total_dislikes, video_desc, thumb_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO videos (video_id, channel_id, grab_date, publish_date, video_title, total_comments, total_views, total_likes, total_dislikes, video_desc, thumb_url, http_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 		for(Video v : videos) {
 			ps.setString(1, v.video_id);
 			ps.setString(2, v.channel.channel_id);
@@ -348,10 +349,17 @@ public class SuiteDatabase {
 			ps.setLong(9, v.total_dislikes);
 			ps.setString(10, v.video_desc);
 			ps.setString(11, v.thumb_url);
+			ps.setInt(12, v.http_code);
 			ps.addBatch();
 		}
 		ps.executeBatch();
 		System.out.println("Inserted "+videos.size()+" videos");
+	}
+	
+	public void updateVideoHttpCode(String video_id, int code) throws SQLException {
+		PreparedStatement ps = con.prepareStatement("UPDATE videos SET http_code = ? WHERE video_id = ?");
+		ps.setInt(1, code);
+		ps.setString(2, video_id);
 	}
 	
 	public void updateVideos(List<Video> videos) throws SQLException {
@@ -383,13 +391,13 @@ public class SuiteDatabase {
 	
 	public void insertChannels(List<Channel> channels) throws SQLException {
 		System.out.println("Inserting "+channels.size()+" channels");
-		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO channels (channel_id, channel_name, channel_profile_url, channel_profile) VALUES (?, ?, ?, ?)");
+		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO channels (channel_id, channel_name, channel_profile_url, download_profile) VALUES (?, ?, ?, ?)");
 		for(Channel c : channels) {
 			if(c != null && ps != null) {
 				ps.setString(1, c.channel_id);
 				ps.setString(2, c.channel_name);
 				ps.setString(3, c.channel_profile_url);
-				ps.setBytes(4, imageIconToBytes(c.channel_profile));
+				ps.setBoolean(4, c.download_profile);
 			} else {
 				System.out.println("NULL VALUE ON CHANNEL INSERT c:"+(c==null)+",ps:"+(ps==null)+"");
 			}
@@ -404,12 +412,13 @@ public class SuiteDatabase {
 		PreparedStatement ps = con.prepareStatement("UPDATE channels SET "
 				+ "channel_name = ?, "
 				+ "channel_profile_url = ?, "
-				+ "channel_profile = ? "
+				+ "download_profile = ? "
 				+ "WHERE channel_id = ?");
 		for(Channel c : channels) {
 			ps.setString(1, c.channel_name);
 			ps.setString(2, c.channel_profile_url);
-			ps.setBytes(3, imageIconToBytes(c.channel_profile));
+			ps.setBoolean(3, c.download_profile);
+			ps.setString(4, c.channel_id);
 			ps.addBatch();
 		}
 		System.out.println("Updating "+channels.size()+" channels");
@@ -429,7 +438,7 @@ public class SuiteDatabase {
 		System.out.println("Inserted "+video_groups.size()+" video groups");
 	}
 	
-	public void updateGroupItemsChecked(List<GroupItem> items, Date date) throws SQLException {
+	public void updateGroupItemsChecked(Collection<GroupItem> items, Date date) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("UPDATE gitem_list SET last_checked = ? WHERE gitem_id = ?");
 		for(GroupItem gi : items) {
 			ps.setLong(1, date.getTime());
@@ -548,15 +557,15 @@ public class SuiteDatabase {
 	}
 	
 	
-	private ImageIcon bytesToImageIcon(byte[] bytes) {
+	/*private ImageIcon bytesToImageIcon(byte[] bytes) {
 		if(bytes == null) {
 			return null;
 		} else {
 			return new ImageIcon(bytes);
 		}
-	}
+	}*/
 	
-	private byte[] imageIconToBytes(ImageIcon img) {
+	/*private byte[] imageIconToBytes(ImageIcon img) {
 		if(img == null) return null;
 		BufferedImage bi = new BufferedImage(img.getIconWidth(), img.getIconHeight(), BufferedImage.TYPE_INT_RGB);
 		Graphics g = bi.createGraphics();
@@ -565,10 +574,10 @@ public class SuiteDatabase {
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			ImageIO.write(bi, "png", baos);
+			ImageIO.write(bi, "jpg", baos);
 		} catch (IOException e) {
 			return null;
 		}
 		return baos.toByteArray();
-	}
+	}*/
 }
