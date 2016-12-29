@@ -795,9 +795,10 @@ public class SuiteDatabase {
 				+ ") AS cc ON cc.channel_id = channels.channel_id "
 				+ "WHERE comment_count > 0 "
 				+ "ORDER BY comment_count DESC "
-				+ "LIMIT 10 ";
+				+ "LIMIT ?";
 		PreparedStatement ps1 = con.prepareStatement(ps1_stmt);
 		if(gi.gitem_id == 0) {ps1.setString(1, group_name);} else {ps1.setInt(1, gi.gitem_id);}
+		ps1.setInt(2, 10);
 		ResultSet rs = ps1.executeQuery();
 		output.add("<b>Most Active Viewers</b>");
 		String table = "<table>";
@@ -821,9 +822,10 @@ public class SuiteDatabase {
 				+ ") AS cc ON cc.channel_id = channels.channel_id "
 				+ "WHERE comment_count > 0 "
 				+ "ORDER BY total_comment_likes DESC "
-				+ "LIMIT 10 ";
+				+ "LIMIT ?";
 		PreparedStatement ps2 = con.prepareStatement(ps2_stmt);
 		if(gi.gitem_id == 0) {ps2.setString(1, group_name);} else {ps2.setInt(1, gi.gitem_id);}
+		ps2.setInt(2, 10);
 		rs = ps2.executeQuery();
 		output.add("<br><b>Most Popular Viewers</b>");
 		table = "<table>";
@@ -837,15 +839,16 @@ public class SuiteDatabase {
 		output.add(table += "</table>");
 		
 		String ps3_stmt = "SELECT comment_text, COUNT(LOWER(comment_text)) AS comment_count, MAX(comment_date) AS comment_date FROM comments "
-				+ "LEFT JOIN video_group ON comments.video_id = video_group.video_id "
+				+ "WHERE video_id IN (SELECT video_id FROM video_group "
 				+ (gi.gitem_id == 0 ? 
 						"LEFT JOIN group_gitem ON group_gitem.gitem_id = video_group.gitem_id LEFT JOIN groups ON groups.group_id = group_gitem.group_id WHERE group_name = ? "
 						:"WHERE video_group.gitem_id = ? ")
-				+ "GROUP BY LOWER(comment_text) "
+				+ ") GROUP BY LOWER(comment_text) "
 				+ "ORDER BY comment_count DESC "
-				+ "LIMIT 10 ";
+				+ "LIMIT ?";
 		PreparedStatement ps3 = con.prepareStatement(ps3_stmt);
 		if(gi.gitem_id == 0) {ps3.setString(1, group_name);} else {ps3.setInt(1, gi.gitem_id);}
+		ps3.setInt(2, 10);
 		rs = ps3.executeQuery();
 		output.add("<br><b>Most Common Comments</b> <i>Ignore case, full comment.</i>");
 		table = "<table>";
