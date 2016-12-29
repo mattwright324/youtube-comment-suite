@@ -11,6 +11,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,6 +39,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
@@ -45,6 +48,9 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.jdesktop.swingx.JXTextField;
@@ -71,16 +77,15 @@ public class CommentSuite extends JFrame implements ActionListener {
 	
 	public static CommentSuite window;
 	public static SuiteDatabase db = new SuiteDatabase("commentsuite.db");
+	public static String title = "Youtube Comment Suite";
 	
-	public Insets margin = new Insets(2, 4, 2, 4);
-	
-	public String title = "Youtube Comment Suite";
 	public String youtubeDataKey;
 	public Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.PRIVATE).create();
 	public YoutubeData data;
 	public String dateFormatString = "yyyy-MM-dd hh:mm a";
 	public Font youtube_font = new Font("Arial", Font.PLAIN, 12);
 	public ElapsedTime timer = new ElapsedTime();
+	public Insets margin = new Insets(2, 4, 2, 4);
 	
 	public JPanel videosPanel, groupsPanel, commentsPanel, settingsPanel;
 	public JTabbedPane display;
@@ -114,6 +119,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public DefaultTableModel groupVideoModel;
 	public JProgressBar groupLoad;
 	public JPanel groups;
+	public JPanel analytics;
+	public JButton analyze;
+	public JComboBox<GroupItem> gitems;
+	public JComboBox<String> aType;
+	public JProgressBar progress;
+	public JTextPane results;
+	
 	
 		/** Comments Panel Components **/
 	public JPanel comment_list;
@@ -121,7 +133,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 	public JLabel videoAuthorProfile;
 	public JTextField videoTitle, videoAuthorName;
 	public JLabel videoStats;
-	public JEditorPane videoDesc;
+	public JTextPane videoDesc;
 	public String defaultDescription = "<html>"
 			+ "Come visit the <a href='https://github.com/mattwright324'>Github Page<a> for the latest release!"
 			+ "<br>"
@@ -134,13 +146,15 @@ public class CommentSuite extends JFrame implements ActionListener {
 			+ "</ol>"
 			+ "</html>";
 	public JTable cTable;
+	public Rectangle lastRect;
+	public int selectedRow = 0;
 	public DefaultTableModel cModel;
 	public JXTextField fieldName, fieldText;
 	public JComboBox<String> orderBy, type;
 	public JButton findComments;
 	public JComboBox<Group> commentGroup;
 	public JComboBox<GroupItem> itemGroup;
-	public JMenuItem viewFullComment, viewCommentTree, openVideo, openProfile;
+	public JMenuItem viewFullComment, viewCommentTree, openVideo, openProfile, downloadProfiles;
 	public List<Comment> foundComments;
 	public List<Comment> commentTree;
 	public JButton backToResults;
@@ -190,11 +204,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 					try {
 						db.create();
 						window.setupFromDatabase();
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					} catch (ParseException e) {
+					} catch (ClassNotFoundException | SQLException | ParseException e) {
+						window.setTitle(title+" - "+e.getMessage());
 						e.printStackTrace();
 					}
 				}
@@ -534,7 +545,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		addItem.addActionListener(this);
 		gbc3.gridx = 0;
 		gbc3.gridy = 0;
-		groupitems.add(addItem, gbc3);
+		// groupitems.add(addItem, gbc3);
 		
 		deleteItem = new JButton("Delete Item(s)");
 		deleteItem.addActionListener(this);
@@ -657,6 +668,69 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc4.gridwidth = 4;
 		videolist.add(new JScrollPane(groupVideoTable), gbc4);
 		
+		analytics = new JPanel(new GridBagLayout());
+		tabs.addTab("Analytics", analytics);
+		
+		GridBagConstraints gbc5 = new GridBagConstraints();
+		gbc5.insets = margin;
+		gbc5.fill = GridBagConstraints.HORIZONTAL;
+		gbc5.weightx = 0.2;
+		
+		analyze = new JButton("Analyze");
+		analyze.addActionListener(this);
+		gbc5.gridx = 0;
+		gbc5.gridy = 0;
+		analytics.add(analyze, gbc5);
+		
+		gitems = new JComboBox<GroupItem>();
+		gbc5.gridx = 1;
+		gbc5.gridy = 0;
+		analytics.add(gitems, gbc5);
+		
+		aType = new JComboBox<String>(new String[]{"Comments", "Videos"});
+		gbc5.gridx = 2;
+		gbc5.gridy = 0;
+		analytics.add(aType, gbc5);
+		
+		progress = new JProgressBar();
+		progress.setStringPainted(true);
+		progress.setString("");
+		progress.setIndeterminate(false);
+		gbc5.gridx = 3;
+		gbc5.gridy = 0;
+		gbc5.ipady = 5;
+		gbc5.weightx = 1;
+		analytics.add(progress, gbc5);
+		
+		results = new JTextPane();
+		results.setContentType("text/html");
+		results.setEditable(false);
+		results.setText("<html><body></body></html>");
+		results.setFont(youtube_font);
+		results.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
+		results.addHyperlinkListener(new HyperlinkListener(){
+			public void hyperlinkUpdate(HyperlinkEvent e) {
+				if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+					openInBrowser(e.getURL().toString());
+				}
+			}
+		});
+		HTMLEditorKit editor = new HTMLEditorKit();
+		HTMLDocument doc = (HTMLDocument) editor.createDefaultDocument();
+		StyleSheet ss = doc.getStyleSheet();
+		ss.addRule("table {}");
+		ss.addRule("table tr:odd {background-color:rgb(120,120,120)}");
+		ss.addRule("table td:last-child {width: 100%;}");
+		editor.setStyleSheet(ss);
+		results.setEditorKit(editor);
+		gbc5.gridx = 0;
+		gbc5.gridy = 1;
+		gbc5.fill = GridBagConstraints.BOTH;
+		gbc5.weightx = 1;
+		gbc5.weighty = 1;
+		gbc5.gridwidth = 5;
+		analytics.add(new JScrollPane(results), gbc5);
+		
 		split.setResizeWeight(0.0);
 		split.setDividerLocation(split.getMaximumDividerLocation());
 	}
@@ -703,9 +777,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 		tabs.setTitleAt(1, "Related Videos ["+videos.size()+"]");
 		groupItemModel.setRowCount(0);
 		groupVideoModel.setRowCount(0);
+		results.setText("");
+		gitems.removeAllItems();
+		gitems.addItem(new GroupItem(-1, null, null, "All Items ("+gi.size()+")", null, null, new Date(0), null));
 		for(GroupItem item : gi) {
 			String html = "<html><div style='text-align:right'>"+item.channel_title+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(item.published)+"</div></div></html>";
 			groupItemModel.addRow(new Object[]{item.type, item.thumbnail, item, html, item.last_checked.getTime() != 0 ? sdf.format(item.last_checked):""});
+			gitems.addItem(item);
 		}
 		for(Video v : videos) {
 			String html = "<html><div style='text-align:right'>"+v.channel.channel_name+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(v.publish_date)+"</div></div></html>";
@@ -817,7 +895,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc1.gridy = 3;
 		gbc1.gridx = 0;
 		gbc1.weighty = 1;
-		videoDesc = new JEditorPane();
+		videoDesc = new JTextPane();
 		videoDesc.setEditable(false);
 		videoDesc.setContentType("text/html");
 		videoDesc.addHyperlinkListener(new HyperlinkListener(){
@@ -827,9 +905,10 @@ public class CommentSuite extends JFrame implements ActionListener {
 				}
 			}
 		});
-		videoDesc.setText(defaultDescription);
+		
 		videoDesc.setFont(youtube_font);
 		videoDesc.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
+		videoDesc.setText(defaultDescription);
 		video_info.add(new JScrollPane(videoDesc), gbc1);
 		
 		split2.setResizeWeight(0.0);
@@ -854,6 +933,9 @@ public class CommentSuite extends JFrame implements ActionListener {
 		openProfile.addActionListener(this);
 		openProfile.setIcon(imgBrowser);
 		
+		downloadProfiles = new JMenuItem("Download Profiles");
+		downloadProfiles.addActionListener(this);
+		
 		backToResults = new JButton("Back to Results");
 		backToResults.addActionListener(this);
 		backToResults.setBackground(Color.getHSBColor(0.55F, 0.5F, 0.5F));
@@ -869,7 +951,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		cTable.setShowGrid(false);
 		cTable.setCellSelectionEnabled(true);
 		cTable.getTableHeader().setReorderingAllowed(false);
-		int[] cols2 = new int[]{75, -1, -1, 135, 75, 75, -1};
+		int[] cols2 = new int[]{75, -1, -1, 135, 75, 55, -1};
 		for(int i=0; i<cols2.length; i++) {
 			if(cols2[i] > 0) {
 				cTable.getColumnModel().getColumn(i).setMinWidth(cols2[i]);
@@ -947,6 +1029,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 				popup.add(viewCommentTree);
 				popup.add(openVideo);
 				popup.add(openProfile);
+				popup.addSeparator();
+				popup.add(downloadProfiles);
 				popup.show(source, e.getX(), e.getY());
 			}
 			public void loadVideo(MouseEvent e) {
@@ -992,7 +1076,6 @@ public class CommentSuite extends JFrame implements ActionListener {
 		JScrollPane scroll = new JScrollPane(cTable);
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		comment_list.add(scroll, gbcc);
-		
 		
 		JPanel search = new JPanel(new GridBagLayout());
 		split1.setRightComponent(search);
@@ -1122,7 +1205,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 		isFair.setPreferredSize(new Dimension(25, 20));
 		isFair.setToolTipText("Multiple comments do not improve chances. Everyone has an equal chance.");
 		gbc6.gridx = 2;
-		isFair.setSelected(true);
+		isFair.setSelected(false);
+		isFair.setEnabled(false);
 		searchComments.add(isFair, gbc6);
 		
 		
@@ -1314,14 +1398,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 		if(o.equals(find) || o.equals(nextPage)) {
 			Thread find_videos = new Thread(new Runnable(){
 				public void run() {
-					find.setEnabled(false);
-					nextPage.setEnabled(false);
-					videosTerm.setEditable(false);
+					setComponentsEnabled(false, find, random, nextPage, videosTerm);
 					nextPage.setToolTipText(videosTerm.getText());
 					String pageToken = slr != null ? (slr.nextPageToken != null ? slr.nextPageToken : "") : "";
 					doVideoSearch(videosTerm.getText(), pageToken, findSort.getSelectedIndex(), findType.getSelectedIndex());
-					find.setEnabled(true);
-					videosTerm.setEditable(true);
+					setComponentsEnabled(true, find, random, videosTerm);
 				}
 			});
 			find_videos.start();
@@ -1489,7 +1570,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 			}
 		} else if(o.equals(refreshGroup)) {
 			refreshGroup.setEnabled(false);
-			new Thread(new Runnable(){
+			Thread thread = new Thread(new Runnable(){
 				public void run() {
 					int row = gTable.getSelectedRow();
 					Group g = (Group) gTable.getValueAt(row, 0);
@@ -1501,7 +1582,42 @@ public class CommentSuite extends JFrame implements ActionListener {
 					}
 					System.gc();
 				}
-			}).start();
+			});
+			thread.start();
+		} else if(o.equals(analyze)) {
+			Thread thread = new Thread(new Runnable(){
+				public void run() {
+					analyze.setEnabled(false);
+					gitems.setEnabled(false);
+					aType.setEnabled(false);
+					progress.setIndeterminate(true);
+					List<String> output;
+					try {
+						output = db.getAnalytics(gTable.getValueAt(gTable.getSelectedRow(), 0).toString(), (GroupItem) gitems.getSelectedItem(), aType.getSelectedIndex());
+						results.setText(output.stream().collect(Collectors.joining()));
+					} catch (SQLException e) {
+						e.printStackTrace();
+						results.setText("<div style='color:red'>"+e.getMessage()+"</div>");
+					}
+					analyze.setEnabled(true);
+					gitems.setEnabled(true);
+					aType.setEnabled(true);
+					progress.setIndeterminate(false);
+				}
+			});
+			thread.start();
+		} else if(o.equals(deleteItem)) {
+			Thread thread = new Thread(new Runnable(){
+				public void run() {
+					deleteItem.setEnabled(false);
+					List<GroupItem> list = new ArrayList<GroupItem>();
+					for(int i : groupItemTable.getSelectedRows()) {
+						list.add((GroupItem) groupItemTable.getValueAt(i, 2));
+					}
+					deleteItem.setEnabled(true);
+				}
+			});
+			thread.start();
 		}
 		
 		/**
@@ -1511,12 +1627,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 			Thread find = new Thread(new Runnable(){
 				public void run() {
 					foundComments = new ArrayList<Comment>();
-					findComments.setEnabled(false);
+					setComponentsEnabled(false, findComments, random);
 					try {
 						GroupItem gi = itemGroup.getSelectedIndex() != 0 ? (GroupItem) itemGroup.getSelectedItem() : null;
 						CommentSearch cs = db.getComments(commentGroup.getSelectedItem().toString(), orderBy.getSelectedIndex(), fieldName.getText(), fieldText.getText(), 5000, gi, type.getSelectedIndex(), o.equals(random), Integer.parseInt(numberModel.getValue().toString()), isFair.isSelected());
 						foundComments = cs.results;
 						cModel.setRowCount(0);
+						lastRect = null;
 						for(Comment c : foundComments) {
 							addCommentToTable(c);
 						}
@@ -1525,13 +1642,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
-					findComments.setEnabled(true);
+					setComponentsEnabled(true, findComments, random);
 				}
 			});
 			find.start();
 		} else if(o.equals(viewFullComment)) {
 			Comment c = (Comment) cTable.getValueAt(cTable.getSelectedRow(), 2);
-			viewFullComment(c);
+			viewFullComment(c); 
 		} else if(o.equals(openVideo)) {
 			Comment c = (Comment) cTable.getValueAt(cTable.getSelectedRow(), 2);
 			openInBrowser("https://youtu.be/"+c.video_id);
@@ -1543,6 +1660,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 					gbc.weightx = 1;
 					gbc.gridy = 1;
 					gbc.weighty = 0;
+					Rectangle vr = cTable.getVisibleRect(); // Get last visible row.
+					vr.translate(0, vr.height);
+		            int firstRow = cTable.rowAtPoint(vr.getLocation());
+		            int visibleRows = cTable.rowAtPoint(vr.getLocation()) - firstRow;
+		            int lastRow = (visibleRows > 0) ? visibleRows+firstRow : cTable.getRowCount();
+		            lastRect = cTable.getCellRect(lastRow, 0, true);
+		            selectedRow = cTable.getSelectedRow();
 					comment_list.add(backToResults, gbc);
 					comment_list.validate();
 					Comment comment = (Comment) cTable.getValueAt(cTable.getSelectedRow(), 2);
@@ -1576,6 +1700,12 @@ public class CommentSuite extends JFrame implements ActionListener {
 							for(Comment c : foundComments) {
 								addCommentToTable(c);
 							}
+							if(lastRect != null) {
+								if(selectedRow >= 0)
+									cTable.setRowSelectionInterval(selectedRow, selectedRow);
+								cTable.scrollRectToVisible(lastRect);
+								lastRect = null;
+							}
 						}
 					});
 					backToResults.setEnabled(false);
@@ -1586,6 +1716,27 @@ public class CommentSuite extends JFrame implements ActionListener {
 		} else if(o.equals(openProfile)) {
 			Comment c = (Comment) cTable.getValueAt(cTable.getSelectedRow(), 2);
 			openInBrowser("https://youtube.com/channel/"+c.channel.channel_id);
+		} else if(o.equals(downloadProfiles)) {
+			Thread thread = new Thread(new Runnable(){
+				public void run() {
+					downloadProfiles.setEnabled(false);
+					List<Channel> channels = new ArrayList<Channel>();
+					for(int i : cTable.getSelectedRows()) {
+						Channel c = ((Comment) cTable.getValueAt(i, 2)).channel;
+						if(c != null) {
+							if(!channels.contains(c))
+								channels.add(c);
+						}
+					}
+					for(Channel c : channels) {
+						System.out.println("Attempting to refresh "+c.channel_name);
+						c.download_profile = true;
+						c.loadProfile();
+					}
+					downloadProfiles.setEnabled(true);
+				}
+			});
+			thread.start();
 		}
 		
 		
@@ -1778,7 +1929,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 			try {
 				timer.set();
 				db.con.setAutoCommit(false);
-				setStatus("Part 1 of 3. Searching for new videos.");
+				setStatus("Part 1 of 3. New videos.");
 				try {
 					parseVideoItems(gitemVideos, -1);
 					parseChannelItems(gitemChannels);
@@ -1796,7 +1947,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 				clearAll(insertVideos, updateVideos, insertVideoGroups);
 				clearAll(gitemVideos, gitemChannels, gitemPlaylists);
 				
-				setStatus("Part 2 of 3. Grabbing top-level comments.");
+				setStatus("Part 2 of 3. New comments.");
 				commentProgress = 0;
 				List<String> videosInGroup = db.getVideoIds(group.group_name);
 				setStatus("Part 2 of 3. Grabbing top-level comments<br>Videos 0/"+videosInGroup.size()+" (...)");
@@ -1819,7 +1970,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 				setStatus("Part 2 of 3. Committing.");
 				db.con.commit();
 				
-				setStatus("Part 3 of 3. Grabbing replies.");
+				setStatus("Part 3 of 3. New replies.");
 				commentProgress = 0;
 				commentThreadIds.parallelStream().forEach(thread -> {
 					ElapsedTime clock = new ElapsedTime();
@@ -1961,20 +2112,33 @@ public class CommentSuite extends JFrame implements ActionListener {
 				} catch (IOException e) {
 					fails++;
 					if(e.getMessage().contains("HTTP response code")) {
-						if(e.getMessage().contains("403 for URL")) {
-							System.err.println("Forbidden/Comments Disabled "+e.getMessage());
-							try {
-								db.updateVideoHttpCode(videoId, 403);
-							} catch (SQLException e1) {}
-							break;
-						} else if(e.getMessage().contains("404 for URL")) {
-							System.err.println("Forbidden/Comments Disabled "+e.getMessage());
-							try {
-								db.updateVideoHttpCode(videoId, 403);
-							} catch (SQLException e1) {}
-							break;
-						} else {
-							System.err.println("Retry #"+fails+": "+e.getMessage());
+						Pattern p = Pattern.compile("([0-9]{3}) for URL");
+						Matcher m = p.matcher(e.getMessage());
+						if(m.find()) {
+							int code = Integer.parseInt(m.group(1));
+							if(code == 400) { // Retry / Bad request.
+								System.err.println("Bad Request (400): Retry #"+fails+"  http://youtu.be/"+videoId);
+							} else if(code == 403) { // Comments Disabled or Forbidden
+								System.err.println("Comments Disabled (403): http://youtu.be/"+videoId);
+								try {
+									db.updateVideoHttpCode(videoId, 403);
+								} catch (SQLException e1) {}
+								break;
+							} else if(code == 404) { // Not found.
+								System.err.println("Not found (404): http://youtu.be/"+videoId);
+								try {
+									db.updateVideoHttpCode(videoId, 403);
+								} catch (SQLException e1) {}
+								break;
+							} else { // Unknown error.
+								System.err.println("Unknown Error ("+code+"): http://youtu.be/"+videoId);
+								try {
+									db.updateVideoHttpCode(videoId, code);
+								} catch (SQLException e1) {
+									e1.printStackTrace();
+								}
+								break;
+							}
 						}
 					}
 				}

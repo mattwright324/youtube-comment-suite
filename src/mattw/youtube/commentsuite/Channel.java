@@ -22,6 +22,10 @@ public class Channel {
 		this.channel_profile_url = channel_profile_url;
 		this.download_profile = download_profile;
 		
+		loadProfile();
+	}
+	
+	public void loadProfile() {
 		thumbs.mkdirs();
 		File thumbFile = new File(thumbs, channel_id+".jpg");
 		try {
