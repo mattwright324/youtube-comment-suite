@@ -1,5 +1,6 @@
 package mattw.youtube.commentsuite;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -29,6 +30,7 @@ public class SuiteDatabase {
 	
 	public void create() throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
+		if(con != null) con.close();
 		con = DriverManager.getConnection("jdbc:sqlite:"+dbfile);
 		s = con.createStatement();
 		setup();
@@ -248,7 +250,6 @@ public class SuiteDatabase {
 		ps.setString(3, "%"+text_like+"%");
 		
 		ResultSet rs = ps.executeQuery();
-		System.out.println("Executed");
 		
 		int count = 0;
 		List<Comment> list = new ArrayList<Comment>();
@@ -266,7 +267,6 @@ public class SuiteDatabase {
 			}
 			count++;
 		}
-		System.out.println("Done");
 		return new CommentSearch(count, list);
 	}
 	
@@ -471,8 +471,87 @@ public class SuiteDatabase {
 		System.out.println("Created new group ["+name+"]");
 	}
 	
-	public void removeGroup(Group g) throws SQLException {
+	public void deleteGroup(String group_name) throws SQLException {
+		deleteGroup(getGroup(group_name));
+	}
+	
+	public void deleteGroup(Group g) throws SQLException {
+		System.out.println("Grabbing relevant video_ids.");
+		PreparedStatement ps = con.prepareStatement(""
+				+ "WITH vlist AS ("
+				+ "    SELECT video_id, group_id "
+				+ "    FROM video_group "
+				+ "    JOIN group_gitem USING (gitem_id)"
+				+ ")"
+				+ "SELECT video_id FROM videos "
+				+ "WHERE video_id IN (SELECT video_id FROM vlist WHERE group_id = ?) AND video_id NOT IN (SELECT video_id FROM vlist WHERE group_id != ?)");
+		ps.setInt(1, g.group_id);
+		ps.setInt(2, g.group_id);
+		ResultSet rs = ps.executeQuery();
+		List<String> videos = new ArrayList<String>();
 		
+		System.out.println("Deleting video thumbnails, COMMENTS, VIDEO_GROUP, and VIDEOS entries.");
+		PreparedStatement ps_vgroup = con.prepareStatement(""
+				+ "WITH items AS ("
+				+ "   SELECT gitem_id "
+				+ "   FROM group_gitem "
+				+ "   WHERE group_id = ?"
+				+ ")"
+				+ "DELETE FROM video_group WHERE video_id = ? AND gitem_id IN (SELECT gitem_id FROM items);");
+		PreparedStatement ps_comments = con.prepareStatement("DELETE FROM comments WHERE video_id = ?;");
+		PreparedStatement ps_video = con.prepareStatement("DELETE FROM videos WHERE video_id = ?");
+		File thumbs = new File("Thumbs/");
+		File thumbFile;
+		while(rs.next()) {
+			videos.add(rs.getString("video_id"));
+			if((thumbFile = new File(thumbs, rs.getString("video_id")+".jpg")).exists()) {
+				thumbFile.delete();
+			}
+			
+			ps_vgroup.setInt(1, g.group_id);
+			ps_vgroup.setString(2, rs.getString("video_id"));
+			ps_comments.setString(1, rs.getString("video_id"));
+			ps_video.setString(1, rs.getString("video_id"));
+			
+			ps_vgroup.addBatch();
+			ps_comments.addBatch();
+			ps_video.addBatch();
+		}
+		ps_vgroup.executeBatch();
+		ps_comments.executeBatch();
+		ps_video.executeBatch();
+		
+		System.out.println("Deleting GITEM_LIST, GROUP_GITEM, and GROUP entries.");
+		PreparedStatement ps_gitem = con.prepareStatement("DELETE FROM gitem_list WHERE gitem_id IN (SELECT gitem_id FROM group_gitem WHERE group_id = ?);");
+		PreparedStatement ps_ggitem = con.prepareStatement("DELETE FROM group_gitem WHERE group_id = ?;");
+		ps_gitem.setInt(1, g.group_id);
+		ps_ggitem.setInt(1, g.group_id);
+		System.out.println(ps_gitem.executeUpdate());
+		System.out.println(ps_ggitem.executeUpdate());
+		if(g.group_id != 0) {
+			PreparedStatement ps_group = con.prepareStatement("DELETE FROM groups WHERE group_id = ?;");
+			ps_group.setInt(1, g.group_id);
+			System.out.println(ps_group.executeUpdate());
+		}
+		
+		System.out.println("Deleting channel profile thumbs.");
+		PreparedStatement ps1 = con.prepareStatement(""
+				+ "WITH clist AS ("
+				+ "    SELECT channel_id FROM comments"
+				+ "    UNION"
+				+ "    SELECT channel_id FROM videos"
+				+ ")"
+				+ "SELECT channel_id FROM channels WHERE channel_id NOT IN (SELECT channel_id FROM clist)");
+		rs = ps1.executeQuery();
+		while(rs.next()) {
+			if((thumbFile = new File(thumbs, rs.getString("channel_id")+".jpg")).exists()) {
+				thumbFile.delete();
+			}
+		}
+		
+		System.out.println("Deleting CHANNELS entries.");
+		PreparedStatement ps_channels = con.prepareStatement("DELETE FROM channels WHERE channel_id NOT IN (SELECT channel_id FROM comments) AND channel_id NOT IN (SELECT channel_id FROM videos)");
+		System.out.println(ps_channels.executeUpdate());
 	}
 	
 	public Group getGroup(int group_id) throws SQLException {
@@ -495,12 +574,6 @@ public class SuiteDatabase {
 		} else {
 			return null;
 		}
-	}
-	
-	public void deleteGroup(String group_name) throws SQLException {
-		PreparedStatement ps = con.prepareStatement("DELETE FROM groups WHERE group_name = ?");
-		ps.setString(1, group_name);
-		ps.executeUpdate();
 	}
 	
 	public List<Group> getGroups() throws SQLException {
@@ -564,12 +637,7 @@ public class SuiteDatabase {
 	}
 	
 	public void deleteGroupItems(Collection<GroupItem> items) throws SQLException {
-		PreparedStatement ps = con.prepareStatement("DELETE FROM group_gitem WHERE gitem_id = ?");
-		for(GroupItem gi : items) {
-			ps.setInt(1, gi.gitem_id);
-			ps.addBatch();
-		}
-		ps.executeBatch();
+		
 	}
 	
 	public List<GroupItem> getGroupItems(String group_name) throws SQLException {

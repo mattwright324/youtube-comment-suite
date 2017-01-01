@@ -9,6 +9,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
@@ -442,9 +443,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 		gbc2.weightx = 1.0;
 		groups.add(addGroup, gbc2);
 		
-		deleteGroup = new JButton("Delete Group");
+		deleteGroup = new JButton("Clear Group");
 		deleteGroup.addActionListener(this);
-		deleteGroup.setEnabled(false);
 		gbc2.gridx = 1;
 		groups.add(deleteGroup, gbc2);
 		
@@ -502,9 +502,13 @@ public class CommentSuite extends JFrame implements ActionListener {
 							gTable.setEnabled(false);
 							int row = gTable.getSelectedRow();
 							Group g = (Group) gTable.getValueAt(row, 0);
-							
-							setComponentsEnabled(row != 0 && !g.isRefreshing(), deleteGroup, editName);
-							setComponentsEnabled(!g.isRefreshing(), refreshGroup);
+							setComponentsEnabled(row != 0 && !g.isRefreshing(), editName);
+							setComponentsEnabled(!g.isRefreshing(), deleteGroup, refreshGroup);
+							if(row != 0) {
+								deleteGroup.setText("Delete Group");
+							} else {
+								deleteGroup.setText("Clear Group");
+							}
 							try {
 								tabs.setTitleAt(0, "Group Items [0]");
 								tabs.setTitleAt(1, "Related Videos [0]");
@@ -551,7 +555,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		deleteItem.addActionListener(this);
 		gbc3.gridx = 1;
 		gbc3.gridy = 0;
-		groupitems.add(deleteItem, gbc3);
+		// groupitems.add(deleteItem, gbc3);
 		
 		gbc3.weightx = 1;
 		gbc3.gridx = 3;
@@ -601,7 +605,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		});
 		
 		gbc3.fill = GridBagConstraints.BOTH;
-		gbc3.gridy = 1;
+		gbc3.gridy = 0;
 		gbc3.gridx = 0;
 		gbc3.weightx = 1;
 		gbc3.weighty = 1;
@@ -744,12 +748,11 @@ public class CommentSuite extends JFrame implements ActionListener {
 			gModel.addRow(new Object[]{g});
 			commentGroup.addItem(g);
 		}
-		deleteGroup.setEnabled(false);
-		if(selection == -1)
+		if(selection == -1 || selection >= gTable.getRowCount()) {
 			gTable.setRowSelectionInterval(0, 0);
-		else
+		} else {
 			gTable.setRowSelectionInterval(selection, selection);
-		
+		}
 		if(gTable.getRowCount() > 0) {
 			loadSelectedGroup((Group) gTable.getValueAt(0, 0));
 			gTable.setEnabled(true);
@@ -1543,11 +1546,16 @@ public class CommentSuite extends JFrame implements ActionListener {
 				}
 			});
 			add.start();
-		} else if(o.equals(deleteGroup)) {
+		} else if(o.equals(deleteGroup)) { // TODO
 			String group_name = gTable.getValueAt(gTable.getSelectedRow(), 0).toString();
-			JOptionPane.showConfirmDialog(this, new JLabel("<html>Are you sure you want to delete <b>"+group_name+"</b> and all of its videos?</html>"), "Delete Group", JOptionPane.OK_CANCEL_OPTION);
+			int code = JOptionPane.showConfirmDialog(this, new JLabel("<html>Are you sure you want to delete <b>"+group_name+"</b> and all of its videos?</html>"), "Delete Group", JOptionPane.OK_CANCEL_OPTION);
 			try {
-				refreshGroupTable();
+				if(code == JOptionPane.OK_OPTION) {
+					gTable.setEnabled(false);
+					db.deleteGroup(group_name);
+					refreshGroupTable();
+					gTable.setEnabled(true);
+				}
 			} catch (SQLException | ParseException e) {
 				e.printStackTrace();
 			}
@@ -1606,7 +1614,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 				}
 			});
 			thread.start();
-		} else if(o.equals(deleteItem)) {
+		} else if(o.equals(deleteItem)) { // TODO
 			Thread thread = new Thread(new Runnable(){
 				public void run() {
 					deleteItem.setEnabled(false);
@@ -1661,8 +1669,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 					gbc.gridy = 1;
 					gbc.weighty = 0;
 					Rectangle vr = cTable.getVisibleRect(); // Get last visible row.
-					vr.translate(0, vr.height);
 		            int firstRow = cTable.rowAtPoint(vr.getLocation());
+		            vr.translate(0, vr.height);
 		            int visibleRows = cTable.rowAtPoint(vr.getLocation()) - firstRow;
 		            int lastRow = (visibleRows > 0) ? visibleRows+firstRow : cTable.getRowCount();
 		            lastRect = cTable.getCellRect(lastRow, 0, true);
@@ -1754,7 +1762,9 @@ public class CommentSuite extends JFrame implements ActionListener {
 					if(code == JOptionPane.OK_OPTION) {
 						try {
 							db.dropAllTables();
-							db.setup();
+							try {
+								db.create();
+							} catch (ClassNotFoundException e) {}
 							db.clean();
 							setupFromDatabase();
 							File thumbs = new File("Thumbs/");
@@ -1950,7 +1960,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 				setStatus("Part 2 of 3. New comments.");
 				commentProgress = 0;
 				List<String> videosInGroup = db.getVideoIds(group.group_name);
-				setStatus("Part 2 of 3. Grabbing top-level comments<br>Videos 0/"+videosInGroup.size()+" (...)");
+				setStatus("Part 2 of 3. New comments.<br>Videos 0/"+videosInGroup.size()+" (...)");
 				videosInGroup.parallelStream().forEach(videoId -> {
 					ElapsedTime clock = new ElapsedTime();
 					clock.set();
@@ -1965,7 +1975,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 						e.printStackTrace();
 					}
 					commentProgress++;
-					setStatus("Part 2 of 3. Grabbing top-level comments<br>Videos "+commentProgress+"/"+videosInGroup.size()+" ("+clock.getTimeString()+")");
+					setStatus("Part 2 of 3. New comments.<br>Videos "+commentProgress+"/"+videosInGroup.size()+" ("+clock.getTimeString()+")");
 				});
 				setStatus("Part 2 of 3. Committing.");
 				db.con.commit();
@@ -2084,7 +2094,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 						updateVideos.add(video);
 				}
 			}
-			setStatus("Part 1 of 3. Searching for new videos.<br>"+insertVideos.size()+" new of "+(insertVideos.size()+updateVideos.size()));
+			setStatus("Part 1 of 3. New videos.<br>"+insertVideos.size()+" new of "+(insertVideos.size()+updateVideos.size()));
 		}
 		
 		public List<Comment> getComments(final String videoId) throws JsonSyntaxException {
