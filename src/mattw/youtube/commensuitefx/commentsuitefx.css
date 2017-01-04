@@ -1,0 +1,29 @@
+#form-good {
+	-fx-base: rgba(20, 120, 20, 0.8);
+}
+
+#form-bad {
+	-fx-base: rgba(120, 20, 20, 0.8);
+}
+
+#menuButton {
+	-fx-base: rgba(255,255,255,0.5);
+	-fx-focus-color: transparent;
+	-fx-border-width: 0 0 3 0;
+	-fx-border-color: white white white white;
+}
+
+#menuButton:selected {
+	-fx-border-width: 0 0 3 0;
+	-fx-border-color: white white firebrick white;
+}
+
+#menuButton:hover {
+	-fx-border-width: 0 0 3 0;
+	-fx-border-color: white white indianred white;
+}
+
+#searchScroll {
+	-fx-unit-increment: 1000;
+	-fx-block-increment: 2000;
+}
