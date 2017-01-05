@@ -1,14 +1,16 @@
 package mattw.youtube.commensuitefx;
 
 import java.awt.Desktop;
-import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 
-import javax.imageio.ImageIO;
-
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import javafx.application.Application;
@@ -16,7 +18,6 @@ import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
@@ -25,25 +26,10 @@ import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -53,8 +39,13 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import mattw.youtube.datav3.YoutubeData;
+import mattw.youtube.datav3.list.ChannelsList;
+import mattw.youtube.datav3.list.CommentThreadsList;
+import mattw.youtube.datav3.list.CommentsList;
 import mattw.youtube.datav3.list.SearchList;
 
 public class CommentSuiteFX extends Application implements EventHandler<ActionEvent> {
@@ -73,8 +64,9 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	
 	public Button saveAndSetup, exitSetup;
 	public Hyperlink googleGuide;
-	public TextField userField;
-	public PasswordField keyField, passField;
+	public Button signin;
+	public TextField status;
+	public PasswordField keyField;
 	
 	public String pageToken = "";
 	public Button search, selectAll, clearResults, addToGroup, nextPage;
@@ -84,162 +76,126 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public VBox searchResults;
 	public Label resultStatus;
 	
-	
-	public class SearchResult extends AnchorPane {
-		
-		final Label author, title, description, published;
-		private CheckBox select;
-		
-		final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
-		final URL thumbUrl;
-		final String youtubeId;
-		final int type_id;
-		final String type;
-		
-		
-		public void setSelected(boolean s) {
-			select.setSelected(s);
-			if(s) {
-				setStyle("-fx-background-color: radial-gradient(radius 85%, rgba(220,220,220,0), rgba(200,80,80,0.5), rgba(220,220,220,0.1))");
-			} else {
-				setStyle("");
-			}
-		}
-		
-		public boolean getSelected() {
-			return select.isSelected();
-		}
-		
-		public SearchResult(Node topAnchor, SearchList.Item item) {
-			super();
-			int width = 650;
-			int height = 120;
-			setMaxWidth(width);
-			setPrefWidth(width);
-			setMinWidth(width);
-			setMaxHeight(height);
-			setPrefHeight(height);
-			setMinHeight(height);
-			setTopAnchor(topAnchor, 10d);
-			
-			thumbUrl = item.snippet.thumbnails.medium.url;
-			author = new Label(item.snippet.channelTitle);
-			description = new Label("Published on "+sdf.format(item.snippet.publishedAt)+"  "+item.snippet.description);
-			published = new Label();
-			title = new Label(item.snippet.title);
-			if(item.id.videoId != null) {
-				type_id = 0;
-				type = "Video";
-				youtubeId = item.id.videoId;
-			} else if(item.id.channelId != null) {
-				type_id = 1;
-				type = "Channel";
-				youtubeId = item.id.channelId;
-			} else if(item.id.playlistId != null) {
-				type_id = 2;
-				type = "Playlist";
-				youtubeId = item.id.playlistId;
-			} else {
-				type = "Error";
-				type_id = -1;
-				youtubeId = "";
-			}
-			
-			ContextMenu context = new ContextMenu();
-			MenuItem open = new MenuItem("Open in Browser");
-			open.setOnAction(e -> {
-				String url = "";
-				if(type_id == 0) url = "http://youtu.be/"+youtubeId;
-				if(type_id == 1) url = "http://www.youtube.com/channel/"+youtubeId;
-				if(type_id == 2) url = "http://www.youtube.com/playlist?list="+youtubeId;
-				openInBrowser(url);
-			});
-			context.getItems().addAll(open);
-			setOnMouseClicked(e -> {
-				if(e.isPopupTrigger()) {
-					context.show(stage, e.getScreenX(), e.getScreenY());
-				}
-				setSelected(!select.isSelected());
-			});
-			
-			GridPane grid = new GridPane();
-			getChildren().add(grid);
-			grid.setAlignment(Pos.CENTER_RIGHT);
-			grid.setVgap(5);
-			grid.setHgap(5);
-			
-			GridPane side = new GridPane();
-			side.setAlignment(Pos.CENTER);
-			side.setMaxWidth(160);
-			side.setMinWidth(160);
-			side.setHgap(5);
-			side.setVgap(5);
-			grid.add(side, 0, 0);
-			
-			select = new CheckBox();
-			select.setOnAction(e -> {
-				setSelected(select.isSelected());
-			});
-			select.setMaxHeight(Double.MAX_VALUE);
-			side.add(select, 0, 0);
-			GridPane.setHgrow(select, Priority.ALWAYS);
-			
-			Label label = new Label(type);
-			label.setMaxWidth(Double.MAX_VALUE);
-			label.setAlignment(Pos.CENTER);
-			side.add(label, 0, 1, 2, 1);
-			label.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 14));
-			GridPane.setHgrow(label, Priority.ALWAYS);
-			
-			StackPane stack = new StackPane();
-			ImageView img = new ImageView();
-			try {
-				BufferedImage bi = ImageIO.read(thumbUrl);
-				img.setImage(SwingFXUtils.toFXImage(bi, null));
-				img.setFitHeight(80);
-				img.setFitWidth(80 * img.getImage().getWidth() / img.getImage().getHeight());
-			} catch (IOException e) {}
-			stack.getChildren().add(img);
-			side.add(stack, 1, 0);
-			GridPane.setVgrow(stack, Priority.ALWAYS);
-			GridPane.setHgrow(stack, Priority.ALWAYS);
-			
-			GridPane center = new GridPane();
-			center.setHgap(5);
-			center.setVgap(5);
-			grid.add(center, 1, 0);
-			center.add(title, 1, 0);
-			title.setFont(Font.font("Arial", FontWeight.NORMAL, 18));
-			title.setMaxWidth(550);
-			center.add(author, 1, 1);
-			author.setMaxWidth(550);
-			center.add(description, 1, 2);
-			description.setWrapText(true);
-			description.setMaxWidth(550);
-			description.setMaxHeight(50);
-			GridPane.setFillWidth(description, true);
-			GridPane.setFillHeight(description, true);
-		}
-	}
-	
 	public static void main(String[] args) {
 		launch(args);
 	}
 	
+	public void refreshTokens() {
+		if(config.getAccessTokens() != null) {
+			OA2Tokens old_tokens = config.getAccessTokens();
+			OA2Tokens new_tokens;
+			try {
+				new_tokens = OA2Handler.refreshAccessTokens(old_tokens);
+				config.setAccessTokens(new_tokens);
+				data.setAccessToken(new_tokens.access_token);
+				config.save();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void signOut() throws IOException {
+		config.setUsername("Guest");
+		data.setAccessToken("");
+		config.setAccessTokens(null);
+		config.save();
+	}
+	
+	public CommentThreadsList.Item postComment(String channelId, String videoId, String textOriginal) throws IOException {
+		System.out.println("Commenting on ["+videoId+", "+channelId+"]\n    "+textOriginal);
+		String payload = new Gson().toJson(new MakeComment(channelId, videoId, textOriginal), MakeComment.class);
+		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&access_token="+data.access_token+"&key="+data.data_api_key).openConnection();
+		url.setDoOutput(true);
+		url.setDoInput(true);
+		url.setRequestProperty("Content-Type", "application/json");
+		OutputStream os = url.getOutputStream();
+		os.write(payload.getBytes("UTF-8"));
+		String response = "";
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.getInputStream()));
+			String line;
+			while((line = br.readLine()) != null) {response+=line;}
+		} catch (IOException e) {
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.getErrorStream()));
+			String line;
+			while((line = br.readLine()) != null) {response+=line;}
+		}
+		System.out.println("["+response+"]");
+		return data.gson.fromJson(response, CommentThreadsList.Item.class);
+	}
+	
+	public CommentsList.Item postReply(String parentId, String textOriginal) throws IOException {
+		System.out.println("Replying to ["+parentId+"]\n    "+textOriginal);
+		String payload = new Gson().toJson(new MakeReply(parentId, textOriginal), MakeReply.class);
+		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token="+data.access_token+"&key="+data.data_api_key).openConnection();
+		url.setDoOutput(true);
+		url.setDoInput(true);
+		url.setRequestProperty("Content-Type", "application/json");
+		OutputStream os = url.getOutputStream();
+		os.write(payload.getBytes("UTF-8"));
+		String response = null;
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.getInputStream()));
+			String line;
+			while((line = br.readLine()) != null) {response+=line;}
+		} catch (IOException e) {
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.getErrorStream()));
+			String line;
+			while((line = br.readLine()) != null) {response+=line;}
+		}
+		System.out.println("["+response+"]");
+		return data.gson.fromJson(response, CommentsList.Item.class);
+	}
+	
+	public class MakeReply {
+		public MakeReply(String parentId, String textOriginal) {
+			snippet = new Snippet();
+			snippet.parentId = parentId;
+			snippet.textOriginal = textOriginal;
+		}
+		public Snippet snippet;
+		public class Snippet {
+			public String parentId;
+			public String textOriginal;
+		}
+	}
+	
+	public class MakeComment {
+		public MakeComment(String channel_id, String textOriginal) {
+			snippet.channelId = channel_id;
+			snippet.topLevelComment.snippet.textOriginal = textOriginal;
+		}
+		public MakeComment(String channel_id, String videoId, String textOriginal) {
+			this(channel_id, textOriginal);
+			snippet.videoId = videoId;
+		}
+		public Snippet snippet = new Snippet();
+		public class Snippet {
+			public String channelId;
+			public String videoId;
+			public TopLevelComment topLevelComment = new TopLevelComment();
+			public class TopLevelComment {
+				public TLCSnippet snippet = new TLCSnippet();
+				public class TLCSnippet {
+					public String textOriginal;
+				}
+			}
+		}
+		
+	}
+	
 	public void handle(ActionEvent arg0) {
 		Object o = arg0.getSource();
-		if(o.equals(saveAndSetup) || o.equals(exitSetup)) {
+		if(o.equals(saveAndSetup) || o.equals(exitSetup) || o.equals(signin)) {
 			if(o.equals(saveAndSetup)) {
 				Task<Void> task = new Task<Void>(){
 					protected Void call() throws Exception {
 						saveAndSetup.setDisable(true);
 						keyField.setDisable(true);
-						userField.setDisable(true);
-						passField.setDisable(true);
 						Platform.runLater(() -> {
 							if(layout.getChildren().contains(setup)) {
 								config.setYoutubeKey(keyField.getText());
-								config.setUsername(userField.getText());
 								try {
 									config.save();
 									data = new YoutubeData(config.getYoutubeKey());
@@ -250,6 +206,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 								layout.getChildren().remove(setup);
 							}
 						});
+							
 						return null;
 					}
 				};
@@ -258,6 +215,56 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				thread.start();
 			} else if(o.equals(exitSetup)) {
 				layout.getChildren().remove(setup);
+			} else if(o.equals(signin)) {
+				Task<Void> task = new Task<Void>(){
+					protected Void call() throws Exception {
+						System.out.println("OAuth2");
+						Platform.runLater(() -> {
+							WebView web = new WebView();
+							WebEngine engine = web.getEngine();
+							try {
+								engine.load(OA2Handler.getOAuth2Url());
+								web.setPrefSize(400, 575);
+								
+								Dialog<WebView> dialog = new Dialog<>();
+								dialog.getDialogPane().setContent(web);
+								dialog.titleProperty().bind(engine.titleProperty());
+								engine.titleProperty().addListener(e -> {
+									System.out.println("CHANGE: "+engine.getTitle());
+									if(engine.getTitle() != null && (engine.getTitle().contains("code=") || engine.getTitle().contains("error="))) {
+										String response = engine.getTitle();
+										String code = response.substring(13, response.length());
+										dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL);
+										web.setDisable(true);
+										try {
+											OA2Tokens tokens = OA2Handler.getAccessTokens(code);
+											data.setAccessToken(tokens.access_token);
+											ChannelsList cl = data.getChannelsByMine(ChannelsList.PART_SNIPPET);
+											String title = cl.items[0].snippet.title;
+											config.setUsername(title);
+											config.setAccessTokens(tokens);
+											config.save();
+										} catch (IOException e1) {
+											e1.printStackTrace();
+										}
+										
+										dialog.close();
+									} else {
+										System.out.println("    NO RESPONSE");
+									}
+								});
+								dialog.showAndWait();
+								System.out.println("OAuth2 Done?");
+							} catch (UnsupportedEncodingException e) {
+								e.printStackTrace();
+							}
+						});
+						return null;
+					}
+				};
+				Thread thread = new Thread(task);
+				thread.setDaemon(true);
+				thread.start();
 			}
 		} else if(o.equals(videoToggle) || o.equals(groupToggle) || o.equals(commentToggle)) {
 			if(videoToggle.isSelected()) {
@@ -356,7 +363,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			for(Node n : list) {
 				if(n instanceof SearchResult) {
 					SearchResult r = (SearchResult) n;
-					if(!r.select.isSelected()) {
+					if(!r.isSelected()) {
 						allSelected = false;
 						break;
 					}
@@ -382,7 +389,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	
 	public void start(Stage arg0) throws Exception {
 		stage = arg0;
-		
+		// TODO 
 		layout = new StackPane();
 		setup = createSetupPane();
 		menu = createMenuPane();
@@ -408,8 +415,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				config.load();
 				Platform.runLater(() -> {
 					keyField.setText(config.getYoutubeKey());
-					userField.setText(config.getUsername());
 					welcome.setText("Welcome, "+config.getUsername());
+					if(config.getAccessTokens() != null) {
+						data.setAccessToken(config.getAccessTokens().access_token);
+					}
 				});
 				data = new YoutubeData(config.getYoutubeKey());
 				if(!config.isSetup()) {
@@ -432,7 +441,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		);
 		stage.setScene(scene);
 		stage.setTitle("Youtube Comment Suite");
-		stage.getIcons().add(new Image(getClass().getResourceAsStream("/mattw/youtube/commentsuite/images/icon.png")));
+		stage.getIcons().add(new Image(getClass().getResourceAsStream("/mattw/youtube/commentsuite/images/fxicon.png")));
 		stage.setOnCloseRequest(e -> {
 			Platform.exit();
 			System.exit(0);
@@ -450,6 +459,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public GridPane createGroupsPane() {
 		GridPane grid = new GridPane();
 		grid.setGridLinesVisible(true);
+		
+		
 		
 		return grid;
 	}
@@ -627,6 +638,11 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				keyField.setDisable(false);
 				saveAndSetup.setDisable(false);
 				layout.getChildren().add(setup);
+				try {
+					postComment("UCUcyEsEjhPEDf69RRVhRh4A", "04r5XVEgn0Q", "Test post! http://www.google.com");
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
 			}
 		});
 		grid.add(gotoSetup, 5, 0);
@@ -638,7 +654,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	}
 	
 	public StackPane createSetupPane() {
-		String gradient = "-fx-background-color: linear-gradient(rgba(160,160,160,0.7), rgba(80,80,80,0.95), rgba(80,80,80,0.95), rgba(220,220,220,0.7)) ";
+		String gradient = "-fx-background-color: linear-gradient(rgba(160,160,160,0.7), rgba(160,160,160,0.95), rgba(160,160,160,0.99), rgba(220,220,220,1)) ";
 		StackPane glass = new StackPane();
 		glass.setStyle(gradient); 
 		glass.setMaxHeight(Double.MAX_VALUE);
@@ -662,6 +678,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		keyField.setPromptText("Paste your Youtube Data API key here.");
 		keyField.setTooltip(new Tooltip("This key is required for everything to function. Do not clear this field."));
 		keyField.setId("form-plain");
+		keyField.setDisable(true);
 		form.add(keyField, 1, 1, 3, 1);
 		
 		googleGuide = new Hyperlink();
@@ -676,23 +693,13 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		text2.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
 		form.add(text2, 0, 3, 2, 1);
 		
-		Label label2 = new Label("Username");
-		form.add(label2, 0, 4);
+		signin = new Button("Sign in");
+		signin.setOnAction(this);
+		form.add(signin, 0, 4);
 		
-		userField = new TextField();
-		userField.setDisable(true);
-		userField.setPromptText("Your username here.");
-		userField.setId("form-plain");
-		form.add(userField, 1, 4, 3, 1);
-		
-		Label label3 = new Label("Password");
-		form.add(label3, 0, 5);
-		
-		passField = new PasswordField();
-		passField.setDisable(true);
-		passField.setPromptText("Your password here.");
-		passField.setId("form-plain");
-		form.add(passField, 1, 5, 3, 1);
+		status = new TextField("Sign in to leave comments and replies.");
+		status.setEditable(false);
+		form.add(status, 1, 4, 3, 1);
 		
 		HBox hBtn = new HBox(10);
 		saveAndSetup = new Button("Save and Setup");
@@ -707,8 +714,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		glass.getChildren().add(form);
 		return glass;
 	}
-	
-	public void openInBrowser(String link) {
+
+	public static void openInBrowser(String link) {
 		link = link.replace(" ", "%20");
 		try {
 			URL url = new URL(link);

@@ -2015,7 +2015,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		
 		public void parseChannelItems(List<GroupItem> channels) throws JsonSyntaxException, IOException {
 			for(GroupItem gi : channels) {
-				ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_CONTENT_DETAILS, gi.youtube_id, ChannelsList.MAX_RESULTS);
+				ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_CONTENT_DETAILS, gi.youtube_id, ChannelsList.MAX_RESULTS, "");
 				String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
 				handlePlaylist(uploadPlaylistId, gi.gitem_id);
 			}
@@ -2073,7 +2073,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 				if(channels.containsKey(itemSnip.snippet.channelId)) {
 					channel = channels.get(itemSnip.snippet.channelId);
 				} else {
-					ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_SNIPPET, itemSnip.snippet.channelId, 1);
+					ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_SNIPPET, itemSnip.snippet.channelId, 1, "");
 					ChannelsList.Item item = cl.items[0];
 					channel = new Channel(itemSnip.snippet.channelId, StringEscapeUtils.unescapeHtml4(item.snippet.title), item.snippet.thumbnails.default_thumb.url.toString(), true);
 					channels.put(itemSnip.snippet.channelId, channel);

@@ -15,12 +15,18 @@ public class YCSConfig {
 	private final Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();
 	private final File CONFIG_FILE = new File("config.ycs");
 	
-	private String youtube_data_key = "";
+	private String youtube_data_key = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
 	private String username = "Guest";
+	private OA2Tokens access_tokens;
 	
 	private void loadAs(YCSConfig config) {
 		setYoutubeKey(config.youtube_data_key);
 		setUsername(config.username);
+		setAccessTokens(config.access_tokens);
+	}
+	
+	public void setAccessTokens(OA2Tokens tokens) {
+		access_tokens = tokens;
 	}
 	
 	public void setYoutubeKey(String key) {
@@ -37,6 +43,10 @@ public class YCSConfig {
 	
 	public boolean isSetup() {
 		return !youtube_data_key.equals("");
+	}
+	
+	public OA2Tokens getAccessTokens() {
+		return access_tokens;
 	}
 	
 	public String getYoutubeKey() {
