@@ -38,7 +38,7 @@ public class SearchResult extends AnchorPane {
 	public void setSelected(boolean s) {
 		select.setSelected(s);
 		if(s) {
-			setStyle("-fx-background-color: radial-gradient(radius 85%, rgba(220,220,220,0), rgba(200,80,80,0.5), rgba(220,220,220,0.1))");
+			setStyle("-fx-background-color: radial-gradient(focus-distance 0%, center 50% 50%, radius 55%, rgba(220,80,80,0.5), rgba(220,220,220,0))");
 		} else {
 			setStyle("");
 		}
