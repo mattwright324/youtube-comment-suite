@@ -8,7 +8,17 @@ import java.util.Date;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import javafx.beans.property.LongProperty;
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 public class GroupItem {
+	
+	public StringProperty groupType;
+	public StringProperty groupTitle;
+	public LongProperty groupChecked;
+	
 	public int gitem_id;
 	public int type_id;
 	public String youtube_id;
@@ -19,10 +29,11 @@ public class GroupItem {
 	public Date last_checked;
 	public String thumb_url;
 	
+	public boolean needImage = false;
 	public ImageIcon thumbnail;
 	private File thumbs = new File("Thumbs/");
 	
-	public GroupItem(int type_id, String type, String youtube_id, String title, String channel_title, Date published, Date last_checked, String thumb_url) {
+	public GroupItem(int type_id, String type, String youtube_id, String title, String channel_title, Date published, Date last_checked, String thumb_url, boolean needImage) {
 		this.type_id = type_id;
 		this.type = type;
 		this.youtube_id = youtube_id;
@@ -30,7 +41,13 @@ public class GroupItem {
 		this.channel_title = channel_title;
 		this.published = published;
 		this.last_checked = last_checked;
+		this.needImage = needImage;
 		
+		groupType = new SimpleStringProperty(type);
+		groupTitle = new SimpleStringProperty(title);
+		groupChecked = new SimpleLongProperty(last_checked != null ? last_checked.getTime() : 0);
+		
+		if(!needImage) return;
 		thumbs.mkdirs();
 		File thumbFile = new File(thumbs, youtube_id+".jpg");
 		try {
@@ -49,6 +66,26 @@ public class GroupItem {
 		}
 		if(thumbnail == null) thumbnail = CommentSuite.window.imgThumbPlaceholder;
 		thumbnail = new ImageIcon(thumbnail.getImage().getScaledInstance((int) (45.0 * thumbnail.getIconWidth() / thumbnail.getIconHeight())+1, 45, 0));
+	}
+	
+	public String getGroupType() {
+		return groupType.get();
+	}
+	
+	public String getGroupTitle() {
+		return groupTitle.get();
+	}
+	
+	public Long getGroupChecked() {
+		return groupChecked.get();
+	}
+	
+	public String getYoutubeLink() {
+		String link = "https://www.youtube.com/";
+		if(type_id == 0) link = "https://youtu.be/"+youtube_id;
+		if(type_id == 1) link = "https://www.youtube.com/channels/"+youtube_id;
+		if(type_id == 2) link = "https://www.youtube.com/playlists?list="+youtube_id;
+		return link;
 	}
 	
 	public void setID(int id) {

@@ -8,7 +8,16 @@ import java.util.Date;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import javafx.beans.property.LongProperty;
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 public class Video {
+	
+	public StringProperty videoTitle;
+	public LongProperty videoChecked;
+	
 	public String video_id;
 	public Channel channel;
 	public Date grab_date;
@@ -18,12 +27,13 @@ public class Video {
 	public String thumb_url;
 	public int http_code;
 	
+	public boolean needImage = false;
 	public ImageIcon thumbnail;
 	public ImageIcon small_thumb;
 	public long comment_count = 0;
 	private File thumbs = new File("Thumbs/");
 	
-	public Video(String video_id, Channel channel, Date grab_date, Date publish_date, String video_title, String video_desc, long total_comments, long total_likes, long total_dislikes, long total_views, String thumb_url, int http_code) {
+	public Video(String video_id, Channel channel, Date grab_date, Date publish_date, String video_title, String video_desc, long total_comments, long total_likes, long total_dislikes, long total_views, String thumb_url, int http_code, boolean needImage) {
 		this.video_id = video_id;
 		this.channel = channel;
 		this.grab_date = grab_date;
@@ -35,7 +45,12 @@ public class Video {
 		this.total_dislikes = total_dislikes;
 		this.total_views = total_views;
 		this.http_code = http_code;
+		this.needImage = needImage;
 		
+		this.videoTitle = new SimpleStringProperty(video_title);
+		this.videoChecked = new SimpleLongProperty(grab_date != null ? grab_date.getTime() : 0);
+		
+		if(!needImage) return;
 		thumbs.mkdirs();
 		File thumbFile = new File(thumbs, video_id+".jpg");
 		try {
@@ -54,6 +69,18 @@ public class Video {
 		}
 		if(thumbnail == null) thumbnail = CommentSuite.window.imgThumbPlaceholder;
 		small_thumb = new ImageIcon(thumbnail.getImage().getScaledInstance((int) (45.0 * thumbnail.getIconWidth() / thumbnail.getIconHeight())+1, 45, 0));
+	}
+	
+	public String getVideoTitle() {
+		return videoTitle.get();
+	}
+	
+	public Long getVideoChecked() {
+		return videoChecked.get();
+	}
+	
+	public String getYoutubeLink() {
+		return "https://youtu.be/"+video_id;
 	}
 	
 	public void setCommentCount(long comment_count) {

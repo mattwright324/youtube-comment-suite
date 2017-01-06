@@ -12,6 +12,10 @@ public class ElapsedTime {
 		return System.currentTimeMillis() - start;
 	}
 	
+	public long getSeconds() {
+		return getTime() / 1000;
+	}
+	
 	public String getTimeString() {
 		long time = getTime();
 		long ms = 0;
@@ -24,7 +28,7 @@ public class ElapsedTime {
 		m = time % 60; time /= 60;
 		h = time % 24; time /= 24;
 		
-		String string = (h > 0 ? h+"h ":"")+(m > 0 ? m+"m ":"")+(s > 0 ? s+"s ":"")+(ms > 0 ? ms:"");
+		String string = (h > 0 ? h+"h ":"")+(m > 0 ? m+"m ":"")+(s > 0 ? s+"s ":"")+(ms > 0 ? ms+"ms":"");
 		return string;
 	}
 }

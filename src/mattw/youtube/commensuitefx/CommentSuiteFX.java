@@ -6,6 +6,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import com.google.gson.JsonSyntaxException;
 
@@ -75,7 +78,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public Label resultStatus;
 	
 	public GroupManager manager;
-	public Button createGroup, deleteGroup, renameGroup, refreshGroup;
+	public Button createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, resetDB, cleanDB;
 	public ChoiceBox<Group> choice;
 	
 	public static void main(String[] args) {
@@ -346,15 +349,161 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			nextPage.setDisable(true);
 			resultStatus.setText("");
 			searchResults.getChildren().clear();
-		} else if(o.equals(addToGroup)) {
+		} else if(o.equals(addToGroup)) { // TODO
+			Dialog<ButtonType> dialog = new Dialog<>();
+			DialogPane pane = new DialogPane();
+			dialog.setDialogPane(pane);
+			pane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 			
-		} else if(o.equals(createGroup) || o.equals(deleteGroup) || o.equals(renameGroup) || o.equals(refreshGroup)) {
+			GridPane grid = new GridPane();
+			grid.setPadding(new Insets(10,10,10,10));
+			grid.setAlignment(Pos.CENTER);
+			
+			ToggleGroup toggle = new ToggleGroup();
+			RadioButton existing = new RadioButton("Existing group.");
+			existing.setToggleGroup(toggle);
+			RadioButton newGroup = new RadioButton("Make new group.");
+			newGroup.setToggleGroup(toggle);
+			
+			grid.add(existing, 0, 0);
+			
+			ChoiceBox<Group> groupList = new ChoiceBox<>();
+			groupList.getItems().addAll(choice.getItems());
+			grid.add(groupList, 0, 1);
+			grid.add(newGroup, 0, 2);
+			
+			TextField field = new TextField();
+			field.setPromptText("Choose a unique name.");
+			grid.add(field, 0, 3);
+			
+			existing.setOnAction(e -> {
+				if(existing.isSelected()) {
+					groupList.setDisable(false);
+					field.setDisable(true);
+				}
+			});
+			newGroup.setOnAction(e -> {
+				if(newGroup.isSelected()) {
+					groupList.setDisable(true);
+					field.setDisable(false);
+				}
+			});
+			
+			if(groupList.getItems().isEmpty()) {
+				existing.setDisable(true);
+				newGroup.fire();
+			} else {
+				existing.fire();
+				groupList.getSelectionModel().select(0);
+			}
+			
+			List<GroupItem> items = new ArrayList<GroupItem>();
+			searchResults.getChildren().stream().filter(object -> object instanceof SearchResult && ((SearchResult) object).isSelected()).forEach(result -> {
+				SearchResult sr = (SearchResult) result;
+				items.add(new GroupItem(sr.type_id, sr.type, sr.youtubeId, sr.title.getText(), sr.author.getText(), sr.publishedAt, new Date(0), sr.thumbUrl.toString(), true));
+			});
+			
+			pane.setContent(grid);
+			dialog.setTitle("Add Items to Group ("+items.size()+")");
+			dialog.showAndWait().ifPresent(choice -> {
+				if(choice == ButtonType.OK) {
+					String group_name;
+					try {
+						if(newGroup.isSelected()) {
+							boolean unique = true;
+							group_name = field.getText();
+							for(Group g : groupList.getItems()) if(g.group_name.equals(group_name)) {
+								unique = false;
+								break;
+							}
+							if(unique) {
+								db.createGroup(group_name);
+								reloadGroups();
+							}
+						} else {
+							group_name = groupList.getSelectionModel().getSelectedItem().group_name;
+						}
+						db.insertGroupItems(group_name, items);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			
+		} else if(o.equals(createGroup) || o.equals(deleteGroup) || o.equals(renameGroup) || o.equals(refreshGroup) || o.equals(reloadGroup)) { // TODO
 			if(o.equals(createGroup)) {
-				
+				List<Group> allGroups = choice.getItems();
+				TextInputDialog input = new TextInputDialog("");
+				input.setTitle("Create Group");
+				input.setContentText("Pick a unique name: ");
+				input.showAndWait().ifPresent(result -> {
+					boolean unique = true;
+					if(result != null) {
+						for(Group g : allGroups) {
+							if(g.group_name.equals(result))
+								unique = false;
+						}
+						if(unique) {
+							try {
+								db.createGroup(result);
+								reloadGroups();
+							} catch (SQLException e) {}
+						}
+					}
+				});
 			} else if(o.equals(deleteGroup)) {
-				
+				Group current = choice.getSelectionModel().getSelectedItem();
+				Dialog<ButtonType> dialog = new Dialog<>();
+				dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+				dialog.setContentText("Are you sure you want to delete '"+current.group_name+"' and all of its data?");
+				dialog.showAndWait().ifPresent(result -> {
+					if(result == ButtonType.OK) {
+						Task<Void> task = new Task<Void>(){
+							protected Void call() throws Exception {
+								choice.setDisable(true);
+								createGroup.setDisable(true);
+								deleteGroup.setDisable(true);
+								renameGroup.setDisable(true);
+								refreshGroup.setDisable(true);
+								reloadGroup.setDisable(true);
+								try {
+									db.deleteGroup(current.group_name);
+									Platform.runLater(() -> {
+										try {
+											reloadGroups();
+										} catch (SQLException e) {
+											e.printStackTrace();
+										}
+									});
+								} catch (SQLException e) {
+									e.printStackTrace();
+								}
+								createGroup.setDisable(false);
+								deleteGroup.setDisable(false);
+								renameGroup.setDisable(false);
+								refreshGroup.setDisable(false);
+								reloadGroup.setDisable(false);
+								return null;
+							}
+						};
+						Thread thread = new Thread(task);
+						thread.setDaemon(true);
+						thread.start();
+					}
+				});
 			} else if(o.equals(renameGroup)) {
-				
+				Group current = choice.getSelectionModel().getSelectedItem();
+				TextInputDialog input = new TextInputDialog(current.group_name);
+				input.setTitle("Rename Group");
+				input.setContentText("Pick a new name: ");
+				input.showAndWait().ifPresent(result -> {
+					if(result != null && !current.group_name.equals(result)) {
+						try {
+							db.editGroupName(current.group_name, result);
+							reloadGroups();
+						} catch (SQLException e) {}
+					}
+				});
 			} else if(o.equals(refreshGroup)) {
 				Task<Void> task = new Task<Void>() {
 					protected Void call() throws Exception {
@@ -365,6 +514,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 									deleteGroup.setDisable(true);
 									renameGroup.setDisable(true);
 									refreshGroup.setDisable(true);
+									reloadGroup.setDisable(true);
 								} catch (InterruptedException e) {
 									e.printStackTrace();
 								}
@@ -374,6 +524,13 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					}
 				};
 				new Thread(task).start();
+			} else if(o.equals(reloadGroup)) {
+				Platform.runLater(() -> {
+					reloadGroup.setDisable(true);
+					manager.reloadTables();
+					reloadGroup.setDisable(false);
+				});
+				
 			}
 		}
 	}
@@ -475,42 +632,52 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			renameGroup.setDisable(true);
 			refreshGroup.setDisable(true);
 			Group group = choice.getSelectionModel().getSelectedItem();
-			if(GroupManager.managers.containsKey(group.group_id)) {
-				manager = GroupManager.managers.get(group.group_id);
-				
-			} else {
-				manager = new GroupManager(group);
-				GroupManager.managers.put(group.group_id, manager);
-			}
-			for(GroupManager gm : GroupManager.managers.values()) {
-				if(grid.getChildren().contains(gm)) {
-					grid.getChildren().remove(gm);
+			if(group != null) {
+				if(GroupManager.managers.containsKey(group.group_id)) {
+					manager = GroupManager.managers.get(group.group_id);
+				} else {
+					manager = new GroupManager(group, db, data);
+					GroupManager.managers.put(group.group_id, manager);
 				}
+				for(GroupManager gm : GroupManager.managers.values()) {
+					if(grid.getChildren().contains(gm)) {
+						grid.getChildren().remove(gm);
+					}
+				}
+				setupWithManager(manager);
+				grid.add(manager, 0, 1);
+				GridPane.setHgrow(manager, Priority.ALWAYS);
+				GridPane.setVgrow(manager, Priority.ALWAYS);
 			}
-			setupWithManager(manager);
-			grid.add(manager, 0, 1);
-			GridPane.setHgrow(manager, Priority.ALWAYS);
-			GridPane.setVgrow(manager, Priority.ALWAYS);
 		});
 		
 		createGroup = new Button("Create");
+		createGroup.setTooltip(new Tooltip("Create a new, empty group."));
 		createGroup.setOnAction(this);
 		
 		deleteGroup = new Button("Delete");
+		deleteGroup.setTooltip(new Tooltip("Delete this group and all its data."));
 		deleteGroup.setOnAction(this);
 		deleteGroup.setDisable(true);
 		deleteGroup.setStyle("-fx-base: mistyrose");
 		
 		renameGroup = new Button("Rename");
+		renameGroup.setTooltip(new Tooltip("Rename this group."));
 		renameGroup.setOnAction(this);
 		renameGroup.setDisable(true);
 		
 		refreshGroup = new Button("Refresh");
+		refreshGroup.setTooltip(new Tooltip("Check for new videos, comments, and replies."));
 		refreshGroup.setOnAction(this);
 		refreshGroup.setDisable(true);
 		refreshGroup.setStyle("-fx-base: honeydew");
 		
-		menu.getChildren().addAll(label, choice, createGroup, deleteGroup, renameGroup, refreshGroup);
+		reloadGroup = new Button("Reload");
+		reloadGroup.setTooltip(new Tooltip("Reloads the data displayed."));
+		reloadGroup.setOnAction(this);
+		reloadGroup.setDisable(true);
+		
+		menu.getChildren().addAll(label, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup);
 		
 		return grid;
 	}
@@ -520,6 +687,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		deleteGroup.setDisable(disable);
 		renameGroup.setDisable(disable);
 		refreshGroup.setDisable(disable);
+		reloadGroup.setDisable(disable);
 	}
 	
 	public void reloadGroups() throws SQLException {

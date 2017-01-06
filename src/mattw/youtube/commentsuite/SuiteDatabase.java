@@ -402,7 +402,7 @@ public class SuiteDatabase {
 		return list;
 	}
 	
-	public Video getVideo(String videoId) throws SQLException, ParseException {
+	public Video getVideo(String videoId, boolean needImage) throws SQLException, ParseException {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos "
 				+ "LEFT JOIN (SELECT video_id, count(video_id) as comment_count FROM videos WHERE video_id = ?) AS cc ON cc.video_id = videos.video_id "
 				+ "LEFT JOIN channels ON channels.channel_id = videos.channel_id "
@@ -412,14 +412,14 @@ public class SuiteDatabase {
 		ResultSet rs = ps.executeQuery();
 		if(rs.next()) {
 			Channel author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), rs.getBoolean("download_profile"));
-			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"), rs.getInt("http_code"));
+			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"), rs.getInt("http_code"), needImage);
 			video.setCommentCount(rs.getLong("comment_count"));
 			return video;
 		}
 		return null;
 	}
 	
-	public List<Video> getVideos(String group_name) throws SQLException, ParseException {
+	public List<Video> getVideos(String group_name, boolean needImage) throws SQLException, ParseException {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos "
 				+ "LEFT JOIN (SELECT videos.video_id, count(videos.video_id) as comment_count FROM videos "
 				+ "    LEFT JOIN comments on videos.video_id = comments.video_id "
@@ -445,7 +445,7 @@ public class SuiteDatabase {
 				author = new Channel(rs.getString("channel_id"), rs.getString("channel_name"), rs.getString("channel_profile_url"), rs.getBoolean("download_profile"));
 				channels.put(rs.getString("channel_id"), author);
 			}
-			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"), rs.getInt("http_code"));
+			Video video = new Video(rs.getString("video_id"), author, new Date(rs.getLong("grab_date")), new Date(rs.getLong("publish_date")), rs.getString("video_title"), rs.getString("video_desc"), rs.getLong("total_comments"), rs.getLong("total_likes"), rs.getLong("total_dislikes"), rs.getLong("total_views"), rs.getString("thumb_url"), rs.getInt("http_code"), needImage);
 			video.setCommentCount(rs.getLong("comment_count"));
 			list.add(video);
 		}
@@ -640,7 +640,7 @@ public class SuiteDatabase {
 		
 	}
 	
-	public List<GroupItem> getGroupItems(String group_name) throws SQLException {
+	public List<GroupItem> getGroupItems(String group_name, boolean needImage) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM gitem_list "
 				+ "LEFT JOIN gitem_type ON gitem_type.type_id = gitem_list.type_id "
 				+ "LEFT JOIN group_gitem ON group_gitem.gitem_id = gitem_list.gitem_id "
@@ -651,7 +651,7 @@ public class SuiteDatabase {
 		
 		List<GroupItem> list = new ArrayList<GroupItem>();
 		while(rs.next()) {
-			GroupItem gi = new GroupItem(rs.getInt("type_id"), rs.getString("name"), rs.getString("youtube_id"), rs.getString("title"), rs.getString("channel_title"), new Date(rs.getLong("published")), new Date(rs.getLong("last_checked")), rs.getString("thumb_url"));
+			GroupItem gi = new GroupItem(rs.getInt("type_id"), rs.getString("name"), rs.getString("youtube_id"), rs.getString("title"), rs.getString("channel_title"), new Date(rs.getLong("published")), new Date(rs.getLong("last_checked")), rs.getString("thumb_url"), needImage);
 			gi.setID(rs.getInt("gitem_id"));
 			list.add(gi);
 		}

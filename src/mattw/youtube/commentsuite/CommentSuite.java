@@ -772,8 +772,8 @@ public class CommentSuite extends JFrame implements ActionListener {
 		
 		SimpleDateFormat sdf = new SimpleDateFormat(dateFormatString);
 		System.out.println("Loading Group ["+g.group_name+"] ("+g.group_id+")");
-		List<GroupItem> gi = db.getGroupItems(g.group_name);
-		List<Video> videos = db.getVideos(g.group_name);
+		List<GroupItem> gi = db.getGroupItems(g.group_name, true);
+		List<Video> videos = db.getVideos(g.group_name, true);
 		System.out.println(gi.size()+" group items / "+videos.size()+" videos");
 		tabs.setTitleAt(0, "Group Items ["+gi.size()+"]");
 		tabs.setTitleAt(1, "Related Videos ["+videos.size()+"]");
@@ -781,7 +781,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 		groupVideoModel.setRowCount(0);
 		results.setText("");
 		gitems.removeAllItems();
-		gitems.addItem(new GroupItem(-1, null, null, "All Items ("+gi.size()+")", null, null, new Date(0), null));
+		gitems.addItem(new GroupItem(-1, null, null, "All Items ("+gi.size()+")", null, null, new Date(0), null, false));
 		for(GroupItem item : gi) {
 			String html = "<html><div style='text-align:right'>"+item.channel_title+"<br><div style='color:rgb(140,140,140)'>"+sdf.format(item.published)+"</div></div></html>";
 			groupItemModel.addRow(new Object[]{item.type, item.thumbnail, item, html, item.last_checked.getTime() != 0 ? sdf.format(item.last_checked):""});
@@ -1038,7 +1038,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 			public void loadVideo(MouseEvent e) {
 				Comment c = (Comment) cTable.getValueAt(cTable.getSelectedRow(), 2);
 				try {
-					Video v = db.getVideo(c.video_id);
+					Video v = db.getVideo(c.video_id, true);
 					ImageIcon thumb = v.thumbnail;
 					if(thumb != null && (thumb.getIconWidth() != 320 || thumb.getIconHeight() != 180)) {
 						thumb = new ImageIcon(thumb.getImage().getScaledInstance(320, 180, Image.SCALE_SMOOTH));
@@ -1110,9 +1110,9 @@ public class CommentSuite extends JFrame implements ActionListener {
 					Group g = (Group) commentGroup.getSelectedItem();
 					if(g != null) {
 						try {
-							List<GroupItem> items = db.getGroupItems(g.group_name);
+							List<GroupItem> items = db.getGroupItems(g.group_name, false);
 							itemGroup.removeAllItems();
-							itemGroup.addItem(new GroupItem(-1, null, null, "All Items ("+items.size()+")", null, null, new Date(0), null));
+							itemGroup.addItem(new GroupItem(-1, null, null, "All Items ("+items.size()+")", null, null, new Date(0), null, false));
 							for(GroupItem gi : items) {
 								itemGroup.addItem(gi);
 							}
@@ -1473,7 +1473,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 					if(item.id.videoId != null) youtube_id = item.id.videoId;
 					if(item.id.channelId != null) youtube_id = item.id.channelId;
 					if(item.id.playlistId != null) youtube_id = item.id.playlistId;
-					gi.add(new GroupItem(type_id, kind, youtube_id, item.snippet.title, item.snippet.channelTitle, item.snippet.publishedAt, new Date(0), item.snippet.thumbnails.default_thumb.url.toString()));
+					gi.add(new GroupItem(type_id, kind, youtube_id, item.snippet.title, item.snippet.channelTitle, item.snippet.publishedAt, new Date(0), item.snippet.thumbnails.default_thumb.url.toString(), true));
 					try {
 						refreshGroupTable();
 					} catch (SQLException | ParseException e) {
@@ -1893,7 +1893,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 			existingCommentIds.addAll(db.getCommentIDs(group.group_name));
 			existingChannelIds.addAll(db.getAllChannelIDs());
 			existingVideoGroups.addAll(db.getVideoGroups());
-			existingGroupItems.addAll(db.getGroupItems(group.group_name));
+			existingGroupItems.addAll(db.getGroupItems(group.group_name, false));
 			for(GroupItem gi : existingGroupItems) {
 				if(gi.type_id == 0) {
 					VideoGroup vg = new VideoGroup(gi.gitem_id, gi.youtube_id);
@@ -2085,7 +2085,7 @@ public class CommentSuite extends JFrame implements ActionListener {
 						updateChannels.add(channel);
 				}
 				if(channel == null) System.out.println("NULL CHANNEL");
-				Video video = new Video(itemSnip.id, channel, new Date(), itemSnip.snippet.publishedAt, itemSnip.snippet.title, itemSnip.snippet.description, itemStat.statistics.commentCount, itemStat.statistics.likeCount, itemStat.statistics.dislikeCount, itemStat.statistics.viewCount, itemSnip.snippet.thumbnails.medium.url.toString(), 200);
+				Video video = new Video(itemSnip.id, channel, new Date(), itemSnip.snippet.publishedAt, itemSnip.snippet.title, itemSnip.snippet.description, itemStat.statistics.commentCount, itemStat.statistics.likeCount, itemStat.statistics.dislikeCount, itemStat.statistics.viewCount, itemSnip.snippet.thumbnails.medium.url.toString(), 200, true);
 				if(!existingVideoIds.contains(itemSnip.id) && !videoListContainsId(insertVideos, itemSnip.id) && !videoListContainsId(updateVideos, itemSnip.id)) {
 					insertVideos.add(video);
 				} else {

@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
 
@@ -30,6 +31,7 @@ public class SearchResult extends AnchorPane {
 	
 	final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
 	final URL thumbUrl;
+	final Date publishedAt;
 	final String youtubeId;
 	final int type_id;
 	final String type;
@@ -62,23 +64,24 @@ public class SearchResult extends AnchorPane {
 		
 		thumbUrl = item.snippet.thumbnails.medium.url;
 		author = new Label(item.snippet.channelTitle);
+		publishedAt = item.snippet.publishedAt;
 		description = new Label("Published on "+sdf.format(item.snippet.publishedAt)+"  "+item.snippet.description);
 		published = new Label();
 		title = new Label(item.snippet.title);
 		if(item.id.videoId != null) {
 			type_id = 0;
-			type = "Video";
+			type = "video";
 			youtubeId = item.id.videoId;
 		} else if(item.id.channelId != null) {
 			type_id = 1;
-			type = "Channel";
+			type = "channel";
 			youtubeId = item.id.channelId;
 		} else if(item.id.playlistId != null) {
 			type_id = 2;
-			type = "Playlist";
+			type = "playlist";
 			youtubeId = item.id.playlistId;
 		} else {
-			type = "Error";
+			type = "error";
 			type_id = -1;
 			youtubeId = "";
 		}

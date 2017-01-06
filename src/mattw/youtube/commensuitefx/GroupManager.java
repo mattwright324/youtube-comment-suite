@@ -1,12 +1,29 @@
 package mattw.youtube.commensuitefx;
 
+import java.io.IOException;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringEscapeUtils;
+
+import com.google.gson.JsonSyntaxException;
 
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -14,13 +31,17 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
-import javafx.scene.chart.LineChart;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -30,9 +51,16 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import mattw.youtube.commentsuite.*;
+import mattw.youtube.datav3.YoutubeData;
+import mattw.youtube.datav3.list.ChannelsList;
+import mattw.youtube.datav3.list.CommentThreadsList;
+import mattw.youtube.datav3.list.CommentsList;
+import mattw.youtube.datav3.list.PlaylistItemsList;
+import mattw.youtube.datav3.list.VideosList;
 
 public class GroupManager extends StackPane {
 	
@@ -43,21 +71,28 @@ public class GroupManager extends StackPane {
 	public ObservableList<Video> v_list = FXCollections.observableArrayList();
 	
 	public TabPane tabs = new TabPane();
-	public Tab items, videos, analytics;
+	public Tab items, analytics;
+	public Label gi_label, v_label;
 	
 	public ExecutorService es;
 	public boolean refreshing = false;
 	public Button close;
 	
 	public Group group;
+	public int group_id;
+	public SuiteDatabase db;
+	public YoutubeData data;
 	
-	public GroupManager(Group g) {
+	public GroupManager(Group g, SuiteDatabase db, YoutubeData data) {
 		super();
 		manager = this;
+		this.db = db;
+		this.data = data;
 		
 		setMaxHeight(Double.MAX_VALUE);
 		setMaxWidth(Double.MAX_VALUE);
 		group = g;
+		group_id = g.group_id;
 		
 		VBox vbox = new VBox();
 		
@@ -83,7 +118,7 @@ public class GroupManager extends StackPane {
 		grid.getColumnConstraints().addAll(col1, col2);
 		items.setContent(grid);
 		
-		Label gi_label = new Label("0 items");
+		gi_label = new Label("Add some items to this group.");
 		gi_label.setMaxWidth(Double.MAX_VALUE);
 		gi_label.setAlignment(Pos.CENTER);
 		grid.add(gi_label, 0, 0);
@@ -94,18 +129,53 @@ public class GroupManager extends StackPane {
 		gi_table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 		gi_table.setItems(gi_list);
 		TableColumn<GroupItem, String> typeCol = new TableColumn<>("Type");
-		typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+		typeCol.setCellValueFactory(new PropertyValueFactory<>("groupType"));
+		typeCol.setCellFactory(col -> new TableCell<GroupItem, String>(){
+			public void updateItem(String item, boolean empty) {
+				if(empty || item == null) {
+					setText(null);
+				} else {
+					setText(item);
+				}
+				setAlignment(Pos.CENTER);
+			}
+		});
 		TableColumn<GroupItem, String> gi_titleCol = new TableColumn<>("Title");
-		gi_titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-		TableColumn<GroupItem, Long> gi_checked = new TableColumn<>("Last Checked");
-		gi_checked.setCellValueFactory(new PropertyValueFactory<>("last_checked"));
+		gi_titleCol.setCellValueFactory(new PropertyValueFactory<>("groupTitle"));
+		TableColumn<GroupItem, Long> gi_checkedCol = new TableColumn<>("Last checked");
+		gi_checkedCol.setCellValueFactory(new PropertyValueFactory<>("groupChecked"));
+		gi_checkedCol.setCellFactory(col -> new TableCell<GroupItem, Long>(){
+			private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+			public void updateItem(Long item, boolean empty) {
+				if(empty || item == null) {
+					setText(null);
+				} else {
+					setText(item > 0 ? sdf.format(new Date(item)) : "Never");
+				}
+				setAlignment(Pos.CENTER);
+			}
+		});
 		gi_table.getColumns().add(typeCol);
 		gi_table.getColumns().add(gi_titleCol);
-		gi_table.getColumns().add(gi_checked);
+		gi_table.getColumns().add(gi_checkedCol);
 		grid.add(gi_table, 0, 1);
 		GridPane.setVgrow(gi_table, Priority.ALWAYS);
 		
-		Label v_label = new Label("0 videos");
+		ContextMenu gi_menu = new ContextMenu();
+		MenuItem gi_open = new MenuItem("Open in Browser");
+		gi_open.setOnAction(e -> {
+			GroupItem gi = gi_table.getSelectionModel().getSelectedItem();
+			CommentSuiteFX.openInBrowser(gi.getYoutubeLink());
+		});
+		gi_menu.getItems().add(gi_open);
+		gi_table.setOnMouseClicked(e -> {
+			if(e.isPopupTrigger()) {
+				gi_menu.show(this, e.getScreenX(), e.getScreenY());
+			}
+		});
+		
+		
+		v_label = new Label("Refresh this group to get video data.");
 		v_label.setMaxWidth(Double.MAX_VALUE);
 		v_label.setAlignment(Pos.CENTER);
 		grid.add(v_label, 1, 0);
@@ -116,11 +186,93 @@ public class GroupManager extends StackPane {
 		v_table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 		v_table.setItems(v_list);
 		TableColumn<Video,String> v_titleCol = new TableColumn<>("Title");
-		v_titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+		v_titleCol.setCellValueFactory(new PropertyValueFactory<>("videoTitle"));
+		v_titleCol.setCellFactory(col -> new TableCell<Video, String>(){
+			public void updateItem(String item, boolean empty) {
+				if(empty || item == null) {
+					setText(null);
+				} else {
+					setText(item);
+				}
+				setAlignment(Pos.CENTER_LEFT);
+			}
+		});
+		TableColumn<Video,Video> v_aboutCol = new TableColumn<>("About");
+		v_aboutCol.setCellValueFactory(celldata -> new ReadOnlyObjectWrapper<Video>(celldata.getValue()));
+		v_aboutCol.setCellFactory(col -> new TableCell<Video,Video>(){
+			private VBox vbox;
+			private Label author;
+			private Label published;
+			private Label comments;
+			private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+			{
+				vbox = new VBox();
+				author = createLabel();
+				published = createLabel();
+				published.setStyle("-fx-color: lightgray");
+				published.setTextFill(Color.GOLDENROD);
+				comments = createLabel();
+				vbox.getChildren().addAll(author,published,comments);
+				setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+			}
+			private Label createLabel() {
+				Label label = new Label();
+				label.setMaxWidth(Double.MAX_VALUE);
+				label.setAlignment(Pos.CENTER);
+				VBox.setVgrow(label, Priority.ALWAYS);
+				return label;
+			}
+			public void updateItem(Video video, boolean empty) {
+				if(empty) {
+					setGraphic(null);
+				} else {
+					author.setText(video.channel != null ? video.channel.channel_name : "Not found.");
+					published.setText(sdf.format(video.publish_date));
+					comments.setText(video.http_code == 200 ? video.comment_count+" comments" : video.http_code == 403 ? "Comments Disabled" : "HTTP "+video.http_code);
+					if(video.http_code != 200) {
+						comments.setStyle("-fx-color: red");
+						vbox.setStyle("-fx-background-color: mistyrose");
+					} else {
+						comments.setStyle("");
+						vbox.setStyle("");
+					}
+					setGraphic(vbox);
+				}
+			}
+		});
+		TableColumn<Video,Long> v_checkedCol = new TableColumn<>("Last checked");
+		v_checkedCol.setCellValueFactory(new PropertyValueFactory<>("videoChecked"));
+		v_checkedCol.setCellFactory(col -> new TableCell<Video, Long>(){
+			private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+			public void updateItem(Long item, boolean empty) {
+				if(empty || item == null) {
+					setText(null);
+				} else {
+					setText(item > 0 ? sdf.format(new Date(item)) : "Never");
+				}
+				setAlignment(Pos.CENTER);
+			}
+		});
 		v_table.getColumns().add(v_titleCol);
+		v_table.getColumns().add(v_aboutCol);
+		v_table.getColumns().add(v_checkedCol);
 		grid.add(v_table, 1, 1);
 		GridPane.setConstraints(v_table, 1, 1, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS);
 		
+		ContextMenu v_menu = new ContextMenu();
+		MenuItem v_open = new MenuItem("Open in Browser");
+		v_open.setOnAction(e -> {
+			Video v = v_table.getSelectionModel().getSelectedItem();
+			CommentSuiteFX.openInBrowser(v.getYoutubeLink());
+		});
+		v_menu.getItems().add(v_open);
+		v_table.setOnMouseClicked(e -> {
+			if(e.isPopupTrigger()) {
+				v_menu.show(this, e.getScreenX(), e.getScreenY());
+			}
+		});
+		
+		reloadTables();
 		
 		analytics = new Tab("Analytics");
 		analytics.setClosable(false);
@@ -134,19 +286,42 @@ public class GroupManager extends StackPane {
 	public void reloadTables() {
 		gi_list.clear();
 		v_list.clear();
+		try {
+			group = db.getGroup(group_id);
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
+		try {
+			gi_list.addAll(db.getGroupItems(group.group_name, false));
+			if(!gi_list.isEmpty())
+				gi_label.setText(gi_list.size()+" items");
+			else
+				gi_label.setText("Add some items to this group.");
+		} catch (SQLException e) {
+			gi_label.setText(e.getClass().getName()+": "+e.getMessage());
+			e.printStackTrace();
+		}
+		try {
+			v_list.addAll(db.getVideos(group.group_name, false));
+			if(!v_list.isEmpty())
+				v_label.setText(v_list.size()+" videos");
+			else
+				v_label.setText("Refresh this group to get video data.");
+		} catch (SQLException | ParseException e) {
+			v_label.setText(e.getClass().getName()+": "+e.getMessage());
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean isRefreshing() {
 		return refreshing;
 	}
 	
-	// Overlay stackpane like the setup overlay but doesn't affect whole application.
-	// Make use of JavaFX graphs.
 	public void refresh() throws InterruptedException {
 		refreshing = true;
 		
 		StackPane stack = new StackPane();
-		stack.setStyle("-fx-background-color: linear-gradient(rgba(200,200,200,0.2), rgba(220,220,200,0.5), rgba(220,220,200,0.85), rgba(220,220,220,1))");
+		stack.setStyle("-fx-background-color: linear-gradient(rgba(200,200,200,0.2), rgba(220,220,200,0.9), rgba(220,220,200,0.95), rgba(220,220,220,1))");
 		stack.setMaxHeight(Double.MAX_VALUE);
 		stack.setMaxWidth(Double.MAX_VALUE);
 		getChildren().add(stack);
@@ -168,71 +343,436 @@ public class GroupManager extends StackPane {
 		status.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
 		grid.add(status, 1, 0);
 		
+		Label status2 = new Label();
+		grid.add(status2, 1, 1);
+		
 		NumberAxis xAxis = new NumberAxis();
 		xAxis.setLabel("Elapsed Time (s)");
 		NumberAxis yAxis = new NumberAxis();
-		LineChart<Number,Number> line = new LineChart<>(xAxis, yAxis);
+		AreaChart<Number,Number> chart = new AreaChart<>(xAxis, yAxis);
+		chart.setCreateSymbols(false);
 		XYChart.Series<Number,Number> vseries = new XYChart.Series<>();
 		vseries.setName("New Videos");
 		XYChart.Series<Number,Number> cseries = new XYChart.Series<>();
 		cseries.setName("New Comments");
-		line.getData().add(vseries);
-		line.getData().add(cseries);
-		line.setPrefWidth(600);
-		line.setPrefHeight(300);
-		grid.add(line, 0, 1, 2, 1);
+		XYChart.Series<Number, Number> rseries = new XYChart.Series<>();
+		rseries.setName("New Replies");
+		chart.getData().add(vseries);
+		chart.getData().add(cseries);
+		chart.getData().add(rseries);
+		chart.setPrefWidth(600);
+		chart.setPrefHeight(300);
+		grid.add(chart, 0, 2, 2, 1);
 		
 		HBox hbox = new HBox();
 		hbox.setAlignment(Pos.CENTER_RIGHT);
 		close = new Button("Close");
 		close.setDisable(true);
 		close.setOnAction(e -> {
+			vseries.getData().clear();
+			cseries.getData().clear();
 			getChildren().remove(stack);
 		});
 		hbox.getChildren().add(close);
-		grid.add(hbox, 0, 2, 2, 1);
-
+		grid.add(hbox, 0, 3, 2, 1);
+		
 		es = Executors.newCachedThreadPool();
 		Task<Void> task = new Task<Void>() {
+			
+			protected ElapsedTime timer = new ElapsedTime();
+			protected long last_second = -1;
+			protected long new_comments = 0;
+			protected long thread_progress = 0;
+			
+			protected Set<String> existingVideoIds = new HashSet<String>();
+			protected Set<String> existingCommentIds = new HashSet<String>();
+			protected Set<String> existingChannelIds = new HashSet<String>();
+			protected List<VideoGroup> existingVideoGroups = new ArrayList<VideoGroup>();
+			protected List<GroupItem> existingGroupItems = new ArrayList<GroupItem>();
+			
+			protected List<CommentThread> commentThreadIds = new ArrayList<CommentThread>();
+			
+			class CommentThread {
+				public String comment_id;
+				public String video_id;
+				public CommentThread(String comment_id, String video_id) {
+					this.comment_id = comment_id;
+					this.video_id = video_id; 
+				}
+			}
+			
+			protected List<Video> insertVideos = new ArrayList<Video>();
+			protected List<Video> updateVideos = new ArrayList<Video>();
+			protected List<Channel> insertChannels = new ArrayList<Channel>();
+			protected List<Channel> updateChannels = new ArrayList<Channel>();
+			protected List<VideoGroup> insertVideoGroups = new ArrayList<VideoGroup>();
+			
+			protected List<String> gitemVideos = new ArrayList<String>();
+			protected List<GroupItem> gitemChannels = new ArrayList<GroupItem>();
+			protected List<GroupItem> gitemPlaylists = new ArrayList<GroupItem>();
+			
+			protected Map<String, Channel> channels = new HashMap<String, Channel>();
+			
 			protected Void call() throws Exception {
-				Random rand = new Random();
-				long start = System.currentTimeMillis();
-				long last = 0;
-				long vcount = 0, ccount = 0;
-				long seconds = 0;
-				boolean videos_done = false;
-				do {
-					if(System.currentTimeMillis() - last >= 5000) {
-						final long t = seconds, v = vcount, c = ccount;
-						final boolean vd = videos_done;
-						System.out.println(t+", "+v+", "+c);
-						Platform.runLater(() -> {
-							if(vd == false)
-								vseries.getData().add(new XYChart.Data<>(t, v));
-							cseries.getData().add(new XYChart.Data<>(t, c));
-						});
-						last = System.currentTimeMillis();
-						seconds += 5;
+				timer.set();
+				
+				existingVideoIds.addAll(db.getAllVideoIds());
+				existingCommentIds.addAll(db.getCommentIDs(group.group_name));
+				existingChannelIds.addAll(db.getAllChannelIDs());
+				existingVideoGroups.addAll(db.getVideoGroups());
+				existingGroupItems.addAll(db.getGroupItems(group.group_name, false));
+				for(GroupItem gi : existingGroupItems) {
+					if(gi.type_id == 0) {
+						VideoGroup vg = new VideoGroup(gi.gitem_id, gi.youtube_id);
+						if(!existingVideoGroups.contains(vg)) {
+							insertVideoGroups.add(vg);
+						}
+						gitemVideos.add(gi.youtube_id);
+					} else if(gi.type_id == 1) {
+						gitemChannels.add(gi);
+					} else if(gi.type_id == 2) {
+						gitemPlaylists.add(gi);
 					}
-					if(System.currentTimeMillis() - start >= 15000) {
-						Platform.runLater(() -> {
-							status.setText("Part 2 of 2\tChecking for new commentThreads.");
-						});
-						ccount += rand.nextInt(50)+50;
-						videos_done = true;
-					} else if(System.currentTimeMillis() - start >= 0) {
-						vcount += rand.nextInt(4);
+				}
+				db.updateGroupItemsChecked(existingGroupItems, new Date());
+				
+				try {
+					db.con.setAutoCommit(false);
+					Platform.runLater(() -> {
+						status.setText("Part 1 of 3. Finding new videos.");
+						vseries.getData().add(new XYChart.Data<>(0, 0));
+					});
+					try {
+						System.out.println("1");
+						parseVideoItems(gitemVideos, -1);
+						System.out.println("2");
+						parseChannelItems(gitemChannels);
+						System.out.println("3");
+						parsePlaylistItems(gitemPlaylists);
+					} catch (JsonSyntaxException | IOException e) {
+						e.printStackTrace();
 					}
-					Thread.sleep(200);
-				} while(System.currentTimeMillis() - start < 60 * 1000);
+					Platform.runLater(() -> {
+						status.setText("Part 1 of 3. Inserting new videos (committing).");
+					});
+					db.insertVideos(insertVideos);
+					db.updateVideos(updateVideos);
+					db.insertVideoGroups(insertVideoGroups);
+					db.con.commit();
+					
+					clearAll(existingVideoIds, existingVideoGroups);
+					clearAll(insertVideos, updateVideos, insertVideoGroups);
+					clearAll(gitemVideos, gitemChannels, gitemPlaylists);
+					
+					Platform.runLater(() -> {
+						status.setText("Part 2 of 3. Finding new comment threads.");
+					});
+					List<String> videosInGroup = db.getVideoIds(group.group_name);
+					videosInGroup.parallelStream().forEach(videoId -> {
+						ElapsedTime clock = new ElapsedTime();
+						clock.set();
+						try {
+							List<Comment> comments = getComments(videoId);
+							if(comments.size() > 0) {
+								new_comments += comments.size();
+								db.insertComments(comments);
+								final long t = timer.getSeconds(), c = new_comments;
+								if(t > last_second+3) {
+									last_second = t;
+									System.out.println(t);
+									Platform.runLater(() -> {
+										cseries.getData().add(new XYChart.Data<>(t, c));
+									});
+								}
+							}
+						} catch (JsonSyntaxException | SQLException e) {
+							e.printStackTrace();
+						} catch (Throwable e) {
+							System.out.println("Something fucked up. "+videoId);
+							e.printStackTrace();
+						}
+					});
+					Platform.runLater(() -> {
+						status.setText("Part 2 of 3. Finding new comment threads (committing).");
+					});
+					db.con.commit();
+					
+					Platform.runLater(() -> {
+						status.setText("Part 3 of 3. Finding new comment replies.");
+					});
+					commentThreadIds.parallelStream().forEach(thread -> {
+						ElapsedTime clock = new ElapsedTime();
+						clock.set();
+						try {
+							List<Comment> replies = getReplies(thread);
+							thread_progress++;
+							final long prog = thread_progress;
+							Platform.runLater(() -> {
+								status2.setText(prog+" / "+commentThreadIds.size()+" comment threads");
+							});
+							if(replies.size() > 0) {
+								new_comments += replies.size();
+								db.insertComments(replies);
+								final long t = timer.getSeconds(), c = new_comments;
+								if(t > last_second+3) {
+									last_second = t;
+									System.out.println(t);
+									Platform.runLater(() -> {
+										rseries.getData().add(new XYChart.Data<>(t, c));
+									});
+								}
+							}
+						} catch (JsonSyntaxException e) {
+							e.printStackTrace();
+						} catch (SQLException e) {
+							e.printStackTrace();
+						} catch (Throwable e) {
+							System.out.println("Something fucked up. "+thread.comment_id);
+							e.printStackTrace();
+						}
+					});
+					Platform.runLater(() -> {
+						status.setText("Part 3 of 3. Inserting channels and committing.");
+					});
+					db.insertChannels(insertChannels);
+					db.updateChannels(updateChannels);
+					db.con.commit();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				clearAll(insertChannels, updateChannels, existingCommentIds, existingChannelIds);
+				channels.clear();
+				
+				final String time = timer.getTimeString();
 				Platform.runLater(() -> {
 					status.setText("Complete.");
+					status2.setText("Elapsed time: "+time);
+					reloadTables();
 				});
 				refreshing = false;
 				close.setDisable(false);
 				CommentSuiteFX.app.setupWithManager(manager);
 				return null;
 			}
+			
+			protected boolean videoListContainsId(List<Video> list, String id) {
+				for(Video video : list)
+					if(video.video_id.equals(id)) return true;
+				return false;
+			}
+			
+			protected void clearAll(Collection<?>... lists) {
+				for(Collection<?> list : lists) {
+					list.clear();
+				}
+			}
+			
+			protected void parseChannelItems(List<GroupItem> channels) throws JsonSyntaxException, IOException {
+				System.out.println("2a");
+				for(GroupItem gi : channels) {
+					System.out.println("2a1");
+					ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_CONTENT_DETAILS, gi.youtube_id, ChannelsList.MAX_RESULTS, "");
+					System.out.println("2a2");
+					String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
+					System.out.println("2a3");
+					handlePlaylist(uploadPlaylistId, gi.gitem_id);
+				}
+			}
+			
+			protected void parsePlaylistItems(List<GroupItem> playlists) throws JsonSyntaxException, IOException {
+				for(GroupItem gi : playlists) {
+					handlePlaylist(gi.youtube_id, gi.gitem_id);
+				}
+			}
+			
+			protected void handlePlaylist(final String playlistId, int gitem_id) throws JsonSyntaxException, IOException {
+				System.out.println("2ab");
+				PlaylistItemsList pil = null;
+				String pageToken = "";
+				List<String> videos = new ArrayList<String>();
+				do {
+					pil = data.getPlaylistItems(PlaylistItemsList.PART_SNIPPET, playlistId, PlaylistItemsList.MAX_RESULTS, pageToken);
+					pageToken = pil.nextPageToken;
+					for(PlaylistItemsList.Item item : pil.items) {
+						if(item.hasSnippet()) {
+							videos.add(item.snippet.resourceId.videoId);
+						}
+					}
+				} while (pil.nextPageToken != null);
+				parseVideoItems(videos, gitem_id);
+			}
+			
+			protected void parseVideoItems(List<String> videos, int gitem_id) throws JsonSyntaxException, IOException {
+				System.out.println("2abc");
+				for(int i=0; i<videos.size(); i += 50) {
+					List<String> sublist = videos.subList(i, i+50 < videos.size() ? i+50 : videos.size());
+					if(gitem_id != -1) {
+						for(String v : sublist) {
+							VideoGroup vg = new VideoGroup(gitem_id, v);
+							if(!existingVideoGroups.contains(vg)) {
+								if(!insertVideoGroups.contains(vg)) {
+									insertVideoGroups.add(vg);
+								}
+							}
+						}
+					}
+					String ids = sublist.stream().filter(id -> !videoListContainsId(insertVideos, id) && !videoListContainsId(updateVideos, id)).collect(Collectors.joining(","));
+					handleVideos(ids);
+				}
+			}
+			
+			protected void handleVideos(final String ids) throws JsonSyntaxException, IOException {
+				System.out.println("2abcd "+ids);
+				VideosList snip = data.getVideosById(VideosList.PART_SNIPPET, ids, VideosList.MAX_RESULTS, "");
+				VideosList stats = data.getVideosById(VideosList.PART_STATISTICS, ids, VideosList.MAX_RESULTS, "");
+				
+				Channel channel;
+				for(int i=0; i<snip.items.length; i++) {
+					VideosList.Item itemSnip = snip.items[i];
+					VideosList.Item itemStat = stats.items[i];
+					if(channels.containsKey(itemSnip.snippet.channelId)) {
+						channel = channels.get(itemSnip.snippet.channelId);
+					} else {
+						ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_SNIPPET, itemSnip.snippet.channelId, 1, "");
+						ChannelsList.Item item = cl.items[0];
+						channel = new Channel(itemSnip.snippet.channelId, StringEscapeUtils.unescapeHtml4(item.snippet.title), item.snippet.thumbnails.default_thumb.url.toString(), true);
+						channels.put(itemSnip.snippet.channelId, channel);
+					}
+					if(!existingChannelIds.contains(itemSnip.snippet.channelId)) {
+						if(!insertChannels.contains(channel))
+							insertChannels.add(channel);
+					} else {
+						if(!updateChannels.contains(channel))
+							updateChannels.add(channel);
+					}
+					if(channel == null) System.out.println("NULL CHANNEL");
+					Video video = new Video(itemSnip.id, channel, new Date(), itemSnip.snippet.publishedAt, itemSnip.snippet.title, itemSnip.snippet.description, itemStat.statistics.commentCount, itemStat.statistics.likeCount, itemStat.statistics.dislikeCount, itemStat.statistics.viewCount, itemSnip.snippet.thumbnails.medium.url.toString(), 200, true);
+					if(!existingVideoIds.contains(itemSnip.id) && !videoListContainsId(insertVideos, itemSnip.id) && !videoListContainsId(updateVideos, itemSnip.id)) {
+						insertVideos.add(video);
+					} else {
+						if(!videoListContainsId(updateVideos, itemSnip.id))
+							updateVideos.add(video);
+					}
+				}
+				final long t = timer.getSeconds(), v = insertVideos.size();
+				Platform.runLater(() -> {
+					vseries.getData().add(new XYChart.Data<>(t, v));
+				});
+			}
+			
+			protected List<Comment> getComments(final String videoId) throws JsonSyntaxException {
+				List<Comment> comments = new ArrayList<Comment>();
+				CommentThreadsList snippet = null;
+				String snipToken = "";
+				int fails = 0;
+				do {
+					try {
+						snippet = data.getCommentThreadsByVideoId(CommentThreadsList.PART_SNIPPET, videoId, CommentThreadsList.MAX_RESULTS, snipToken);
+						snipToken = snippet.nextPageToken;
+						
+						for(CommentThreadsList.Item item : snippet.items) {
+							if(item.hasSnippet()) {
+								if(item.snippet.totalReplyCount > 0) {
+									commentThreadIds.add(new CommentThread(item.id, videoId));
+								}
+								if(!existingCommentIds.contains(item.id)) {
+									CommentsList.Item tlc = item.snippet.topLevelComment;
+									Comment c = createComment(tlc, false, item.snippet.totalReplyCount);
+									comments.add(c);
+								}
+							}
+						}
+					} catch (IOException e) {
+						fails++;
+						if(e.getMessage().contains("HTTP response code")) {
+							Pattern p = Pattern.compile("([0-9]{3}) for URL");
+							Matcher m = p.matcher(e.getMessage());
+							if(m.find()) {
+								int code = Integer.parseInt(m.group(1));
+								if(code == 400) { // Retry / Bad request.
+									System.err.println("Bad Request (400): Retry #"+fails+"  http://youtu.be/"+videoId);
+								} else if(code == 403) { // Comments Disabled or Forbidden
+									System.err.println("Comments Disabled (403): http://youtu.be/"+videoId);
+									try {
+										db.updateVideoHttpCode(videoId, 403);
+									} catch (SQLException e1) {}
+									break;
+								} else if(code == 404) { // Not found.
+									System.err.println("Not found (404): http://youtu.be/"+videoId);
+									try {
+										db.updateVideoHttpCode(videoId, 403);
+									} catch (SQLException e1) {}
+									break;
+								} else { // Unknown error.
+									System.err.println("Unknown Error ("+code+"): http://youtu.be/"+videoId);
+									try {
+										db.updateVideoHttpCode(videoId, code);
+									} catch (SQLException e1) {
+										e1.printStackTrace();
+									}
+									break;
+								}
+							}
+						}
+					}
+				} while ((snippet == null || snippet.nextPageToken != null) && fails < 5);
+				return comments;
+			}
+			
+			protected List<Comment> getReplies(final CommentThread thread) throws JsonSyntaxException {
+				List<Comment> replies = new ArrayList<Comment>();
+				CommentsList cl = null;
+				String pageToken = "";
+				int fails = 0;
+				do {
+					try {
+						cl = data.getCommentsByParentId(thread.comment_id, CommentsList.MAX_RESULTS, pageToken);
+						pageToken = cl.nextPageToken;
+						for(CommentsList.Item reply : cl.items) {
+							if(!existingCommentIds.contains(reply.id)) {
+								Comment c = createComment(reply, true, -1);
+								c.video_id = thread.video_id;
+								replies.add(c);
+							}
+						}
+					} catch (IOException e) {
+						fails++;
+					}
+				} while (cl.nextPageToken != null && fails < 5);
+				return replies;
+			}
+			
+			protected Comment createComment(CommentsList.Item item, boolean isReply, int replyCount) {
+				if(item.hasSnippet()) {
+					if(item.snippet.authorChannelId != null && item.snippet.authorChannelId.value != null) {
+						Channel channel;
+						String channelId = item.snippet.authorChannelId.value;
+						if(channelId == null) System.out.println("NULL CHANNELID");
+						if(channels.containsKey(channelId)) {
+							channel = channels.get(channelId);
+						} else {
+							channel = new Channel(channelId, StringEscapeUtils.unescapeHtml4(item.snippet.authorDisplayName), item.snippet.authorProfileImageUrl, false);
+							channels.put(channelId, channel);
+						}
+						if(!existingChannelIds.contains(channelId)) {
+							if(!insertChannels.contains(channel))
+								insertChannels.add(channel);
+						} else {
+							if(!updateChannels.contains(channel))
+								updateChannels.add(channel);
+						}
+						Comment comment = null;
+						if(isReply) {
+							comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, StringEscapeUtils.unescapeHtml4(item.snippet.textDisplay), item.snippet.likeCount, replyCount, isReply, item.snippet.parentId);
+						} else {
+							comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, StringEscapeUtils.unescapeHtml4(item.snippet.textDisplay), item.snippet.likeCount, replyCount, isReply, null);
+						}
+						return comment;
+					}
+				}
+				return null;
+			}
+			
 		};
 		es.execute(task);
 		es.shutdown();

@@ -42,7 +42,7 @@ public class Channel {
 			e.printStackTrace();
 		}
 		if(channel_profile == null) {
-			channel_profile = CommentSuite.window.imgBlankProfile;
+			channel_profile = null;
 		} else {
 			channel_profile = new ImageIcon(channel_profile.getImage().getScaledInstance((int) (24.0 * channel_profile.getIconWidth() / channel_profile.getIconHeight()), 24, 0));
 		}
