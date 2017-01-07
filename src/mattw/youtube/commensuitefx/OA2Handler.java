@@ -42,6 +42,8 @@ public class OA2Handler {
 						CommentSuiteFX.app.refreshTokens();
 						tryagain = true;
 					}
+				} else if(response instanceof CommentThreadsList.Item) {
+					
 				}
 			} while(response instanceof GlobalDomainError && tryagain);
 		} catch (IOException e1) {
@@ -65,6 +67,8 @@ public class OA2Handler {
 						CommentSuiteFX.app.refreshTokens();
 						tryagain = true;
 					}
+				} else if(response instanceof CommentsList.Item) {
+					
 				}
 			} while(response instanceof GlobalDomainError && tryagain);
 		} catch (IOException e1) {
@@ -199,6 +203,7 @@ public class OA2Handler {
 				.data("grant_type", "refresh_token")
 				.post();
 		OA2Tokens new_tokens = gson.fromJson(doc.text(), OA2Tokens.class);
+		new_tokens.setRefreshToken(old_tokens.refresh_token);
 		return new_tokens;
 	}
 	

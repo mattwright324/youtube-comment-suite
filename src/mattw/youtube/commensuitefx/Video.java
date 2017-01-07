@@ -1,4 +1,4 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commensuitefx;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -6,7 +6,6 @@ import java.net.URL;
 import java.util.Date;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
@@ -28,10 +27,14 @@ public class Video {
 	public int http_code;
 	
 	public boolean needImage = false;
-	public ImageIcon thumbnail;
-	public ImageIcon small_thumb;
+	public BufferedImage buffered_thumb;
 	public long comment_count = 0;
 	private File thumbs = new File("Thumbs/");
+	
+	public Video(String video_id, String video_title) {
+		this.video_id = video_id;
+		this.video_title = video_title;
+	}
 	
 	public Video(String video_id, Channel channel, Date grab_date, Date publish_date, String video_title, String video_desc, long total_comments, long total_likes, long total_dislikes, long total_views, String thumb_url, int http_code, boolean needImage) {
 		this.video_id = video_id;
@@ -55,20 +58,17 @@ public class Video {
 		File thumbFile = new File(thumbs, video_id+".jpg");
 		try {
 			if(thumbFile.exists()) {
-				thumbnail = new ImageIcon(ImageIO.read(thumbFile));
+				buffered_thumb = ImageIO.read(thumbFile);
 			} else {
 				if(thumb_url != null && !thumb_url.equals("")) {
 					System.out.println("Thumbnail not found ["+video_id+"]\n    Attempting to download from url.");
-					BufferedImage bi = ImageIO.read(new URL(thumb_url));
-					ImageIO.write(bi, "jpg", thumbFile);
-					thumbnail = new ImageIcon(bi);
+					buffered_thumb = ImageIO.read(new URL(thumb_url));
+					ImageIO.write(buffered_thumb, "jpg", thumbFile);
 				}
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-		if(thumbnail == null) thumbnail = CommentSuite.window.imgThumbPlaceholder;
-		small_thumb = new ImageIcon(thumbnail.getImage().getScaledInstance((int) (45.0 * thumbnail.getIconWidth() / thumbnail.getIconHeight())+1, 45, 0));
 	}
 	
 	public String getVideoTitle() {

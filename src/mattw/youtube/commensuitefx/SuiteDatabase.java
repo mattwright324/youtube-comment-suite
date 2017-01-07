@@ -1,4 +1,4 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commensuitefx;
 
 import java.io.File;
 import java.sql.Connection;
@@ -103,18 +103,18 @@ public class SuiteDatabase {
 	}
 	
 	public void clean() throws SQLException {
-		if(!con.getAutoCommit())
+		if(!con.getAutoCommit()) {
 			con.commit();
-		con.setAutoCommit(true);
+			con.setAutoCommit(true);
+		}
 		s.execute("VACUUM");
 	}
 	
 	public void dropAllTables() throws SQLException {
-		if(!con.getAutoCommit())
+		if(!con.getAutoCommit()) {
 			con.commit();
-		System.out.println(con.getAutoCommit());
-		con.setAutoCommit(true);
-		System.out.println(con.getAutoCommit());
+			con.setAutoCommit(true);
+		}
 		for(String table : "gitem_type,gitem_list,groups,group_gitem,video_group,videos,comments,channels".split(","))
 			s.executeUpdate("DROP TABLE IF EXISTS "+table);
 	}
@@ -144,12 +144,12 @@ public class SuiteDatabase {
 		}
 		ps.executeBatch();
 		System.out.println("Inserted "+comments.size()+" comments");
+		ps.close();
 	}
 	
 	public List<String> getCommentIDs(String group_name) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("SELECT comment_id FROM comments "
-				+ "LEFT JOIN videos ON videos.video_id = comments.video_id "
-				+ "WHERE videos.video_id IN ( "
+				+ "WHERE comments.video_id IN ( "
 				+ "    SELECT video_id FROM video_group "
 				+ "    LEFT JOIN group_gitem ON video_group.gitem_id = group_gitem.gitem_id "
 				+ "    LEFT JOIN groups ON groups.group_id = group_gitem.group_id "
@@ -161,10 +161,35 @@ public class SuiteDatabase {
 		while(rs.next()) {
 			list.add(rs.getString("comment_id"));
 		}
+		ps.close();
+		rs.close();
 		return list;
 	}
 	
+	public Map<String,Long> getCommentThreadReplies(String group_name) throws SQLException {
+		PreparedStatement ps = con.prepareStatement("SELECT comment_id, reply_count FROM comments "
+				+ "WHERE comments.video_id IN ( "
+				+ "    SELECT video_id FROM video_group "
+				+ "    LEFT JOIN group_gitem USING (gitem_id) "
+				+ "    LEFT JOIN groups USING (group_id) "
+				+ "    WHERE group_name = ?)"
+				+ "AND is_reply = ?");
+		ps.setString(1, group_name);
+		ps.setBoolean(2, false);
+		ResultSet rs = ps.executeQuery();
+		Map<String,Long> list = new HashMap<String,Long>();
+		while(rs.next()) {
+			list.put(rs.getString("comment_id"), rs.getLong("reply_count"));
+		}
+		ps.close();
+		rs.close();
+		return list;
+	}
 	
+	public class CommentData {
+		public String comment_id;
+		public long reply_count;
+	}
 	
 	public List<Comment> getCommentTree(String commentId) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM comments "
@@ -187,6 +212,8 @@ public class SuiteDatabase {
 			Comment comment = new Comment(rs.getString("comment_id"), author, rs.getString("video_id"), new Date(rs.getLong("comment_date")), rs.getString("comment_text"), rs.getLong("comment_likes"), rs.getLong("reply_count"), rs.getBoolean("is_reply"), rs.getString("parent_id"));
 			list.add(comment);
 		}
+		ps.close();
+		rs.close();
 		return list;
 	}
 	
@@ -267,6 +294,8 @@ public class SuiteDatabase {
 			}
 			count++;
 		}
+		ps.close();
+		rs.close();
 		return new CommentSearch(count, list);
 	}
 	
@@ -291,6 +320,7 @@ public class SuiteDatabase {
 		}
 		ps.executeBatch();
 		System.out.println("Inserted "+channels.size()+" channels");
+		ps.close();
 	}
 	
 	public void updateChannels(List<Channel> channels) throws SQLException {
@@ -309,6 +339,7 @@ public class SuiteDatabase {
 		System.out.println("Updating "+channels.size()+" channels");
 		ps.executeBatch();
 		System.out.println("Updated "+channels.size()+" channels");
+		ps.close();
 	}
 	
 	public List<String> getAllChannelIDs() throws SQLException {
@@ -318,6 +349,7 @@ public class SuiteDatabase {
 		while(rs.next()) {
 			list.add(rs.getString("channel_id"));
 		}
+		rs.close();
 		return list;
 	}
 	
@@ -346,6 +378,7 @@ public class SuiteDatabase {
 		}
 		ps.executeBatch();
 		System.out.println("Inserted "+videos.size()+" videos");
+		ps.close();
 	}
 	
 	public void updateVideos(List<Video> videos) throws SQLException {
@@ -373,6 +406,7 @@ public class SuiteDatabase {
 		}
 		ps.executeBatch();
 		System.out.println("Updated "+videos.size()+" videos");
+		ps.close();
 	}
 	
 	public List<String> getAllVideoIds() throws SQLException {
@@ -381,6 +415,7 @@ public class SuiteDatabase {
 		while(rs.next()) {
 			list.add(rs.getString("video_id"));
 		}
+		rs.close();
 		return list;
 	}
 	
@@ -399,6 +434,8 @@ public class SuiteDatabase {
 		while(rs.next()) {
 			list.add(rs.getString("video_id"));
 		}
+		ps.close();
+		rs.close();
 		return list;
 	}
 	
@@ -416,6 +453,8 @@ public class SuiteDatabase {
 			video.setCommentCount(rs.getLong("comment_count"));
 			return video;
 		}
+		ps.close();
+		rs.close();
 		return null;
 	}
 	
@@ -449,6 +488,8 @@ public class SuiteDatabase {
 			video.setCommentCount(rs.getLong("comment_count"));
 			list.add(video);
 		}
+		rs.close();
+		ps.close();
 		return list;
 	}
 	
@@ -458,6 +499,7 @@ public class SuiteDatabase {
 		ps.setInt(1, code);
 		ps.setString(2, video_id);
 		ps.executeUpdate();
+		ps.close();
 	}
 	
 	/* TODO
@@ -469,6 +511,7 @@ public class SuiteDatabase {
 		ps.setString(1, name);
 		ps.executeUpdate();
 		System.out.println("Created new group ["+name+"]");
+		ps.close();
 	}
 	
 	public void deleteGroup(String group_name) throws SQLException {
@@ -532,6 +575,7 @@ public class SuiteDatabase {
 			PreparedStatement ps_group = con.prepareStatement("DELETE FROM groups WHERE group_id = ?;");
 			ps_group.setInt(1, g.group_id);
 			System.out.println(ps_group.executeUpdate());
+			ps_group.close();
 		}
 		
 		System.out.println("Deleting channel profile thumbs.");
@@ -552,6 +596,16 @@ public class SuiteDatabase {
 		System.out.println("Deleting CHANNELS entries.");
 		PreparedStatement ps_channels = con.prepareStatement("DELETE FROM channels WHERE channel_id NOT IN (SELECT channel_id FROM comments) AND channel_id NOT IN (SELECT channel_id FROM videos)");
 		System.out.println(ps_channels.executeUpdate());
+		
+		ps_vgroup.close();
+		ps_comments.close();
+		ps_video.close();
+		ps_gitem.close();
+		ps_ggitem.close();
+		ps_channels.close();
+		ps1.close();
+		ps.close();
+		rs.close();
 	}
 	
 	public Group getGroup(int group_id) throws SQLException {
@@ -559,8 +613,13 @@ public class SuiteDatabase {
 		q.setInt(1, group_id);
 		ResultSet rs = q.executeQuery();
 		if(rs.next()) {
-			return new Group(rs.getInt("group_id"), rs.getString("group_name"));
+			Group g = new Group(rs.getInt("group_id"), rs.getString("group_name"));
+			q.close();
+			rs.close();
+			return g;
 		} else {
+			q.close();
+			rs.close();
 			return null;
 		}
 	}
@@ -570,8 +629,13 @@ public class SuiteDatabase {
 		q.setString(1, group_name);
 		ResultSet rs = q.executeQuery();
 		if(rs.next()) {
-			return new Group(rs.getInt("group_id"), rs.getString("group_name"));
+			Group g = new Group(rs.getInt("group_id"), rs.getString("group_name"));
+			q.close();
+			rs.close();
+			return g;
 		} else {
+			q.close();
+			rs.close();
 			return null;
 		}
 	}
@@ -582,6 +646,7 @@ public class SuiteDatabase {
 		while(rs.next()) {
 			groups.add(new Group(rs.getInt("group_id"), rs.getString("group_name")));
 		}
+		rs.close();
 		return groups;
 	}
 	
@@ -590,6 +655,7 @@ public class SuiteDatabase {
 		ps.setString(1, new_name);
 		ps.setString(2, group_name);
 		ps.executeUpdate();
+		ps.close();
 	}
 	
 	/* TODO
@@ -624,6 +690,8 @@ public class SuiteDatabase {
 		ps.executeBatch();
 		ps1.executeBatch();
 		System.out.println("Inserted "+items.size()+" Group Items");
+		ps.close();
+		ps1.close();
 	}
 	
 	public void updateGroupItemsChecked(Collection<GroupItem> items, Date date) throws SQLException {
@@ -634,6 +702,7 @@ public class SuiteDatabase {
 			ps.addBatch();
 		}
 		ps.executeBatch();
+		ps.close();
 	}
 	
 	public void deleteGroupItems(Collection<GroupItem> items) throws SQLException {
@@ -655,6 +724,8 @@ public class SuiteDatabase {
 			gi.setID(rs.getInt("gitem_id"));
 			list.add(gi);
 		}
+		rs.close();
+		ps.close();
 		return list;
 	}
 	
@@ -672,6 +743,8 @@ public class SuiteDatabase {
 		System.out.println("Inserting "+video_groups.size()+" video groups");
 		ps.executeBatch();
 		System.out.println("Inserted "+video_groups.size()+" video groups");
+		ps.close();
+		ps.close();
 	}
 	
 	public List<VideoGroup> getVideoGroups() throws SQLException {
@@ -680,6 +753,7 @@ public class SuiteDatabase {
 		while(rs.next()) {
 			list.add(new VideoGroup(rs.getInt("gitem_id"), rs.getString("video_id")));
 		}
+		rs.close();
 		return list;
 	}
 	

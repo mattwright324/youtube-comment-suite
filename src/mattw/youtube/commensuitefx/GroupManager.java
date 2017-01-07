@@ -54,7 +54,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import mattw.youtube.commentsuite.*;
 import mattw.youtube.datav3.YoutubeData;
 import mattw.youtube.datav3.list.ChannelsList;
 import mattw.youtube.datav3.list.CommentThreadsList;
@@ -338,7 +337,7 @@ public class GroupManager extends StackPane {
 		label.setFont(Font.font("Tahoma", FontWeight.BOLD, 20));
 		grid.add(label, 0, 0);
 		
-		Label status = new Label("Part 1 of 2. Checking for new videos.");
+		Label status = new Label("Part 1 of 3. Checking for new videos.");
 		status.setAlignment(Pos.CENTER);
 		status.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
 		grid.add(status, 1, 0);
@@ -383,6 +382,7 @@ public class GroupManager extends StackPane {
 			protected long last_second = -1;
 			protected long new_comments = 0;
 			protected long thread_progress = 0;
+			protected long video_progress = 0;
 			
 			protected Set<String> existingVideoIds = new HashSet<String>();
 			protected Set<String> existingCommentIds = new HashSet<String>();
@@ -391,6 +391,7 @@ public class GroupManager extends StackPane {
 			protected List<GroupItem> existingGroupItems = new ArrayList<GroupItem>();
 			
 			protected List<CommentThread> commentThreadIds = new ArrayList<CommentThread>();
+			protected Map<String, Long> commentThreadReplies;
 			
 			class CommentThread {
 				public String comment_id;
@@ -421,6 +422,9 @@ public class GroupManager extends StackPane {
 				existingChannelIds.addAll(db.getAllChannelIDs());
 				existingVideoGroups.addAll(db.getVideoGroups());
 				existingGroupItems.addAll(db.getGroupItems(group.group_name, false));
+				System.out.println("a");
+				commentThreadReplies = db.getCommentThreadReplies(group.group_name);
+				System.out.println("b");
 				for(GroupItem gi : existingGroupItems) {
 					if(gi.type_id == 0) {
 						VideoGroup vg = new VideoGroup(gi.gitem_id, gi.youtube_id);
@@ -443,11 +447,8 @@ public class GroupManager extends StackPane {
 						vseries.getData().add(new XYChart.Data<>(0, 0));
 					});
 					try {
-						System.out.println("1");
 						parseVideoItems(gitemVideos, -1);
-						System.out.println("2");
 						parseChannelItems(gitemChannels);
-						System.out.println("3");
 						parsePlaylistItems(gitemPlaylists);
 					} catch (JsonSyntaxException | IOException e) {
 						e.printStackTrace();
@@ -464,8 +465,10 @@ public class GroupManager extends StackPane {
 					clearAll(insertVideos, updateVideos, insertVideoGroups);
 					clearAll(gitemVideos, gitemChannels, gitemPlaylists);
 					
+					final long t = timer.getSeconds();
 					Platform.runLater(() -> {
-						status.setText("Part 2 of 3. Finding new comment threads.");
+						cseries.getData().add(new XYChart.Data<>(t, 0));
+						status.setText("Part 2 of 3. Finding new comments.");
 					});
 					List<String> videosInGroup = db.getVideoIds(group.group_name);
 					videosInGroup.parallelStream().forEach(videoId -> {
@@ -473,15 +476,20 @@ public class GroupManager extends StackPane {
 						clock.set();
 						try {
 							List<Comment> comments = getComments(videoId);
+							video_progress++;
+							final long prog = video_progress;
+							Platform.runLater(() -> {
+								status2.setText(prog+" / "+videosInGroup.size()+" videos");
+							});
 							if(comments.size() > 0) {
 								new_comments += comments.size();
 								db.insertComments(comments);
-								final long t = timer.getSeconds(), c = new_comments;
-								if(t > last_second+3) {
-									last_second = t;
+								final long t2 = timer.getSeconds(), c = new_comments;
+								if(t2 > last_second+3) {
+									last_second = t2;
 									System.out.println(t);
 									Platform.runLater(() -> {
-										cseries.getData().add(new XYChart.Data<>(t, c));
+										cseries.getData().add(new XYChart.Data<>(t2, c));
 									});
 								}
 							}
@@ -492,8 +500,11 @@ public class GroupManager extends StackPane {
 							e.printStackTrace();
 						}
 					});
+					final long t3 = timer.getSeconds(), c = new_comments;
 					Platform.runLater(() -> {
-						status.setText("Part 2 of 3. Finding new comment threads (committing).");
+						cseries.getData().add(new XYChart.Data<>(t3, c));
+						rseries.getData().add(new XYChart.Data<>(t3, c));
+						status.setText("Part 2 of 3. Finding new comments (committing).");
 					});
 					db.con.commit();
 					
@@ -513,12 +524,12 @@ public class GroupManager extends StackPane {
 							if(replies.size() > 0) {
 								new_comments += replies.size();
 								db.insertComments(replies);
-								final long t = timer.getSeconds(), c = new_comments;
-								if(t > last_second+3) {
-									last_second = t;
-									System.out.println(t);
+								final long t1 = timer.getSeconds(), c1 = new_comments;
+								if(t1 > last_second+3) {
+									last_second = t1;
+									System.out.println(t1);
 									Platform.runLater(() -> {
-										rseries.getData().add(new XYChart.Data<>(t, c));
+										rseries.getData().add(new XYChart.Data<>(t1, c1));
 									});
 								}
 							}
@@ -531,7 +542,9 @@ public class GroupManager extends StackPane {
 							e.printStackTrace();
 						}
 					});
+					final long t2 = timer.getSeconds(), c2 = new_comments;
 					Platform.runLater(() -> {
+						rseries.getData().add(new XYChart.Data<>(t2, c2));
 						status.setText("Part 3 of 3. Inserting channels and committing.");
 					});
 					db.insertChannels(insertChannels);
@@ -568,13 +581,9 @@ public class GroupManager extends StackPane {
 			}
 			
 			protected void parseChannelItems(List<GroupItem> channels) throws JsonSyntaxException, IOException {
-				System.out.println("2a");
 				for(GroupItem gi : channels) {
-					System.out.println("2a1");
 					ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_CONTENT_DETAILS, gi.youtube_id, ChannelsList.MAX_RESULTS, "");
-					System.out.println("2a2");
 					String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
-					System.out.println("2a3");
 					handlePlaylist(uploadPlaylistId, gi.gitem_id);
 				}
 			}
@@ -586,7 +595,6 @@ public class GroupManager extends StackPane {
 			}
 			
 			protected void handlePlaylist(final String playlistId, int gitem_id) throws JsonSyntaxException, IOException {
-				System.out.println("2ab");
 				PlaylistItemsList pil = null;
 				String pageToken = "";
 				List<String> videos = new ArrayList<String>();
@@ -603,7 +611,6 @@ public class GroupManager extends StackPane {
 			}
 			
 			protected void parseVideoItems(List<String> videos, int gitem_id) throws JsonSyntaxException, IOException {
-				System.out.println("2abc");
 				for(int i=0; i<videos.size(); i += 50) {
 					List<String> sublist = videos.subList(i, i+50 < videos.size() ? i+50 : videos.size());
 					if(gitem_id != -1) {
@@ -622,7 +629,6 @@ public class GroupManager extends StackPane {
 			}
 			
 			protected void handleVideos(final String ids) throws JsonSyntaxException, IOException {
-				System.out.println("2abcd "+ids);
 				VideosList snip = data.getVideosById(VideosList.PART_SNIPPET, ids, VideosList.MAX_RESULTS, "");
 				VideosList stats = data.getVideosById(VideosList.PART_STATISTICS, ids, VideosList.MAX_RESULTS, "");
 				
@@ -672,7 +678,8 @@ public class GroupManager extends StackPane {
 						
 						for(CommentThreadsList.Item item : snippet.items) {
 							if(item.hasSnippet()) {
-								if(item.snippet.totalReplyCount > 0) {
+								boolean contains = commentThreadReplies.containsKey(item.id);
+								if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != commentThreadReplies.get(item.id))) {
 									commentThreadIds.add(new CommentThread(item.id, videoId));
 								}
 								if(!existingCommentIds.contains(item.id)) {

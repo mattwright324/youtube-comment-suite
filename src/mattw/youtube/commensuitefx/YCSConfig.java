@@ -17,11 +17,13 @@ public class YCSConfig {
 	
 	private String youtube_data_key = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
 	private String username = "Guest";
+	private String channelId = "";
 	private OA2Tokens access_tokens;
 	
 	private void loadAs(YCSConfig config) {
 		setYoutubeKey(config.youtube_data_key);
 		setUsername(config.username);
+		setChannelId(config.channelId);
 		setAccessTokens(config.access_tokens);
 	}
 	
@@ -41,6 +43,10 @@ public class YCSConfig {
 		}
 	}
 	
+	public void setChannelId(String id) {
+		channelId = id;
+	}
+	
 	public boolean isSetup() {
 		return !youtube_data_key.equals("");
 	}
@@ -55,6 +61,10 @@ public class YCSConfig {
 	
 	public String getUsername() {
 		return username;
+	}
+	
+	public String getChannelId() {
+		return channelId;
 	}
 	
 	public void save() throws IOException {

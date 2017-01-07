@@ -1,14 +1,18 @@
 package mattw.youtube.commensuitefx;
 
 import java.awt.Desktop;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.google.gson.JsonSyntaxException;
 
@@ -17,16 +21,20 @@ import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -41,7 +49,6 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
-import mattw.youtube.commentsuite.*;
 import mattw.youtube.datav3.YoutubeData;
 import mattw.youtube.datav3.list.ChannelsList;
 import mattw.youtube.datav3.list.SearchList;
@@ -49,15 +56,15 @@ import mattw.youtube.datav3.list.SearchList;
 public class CommentSuiteFX extends Application implements EventHandler<ActionEvent> {
 	
 	public static CommentSuiteFX app;
-	
 	public YoutubeData data;
-	
 	public YCSConfig config = new YCSConfig();
 	public SuiteDatabase db = new SuiteDatabase("commentsuite.db");
 	public Stage stage;
+	final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/placeholder3.png"));
 	
 	public StackPane layout, setup;
-	public GridPane main, menu, videos, groups, comments;
+	public GridPane main, menu, videos, groups;
+	public HBox comments;
 	
 	public ImageView header;
 	public ToggleButton videoToggle, groupToggle, commentToggle;
@@ -80,6 +87,21 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public GroupManager manager;
 	public Button createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, resetDB, cleanDB;
 	public ChoiceBox<Group> choice;
+	
+	public VBox commentResults, searchBox;
+	public ScrollPane cscroll;
+	public double vValue = 0.0;
+	public ImageView thumbnail, authorThumb;
+	public TextField title, author;
+	public Label views, likes, dislikes, resultCount;
+	public TextArea description;
+	public ChoiceBox<Group> cgroup;
+	public ChoiceBox<GroupItem> citem;
+	public ToggleButton videoContext;
+	public TextField userLike, textLike;
+	public Button find, backToResults, clearComments;
+	public ComboBox<String> type, orderby;
+	public List<CommentResult> results;
 	
 	public static void main(String[] args) {
 		launch(args);
@@ -104,6 +126,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		Platform.runLater(() -> {
 			keyField.setText(config.getYoutubeKey());
 			welcome.setText("Welcome, "+config.getUsername());
+			author.setText(config.getUsername());
 			if(config.getAccessTokens() != null) {
 				signin.setText("Sign out");
 				signin.setStyle("-fx-base: firebrick");
@@ -127,6 +150,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			OA2Tokens new_tokens;
 			try {
 				new_tokens = OA2Handler.refreshAccessTokens(old_tokens);
+				checkSignin(new_tokens);
 				config.setAccessTokens(new_tokens);
 				data.setAccessToken(new_tokens.access_token);
 				config.save();
@@ -136,11 +160,25 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		}
 	}
 	
+	public void checkSignin(OA2Tokens tokens) throws JsonSyntaxException, IOException {
+		ChannelsList cl = data.getChannelsByMine(ChannelsList.PART_SNIPPET);
+		String title = cl.items[0].snippet.title;
+		config.setUsername(title);
+		config.setChannelId(cl.items[0].id);
+		config.setAccessTokens(tokens);
+		config.save();
+		loadConfig();
+	}
+	
 	public void signOut() throws IOException {
 		config.setUsername("Guest");
 		data.setAccessToken("");
 		config.setAccessTokens(null);
 		config.save();
+	}
+	
+	public void setNodesDisabled(boolean disable, Node... nodes) {
+		for(Node n : nodes) n.setDisable(disable);
 	}
 	
 	public void handle(ActionEvent arg0) {
@@ -149,8 +187,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			if(o.equals(saveAndSetup)) {
 				Task<Void> task = new Task<Void>(){
 					protected Void call() throws Exception {
-						saveAndSetup.setDisable(true);
-						keyField.setDisable(true);
+						setNodesDisabled(true, saveAndSetup, keyField);
 						saveConfig();
 						return null;
 					}
@@ -185,12 +222,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 											try {
 												OA2Tokens tokens = OA2Handler.getAccessTokens(code);
 												data.setAccessToken(tokens.access_token);
-												ChannelsList cl = data.getChannelsByMine(ChannelsList.PART_SNIPPET);
-												String title = cl.items[0].snippet.title;
-												config.setUsername(title);
-												config.setAccessTokens(tokens);
-												config.save();
-												loadConfig();
+												checkSignin(tokens);
 												saveAndSetup.requestFocus();
 											} catch (IOException e1) {
 												e1.printStackTrace();
@@ -258,14 +290,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		} else if(o.equals(search) || o.equals(nextPage)) {
 			Task<Void> task = new Task<Void>() {
 				protected Void call() throws Exception {
-					search.setDisable(true);
-					nextPage.setDisable(true);
-					searchField.setDisable(true);
-					searchMethod.setDisable(true);
-					locField.setDisable(true);
-					locDistance.setDisable(true);
-					searchOrder.setDisable(true);
-					searchType.setDisable(true);
+					setNodesDisabled(true, search, nextPage, searchField, searchMethod, locField, locDistance, searchOrder, searchType);
 					try {
 						String escaped_search = URLEncoder.encode(searchField.getText(), "UTF-8");
 						System.out.println("q="+escaped_search);
@@ -294,15 +319,13 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 							final SearchResult result = new SearchResult(last != null ? last : searchResults, item);
 							Platform.runLater(() -> {
 								searchResults.getChildren().add(result);
-								selectAll.setDisable(false);
-								clearResults.setDisable(false);
-								addToGroup.setDisable(false);
+								setNodesDisabled(false, selectAll, clearResults, addToGroup);
 								resultStatus.setText("Showing "+searchResults.getChildren().size()+" out of "+sl.pageInfo.totalResults+" results.");
 							});
 							last = result;
 						}
 						if(sl.nextPageToken != null) {
-							nextPage.setDisable(false);
+							setNodesDisabled(false, nextPage);
 							pageToken = sl.nextPageToken;
 						}
 					} catch (JsonSyntaxException | IOException e) {
@@ -311,12 +334,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 						});
 						e.printStackTrace();
 					}
-					search.setDisable(false);
-					searchField.setDisable(false);
-					searchMethod.setDisable(false);
-					locField.setDisable(false);
-					locDistance.setDisable(false);
-					searchOrder.setDisable(false);
+					setNodesDisabled(false, search, searchField, searchMethod, locField, locDistance, searchOrder);
 					if(searchMethod.getSelectionModel().getSelectedIndex() == 0) searchType.setDisable(false);
 					return null;
 				}
@@ -343,13 +361,9 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				}
 			}
 		} else if(o.equals(clearResults)) {
-			selectAll.setDisable(true);
-			clearResults.setDisable(true);
-			addToGroup.setDisable(true);
-			nextPage.setDisable(true);
-			resultStatus.setText("");
+			setNodesDisabled(true, selectAll, clearResults, addToGroup, nextPage, resultStatus);
 			searchResults.getChildren().clear();
-		} else if(o.equals(addToGroup)) { // TODO
+		} else if(o.equals(addToGroup)) {
 			Dialog<ButtonType> dialog = new Dialog<>();
 			DialogPane pane = new DialogPane();
 			dialog.setDialogPane(pane);
@@ -430,7 +444,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				}
 			});
 			
-		} else if(o.equals(createGroup) || o.equals(deleteGroup) || o.equals(renameGroup) || o.equals(refreshGroup) || o.equals(reloadGroup)) { // TODO
+		} else if(o.equals(createGroup) || o.equals(deleteGroup) || o.equals(renameGroup) || o.equals(refreshGroup) || o.equals(reloadGroup)) {
 			if(o.equals(createGroup)) {
 				List<Group> allGroups = choice.getItems();
 				TextInputDialog input = new TextInputDialog("");
@@ -460,12 +474,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					if(result == ButtonType.OK) {
 						Task<Void> task = new Task<Void>(){
 							protected Void call() throws Exception {
-								choice.setDisable(true);
-								createGroup.setDisable(true);
-								deleteGroup.setDisable(true);
-								renameGroup.setDisable(true);
-								refreshGroup.setDisable(true);
-								reloadGroup.setDisable(true);
+								setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
 								try {
 									db.deleteGroup(current.group_name);
 									Platform.runLater(() -> {
@@ -478,11 +487,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 								} catch (SQLException e) {
 									e.printStackTrace();
 								}
-								createGroup.setDisable(false);
-								deleteGroup.setDisable(false);
-								renameGroup.setDisable(false);
-								refreshGroup.setDisable(false);
-								reloadGroup.setDisable(false);
+								setNodesDisabled(false, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
 								return null;
 							}
 						};
@@ -511,10 +516,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 							Platform.runLater(() -> {
 								try {
 									manager.refresh();
-									deleteGroup.setDisable(true);
-									renameGroup.setDisable(true);
-									refreshGroup.setDisable(true);
-									reloadGroup.setDisable(true);
+									setNodesDisabled(true, deleteGroup, renameGroup, refreshGroup, reloadGroup);
 								} catch (InterruptedException e) {
 									e.printStackTrace();
 								}
@@ -532,6 +534,69 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				});
 				
 			}
+		} else if(o.equals(cleanDB) || o.equals(resetDB)) {
+			if(o.equals(cleanDB)) {
+				Task<Void> task = new Task<Void>() {
+					protected Void call() throws Exception {
+						setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB, videoToggle, commentToggle);
+						try {
+							db.clean();
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
+						setNodesDisabled(false, choice, createGroup, cleanDB, resetDB, videoToggle, commentToggle);
+						if(manager != null) {
+							setupWithManager(manager);
+						}
+						return null;
+					}
+				};
+				Thread thread = new Thread(task);
+				thread.setDaemon(true);
+				thread.start();
+			} else if(o.equals(resetDB)) {
+				Dialog<ButtonType> dialog = new Dialog<>();
+				dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+				dialog.setContentText("Reseting the database will delete everything. Are you sure?");
+				dialog.showAndWait().ifPresent(result -> {
+					if(result == ButtonType.OK) {
+						Task<Void> task = new Task<Void>(){
+							protected Void call() throws Exception {
+								setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB, videoToggle, commentToggle);
+								try {
+									db.dropAllTables();
+									try {
+										db.create();
+									} catch (ClassNotFoundException e) {}
+									db.clean();
+									Platform.runLater(() -> {
+										try {
+											reloadGroups();
+										} catch (SQLException e) {
+											e.printStackTrace();
+										}
+									});
+									File thumbs = new File("Thumbs/");
+									if(thumbs.exists()) {
+										for(File f : thumbs.listFiles()) {
+											f.delete();
+										}
+									}
+								} catch (SQLException e) {
+									e.printStackTrace();
+								}
+								setNodesDisabled(false, choice, createGroup, cleanDB, resetDB, videoToggle, commentToggle);
+								if(manager != null) {
+									setupWithManager(manager);
+								}
+								return null;
+							}
+						};
+						Thread thread = new Thread(task);
+						thread.setDaemon(true);
+					}
+				});
+			}
 		}
 	}
 	
@@ -541,15 +606,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		
 		db.create();
 		
-		/*Dialog<Void> dialog = new Dialog<>();
-		DialogPane pane = dialog.getDialogPane();
-		pane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-		GridPane grid = new GridPane();
-		pane.getChildren().add(grid);
-		grid.setAlignment(Pos.CENTER);
-		
-		dialog.showAndWait();*/
-		
 		layout = new StackPane();
 		setup = createSetupPane();
 		menu = createMenuPane();
@@ -558,8 +614,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		comments = createCommentsPane();
 		
 		main = new GridPane();
-		main.setMaxHeight(Double.MAX_VALUE);
-		main.setMaxWidth(Double.MAX_VALUE);
 		main.setAlignment(Pos.TOP_LEFT);
 		main.setVgap(10);
 		ColumnConstraints col = new ColumnConstraints();
@@ -601,15 +655,288 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		stage.show();
 	}
 	
-	public GridPane createCommentsPane() {
-		GridPane grid = new GridPane();
-		grid.setAlignment(Pos.TOP_CENTER);
-		grid.setHgap(5);
-		grid.setVgap(5);
+	// TODO 
+	public HBox createCommentsPane() {
+		HBox grid = new HBox();
+		grid.setAlignment(Pos.TOP_LEFT);
 		
+		VBox context = new VBox(5);
+		context.setPadding(new Insets(5,5,5,5));
+		context.setFillWidth(true);
+		context.setAlignment(Pos.TOP_CENTER);
+		context.setMinWidth(330);
+		context.setMaxWidth(330);
+		context.setPrefWidth(330);
 		
+		thumbnail = new ImageView(placeholder);
+		thumbnail.setFitHeight(180);
+		thumbnail.setFitWidth(320);
+		
+		title = new TextField("Youtube Comment Suite");
+		title.setId("context");
+		title.setFont(Font.font("Arial", FontWeight.NORMAL, 18));
+		title.setEditable(false);
+		
+		HBox publisher = new HBox(5);
+		publisher.setAlignment(Pos.CENTER_LEFT);
+		authorThumb = new ImageView(CommentResult.BLANK_PROFILE);
+		authorThumb.setFitHeight(24);
+		authorThumb.setFitWidth(24);
+		
+		author = new TextField("Guest");
+		author.setId("context");
+		author.setEditable(false);
+		HBox.setHgrow(author, Priority.ALWAYS);
+		
+		views = new Label("8675309 views");
+		views.setAlignment(Pos.CENTER_RIGHT);
+		
+		likes = new Label("+ 8675");
+		likes.setAlignment(Pos.CENTER_RIGHT);
+		likes.setStyle("-fx-text-fill: green");
+		dislikes = new Label("- 309");
+		dislikes.setAlignment(Pos.CENTER_RIGHT);
+		dislikes.setStyle("-fx-text-fill: red");
+		
+		description = new TextArea("Hello world! This is an example video description. One two three four... five six seven eight...\r\nnine ten eleven twelve... thirteen fourteen fifteen sixteen...");
+		description.setEditable(false);
+		description.setWrapText(true);
+		description.setMaxWidth(320);
+		description.setMaxHeight(Double.MAX_VALUE);
+		description.setPrefWidth(320);
+		VBox.setVgrow(description, Priority.ALWAYS);
+		
+		HBox likeDislike = new HBox(5);
+		likeDislike.getChildren().addAll(likes, dislikes);
+		
+		VBox stats = new VBox();
+		stats.setFillWidth(true);
+		stats.getChildren().addAll(views, likeDislike);
+		
+		publisher.getChildren().addAll(authorThumb, author, stats);
+		
+		context.getChildren().addAll(thumbnail, title, publisher, description);
+		
+		VBox resultBox = new VBox(5);
+		resultBox.setFillWidth(true);
+		resultBox.setAlignment(Pos.TOP_CENTER);
+		
+		commentResults = new VBox(5);
+		commentResults.setAlignment(Pos.TOP_CENTER);
+		commentResults.setFillWidth(true);
+		
+		cscroll = new ScrollPane(commentResults);
+		cscroll.setMaxWidth(Double.MAX_VALUE);
+		cscroll.setFitToWidth(true);
+		
+		HBox resultControls = new HBox(5);
+		resultControls.setPadding(new Insets(0,0,5,0));
+		resultControls.setAlignment(Pos.CENTER);
+		
+		clearComments = new Button("Clear Comments");
+		clearComments.setOnAction(e -> {
+			Platform.runLater(()->{
+				commentResults.getChildren().clear();
+				backToResults.setDisable(true);
+				resultCount.setText("Showing 0 out of 0 results.");
+			});
+			results.clear();
+		});
+		
+		resultCount = new Label("Showing 0 out of 0 results.");
+		
+		backToResults = new Button("Return to Results");
+		backToResults.setStyle("-fx-base: seagreen");
+		backToResults.setDisable(true);
+		backToResults.setOnAction(e -> {
+			returnToResults();
+		});
+		
+		resultControls.getChildren().addAll(clearComments, backToResults, resultCount);
+		resultBox.getChildren().addAll(cscroll, resultControls);
+		
+		searchBox = new VBox(10);
+		searchBox.setMinWidth(320);
+		searchBox.setMaxWidth(320);
+		searchBox.setPrefWidth(320);
+		searchBox.setPadding(new Insets(5,5,5,5));
+		searchBox.setAlignment(Pos.TOP_CENTER);
+		searchBox.setFillWidth(true);
+		
+		Label label1 = new Label("Select Group");
+		label1.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 16));
+		label1.setAlignment(Pos.CENTER);
+		
+		cgroup = new ChoiceBox<Group>();
+		cgroup.setMaxWidth(300);
+		cgroup.setPrefWidth(300);
+		cgroup.setOnAction(e -> {
+			Task<Void> task = new Task<Void>() {
+				protected Void call() throws Exception {
+					try {
+						cgroup.setDisable(true);
+						citem.setDisable(true);
+						loadCGroup(cgroup.getValue());
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+					cgroup.setDisable(false);
+					citem.setDisable(false);
+					return null;
+				}
+			};
+			new Thread(task).start();
+		});
+		citem = new ChoiceBox<GroupItem>();
+		citem.setMaxWidth(300);
+		citem.setPrefWidth(300);
+		
+		videoContext = new ToggleButton("Show Video Context");
+		videoContext.setTooltip(new Tooltip("Context appears when you select a comment."));
+		videoContext.setOnAction(e -> {
+			if(!videoContext.isSelected()) {
+				context.setVisible(false);
+				context.setMinWidth(0);
+				context.setMaxWidth(0);
+				context.setPrefWidth(0);
+			} else {
+				context.setVisible(true);
+				context.setMinWidth(330);
+				context.setMaxWidth(330);
+				context.setPrefWidth(330);
+			}
+		});
+		videoContext.fire();
+		
+		Label label2 = new Label("Restrict Results");
+		label2.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 16));
+		label2.setAlignment(Pos.CENTER);
+		
+		type = new ComboBox<String>();
+		type.setMaxWidth(Double.MAX_VALUE);
+		type.getItems().addAll("Comments and Replies", "Comments Only", "Replies Only");
+		type.getSelectionModel().select(0);
+		
+		Label label3 = new Label("Sort by ");
+		label3.setAlignment(Pos.CENTER_RIGHT);
+		
+		orderby = new ComboBox<String>();
+		orderby.setMaxWidth(Double.MAX_VALUE);
+		orderby.getItems().addAll("Most Recent", "Least Recent", "Most Likes", "Most Replies", "Longest Comment", "Names (A to Z)", "Comments (A to Z)");
+		orderby.getSelectionModel().select(0);
+		
+		HBox orderbox = new HBox(5);
+		orderbox.setAlignment(Pos.CENTER_LEFT);
+		orderbox.getChildren().addAll(label3, orderby);
+		
+		userLike = new TextField();
+		userLike.setMaxWidth(Double.MAX_VALUE);
+		userLike.setPromptText("Username contains...");
+		
+		textLike = new TextField();
+		textLike.setMaxWidth(Double.MAX_VALUE);
+		textLike.setPromptText("Comment contains...");
+		
+		find = new Button("Find Comments");
+		find.setMaxWidth(Double.MAX_VALUE);
+		find.setOnAction(e -> {
+			Task<Void> task = new Task<Void>() {
+				protected Void call() throws Exception {
+					try {
+						find.setDisable(true);
+						String group_name = cgroup.getValue().group_name;
+						int order = orderby.getSelectionModel().getSelectedIndex();
+						String user = userLike.getText();
+						String text = textLike.getText();
+						int limit = 1000;
+						GroupItem gitem = citem.getValue().gitem_id != -1 ? citem.getValue() : null;
+						int comment_type =  type.getSelectionModel().getSelectedIndex();
+						CommentSearch searchResult = db.getComments(group_name, order, user, text, limit, gitem, comment_type);
+						final List<CommentResult> list = searchResult.results.stream()
+								.map(c -> new CommentResult(c, true))
+								.collect(Collectors.toList());
+						System.out.println(list.size()+" / "+searchResult.total_results);
+						results = list;
+						Platform.runLater(() -> {
+							resultCount.setText("Showing "+list.size()+" out of "+searchResult.total_results+" results.");
+							commentResults.getChildren().clear();
+							commentResults.getChildren().addAll(list);
+							find.setDisable(false);
+							System.out.println(context.getWidth());
+						});
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+					return null;
+				}
+			};
+			new Thread(task).start();
+		});
+		
+		searchBox.getChildren().addAll(label1, cgroup, citem, videoContext, label2, type, orderbox, userLike, textLike, find);
+		grid.getChildren().addAll(context, resultBox, searchBox);
+		HBox.setHgrow(resultBox, Priority.ALWAYS);
 		
 		return grid;
+	}
+	
+	public void returnToResults() {
+		Platform.runLater(() -> {
+			backToResults.setDisable(true);
+			commentResults.getChildren().clear();
+			commentResults.getChildren().addAll(results);
+			cscroll.setVvalue(1.0d);
+			cscroll.setVvalue(vValue);
+		});
+	}
+	
+	public void viewTree(Comment comment) throws SQLException {
+		vValue = cscroll.getVvalue();
+		final List<CommentResult> list = db.getCommentTree(comment.is_reply ? comment.parent_id : comment.comment_id).stream()
+				.map(c -> new CommentResult(c, false))
+				.collect(Collectors.toList());
+		Platform.runLater(() -> {
+			commentResults.getChildren().clear();
+			commentResults.getChildren().addAll(list);
+			find.setDisable(false);
+			backToResults.setDisable(false);
+		});
+	}
+	
+	public void loadContext(String videoId) throws SQLException, ParseException {
+		Video video = db.getVideo(videoId, true);
+		thumbnail.setImage(SwingFXUtils.toFXImage(video.buffered_thumb, null));
+		thumbnail.setCursor(Cursor.HAND);
+		thumbnail.setOnMouseClicked(e -> {
+			if(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 1) {
+				openInBrowser(video.getYoutubeLink());
+			}
+		});
+		authorThumb.setImage(video.channel.buffered_profile != null ? SwingFXUtils.toFXImage(video.channel.buffered_profile,null) : CommentResult.BLANK_PROFILE);
+		authorThumb.setCursor(Cursor.HAND);
+		authorThumb.setOnMouseClicked(e -> {
+			if(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 1) {
+				openInBrowser(video.channel.getYoutubeLink());
+			}
+		});
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+		description.setText("Published on "+sdf.format(video.publish_date)+"  "+video.video_desc);
+		title.setText(video.video_title);
+		author.setText(video.channel.channel_name);
+		likes.setText("+"+video.total_likes);
+		dislikes.setText("-"+video.total_dislikes);
+		views.setText(video.total_views+" views");
+	}
+	
+	public void loadCGroup(Group g) throws SQLException {
+		final List<GroupItem> items = db.getGroupItems(g.group_name, false);
+		Platform.runLater(() -> {
+			citem.getItems().clear();
+			citem.getItems().add(new GroupItem(-1, "All Items ("+items.size()+")"));
+			citem.getItems().addAll(items);
+			citem.getSelectionModel().select(0);
+			// Not smart to load all relevant videos into another ChoiceBox, too slow and list has potential to be gigantic. 
+		});
 	}
 	
 	public GridPane createGroupsPane() {
@@ -677,25 +1004,48 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		reloadGroup.setOnAction(this);
 		reloadGroup.setDisable(true);
 		
-		menu.getChildren().addAll(label, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup);
+		Separator sep = new Separator();
+		sep.setOrientation(Orientation.VERTICAL);
+		
+		cleanDB = new Button("Clean DB");
+		cleanDB.setTooltip(new Tooltip("Perform a VACUUM on the database."));
+		cleanDB.setOnAction(this);
+		
+		resetDB = new Button("Reset DB");
+		resetDB.setTooltip(new Tooltip("Delete everything and start from scratch. Does not affect sign-in or key."));
+		resetDB.setOnAction(this);
+		resetDB.setStyle("-fx-base: firebrick");
+		
+		menu.getChildren().addAll(label, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, sep, cleanDB, resetDB);
 		
 		return grid;
 	}
 	
 	public void setupWithManager(GroupManager gm) {
 		boolean disable = manager.isRefreshing();
-		deleteGroup.setDisable(disable);
-		renameGroup.setDisable(disable);
-		refreshGroup.setDisable(disable);
-		reloadGroup.setDisable(disable);
+		setNodesDisabled(disable, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
 	}
 	
 	public void reloadGroups() throws SQLException {
 		manager = null;
 		int selected = choice.getSelectionModel().getSelectedIndex();
+		List<Group> groups = db.getGroups();
 		choice.getItems().clear();
-		choice.getItems().addAll(db.getGroups());
-		choice.getSelectionModel().select(selected);
+		cgroup.getItems().clear();
+		citem.getItems().clear();
+		choice.getItems().addAll(groups);
+		cgroup.getItems().addAll(groups);
+		int select = -1;
+		if(choice.getItems().size() > 0) {
+			if(selected == -1 || choice.getItems().size() <= selected) {
+				select = -1;
+			} else {
+				select = selected;
+			}
+			cgroup.getSelectionModel().select(0);
+			loadCGroup(cgroup.getValue());
+		}
+		choice.getSelectionModel().select(select);
 	}
 	
 	public GridPane createVideosPane() {

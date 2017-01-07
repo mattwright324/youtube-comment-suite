@@ -1,18 +1,17 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commensuitefx;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 public class Channel {
 	public String channel_id;
 	public String channel_name;
 	public String channel_profile_url;
 	
-	public ImageIcon channel_profile;
+	public BufferedImage buffered_profile;
 	public boolean download_profile = false;
 	private File thumbs = new File("Thumbs/");
 	
@@ -30,22 +29,20 @@ public class Channel {
 		File thumbFile = new File(thumbs, channel_id+".jpg");
 		try {
 			if(thumbFile.exists()) {
-				channel_profile = new ImageIcon(ImageIO.read(thumbFile));
+				buffered_profile = ImageIO.read(thumbFile);
 			} else {
 				if(download_profile && channel_profile_url != null && !channel_profile_url.equals("")) {
-					BufferedImage bi = ImageIO.read(new URL(channel_profile_url));
-					ImageIO.write(bi, "jpg", thumbFile);
-					channel_profile = new ImageIcon(bi);
+					buffered_profile = ImageIO.read(new URL(channel_profile_url));
+					ImageIO.write(buffered_profile, "jpg", thumbFile);
 				}
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-		if(channel_profile == null) {
-			channel_profile = null;
-		} else {
-			channel_profile = new ImageIcon(channel_profile.getImage().getScaledInstance((int) (24.0 * channel_profile.getIconWidth() / channel_profile.getIconHeight()), 24, 0));
-		}
+	}
+	
+	public String getYoutubeLink() {
+		return "https://www.youtube.com/channel/"+channel_id;
 	}
 	
 	public boolean equals(Object o) {

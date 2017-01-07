@@ -1,4 +1,4 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commensuitefx;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -6,7 +6,6 @@ import java.net.URL;
 import java.util.Date;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
@@ -30,8 +29,13 @@ public class GroupItem {
 	public String thumb_url;
 	
 	public boolean needImage = false;
-	public ImageIcon thumbnail;
+	public BufferedImage thumbnail;
 	private File thumbs = new File("Thumbs/");
+	
+	public GroupItem(int gitem_id, String title) {
+		this.gitem_id = gitem_id;
+		this.title = title;
+	}
 	
 	public GroupItem(int type_id, String type, String youtube_id, String title, String channel_title, Date published, Date last_checked, String thumb_url, boolean needImage) {
 		this.type_id = type_id;
@@ -52,20 +56,17 @@ public class GroupItem {
 		File thumbFile = new File(thumbs, youtube_id+".jpg");
 		try {
 			if(thumbFile.exists()) {
-				thumbnail = new ImageIcon(ImageIO.read(thumbFile));
+				thumbnail = ImageIO.read(thumbFile);
 			} else {
 				if(thumb_url != null && !thumb_url.equals("")) {
 					System.out.println("Thumbnail not found ["+youtube_id+"]\n    Attempting to download from url.");
-					BufferedImage bi = ImageIO.read(new URL(thumb_url));
-					ImageIO.write(bi, "jpg", thumbFile);
-					thumbnail = new ImageIcon(bi);
+					thumbnail = ImageIO.read(new URL(thumb_url));
+					ImageIO.write(thumbnail, "jpg", thumbFile);
 				}
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-		if(thumbnail == null) thumbnail = CommentSuite.window.imgThumbPlaceholder;
-		thumbnail = new ImageIcon(thumbnail.getImage().getScaledInstance((int) (45.0 * thumbnail.getIconWidth() / thumbnail.getIconHeight())+1, 45, 0));
 	}
 	
 	public String getGroupType() {

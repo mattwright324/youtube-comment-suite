@@ -1,4 +1,4 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commensuitefx;
 
 import java.util.Date;
 
