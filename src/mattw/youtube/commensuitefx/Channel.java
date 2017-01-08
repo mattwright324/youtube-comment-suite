@@ -3,10 +3,15 @@ package mattw.youtube.commensuitefx;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
 public class Channel {
+	
+	public final static Map<String,BufferedImage> profileMap = new HashMap<String,BufferedImage>();
+	
 	public String channel_id;
 	public String channel_name;
 	public String channel_profile_url;
@@ -25,6 +30,10 @@ public class Channel {
 	}
 	
 	public void loadProfile() {
+		if(profileMap.containsKey(channel_id)) {
+			buffered_profile = profileMap.get(channel_id);
+			return;
+		}
 		thumbs.mkdirs();
 		File thumbFile = new File(thumbs, channel_id+".jpg");
 		try {
@@ -39,6 +48,7 @@ public class Channel {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
+		profileMap.put(channel_id, buffered_profile);
 	}
 	
 	public String getYoutubeLink() {

@@ -9,14 +9,11 @@ import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import mattw.youtube.datav3.list.CommentThreadsList;
 import mattw.youtube.datav3.list.CommentsList;
 
 public class OA2Handler {
@@ -25,31 +22,6 @@ public class OA2Handler {
 	final static String client_id = "972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com";
 	final static String client_secret = "QuTdoA-KArupKMWwDrrxOcoS";
 	final static String redirect_uri = "urn:ietf:wg:oauth:2.0:oob";
-	
-	public static void postNewComment(String channelId, String videoId, String textOriginal) {
-		try {
-			Object response;
-			boolean tryagain = false;
-			do {
-				response = postComment(channelId, videoId, textOriginal);
-				if(response instanceof GlobalDomainError) {
-					GlobalDomainError gde = (GlobalDomainError) response;
-					for(GlobalDomainError.GlobalError.Error error : gde.error.errors) {
-						System.out.println("GlobalDomainError "+gde.error.code+": "+error.message);
-					}
-					if(gde.error.code == 401) {
-						System.out.println("Refreshing tokens and trying again.");
-						CommentSuiteFX.app.refreshTokens();
-						tryagain = true;
-					}
-				} else if(response instanceof CommentThreadsList.Item) {
-					
-				}
-			} while(response instanceof GlobalDomainError && tryagain);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-	}
 	
 	public static void postNewReply(String parentId, String textOriginal) {
 		try {
@@ -76,33 +48,11 @@ public class OA2Handler {
 		}
 	}
 	
-	private static Object postComment(String channelId, String videoId, String textOriginal) throws IOException {
-		System.out.println("Commenting on ["+videoId+", "+channelId+"]:    "+textOriginal);
-		String payload = new Gson().toJson(new MakeComment(channelId, videoId, textOriginal), MakeComment.class);
-		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&access_token="+CommentSuiteFX.app.data.access_token+"&key="+CommentSuiteFX.app.data.data_api_key).openConnection();
-		url.setDoOutput(true);
-		url.setDoInput(true);
-		url.setRequestProperty("Content-Type", "application/json");
-		OutputStream os = url.getOutputStream();
-		os.write(payload.getBytes("UTF-8"));
-		String response = "";
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(url.getInputStream()));
-			String line;
-			while((line = br.readLine()) != null) {response+=line;}
-			return gson.fromJson(response, CommentThreadsList.Item.class);
-		} catch (IOException e) {
-			BufferedReader br = new BufferedReader(new InputStreamReader(url.getErrorStream()));
-			String line;
-			while((line = br.readLine()) != null) {response+=line;}
-			return gson.fromJson(response, GlobalDomainError.class);
-		}
-	}
-	
 	private static Object postReply(String parentId, String textOriginal) throws IOException {
 		System.out.println("Replying to ["+parentId+"]:    "+textOriginal);
 		String payload = new Gson().toJson(new MakeReply(parentId, textOriginal), MakeReply.class);
-		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token="+CommentSuiteFX.app.data.access_token+"&key="+CommentSuiteFX.app.data.data_api_key).openConnection();
+		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token="+CommentSuiteFX.app.config.getAccessTokens().access_token).openConnection();
+		System.out.println("    "+url.getURL().toString());
 		url.setDoOutput(true);
 		url.setDoInput(true);
 		url.setRequestProperty("Content-Type", "application/json");
@@ -132,29 +82,6 @@ public class OA2Handler {
 		public class Snippet {
 			public String parentId;
 			public String textOriginal;
-		}
-	}
-	
-	static class MakeComment {
-		public MakeComment(String channel_id, String textOriginal) {
-			snippet.channelId = channel_id;
-			snippet.topLevelComment.snippet.textOriginal = textOriginal;
-		}
-		public MakeComment(String channel_id, String videoId, String textOriginal) {
-			this(channel_id, textOriginal);
-			snippet.videoId = videoId;
-		}
-		public Snippet snippet = new Snippet();
-		public class Snippet {
-			public String channelId;
-			public String videoId;
-			public TopLevelComment topLevelComment = new TopLevelComment();
-			public class TopLevelComment {
-				public TLCSnippet snippet = new TLCSnippet();
-				public class TLCSnippet {
-					public String textOriginal;
-				}
-			}
 		}
 	}
 	
@@ -204,7 +131,83 @@ public class OA2Handler {
 				.post();
 		OA2Tokens new_tokens = gson.fromJson(doc.text(), OA2Tokens.class);
 		new_tokens.setRefreshToken(old_tokens.refresh_token);
+		System.out.println(old_tokens.access_token+" -> "+new_tokens.access_token);
 		return new_tokens;
 	}
+	
+	
+	/* 
+	 * Replies are the most important, may implement commenting to videos later.
+	 * 
+	public static void postNewComment(String channelId, String videoId, String textOriginal) {
+		try {
+			Object response;
+			boolean tryagain = false;
+			do {
+				response = postComment(channelId, videoId, textOriginal);
+				if(response instanceof GlobalDomainError) {
+					GlobalDomainError gde = (GlobalDomainError) response;
+					for(GlobalDomainError.GlobalError.Error error : gde.error.errors) {
+						System.out.println("GlobalDomainError "+gde.error.code+": "+error.message);
+					}
+					if(gde.error.code == 401) {
+						System.out.println("Refreshing tokens and trying again.");
+						CommentSuiteFX.app.refreshTokens();
+						tryagain = true;
+					}
+				} else if(response instanceof CommentThreadsList.Item) {
+					
+				}
+			} while(response instanceof GlobalDomainError && tryagain);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	private static Object postComment(String channelId, String videoId, String textOriginal) throws IOException {
+		System.out.println("Commenting on ["+videoId+", "+channelId+"]:    "+textOriginal);
+		String payload = new Gson().toJson(new MakeComment(channelId, videoId, textOriginal), MakeComment.class);
+		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&access_token="+CommentSuiteFX.app.config.getAccessTokens().access_token).openConnection();
+		url.setDoOutput(true);
+		url.setDoInput(true);
+		url.setRequestProperty("Content-Type", "application/json");
+		OutputStream os = url.getOutputStream();
+		os.write(payload.getBytes("UTF-8"));
+		String response = "";
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.getInputStream()));
+			String line;
+			while((line = br.readLine()) != null) {response+=line;}
+			return gson.fromJson(response, CommentThreadsList.Item.class);
+		} catch (IOException e) {
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.getErrorStream()));
+			String line;
+			while((line = br.readLine()) != null) {response+=line;}
+			return gson.fromJson(response, GlobalDomainError.class);
+		}
+	}
+	
+	static class MakeComment {
+		public MakeComment(String channel_id, String textOriginal) {
+			snippet.channelId = channel_id;
+			snippet.topLevelComment.snippet.textOriginal = textOriginal;
+		}
+		public MakeComment(String channel_id, String videoId, String textOriginal) {
+			this(channel_id, textOriginal);
+			snippet.videoId = videoId;
+		}
+		public Snippet snippet = new Snippet();
+		public class Snippet {
+			public String channelId;
+			public String videoId;
+			public TopLevelComment topLevelComment = new TopLevelComment();
+			public class TopLevelComment {
+				public TLCSnippet snippet = new TLCSnippet();
+				public class TLCSnippet {
+					public String textOriginal;
+				}
+			}
+		}
+	}*/
 	
 }

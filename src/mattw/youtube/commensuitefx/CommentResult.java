@@ -3,6 +3,8 @@ package mattw.youtube.commensuitefx;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jsoup.Jsoup;
 
@@ -24,10 +26,8 @@ import javafx.scene.layout.VBox;
 
 public class CommentResult extends HBox {
 	
+	final static Map<String,Image> profileMap = new HashMap<String,Image>();
 	final static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/blank_profile.jpg"));
-	
-	final static String SELECT_STYLE = "-fx-background-color: radial-gradient(focus-distance 0%, center 50% 50%, radius 85%, rgba(80,220,220,0.5), rgba(220,220,220,0))";
-	final static String REPLY_STYLE = "-fx-background-color: radial-gradient(focus-distance 0%, center 50% 50%, radius 55%, rgba(80,220,80,0.5), rgba(220,220,220,0))";
 	
 	public static CommentResult lastSelected = null;
 	
@@ -45,7 +45,7 @@ public class CommentResult extends HBox {
 		selected = select;
 		if(selected) {
 			if(lastSelected != null) lastSelected.setSelected(false);
-			setStyle(SELECT_STYLE);
+			setId("commentSelected");
 			lastSelected = this;
 			Platform.runLater(() -> {
 				try {
@@ -55,7 +55,7 @@ public class CommentResult extends HBox {
 				}
 			});
 		} else {
-			setStyle(comment.is_reply ? REPLY_STYLE : "");
+			setId(comment.is_reply ? "commentReply" : "");
 		}
 	}
 	
@@ -66,6 +66,7 @@ public class CommentResult extends HBox {
 	public CommentResult(Comment c, boolean showTreeLink) {
 		super();
 		comment = c;
+		setMinHeight(90);
 		setPrefHeight(90);
 		setMaxHeight(90);
 		setMinWidth(200);
@@ -75,7 +76,6 @@ public class CommentResult extends HBox {
 		setAlignment(Pos.CENTER_LEFT);
 		
 		VBox box = new VBox();
-		box.setStyle("-fx-backround-color: cornflowerblue");
 		box.setMaxWidth(75);
 		box.setPrefWidth(75);
 		box.setMinWidth(75);
@@ -83,6 +83,16 @@ public class CommentResult extends HBox {
 		ImageView img = new ImageView(BLANK_PROFILE);
 		img.setFitHeight(32);
 		img.setFitWidth(32);
+		if(c.channel.buffered_profile != null) {
+			if(profileMap.containsKey(c.channel.channel_id)) {
+				img.setImage(profileMap.get(c.channel.channel_id));
+			} else {
+				Image converted = SwingFXUtils.toFXImage(c.channel.buffered_profile, null);
+				profileMap.put(c.channel.channel_id, converted);
+				img.setImage(converted);
+			}
+			
+		}
 		box.getChildren().addAll(img, c.is_reply ? new Label("Reply") : new Label("Comment"));
 		
 		author = new Hyperlink(c.channel.channel_name);
@@ -90,16 +100,13 @@ public class CommentResult extends HBox {
 			CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.channel.channel_id);
 		});
 		if(c.channel.channel_id.equals(CommentSuiteFX.app.config.getChannelId())) {
-			author.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-		}
-		if(c.channel.buffered_profile != null) {
-			img.setImage(SwingFXUtils.toFXImage(c.channel.buffered_profile, null));
+			author.setId("commentMine");
 		}
 		date = new Label(sdf.format(c.comment_date));
-		date.setStyle("-fx-text-fill: gray");
+		date.setId("commentDate");
 		
 		likes = new Label(c.comment_likes > 0 ? "+"+c.comment_likes : "");
-		likes.setStyle("-fx-text-fill: cornflowerblue");
+		likes.setId("commentLikes");
 		
 		int length = 400;
 		parsedText = Jsoup.parse(comment.comment_text.replace("<br />", "\r\n")).text();
@@ -132,7 +139,7 @@ public class CommentResult extends HBox {
 		if(c.comment_likes > 0) hbox.getChildren().add(likes);
 		if(CommentSuiteFX.app.config.getAccessTokens() != null) hbox.getChildren().add(reply);
 		if(c.reply_count > 0 || c.is_reply) hbox.getChildren().add(viewtree);
-		 hbox.getChildren().add(viewfulltext);
+		hbox.getChildren().add(viewfulltext);
 		
 		VBox text = new VBox();
 		text.setAlignment(Pos.CENTER_LEFT);

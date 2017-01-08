@@ -60,7 +60,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public YCSConfig config = new YCSConfig();
 	public SuiteDatabase db = new SuiteDatabase("commentsuite.db");
 	public Stage stage;
-	final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/placeholder3.png"));
+	final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/placeholder4.png"));
 	
 	public StackPane layout, setup;
 	public GridPane main, menu, videos, groups;
@@ -150,10 +150,12 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			OA2Tokens new_tokens;
 			try {
 				new_tokens = OA2Handler.refreshAccessTokens(old_tokens);
-				checkSignin(new_tokens);
+				new_tokens.setRefreshToken(old_tokens.refresh_token);
 				config.setAccessTokens(new_tokens);
 				data.setAccessToken(new_tokens.access_token);
 				config.save();
+				checkSignin(new_tokens);
+				System.out.println("Sign in success?");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -168,6 +170,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		config.setAccessTokens(tokens);
 		config.save();
 		loadConfig();
+		System.out.println("Signed in and loaded.");
 	}
 	
 	public void signOut() throws IOException {
@@ -210,6 +213,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 									web.setPrefSize(400, 575);
 									
 									Dialog<WebView> dialog = new Dialog<>();
+									dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL);
 									dialog.getDialogPane().setContent(web);
 									dialog.titleProperty().bind(engine.titleProperty());
 									engine.titleProperty().addListener(e -> {
@@ -217,7 +221,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 										if(engine.getTitle() != null && (engine.getTitle().contains("code=") || engine.getTitle().contains("error="))) {
 											String response = engine.getTitle();
 											String code = response.substring(13, response.length());
-											dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL);
 											web.setDisable(true);
 											try {
 												OA2Tokens tokens = OA2Handler.getAccessTokens(code);
@@ -698,7 +701,9 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		dislikes.setAlignment(Pos.CENTER_RIGHT);
 		dislikes.setStyle("-fx-text-fill: red");
 		
-		description = new TextArea("Hello world! This is an example video description. One two three four... five six seven eight...\r\nnine ten eleven twelve... thirteen fourteen fifteen sixteen...");
+		description = new TextArea("Published Nov 18, 1918  This is an example description. You may select this text, the title, and author's name. Right click to copy or select all."
+				+ "\n\nThe thumbnail and author's picture are clickable to open either the video or channel in your browser."
+				+ "\n\nComments may be replied to if you are signed in. Commentor names may be clicked to open their channel in browser.");
 		description.setEditable(false);
 		description.setWrapText(true);
 		description.setMaxWidth(320);
@@ -855,14 +860,16 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 						final List<CommentResult> list = searchResult.results.stream()
 								.map(c -> new CommentResult(c, true))
 								.collect(Collectors.toList());
-						System.out.println(list.size()+" / "+searchResult.total_results);
 						results = list;
 						Platform.runLater(() -> {
 							resultCount.setText("Showing "+list.size()+" out of "+searchResult.total_results+" results.");
 							commentResults.getChildren().clear();
 							commentResults.getChildren().addAll(list);
 							find.setDisable(false);
-							System.out.println(context.getWidth());
+							backToResults.setDisable(true);
+							vValue = 0;
+							scroll.layout();
+							scroll.setVvalue(0.0);
 						});
 					} catch (SQLException e) {
 						e.printStackTrace();
@@ -881,13 +888,11 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	}
 	
 	public void returnToResults() {
-		Platform.runLater(() -> {
 			backToResults.setDisable(true);
 			commentResults.getChildren().clear();
 			commentResults.getChildren().addAll(results);
-			cscroll.setVvalue(1.0d);
+			cscroll.layout();
 			cscroll.setVvalue(vValue);
-		});
 	}
 	
 	public void viewTree(Comment comment) throws SQLException {
@@ -895,12 +900,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		final List<CommentResult> list = db.getCommentTree(comment.is_reply ? comment.parent_id : comment.comment_id).stream()
 				.map(c -> new CommentResult(c, false))
 				.collect(Collectors.toList());
-		Platform.runLater(() -> {
 			commentResults.getChildren().clear();
 			commentResults.getChildren().addAll(list);
 			find.setDisable(false);
 			backToResults.setDisable(false);
-		});
 	}
 	
 	public void loadContext(String videoId) throws SQLException, ParseException {

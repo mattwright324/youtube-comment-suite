@@ -123,6 +123,24 @@ public class SuiteDatabase {
 	 * COMMENTS TABLE
 	 */
 	
+	public void insertComment(Comment c) throws SQLException {
+		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO comments (comment_id, channel_id, video_id, comment_date, comment_text, comment_likes, reply_count, is_reply, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		if(c != null && ps != null) {
+			ps.setString(1, c.comment_id);
+			ps.setString(2, c.channel.channel_id);
+			ps.setString(3, c.video_id);
+			ps.setLong(4, c.comment_date.getTime());
+			ps.setString(5, c.comment_text);
+			ps.setLong(6, c.comment_likes);
+			ps.setLong(7, c.reply_count);
+			ps.setBoolean(8, c.is_reply);
+			ps.setString(9, c.parent_id);
+			ps.executeUpdate();
+			System.out.println("Inserted 1 comment");
+		}
+		ps.close();
+	}
+	
 	public void insertComments(List<Comment> comments) throws SQLException {
 		System.out.println("Inserting "+comments.size()+" comments");
 		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO comments (comment_id, channel_id, video_id, comment_date, comment_text, comment_likes, reply_count, is_reply, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -184,11 +202,6 @@ public class SuiteDatabase {
 		ps.close();
 		rs.close();
 		return list;
-	}
-	
-	public class CommentData {
-		public String comment_id;
-		public long reply_count;
 	}
 	
 	public List<Comment> getCommentTree(String commentId) throws SQLException {
@@ -303,6 +316,19 @@ public class SuiteDatabase {
 	 * CHANNELS TABLE
 	 */
 	
+	public void insertChannel(Channel channel) throws SQLException {
+		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO channels (channel_id, channel_name, channel_profile_url, download_profile) VALUES (?, ?, ?, ?)");
+		if(channel != null && ps != null) {
+			ps.setString(1, channel.channel_id);
+			ps.setString(2, channel.channel_name);
+			ps.setString(3, channel.channel_profile_url);
+			ps.setBoolean(4, channel.download_profile);
+			ps.executeUpdate();
+			System.out.println("Inserted 1 channel");
+		}
+		ps.close();
+	}
+	
 	public void insertChannels(List<Channel> channels) throws SQLException {
 		System.out.println("Inserting "+channels.size()+" channels");
 		PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO channels (channel_id, channel_name, channel_profile_url, download_profile) VALUES (?, ?, ?, ?)");
@@ -340,6 +366,16 @@ public class SuiteDatabase {
 		ps.executeBatch();
 		System.out.println("Updated "+channels.size()+" channels");
 		ps.close();
+	}
+	
+	public boolean hasChannel(String channelId) throws SQLException {
+		PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) AS count FROM channels WHERE channel_id = ?");
+		ps.setString(1, channelId);
+		ResultSet rs = ps.executeQuery();
+		if(rs.next()) {
+			return rs.getInt("count") >= 1;
+		}
+		return false;
 	}
 	
 	public List<String> getAllChannelIDs() throws SQLException {

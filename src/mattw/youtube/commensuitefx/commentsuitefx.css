@@ -30,3 +30,23 @@
 #context:focused {
 	-fx-focus-color: transparent;
 }
+
+#commentSelected {
+	-fx-background-color: radial-gradient(focus-distance 0%, center 50% 50%, radius 85%, rgba(80,220,220,0.5), rgba(220,220,220,0));
+}
+
+#commentReply {
+	-fx-background-color: radial-gradient(focus-distance 0%, center 50% 50%, radius 55%, rgba(80,220,80,0.5), rgba(220,220,220,0));
+}
+
+#commentDate {
+	-fx-text-fill: gray;
+}
+
+#commentLikes {
+	-fx-text-fill: cornflowerblue;
+}
+
+#commentMine {
+	-fx-text-fill: green; -fx-font-weight: bold;
+}

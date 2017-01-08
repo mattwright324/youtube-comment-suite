@@ -79,14 +79,14 @@ public class GroupManager extends StackPane {
 	
 	public Group group;
 	public int group_id;
-	public SuiteDatabase db;
-	public YoutubeData data;
+	public static SuiteDatabase db;
+	public static YoutubeData data;
 	
 	public GroupManager(Group g, SuiteDatabase db, YoutubeData data) {
 		super();
 		manager = this;
-		this.db = db;
-		this.data = data;
+		GroupManager.db = db;
+		GroupManager.data = data;
 		
 		setMaxHeight(Double.MAX_VALUE);
 		setMaxWidth(Double.MAX_VALUE);
@@ -377,42 +377,33 @@ public class GroupManager extends StackPane {
 		
 		es = Executors.newCachedThreadPool();
 		Task<Void> task = new Task<Void>() {
+			private final int COMMENT_INSERT_SIZE = 2000;
+			private ElapsedTime timer = new ElapsedTime();
+			private long last_second = -1;
+			private long new_comments = 0;
+			private long thread_progress = 0;
+			private long video_progress = 0;
 			
-			protected ElapsedTime timer = new ElapsedTime();
-			protected long last_second = -1;
-			protected long new_comments = 0;
-			protected long thread_progress = 0;
-			protected long video_progress = 0;
+			private Set<String> existingVideoIds = new HashSet<String>();
+			private Set<String> existingCommentIds = new HashSet<String>();
+			private Set<String> existingChannelIds = new HashSet<String>();
+			private List<VideoGroup> existingVideoGroups = new ArrayList<VideoGroup>();
+			private List<GroupItem> existingGroupItems = new ArrayList<GroupItem>();
 			
-			protected Set<String> existingVideoIds = new HashSet<String>();
-			protected Set<String> existingCommentIds = new HashSet<String>();
-			protected Set<String> existingChannelIds = new HashSet<String>();
-			protected List<VideoGroup> existingVideoGroups = new ArrayList<VideoGroup>();
-			protected List<GroupItem> existingGroupItems = new ArrayList<GroupItem>();
+			private Map<String, String> commentThreadIds = new HashMap<String, String>(); // <commentThreadId, videoId>
+			private Map<String, Long> commentThreadReplies;
 			
-			protected List<CommentThread> commentThreadIds = new ArrayList<CommentThread>();
-			protected Map<String, Long> commentThreadReplies;
+			private List<Video> insertVideos = new ArrayList<Video>();
+			private List<Video> updateVideos = new ArrayList<Video>();
+			private List<Channel> insertChannels = new ArrayList<Channel>();
+			private List<Channel> updateChannels = new ArrayList<Channel>();
+			private List<VideoGroup> insertVideoGroups = new ArrayList<VideoGroup>();
 			
-			class CommentThread {
-				public String comment_id;
-				public String video_id;
-				public CommentThread(String comment_id, String video_id) {
-					this.comment_id = comment_id;
-					this.video_id = video_id; 
-				}
-			}
+			private List<String> gitemVideos = new ArrayList<String>();
+			private List<GroupItem> gitemChannels = new ArrayList<GroupItem>();
+			private List<GroupItem> gitemPlaylists = new ArrayList<GroupItem>();
 			
-			protected List<Video> insertVideos = new ArrayList<Video>();
-			protected List<Video> updateVideos = new ArrayList<Video>();
-			protected List<Channel> insertChannels = new ArrayList<Channel>();
-			protected List<Channel> updateChannels = new ArrayList<Channel>();
-			protected List<VideoGroup> insertVideoGroups = new ArrayList<VideoGroup>();
-			
-			protected List<String> gitemVideos = new ArrayList<String>();
-			protected List<GroupItem> gitemChannels = new ArrayList<GroupItem>();
-			protected List<GroupItem> gitemPlaylists = new ArrayList<GroupItem>();
-			
-			protected Map<String, Channel> channels = new HashMap<String, Channel>();
+			private Map<String, Channel> channels = new HashMap<String, Channel>();
 			
 			protected Void call() throws Exception {
 				timer.set();
@@ -422,9 +413,8 @@ public class GroupManager extends StackPane {
 				existingChannelIds.addAll(db.getAllChannelIDs());
 				existingVideoGroups.addAll(db.getVideoGroups());
 				existingGroupItems.addAll(db.getGroupItems(group.group_name, false));
-				System.out.println("a");
 				commentThreadReplies = db.getCommentThreadReplies(group.group_name);
-				System.out.println("b");
+				
 				for(GroupItem gi : existingGroupItems) {
 					if(gi.type_id == 0) {
 						VideoGroup vg = new VideoGroup(gi.gitem_id, gi.youtube_id);
@@ -472,33 +462,24 @@ public class GroupManager extends StackPane {
 					});
 					List<String> videosInGroup = db.getVideoIds(group.group_name);
 					videosInGroup.parallelStream().forEach(videoId -> {
-						ElapsedTime clock = new ElapsedTime();
-						clock.set();
 						try {
-							List<Comment> comments = getComments(videoId);
-							video_progress++;
-							final long prog = video_progress;
-							Platform.runLater(() -> {
-								status2.setText(prog+" / "+videosInGroup.size()+" videos");
-							});
-							if(comments.size() > 0) {
-								new_comments += comments.size();
-								db.insertComments(comments);
-								final long t2 = timer.getSeconds(), c = new_comments;
-								if(t2 > last_second+3) {
-									last_second = t2;
-									System.out.println(t);
-									Platform.runLater(() -> {
-										cseries.getData().add(new XYChart.Data<>(t2, c));
-									});
-								}
-							}
+							getComments(videoId);
 						} catch (JsonSyntaxException | SQLException e) {
 							e.printStackTrace();
-						} catch (Throwable e) {
-							System.out.println("Something fucked up. "+videoId);
-							e.printStackTrace();
 						}
+						video_progress++;
+						final long prog = video_progress;
+						final long t1 = timer.getSeconds(), c1 = new_comments;
+						Platform.runLater(() -> {
+							status2.setText(prog+" / "+videosInGroup.size()+" videos");
+							if(t1 > last_second+3) {
+								last_second = t1;
+								System.out.println(t1);
+								Platform.runLater(() -> {
+									cseries.getData().add(new XYChart.Data<>(t1, c1));
+								});
+							}
+						});
 					});
 					final long t3 = timer.getSeconds(), c = new_comments;
 					Platform.runLater(() -> {
@@ -511,20 +492,14 @@ public class GroupManager extends StackPane {
 					Platform.runLater(() -> {
 						status.setText("Part 3 of 3. Finding new comment replies.");
 					});
-					commentThreadIds.parallelStream().forEach(thread -> {
-						ElapsedTime clock = new ElapsedTime();
-						clock.set();
+					commentThreadIds.keySet().parallelStream().forEach(threadId -> {
 						try {
-							List<Comment> replies = getReplies(thread);
+							getReplies(threadId, commentThreadIds.get(threadId));
 							thread_progress++;
 							final long prog = thread_progress;
+							final long t1 = timer.getSeconds(), c1 = new_comments;
 							Platform.runLater(() -> {
 								status2.setText(prog+" / "+commentThreadIds.size()+" comment threads");
-							});
-							if(replies.size() > 0) {
-								new_comments += replies.size();
-								db.insertComments(replies);
-								final long t1 = timer.getSeconds(), c1 = new_comments;
 								if(t1 > last_second+3) {
 									last_second = t1;
 									System.out.println(t1);
@@ -532,13 +507,11 @@ public class GroupManager extends StackPane {
 										rseries.getData().add(new XYChart.Data<>(t1, c1));
 									});
 								}
-							}
+							});
 						} catch (JsonSyntaxException e) {
 							e.printStackTrace();
-						} catch (SQLException e) {
-							e.printStackTrace();
 						} catch (Throwable e) {
-							System.out.println("Something fucked up. "+thread.comment_id);
+							System.out.println("Something broke. "+threadId);
 							e.printStackTrace();
 						}
 					});
@@ -568,19 +541,19 @@ public class GroupManager extends StackPane {
 				return null;
 			}
 			
-			protected boolean videoListContainsId(List<Video> list, String id) {
+			private boolean videoListContainsId(List<Video> list, String id) {
 				for(Video video : list)
 					if(video.video_id.equals(id)) return true;
 				return false;
 			}
 			
-			protected void clearAll(Collection<?>... lists) {
+			private void clearAll(Collection<?>... lists) {
 				for(Collection<?> list : lists) {
 					list.clear();
 				}
 			}
 			
-			protected void parseChannelItems(List<GroupItem> channels) throws JsonSyntaxException, IOException {
+			private void parseChannelItems(List<GroupItem> channels) throws JsonSyntaxException, IOException {
 				for(GroupItem gi : channels) {
 					ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_CONTENT_DETAILS, gi.youtube_id, ChannelsList.MAX_RESULTS, "");
 					String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
@@ -588,13 +561,13 @@ public class GroupManager extends StackPane {
 				}
 			}
 			
-			protected void parsePlaylistItems(List<GroupItem> playlists) throws JsonSyntaxException, IOException {
+			private void parsePlaylistItems(List<GroupItem> playlists) throws JsonSyntaxException, IOException {
 				for(GroupItem gi : playlists) {
 					handlePlaylist(gi.youtube_id, gi.gitem_id);
 				}
 			}
 			
-			protected void handlePlaylist(final String playlistId, int gitem_id) throws JsonSyntaxException, IOException {
+			private void handlePlaylist(final String playlistId, int gitem_id) throws JsonSyntaxException, IOException {
 				PlaylistItemsList pil = null;
 				String pageToken = "";
 				List<String> videos = new ArrayList<String>();
@@ -610,7 +583,7 @@ public class GroupManager extends StackPane {
 				parseVideoItems(videos, gitem_id);
 			}
 			
-			protected void parseVideoItems(List<String> videos, int gitem_id) throws JsonSyntaxException, IOException {
+			private void parseVideoItems(List<String> videos, int gitem_id) throws JsonSyntaxException, IOException {
 				for(int i=0; i<videos.size(); i += 50) {
 					List<String> sublist = videos.subList(i, i+50 < videos.size() ? i+50 : videos.size());
 					if(gitem_id != -1) {
@@ -628,7 +601,7 @@ public class GroupManager extends StackPane {
 				}
 			}
 			
-			protected void handleVideos(final String ids) throws JsonSyntaxException, IOException {
+			private void handleVideos(final String ids) throws JsonSyntaxException, IOException {
 				VideosList snip = data.getVideosById(VideosList.PART_SNIPPET, ids, VideosList.MAX_RESULTS, "");
 				VideosList stats = data.getVideosById(VideosList.PART_STATISTICS, ids, VideosList.MAX_RESULTS, "");
 				
@@ -666,12 +639,16 @@ public class GroupManager extends StackPane {
 				});
 			}
 			
-			protected List<Comment> getComments(final String videoId) throws JsonSyntaxException {
+			private void getComments(final String videoId) throws JsonSyntaxException, SQLException {
 				List<Comment> comments = new ArrayList<Comment>();
 				CommentThreadsList snippet = null;
 				String snipToken = "";
 				int fails = 0;
 				do {
+					if(comments.size() >= COMMENT_INSERT_SIZE) {
+						submitComments(comments);
+						comments.clear();
+					}
 					try {
 						snippet = data.getCommentThreadsByVideoId(CommentThreadsList.PART_SNIPPET, videoId, CommentThreadsList.MAX_RESULTS, snipToken);
 						snipToken = snippet.nextPageToken;
@@ -680,7 +657,7 @@ public class GroupManager extends StackPane {
 							if(item.hasSnippet()) {
 								boolean contains = commentThreadReplies.containsKey(item.id);
 								if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != commentThreadReplies.get(item.id))) {
-									commentThreadIds.add(new CommentThread(item.id, videoId));
+									commentThreadIds.put(item.id, videoId);
 								}
 								if(!existingCommentIds.contains(item.id)) {
 									CommentsList.Item tlc = item.snippet.topLevelComment;
@@ -723,22 +700,29 @@ public class GroupManager extends StackPane {
 						}
 					}
 				} while ((snippet == null || snippet.nextPageToken != null) && fails < 5);
-				return comments;
+				if(comments.size() > 0) {
+					submitComments(comments);
+					comments.clear();
+				}
 			}
 			
-			protected List<Comment> getReplies(final CommentThread thread) throws JsonSyntaxException {
+			private void getReplies(final String threadId, final String videoId) throws JsonSyntaxException, SQLException {
 				List<Comment> replies = new ArrayList<Comment>();
 				CommentsList cl = null;
 				String pageToken = "";
 				int fails = 0;
 				do {
+					if(replies.size() >= COMMENT_INSERT_SIZE) {
+						submitComments(replies);
+						replies.clear();
+					}
 					try {
-						cl = data.getCommentsByParentId(thread.comment_id, CommentsList.MAX_RESULTS, pageToken);
+						cl = data.getCommentsByParentId(threadId, CommentsList.MAX_RESULTS, pageToken);
 						pageToken = cl.nextPageToken;
 						for(CommentsList.Item reply : cl.items) {
 							if(!existingCommentIds.contains(reply.id)) {
 								Comment c = createComment(reply, true, -1);
-								c.video_id = thread.video_id;
+								c.video_id = videoId;
 								replies.add(c);
 							}
 						}
@@ -746,34 +730,45 @@ public class GroupManager extends StackPane {
 						fails++;
 					}
 				} while (cl.nextPageToken != null && fails < 5);
-				return replies;
+				if(replies.size() > 0) {
+						submitComments(replies);
+						replies.clear();
+				}
 			}
 			
-			protected Comment createComment(CommentsList.Item item, boolean isReply, int replyCount) {
+			private void submitComments(List<Comment> comments) throws SQLException {
+				if(comments.size() > 0) {
+					new_comments += comments.size();
+					db.insertComments(comments);
+					final long t2 = timer.getSeconds(), c = new_comments;
+					if(t2 > last_second+3) {
+						last_second = t2;
+						Platform.runLater(() -> {
+							cseries.getData().add(new XYChart.Data<>(t2, c));
+						});
+					}
+				}
+			}
+			
+			private Comment createComment(CommentsList.Item item, boolean isReply, int replyCount) {
 				if(item.hasSnippet()) {
 					if(item.snippet.authorChannelId != null && item.snippet.authorChannelId.value != null) {
 						Channel channel;
 						String channelId = item.snippet.authorChannelId.value;
-						if(channelId == null) System.out.println("NULL CHANNELID");
 						if(channels.containsKey(channelId)) {
 							channel = channels.get(channelId);
 						} else {
 							channel = new Channel(channelId, StringEscapeUtils.unescapeHtml4(item.snippet.authorDisplayName), item.snippet.authorProfileImageUrl, false);
 							channels.put(channelId, channel);
 						}
-						if(!existingChannelIds.contains(channelId)) {
-							if(!insertChannels.contains(channel))
-								insertChannels.add(channel);
-						} else {
-							if(!updateChannels.contains(channel))
-								updateChannels.add(channel);
+						if(!existingChannelIds.contains(channelId) && !insertChannels.contains(channel)) {
+							insertChannels.add(channel);
+						} else if(!updateChannels.contains(channel)) {
+							updateChannels.add(channel);
 						}
 						Comment comment = null;
-						if(isReply) {
-							comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, StringEscapeUtils.unescapeHtml4(item.snippet.textDisplay), item.snippet.likeCount, replyCount, isReply, item.snippet.parentId);
-						} else {
-							comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, StringEscapeUtils.unescapeHtml4(item.snippet.textDisplay), item.snippet.likeCount, replyCount, isReply, null);
-						}
+						String parentId = isReply ? item.snippet.parentId : null;
+						comment = new Comment(item.id, channel, item.snippet.videoId, item.snippet.publishedAt, StringEscapeUtils.unescapeHtml4(item.snippet.textDisplay), item.snippet.likeCount, replyCount, isReply, parentId);
 						return comment;
 					}
 				}
