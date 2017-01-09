@@ -215,10 +215,14 @@ public class CommentResult extends HBox {
 		hbox.getChildren().addAll(img, label);
 		
 		int width = 450;
+		int height = 350;
 		TextArea text = new TextArea(parsedText);
 		text.setMaxWidth(width);
 		text.setPrefWidth(width);
 		text.setMinWidth(width);
+		text.setMaxHeight(height);
+		text.setPrefHeight(height);
+		text.setMinHeight(height);
 		text.setWrapText(true);
 		text.setEditable(false);
 		vbox.getChildren().addAll(hbox, text);

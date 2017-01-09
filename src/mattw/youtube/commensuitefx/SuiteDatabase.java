@@ -375,6 +375,8 @@ public class SuiteDatabase {
 		if(rs.next()) {
 			return rs.getInt("count") >= 1;
 		}
+		ps.close();
+		rs.close();
 		return false;
 	}
 	

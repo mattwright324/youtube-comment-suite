@@ -646,7 +646,7 @@ public class GroupManager extends StackPane {
 				int fails = 0;
 				do {
 					if(comments.size() >= COMMENT_INSERT_SIZE) {
-						submitComments(comments);
+						submitComments(comments, cseries);
 						comments.clear();
 					}
 					try {
@@ -701,7 +701,7 @@ public class GroupManager extends StackPane {
 					}
 				} while ((snippet == null || snippet.nextPageToken != null) && fails < 5);
 				if(comments.size() > 0) {
-					submitComments(comments);
+					submitComments(comments, cseries);
 					comments.clear();
 				}
 			}
@@ -713,7 +713,7 @@ public class GroupManager extends StackPane {
 				int fails = 0;
 				do {
 					if(replies.size() >= COMMENT_INSERT_SIZE) {
-						submitComments(replies);
+						submitComments(replies, rseries);
 						replies.clear();
 					}
 					try {
@@ -731,12 +731,12 @@ public class GroupManager extends StackPane {
 					}
 				} while (cl.nextPageToken != null && fails < 5);
 				if(replies.size() > 0) {
-						submitComments(replies);
+						submitComments(replies, rseries);
 						replies.clear();
 				}
 			}
 			
-			private void submitComments(List<Comment> comments) throws SQLException {
+			private void submitComments(List<Comment> comments, final XYChart.Series<Number,Number> series) throws SQLException {
 				if(comments.size() > 0) {
 					new_comments += comments.size();
 					db.insertComments(comments);
