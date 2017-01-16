@@ -397,9 +397,19 @@ public class GroupManager extends StackPane {
 			private List<ChannelType> updateChannels = new ArrayList<ChannelType>();
 			private List<VideoGroup> insertVideoGroups = new ArrayList<VideoGroup>();
 			
+			private List<String> insertedCommentIds = new ArrayList<String>();
+			
 			private List<String> gitemVideos = new ArrayList<String>();
 			private List<GitemType> gitemChannels = new ArrayList<GitemType>();
 			private List<GitemType> gitemPlaylists = new ArrayList<GitemType>();
+			
+			/*private boolean listContainsId(List<YoutubeObject> list, String youtubeId) {
+				for(YoutubeObject obj : list) {
+					if(obj.getId().equals(youtubeId)) 
+						return true;
+				}
+				return false;
+			}*/
 			
 			protected Void call() {
 				try {
@@ -480,7 +490,7 @@ public class GroupManager extends StackPane {
 						});
 						es = Executors.newCachedThreadPool();
 						final List<String> threads = commentThreadIds.keySet().stream().collect(Collectors.toList());
-						for(int i=0; i < THREADS; i++) {
+						for(int i=0; i < THREADS+8; i++) {
 							final int offset = i;
 							es.execute(() -> repliesThread(threads, offset));
 						}
@@ -506,8 +516,9 @@ public class GroupManager extends StackPane {
 						status2.setText("Elapsed time: "+time);
 						reloadTables();
 					});
-					refreshing = false;
+					database.setAutoCommit(true);
 					close.setDisable(false);
+					refreshing = false;
 					CommentSuiteFX.app.setupWithManager(manager);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -701,7 +712,7 @@ public class GroupManager extends StackPane {
 			}
 			
 			private void repliesThread(final List<String> threads, int offset) {
-				int pos = 0;
+				int pos = offset;
 				while(pos < threads.size()) {
 					final String threadId = threads.get(pos);
 					try {
@@ -725,7 +736,7 @@ public class GroupManager extends StackPane {
 						System.out.println("Something broke. "+threadId);
 						e.printStackTrace();
 					}
-					pos += THREADS;
+					pos += THREADS+8;
 				}
 			}
 			
@@ -764,10 +775,15 @@ public class GroupManager extends StackPane {
 				}
 			}
 			
+			// UC9RM-iSvTu1uPJb8X5yp3EQ
+			
 			private void submitComments(List<CommentType> comments, final XYChart.Series<Number,Number> series) throws SQLException {
 				if(comments.size() > 0) {
 					new_comments += comments.size();
-					database.insertComments(comments);
+					database.insertComments(comments.stream()
+							.filter(ct -> !insertedCommentIds.contains(ct.getId()) && !existingCommentIds.contains(ct.getId()))
+							.peek(ct -> insertedCommentIds.add(ct.getId()))
+							.collect(Collectors.toList()));
 					final long t2 = timer.getSeconds(), c = new_comments;
 					if(t2 > last_second+3) {
 						last_second = t2;

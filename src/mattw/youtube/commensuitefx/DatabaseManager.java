@@ -311,7 +311,7 @@ public class DatabaseManager {
 			ps.setString(3, "%"+textLike+"%");
 			ps.setLong(4, after);
 			ps.setLong(5, before);
-			if(cType != 0) ps.setBoolean(6, cType == 0);
+			if(cType != 0) ps.setBoolean(6, cType == 2);
 			
 			ResultSet rs = ps.executeQuery();
 			
@@ -538,7 +538,7 @@ public class DatabaseManager {
 	}
 	
 	public List<String> getVideoIds(int groupId) throws SQLException {
-		PreparedStatement ps = con.prepareStatement("SELECT video_id FROM videos JOIN video_group USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+		PreparedStatement ps = con.prepareStatement("SELECT video_id FROM videos WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
 		ps.setInt(1, groupId);
 		ResultSet rs = ps.executeQuery();
 		List<String> list = new ArrayList<String>();
@@ -551,7 +551,7 @@ public class DatabaseManager {
 	}
 	
 	public List<VideoType> getVideos(int groupId, boolean fetchImage) throws SQLException {
-		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos JOIN channels USING(channel_id) JOIN video_group USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos JOIN channels USING(channel_id) WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
 		ps.setInt(1, groupId);
 		ResultSet rs = ps.executeQuery();
 		List<VideoType> list = new ArrayList<VideoType>();
@@ -631,7 +631,7 @@ public class DatabaseManager {
 				ps.setBoolean(4, c.willFetchThumb());
 				ps.addBatch();
 			} else {
-				System.out.println("NULL VALUE ON CHANNEL INSERT c:"+(c==null)+",ps:"+(ps==null)+"");
+				System.out.println("NULL VALUE ON CHANNEL INSERT c:"+(c==null)+"");
 			}
 		}
 		ps.executeBatch();
