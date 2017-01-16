@@ -9,7 +9,6 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 
 import javafx.application.Platform;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.ButtonType;
@@ -31,7 +30,8 @@ public class CommentResult extends HBox {
 	
 	public static CommentResult lastSelected = null;
 	
-	final Comment comment;
+	final CommentType ct;
+	
 	final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 	final Hyperlink author;
 	final Label date, textShort, likes;
@@ -49,13 +49,13 @@ public class CommentResult extends HBox {
 			lastSelected = this;
 			Platform.runLater(() -> {
 				try {
-					CommentSuiteFX.app.loadContext(comment.video_id);
+					CommentSuiteFX.app.loadContext(ct.getVideoId());
 				} catch (SQLException | ParseException e) {
 					e.printStackTrace();
 				}
 			});
 		} else {
-			setId(comment.is_reply ? "commentReply" : "");
+			setId(ct.isReply() ? "commentReply" : "");
 		}
 	}
 	
@@ -63,9 +63,9 @@ public class CommentResult extends HBox {
 		return selected;
 	}
 	
-	public CommentResult(Comment c, boolean showTreeLink) {
+	public CommentResult(CommentType c, boolean showTreeLink) {
 		super();
-		comment = c;
+		ct = c;
 		setMinHeight(90);
 		setPrefHeight(90);
 		setMaxHeight(90);
@@ -83,33 +83,26 @@ public class CommentResult extends HBox {
 		ImageView img = new ImageView(BLANK_PROFILE);
 		img.setFitHeight(32);
 		img.setFitWidth(32);
-		if(c.channel.buffered_profile != null) {
-			if(profileMap.containsKey(c.channel.channel_id)) {
-				img.setImage(profileMap.get(c.channel.channel_id));
-			} else {
-				Image converted = SwingFXUtils.toFXImage(c.channel.buffered_profile, null);
-				profileMap.put(c.channel.channel_id, converted);
-				img.setImage(converted);
-			}
-			
-		}
-		box.getChildren().addAll(img, c.is_reply ? new Label("Reply") : new Label("Comment"));
+		Image thumb = DatabaseManager.getChannel(c.getChannelId()).fetchThumb();
+		if(thumb != null)
+			img.setImage(thumb);
+		box.getChildren().addAll(img, c.isReply() ? new Label("Reply") : new Label("Comment"));
 		
-		author = new Hyperlink(c.channel.channel_name);
+		author = new Hyperlink(DatabaseManager.getChannel(c.getChannelId()).getTitle());
 		author.setOnAction(e -> {
-			CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.channel.channel_id);
+			CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.getChannelId());
 		});
-		if(c.channel.channel_id.equals(CommentSuiteFX.app.config.getChannelId())) {
+		if(c.getChannelId().equals(CommentSuiteFX.app.config.getChannelId())) {
 			author.setId("commentMine");
 		}
-		date = new Label(sdf.format(c.comment_date));
+		date = new Label(sdf.format(c.getDate()));
 		date.setId("commentDate");
 		
-		likes = new Label(c.comment_likes > 0 ? "+"+c.comment_likes : "");
+		likes = new Label(c.getLikes() > 0 ? "+"+c.getLikes() : "");
 		likes.setId("commentLikes");
 		
 		int length = 400;
-		parsedText = Jsoup.parse(comment.comment_text.replace("<br />", "\r\n")).text();
+		parsedText = Jsoup.parse(c.getText().replace("<br />", "\r\n")).text();
 		textShort = new Label(parsedText.length() > length ? parsedText.substring(0, length-3)+"..." : parsedText);
 		textShort.setWrapText(true);
 		
@@ -118,11 +111,11 @@ public class CommentResult extends HBox {
 			replyToComment();
 		});
 		
-		viewtree = new Hyperlink("View Tree"+(c.reply_count > 0 ? " ("+c.reply_count+" replies)" : ""));
+		viewtree = new Hyperlink("View Tree"+(c.getReplies() > 0 ? " ("+c.getReplies()+" replies)" : ""));
 		viewtree.setDisable(!showTreeLink);
 		viewtree.setOnAction(e -> {
 			try {
-				CommentSuiteFX.app.viewTree(this.comment);
+				CommentSuiteFX.app.viewTree(this.ct);
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -136,9 +129,9 @@ public class CommentResult extends HBox {
 		HBox hbox = new HBox(10);
 		hbox.setAlignment(Pos.CENTER_LEFT);
 		hbox.getChildren().add(date); // save can_reply
-		if(c.comment_likes > 0) hbox.getChildren().add(likes);
+		if(c.getLikes() > 0) hbox.getChildren().add(likes);
 		if(CommentSuiteFX.app.config.getAccessTokens() != null) hbox.getChildren().add(reply);
-		if(c.reply_count > 0 || c.is_reply) hbox.getChildren().add(viewtree);
+		if(c.getReplies() > 0 || c.isReply()) hbox.getChildren().add(viewtree);
 		hbox.getChildren().add(viewfulltext);
 		
 		VBox text = new VBox();
@@ -176,7 +169,7 @@ public class CommentResult extends HBox {
 		text.setMinHeight(height);
 		text.setWrapText(true);
 		
-		if(comment.is_reply) text.setText("+"+comment.channel.channel_name+" ");
+		if(ct.isReply()) text.setText("+"+DatabaseManager.getChannel(ct.getChannelId()).getTitle()+" ");
 		
 		vbox.getChildren().addAll(text);
 		VBox.setVgrow(text, Priority.ALWAYS);
@@ -185,7 +178,7 @@ public class CommentResult extends HBox {
 			if(result == ButtonType.FINISH) {
 				if(!text.getText().equals("")) {
 					System.out.println("Commenting");
-					OA2Handler.postNewReply(comment.is_reply ? comment.parent_id : comment.comment_id, text.getText());
+					OA2Handler.postNewReply(ct.isReply() ? ct.getParentId() : ct.getId(), text.getText());
 				}
 			}
 		});
@@ -206,9 +199,9 @@ public class CommentResult extends HBox {
 		ImageView img = new ImageView(BLANK_PROFILE);
 		img.setFitHeight(32);
 		img.setFitWidth(32);
-		if(comment.channel.buffered_profile != null) {
-			img.setImage(SwingFXUtils.toFXImage(comment.channel.buffered_profile, null));
-		}
+		Image thumb = DatabaseManager.getChannel(ct.getChannelId()).fetchThumb();
+		if(thumb != null)
+			img.setImage(thumb);
 		HBox hbox = new HBox(5);
 		Hyperlink label = new Hyperlink(author.getText());
 		label.setOnAction(author.getOnAction());
