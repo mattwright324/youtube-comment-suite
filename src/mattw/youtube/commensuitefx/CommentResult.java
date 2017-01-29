@@ -12,10 +12,13 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -32,12 +35,15 @@ public class CommentResult extends HBox {
 	
 	final CommentType ct;
 	
+	final ImageView img;
 	final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 	final Hyperlink author;
 	final Label date, textShort, likes;
 	final Hyperlink reply, viewtree, viewfulltext;
+	final MenuItem loadProfile, openInBrowser, copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink;
 	
 	final String parsedText;
+	
 	
 	private boolean selected;
 	
@@ -45,7 +51,7 @@ public class CommentResult extends HBox {
 		selected = select;
 		if(selected) {
 			if(lastSelected != null) lastSelected.setSelected(false);
-			setId("commentSelected");
+			setId("itemSelected");
 			lastSelected = this;
 			Platform.runLater(() -> {
 				try {
@@ -80,7 +86,7 @@ public class CommentResult extends HBox {
 		box.setPrefWidth(75);
 		box.setMinWidth(75);
 		box.setAlignment(Pos.CENTER);
-		ImageView img = new ImageView(BLANK_PROFILE);
+		img = new ImageView(BLANK_PROFILE);
 		img.setFitHeight(32);
 		img.setFitWidth(32);
 		Image thumb = DatabaseManager.getChannel(c.getChannelId()).fetchThumb();
@@ -140,8 +146,60 @@ public class CommentResult extends HBox {
 		
 		getChildren().addAll(box, text);
 		
+		ContextMenu context = new ContextMenu();
+		
+		openInBrowser = new MenuItem("Open in Browser");
+		openInBrowser.setOnAction(e -> {
+			CommentSuiteFX.openInBrowser(ct.getYoutubeLink());
+		});
+		
+		loadProfile = new MenuItem("Load Profile Image");
+		loadProfile.setOnAction(e -> {
+			try {
+				loadProfileImage();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+		});
+		
+		copyName = new MenuItem("Copy Username");
+		copyName.setOnAction(e -> {
+			Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getTitle());
+		});
+		
+		copyText = new MenuItem("Copy Comment");
+		copyText.setOnAction(e -> {
+			Clipboards.setClipboard(ct.getText());
+		});
+		
+		copyChannelLink = new MenuItem("Copy Channel Link");
+		copyChannelLink.setOnAction(e -> {
+			Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getYoutubeLink());
+		});
+		
+		copyVideoLink = new MenuItem("Copy Video Link");
+		copyVideoLink.setOnAction(e -> {
+			Clipboards.setClipboard("https://youtu.be/"+ct.getVideoId());
+		});
+		
+		copyCommentLink = new MenuItem("Copy Comment Link");
+		copyCommentLink.setOnAction(e -> {
+			Clipboards.setClipboard(ct.getYoutubeLink());
+		});
+		
+		context.getItems().addAll(openInBrowser, loadProfile, new SeparatorMenuItem(), copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);
+		
 		setOnMouseClicked(e -> {
-			setSelected(!isSelected());
+			if(e.isPopupTrigger()) {
+				if(!context.isShowing()) {
+					context.show(this, e.getScreenX(), e.getScreenY());
+				}
+			} else {
+				if(context.isShowing()) {
+					context.hide();
+				}
+				setSelected(!isSelected());
+			}
 		});
 	}
 	
@@ -200,8 +258,9 @@ public class CommentResult extends HBox {
 		img.setFitHeight(32);
 		img.setFitWidth(32);
 		Image thumb = DatabaseManager.getChannel(ct.getChannelId()).fetchThumb();
-		if(thumb != null)
+		if(thumb != null) {
 			img.setImage(thumb);
+		}
 		HBox hbox = new HBox(5);
 		Hyperlink label = new Hyperlink(author.getText());
 		label.setOnAction(author.getOnAction());
@@ -223,4 +282,21 @@ public class CommentResult extends HBox {
 		dialog.showAndWait();
 	}
 	
+	
+	public void refreshImage() {
+		ChannelType channel = DatabaseManager.getChannel(ct.getChannelId());
+		if(channel.hasThumb())
+			img.setImage(channel.fetchThumb());
+	}
+	
+	public void loadProfileImage() throws SQLException {
+		ChannelType channel = DatabaseManager.getChannel(ct.getChannelId());
+		if(!channel.hasThumb()) {
+			CommentSuiteFX.app.database.updateChannelFetchThumb(channel.getId(), true);
+			channel = CommentSuiteFX.app.database.getChannelById(channel.getId());
+			DatabaseManager.channelCache.put(channel.getId(), channel);
+			CommentSuiteFX.app.refreshResultProfiles();
+		}
+	}
 }
+

@@ -31,7 +31,7 @@
 	-fx-focus-color: transparent;
 }
 
-#commentSelected {
+#itemSelected {
 	-fx-background-color: radial-gradient(focus-distance 0%, center 50% 50%, radius 85%, rgba(80,220,220,0.5), rgba(220,220,220,0));
 }
 

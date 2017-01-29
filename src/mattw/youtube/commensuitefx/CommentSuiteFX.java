@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,26 +57,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	
 	/**
 	 * TODO
-	 * Statistics / Analytics
-	 * 	Basic Stats
-	 * 		Total comments
-	 * 		Total likes / dislikes xx:yy
-	 * 		Avg Comments per video
-	 * 		Avg Views per video
-	 * 		Avg Likes / Dislikes per video
-	 * 		
-	 * 	Videos
-	 * 		Top 10 most popular (most viewed)
-	 * 		Comments Disabled list
-	 * 		Top 10 most liked
-	 * 		Top 10 most disliked
-	 * 		Top 10 least viewed
-	 * 		Top 10 most commented
-	 * 	Comments
-	 * 		Top 10 most active
-	 * 		Top 10 most popular
-	 * 		Top 10 most common comments
-	 * 
 	 * More Search Options
 	 * 		Before Date
 	 * 		After Date
@@ -137,6 +116,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public Button find, backToResults, clearComments;
 	public ComboBox<String> type, orderby;
 	public List<CommentResult> results;
+	public List<CommentResult> tree;
 	
 	public static void main(String[] args) {
 		launch(args);
@@ -331,7 +311,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					setNodesDisabled(true, search, nextPage, searchField, searchMethod, locField, locDistance, searchOrder, searchType);
 					try {
 						String escaped_search = URLEncoder.encode(searchField.getText(), "UTF-8");
-						System.out.println("q="+escaped_search);
 						String order = searchOrder.getSelectionModel().getSelectedItem().toLowerCase();
 						String type = "";
 						if(searchType.getSelectionModel().getSelectedIndex() != 0) type = searchType.getSelectionModel().getSelectedItem().toLowerCase();
@@ -352,15 +331,13 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 						} else {
 							sl = data.getSearchVideosAtLocation(escaped_search, 25, token, order, location, distance);
 						}
-						SearchResult last = null;
 						for(SearchList.Item item : sl.items) {
-							final SearchResult result = new SearchResult(last != null ? last : searchResults, item);
+							final SearchResult result = new SearchResult(item);
 							Platform.runLater(() -> {
 								searchResults.getChildren().add(result);
 								setNodesDisabled(false, selectAll, clearResults, addToGroup);
 								resultStatus.setText("Showing "+searchResults.getChildren().size()+" out of "+sl.pageInfo.totalResults+" results.");
 							});
-							last = result;
 						}
 						if(sl.nextPageToken != null) {
 							setNodesDisabled(false, nextPage);
@@ -408,6 +385,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			pane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 			
 			GridPane grid = new GridPane();
+			grid.setVgap(10);
 			grid.setPadding(new Insets(10,10,10,10));
 			grid.setAlignment(Pos.CENTER);
 			
@@ -449,10 +427,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				groupList.getSelectionModel().select(0);
 			}
 			
+			// TODO
 			List<GitemType> items = new ArrayList<GitemType>();
 			searchResults.getChildren().stream().filter(object -> object instanceof SearchResult && ((SearchResult) object).isSelected()).forEach(result -> {
-				SearchResult sr = (SearchResult) result;
-				items.add(new GitemType(sr.type_id, -1, sr.youtubeId, sr.title.getText(), sr.author.getText(), sr.thumbUrl.toString(), true, sr.publishedAt, new Date(0)));
+				items.add(((SearchResult) result).gitem);
 			});
 			
 			pane.setContent(grid);
@@ -474,12 +452,11 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 								reloadGroups();
 							}
 							group = database.getGroup(group_name);
-							database.insertGitems(group.group_id, items);
 						} else {
 							group = groupList.getSelectionModel().getSelectedItem();
 						}
-						System.out.println(group.group_name+" .. "+group.group_id);
-						database.insertGitems(group.group_id, items);
+						List<String> currentItems = database.getGitems(group.group_id, false).stream().map(gitem -> gitem.getId()).collect(Collectors.toList());
+						database.insertGitems(group.group_id, items.stream().filter(gitem -> !currentItems.contains(gitem.getId())).collect(Collectors.toList()));
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -571,7 +548,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			} else if(o.equals(reloadGroup)) {
 				Platform.runLater(() -> {
 					reloadGroup.setDisable(true);
-					manager.reloadTables();
+					manager.reloadGroupData();
 					reloadGroup.setDisable(false);
 				});
 				
@@ -836,7 +813,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		pageNum.setEditable(false);
 		pageNum.textProperty().addListener(new ChangeListener<String>() {
 		    public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-		    	pageNum.setPrefWidth(pageNum.getText().length() * 7);
+		    	pageNum.setPrefWidth(pageNum.getText().length() * 6.5);
 		    }
 		});
 		pageNum.setText(" Page 1 of 0 ");
@@ -1011,11 +988,11 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	
 	public void viewTree(CommentType comment) throws SQLException {
 		vValue = cscroll.getVvalue();
-		final List<CommentResult> list = database.getCommentTree(comment.isReply() ? comment.getParentId() : comment.getId()).stream()
+		tree = database.getCommentTree(comment.isReply() ? comment.getParentId() : comment.getId()).stream()
 				.map(c -> new CommentResult(c, false))
 				.collect(Collectors.toList());
 		commentResults.getChildren().clear();
-		commentResults.getChildren().addAll(list);
+		commentResults.getChildren().addAll(tree);
 		find.setDisable(false);
 		backToResults.setDisable(false);
 		cscroll.layout();
@@ -1240,6 +1217,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		grid.add(grid2, 0, 1, 5, 1);
 		
 		searchResults = new VBox();
+		searchResults.setPadding(new Insets(10,10,10,10));
 		searchResults.setAlignment(Pos.TOP_CENTER);
 		
 		scroll = new ScrollPane(searchResults);
@@ -1402,7 +1380,20 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		glass.getChildren().add(form);
 		return glass;
 	}
-
+	
+	public void refreshResultProfiles() {
+		if(results != null) {
+			for(CommentResult comment : results) {
+				comment.refreshImage();
+			}
+		}
+		if(tree != null) {
+			for(CommentResult comment : tree) {
+				comment.refreshImage();
+			}
+		}
+	}
+	
 	public static void openInBrowser(String link) {
 		link = link.replace(" ", "%20");
 		try {

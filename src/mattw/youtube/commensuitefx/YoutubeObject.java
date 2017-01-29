@@ -25,6 +25,10 @@ public abstract class YoutubeObject {
 	}
 	
 	protected YoutubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb) {
+		this(youtubeId, title, thumbUrl, fetchThumb, true);
+	}
+	
+	protected YoutubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb, boolean saveThumb) {
 		this.youtubeId = youtubeId != null ? youtubeId : "";
 		this.title = title;
 		this.thumbUrl = thumbUrl;
@@ -38,15 +42,19 @@ public abstract class YoutubeObject {
 				System.out.println("Fetching thumb: From URL: "+thumbUrl);
 				image = new Image(thumbUrl);
 				System.out.println("Fetching thumb: Success");
-				try {
-					System.out.println("Downloading thumb for id ("+youtubeId+")");
-					ImageIO.write(SwingFXUtils.fromFXImage(image, null), "jpg", thumbFile);
-				} catch (IOException e) {}
+				if(saveThumb) trySaveImage();
 			}
 		} else {
 			thumbFile = null;
 			image = null;
 		}
+	}
+	
+	public void trySaveImage() {
+		try {
+			System.out.println("Downloading thumb for id ("+youtubeId+")");
+			ImageIO.write(SwingFXUtils.fromFXImage(image, null), "jpg", thumbFile);
+		} catch (IOException e) {}
 	}
 	
 	public abstract String toString();
@@ -80,9 +88,9 @@ public abstract class YoutubeObject {
 		case 0:
 			return "https://youtu.be/"+youtubeId;
 		case 1:
-			return "https://www.youtube.com/playlists?list="+youtubeId;
-		case 2:
 			return "https://www.youtube.com/channel/"+youtubeId;
+		case 2:
+			return "https://www.youtube.com/playlist?list="+youtubeId;
 		default:
 			return "https://www.youtube.com/error/"+youtubeId;
 		}

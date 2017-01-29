@@ -27,21 +27,30 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
+import javafx.scene.Cursor;
 import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -50,6 +59,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import mattw.youtube.commensuitefx.DatabaseManager.Comment;
+import mattw.youtube.commensuitefx.DatabaseManager.Viewer;
 import mattw.youtube.datav3.YoutubeData;
 import mattw.youtube.datav3.list.ChannelsList;
 import mattw.youtube.datav3.list.CommentThreadsList;
@@ -64,10 +75,15 @@ public class GroupManager extends StackPane {
 	
 	public ObservableList<GitemType> gi_list = FXCollections.observableArrayList();
 	public ObservableList<VideoType> v_list = FXCollections.observableArrayList();
+	public ObservableList<GitemType> choiceList = FXCollections.observableArrayList();
 	
 	public TabPane tabs = new TabPane();
 	public Tab items, analytics;
 	public Label gi_label, v_label;
+	public VBox abox;
+	public Button loadAnalytics;
+	public ChoiceBox<GitemType> choice;
+	public ChoiceBox<String> type;
 	
 	public ExecutorService es;
 	public boolean refreshing = false;
@@ -267,27 +283,524 @@ public class GroupManager extends StackPane {
 			}
 		});
 		
-		reloadTables();
-		
-		analytics = new Tab("Analytics");
+		analytics = new Tab("Overview");
 		analytics.setClosable(false);
 		
-		VBox vbox2 = new VBox();
+		VBox vbox2 = new VBox(5);
+		vbox2.setPadding(new Insets(5,5,5,5));
+		vbox2.setAlignment(Pos.TOP_CENTER);
 		analytics.setContent(vbox2);
 		
-		tabs.getTabs().addAll(items, analytics);
+		HBox menu = new HBox(5);
+		menu.setAlignment(Pos.CENTER);
+		
+		loadAnalytics = new Button("Load");
+		loadAnalytics.setOnAction(e -> {
+			Task<Void> task = new Task<Void>() {
+				protected Void call() throws Exception {
+					loadAnalytics.setDisable(true);
+					choice.setDisable(true);
+					type.setDisable(true);
+					loadAnalytics(choice.getValue(), type.getSelectionModel().getSelectedIndex());
+					loadAnalytics.setDisable(false);
+					choice.setDisable(false);
+					type.setDisable(false);
+					return null;
+				}
+			};
+			Thread thread = new Thread(task);
+			thread.start();
+		});
+		
+		choice = new ChoiceBox<>();
+		choice.setMaxWidth(200);
+		choice.setItems(choiceList);
+		
+		type = new ChoiceBox<>();
+		type.getItems().addAll("Comments", "Videos");
+		type.getSelectionModel().select(0);
+		
+		menu.getChildren().addAll(loadAnalytics, choice, type);
+		
+		abox = new VBox(5);
+		
+		vbox2.getChildren().addAll(menu, abox);
+		
+		reloadGroupData();
+		tabs.getTabs().addAll(analytics, items);
+		
+		loadAnalytics.fire();
 	}
 	
-	public void reloadTables() {
+	public void loadAnalytics(GitemType gitem, int type) {
+		Platform.runLater(() -> {
+			abox.getChildren().clear();
+		});
+		
+		CategoryAxis xAxis = new CategoryAxis();
+		xAxis.setLabel("Weeks");
+		NumberAxis yAxis = new NumberAxis();
+		LineChart<String,Number> chart = new LineChart<>(xAxis, yAxis);
+		chart.setMinHeight(225);
+		chart.setPrefWidth(250);
+		chart.setMaxHeight(300);
+		chart.setLegendVisible(false);
+		XYChart.Series<String,Number> series = new XYChart.Series<>();
+		chart.getData().add(series);
+		Platform.runLater(() -> {
+			abox.getChildren().addAll(chart);
+		});
+		
+		FlowPane flow = new FlowPane();
+		flow.setPadding(new Insets(10,10,10,10));
+		flow.setAlignment(Pos.TOP_CENTER);
+		flow.setHgap(5);
+		
+		if(type == 0) {
+			chart.setTitle("Comment Counts by Week");
+			yAxis.setLabel("Comments");
+			
+			VBox active = new VBox(5);
+			active.setFillWidth(true);
+			active.setAlignment(Pos.TOP_CENTER);
+			Label lbl1 = new Label("Most Active Viewers");
+			lbl1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+			active.getChildren().add(lbl1);
+			
+			VBox popular = new VBox(5);
+			popular.setFillWidth(true);
+			popular.setAlignment(Pos.TOP_CENTER);
+			Label lbl2 = new Label("Most Popular Viewers");
+			lbl2.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+			popular.getChildren().add(lbl2);
+			
+			VBox comments = new VBox(5);
+			comments.setFillWidth(true);
+			comments.setAlignment(Pos.TOP_CENTER);
+			Label lbl3 = new Label("Most Common Comments");
+			lbl3.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+			comments.getChildren().add(lbl3);
+			
+			flow.getChildren().addAll(active, popular, comments);
+			
+			ScrollPane scroll = new ScrollPane(flow);
+			scroll.setFitToWidth(true);
+			
+			Platform.runLater(() -> {
+				abox.getChildren().addAll(scroll);
+			});
+			
+			try {
+				Map<Long,Long> histogram = database.getWeekByWeekCommentHistogram(group_id, gitem.getGitemId());
+				Platform.runLater(() -> {
+					xAxis.setLabel("Weeks ("+histogram.size()+" total)");
+				});
+				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
+				for(long time : histogram.keySet()) {
+					String date = sdf.format(new Date(time));
+					Platform.runLater(() -> {
+						XYChart.Data<String, Number> point = new XYChart.Data<>(date, histogram.get(time));
+						series.getData().add(point);
+						Tooltip.install(point.getNode(), new Tooltip("Week of "+date+" - "+sdf.format(new Date(time+604800000-60*60*24*1000))+"\nNew Comments: "+histogram.get(time)+""));
+						point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)");
+						point.getNode().setOnMouseEntered(e -> point.getNode().setStyle("-fx-background-color: orange"));
+						point.getNode().setOnMouseExited(e -> point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)"));
+					});
+				}
+			} catch (SQLException e1) {}
+			
+			ChannelType ct = null;
+			try {
+				List<Viewer> mostActive = database.getMostActiveViewers(group_id, gitem.getGitemId(), 25);
+				int pos = 1;
+				for(Viewer viewer : mostActive) {
+					ct = DatabaseManager.getChannel(viewer.channelId);
+					HBox entry = new HBox(10);
+					entry.setAlignment(Pos.CENTER_LEFT);
+					Platform.runLater(() -> {
+						active.getChildren().add(entry);
+					});
+					
+					TextField author = new TextField(ct.getTitle());
+					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+					author.setEditable(false);
+					author.setId("context");
+					
+					TextField about = new TextField(viewer.totalComments+" total comments");
+					about.setEditable(false);
+					about.setId("context");
+					
+					
+					Label num = new Label(pos+". ");
+					num.setPrefWidth(35);
+					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+					
+					ImageView profile = new ImageView(CommentResult.BLANK_PROFILE);
+					profile.setFitHeight(26);
+					profile.setFitWidth(26);
+					profile.setCursor(Cursor.HAND);
+					profile.setOnMouseClicked(e -> {
+						CommentSuiteFX.openInBrowser(DatabaseManager.getChannel(viewer.channelId).getYoutubeLink());
+					});
+					if(ct.hasThumb()) {
+						profile.setImage(ct.fetchThumb());
+					}
+					
+					VBox vbox = new VBox();
+					vbox.setFillWidth(true);
+					
+					Platform.runLater(() -> {
+						vbox.getChildren().addAll(author, about);
+						entry.getChildren().addAll(num, profile, vbox);
+					});
+					
+					pos++;
+				}
+			} catch (SQLException e) {}
+			
+			try {
+				List<Viewer> mostPopular = database.getMostPopularViewers(group_id, gitem.getGitemId(), 25);
+				int pos = 1;
+				for(Viewer viewer : mostPopular) {
+					ct = DatabaseManager.getChannel(viewer.channelId);
+					HBox entry = new HBox(10);
+					entry.setAlignment(Pos.CENTER_LEFT);
+					Platform.runLater(() -> {
+						popular.getChildren().add(entry);
+					});
+					
+					TextField author = new TextField(ct.getTitle());
+					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+					author.setEditable(false);
+					author.setId("context");
+					
+					TextField about = new TextField(viewer.totalLikes+" total likes");
+					about.setEditable(false);
+					about.setId("context");
+					
+					Label num = new Label(pos+". ");
+					num.setPrefWidth(35);
+					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+					
+					ImageView profile = new ImageView(CommentResult.BLANK_PROFILE);
+					profile.setFitHeight(26);
+					profile.setFitWidth(26);
+					profile.setCursor(Cursor.HAND);
+					profile.setOnMouseClicked(e -> {
+						CommentSuiteFX.openInBrowser(DatabaseManager.getChannel(viewer.channelId).getYoutubeLink());
+					});
+					if(ct.hasThumb()) {
+						profile.setImage(ct.fetchThumb());
+					}
+					
+					VBox vbox = new VBox();
+					vbox.setFillWidth(true);
+					
+					Platform.runLater(() -> {
+						vbox.getChildren().addAll(author, about);
+						entry.getChildren().addAll(num, profile, vbox);
+					});
+					
+					pos++;
+				}
+			} catch (SQLException e) {}
+			
+			try {
+				List<Comment> list = database.getMostCommonComments(group_id, gitem.getGitemId(), 25);
+				int pos = 1;
+				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+				for(Comment c : list) {
+					HBox entry = new HBox(10);
+					entry.setAlignment(Pos.CENTER_LEFT);
+					Platform.runLater(() -> {
+						comments.getChildren().add(entry);
+					});
+					
+					
+					Label num = new Label(pos+". ");
+					num.setPrefWidth(35);
+					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+					
+					TextField text = new TextField(c.commentText);
+					text.setMaxWidth(600);
+					text.setPrefWidth(600);
+					text.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+					text.setEditable(false);
+					text.setId("context");
+					
+					TextField info = new TextField(c.occurances+" times Last on "+sdf.format(new Date(c.lastCommentOn)));
+					info.setEditable(false);
+					info.setId("context");
+					
+					VBox vbox = new VBox();
+					vbox.setFillWidth(true);
+					
+					Platform.runLater(() -> {
+						vbox.getChildren().addAll(text, info);
+						entry.getChildren().addAll(num, vbox);
+					});
+					
+					pos++;
+				}
+				
+			} catch (SQLException e) {}
+			
+		} else if(type == 1) {
+			chart.setTitle("Video Counts by Week");
+			yAxis.setLabel("Videos");
+			
+			VBox popular = new VBox(5);
+			popular.setFillWidth(true);
+			popular.setAlignment(Pos.TOP_CENTER);
+			Label lbl1 = new Label("Most Popular");
+			lbl1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+			popular.getChildren().add(lbl1);
+			
+			VBox disliked = new VBox(5);
+			disliked.setFillWidth(true);
+			disliked.setAlignment(Pos.TOP_CENTER);
+			Label lbl2 = new Label("Most Disliked");
+			lbl2.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+			disliked.getChildren().add(lbl2);
+			
+			VBox comments = new VBox(5);
+			comments.setFillWidth(true);
+			comments.setAlignment(Pos.TOP_CENTER);
+			Label lbl3 = new Label("Most Commented");
+			lbl3.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+			comments.getChildren().add(lbl3);
+			
+			VBox disabled = new VBox(5);
+			disabled.setFillWidth(true);
+			disabled.setAlignment(Pos.TOP_CENTER);
+			Label lbl4 = new Label("Disabled");
+			lbl4.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+			disabled.getChildren().add(lbl4);
+			
+			flow.getChildren().addAll(popular, disliked, comments, disabled);
+			
+			ScrollPane scroll = new ScrollPane(flow);
+			scroll.setFitToWidth(true);
+			
+			Platform.runLater(() -> {
+				abox.getChildren().addAll(scroll);
+			});
+			
+			try {
+				Map<Long,Long> histogram = database.getWeekByWeekVideoHistogram(group_id, gitem.getGitemId());
+				Platform.runLater(() -> {
+					xAxis.setLabel("Weeks ("+histogram.size()+" total)");
+				});
+				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
+				for(long time : histogram.keySet()) {
+					String date = sdf.format(new Date(time));
+					Platform.runLater(() -> {
+						XYChart.Data<String, Number> point = new XYChart.Data<>(date, histogram.get(time));
+						series.getData().add(point);
+						Tooltip.install(point.getNode(), new Tooltip("Week of "+date+" - "+sdf.format(new Date(time+604800000-60*60*24*1000))+"\nNew Videos: "+histogram.get(time)+""));
+						point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)");
+						point.getNode().setOnMouseEntered(e -> point.getNode().setStyle("-fx-background-color: orange"));
+						point.getNode().setOnMouseExited(e -> point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)"));
+					});
+				}
+			} catch (SQLException e1) {}
+			
+			try {
+				List<VideoType> videos = database.getMostPopularVideos(group_id, gitem.getGitemId(), 10);
+				int pos = 1;
+				for(VideoType v : videos) {
+					HBox entry = new HBox(10);
+					entry.setAlignment(Pos.CENTER_LEFT);
+					Platform.runLater(() -> {
+						popular.getChildren().add(entry);
+					});
+					
+					TextField author = new TextField(v.getTitle());
+					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+					author.setEditable(false);
+					author.setId("context");
+					
+					TextField about = new TextField(v.getViews()+" views");
+					about.setEditable(false);
+					about.setId("context");
+					
+					Label num = new Label(pos+". ");
+					num.setPrefWidth(35);
+					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+
+					ImageView thumb = new ImageView(v.fetchThumb());
+					thumb.setFitHeight(32);
+					thumb.setFitWidth(57);
+					thumb.setCursor(Cursor.HAND);
+					thumb.setOnMouseClicked(e -> {
+						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
+					});
+					
+					VBox vbox = new VBox();
+					vbox.setFillWidth(true);
+					
+					Platform.runLater(() -> {
+						vbox.getChildren().addAll(author, about);
+						entry.getChildren().addAll(num, thumb, vbox);
+					});
+					
+					pos++;
+				}
+			} catch (SQLException e) {}
+			
+			try {
+				List<VideoType> videos = database.getMostDislikedVideos(group_id, gitem.getGitemId(), 10);
+				int pos = 1;
+				for(VideoType v : videos) {
+					HBox entry = new HBox(10);
+					entry.setAlignment(Pos.CENTER_LEFT);
+					Platform.runLater(() -> {
+						disliked.getChildren().add(entry);
+					});
+					
+					TextField author = new TextField(v.getTitle());
+					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+					author.setEditable(false);
+					author.setId("context");
+					
+					TextField about = new TextField(v.getDislikes()+" dislikes");
+					about.setEditable(false);
+					about.setId("context");
+					
+					Label num = new Label(pos+". ");
+					num.setPrefWidth(35);
+					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+
+					ImageView thumb = new ImageView(v.fetchThumb());
+					thumb.setFitHeight(32);
+					thumb.setFitWidth(57);
+					thumb.setCursor(Cursor.HAND);
+					thumb.setOnMouseClicked(e -> {
+						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
+					});
+					
+					VBox vbox = new VBox();
+					vbox.setFillWidth(true);
+					
+					Platform.runLater(() -> {
+						vbox.getChildren().addAll(author, about);
+						entry.getChildren().addAll(num, thumb, vbox);
+					});
+					
+					pos++;
+				}
+			} catch (SQLException e) {}
+			
+			try {
+				List<VideoType> videos = database.getMostCommentedVideos(group_id, gitem.getGitemId(), 10);
+				int pos = 1;
+				for(VideoType v : videos) {
+					HBox entry = new HBox(10);
+					entry.setAlignment(Pos.CENTER_LEFT);
+					Platform.runLater(() -> {
+						comments.getChildren().add(entry);
+					});
+					
+					TextField author = new TextField(v.getTitle());
+					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+					author.setEditable(false);
+					author.setId("context");
+					
+					TextField about = new TextField(v.getComments()+" comments");
+					about.setEditable(false);
+					about.setId("context");
+					
+					Label num = new Label(pos+". ");
+					num.setPrefWidth(35);
+					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+
+					ImageView thumb = new ImageView(v.fetchThumb());
+					thumb.setFitHeight(32);
+					thumb.setFitWidth(57);
+					thumb.setCursor(Cursor.HAND);
+					thumb.setOnMouseClicked(e -> {
+						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
+					});
+					
+					VBox vbox = new VBox();
+					vbox.setFillWidth(true);
+					
+					Platform.runLater(() -> {
+						vbox.getChildren().addAll(author, about);
+						entry.getChildren().addAll(num, thumb, vbox);
+					});
+					
+					pos++;
+				}
+			} catch (SQLException e) {}
+			
+			try {
+				List<VideoType> videos = database.getDisabledVideos(group_id, gitem.getGitemId());
+				int pos = 1;
+				if(videos.isEmpty()) {
+					Label none = new Label("No comments disabled.");
+					Platform.runLater(() -> {
+						disabled.getChildren().add(none);
+					});
+				}
+				for(VideoType v : videos) {
+					HBox entry = new HBox(10);
+					entry.setAlignment(Pos.CENTER_LEFT);
+					Platform.runLater(() -> {
+						disabled.getChildren().add(entry);
+					});
+					
+					TextField author = new TextField(v.getTitle());
+					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+					author.setEditable(false);
+					author.setId("context");
+					
+					TextField about = new TextField(v.getHttpCode() == 403 ? "Comments Disabled" : "HTTP "+v.getHttpCode());
+					about.setEditable(false);
+					about.setStyle("-fx-text-fill: firebrick");
+					about.setId("context");
+					
+					Label num = new Label(pos+". ");
+					num.setPrefWidth(35);
+					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+
+					ImageView thumb = new ImageView(v.fetchThumb());
+					thumb.setFitHeight(32);
+					thumb.setFitWidth(57);
+					thumb.setCursor(Cursor.HAND);
+					thumb.setOnMouseClicked(e -> {
+						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
+					});
+					
+					VBox vbox = new VBox();
+					vbox.setFillWidth(true);
+					
+					Platform.runLater(() -> {
+						vbox.getChildren().addAll(author, about);
+						entry.getChildren().addAll(num, thumb, vbox);
+					});
+					
+					pos++;
+				}
+			} catch (SQLException e) {}
+		}
+	}
+	
+	public void reloadGroupData() {
 		gi_list.clear();
 		v_list.clear();
+		choiceList.clear();
 		try {
 			group = database.getGroup(group_id);
 		} catch (SQLException e1) {
 			e1.printStackTrace();
 		}
 		try {
-			gi_list.addAll(database.getGitems(group_id, false));
+			List<GitemType> list = database.getGitems(group_id, false);
+			gi_list.addAll(list);
+			choiceList.add(new GitemType(-1, "All Items ("+list.size()+")"));
+			choiceList.addAll(list);
+			choice.getSelectionModel().select(0);
 			if(!gi_list.isEmpty())
 				gi_label.setText(gi_list.size()+" items");
 			else
@@ -514,7 +1027,7 @@ public class GroupManager extends StackPane {
 					Platform.runLater(() -> {
 						status.setText("Complete.");
 						status2.setText("Elapsed time: "+time);
-						reloadTables();
+						reloadGroupData();
 					});
 					database.setAutoCommit(true);
 					close.setDisable(false);
