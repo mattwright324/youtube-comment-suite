@@ -9,7 +9,13 @@ import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +40,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
@@ -76,7 +83,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public TextField pageNum;
 	public int page = 1;
 	
-	public StackPane layout, setup;
+	public StackPane layout, setup, addGroup;
 	public GridPane main, menu, videos, groups;
 	public HBox comments;
 	
@@ -379,90 +386,14 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			setNodesDisabled(true, selectAll, clearResults, addToGroup, nextPage, resultStatus);
 			searchResults.getChildren().clear();
 		} else if(o.equals(addToGroup)) {
-			Dialog<ButtonType> dialog = new Dialog<>();
-			DialogPane pane = new DialogPane();
-			dialog.setDialogPane(pane);
-			pane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-			
-			GridPane grid = new GridPane();
-			grid.setVgap(10);
-			grid.setPadding(new Insets(10,10,10,10));
-			grid.setAlignment(Pos.CENTER);
-			
-			ToggleGroup toggle = new ToggleGroup();
-			RadioButton existing = new RadioButton("Existing group.");
-			existing.setToggleGroup(toggle);
-			RadioButton newGroup = new RadioButton("Make new group.");
-			newGroup.setToggleGroup(toggle);
-			
-			grid.add(existing, 0, 0);
-			
-			ChoiceBox<Group> groupList = new ChoiceBox<>();
-			groupList.getItems().addAll(choice.getItems());
-			grid.add(groupList, 0, 1);
-			grid.add(newGroup, 0, 2);
-			
-			TextField field = new TextField();
-			field.setPromptText("Choose a unique name.");
-			grid.add(field, 0, 3);
-			
-			existing.setOnAction(e -> {
-				if(existing.isSelected()) {
-					groupList.setDisable(false);
-					field.setDisable(true);
-				}
-			});
-			newGroup.setOnAction(e -> {
-				if(newGroup.isSelected()) {
-					groupList.setDisable(true);
-					field.setDisable(false);
-				}
-			});
-			
-			if(groupList.getItems().isEmpty()) {
-				existing.setDisable(true);
-				newGroup.fire();
-			} else {
-				existing.fire();
-				groupList.getSelectionModel().select(0);
+			//Dialog<ButtonType> dialog = new Dialog<>();
+			//DialogPane pane = new DialogPane();
+			//dialog.setDialogPane(pane);
+			//pane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+			if(!layout.getChildren().contains(addGroup)) {
+				addGroup = createAddToGroupPane();
+				layout.getChildren().add(addGroup);
 			}
-			
-			// TODO
-			List<GitemType> items = new ArrayList<GitemType>();
-			searchResults.getChildren().stream().filter(object -> object instanceof SearchResult && ((SearchResult) object).isSelected()).forEach(result -> {
-				items.add(((SearchResult) result).gitem);
-			});
-			
-			pane.setContent(grid);
-			dialog.setTitle("Add Items to Group ("+items.size()+")");
-			dialog.showAndWait().ifPresent(choice -> {
-				if(choice == ButtonType.OK) {
-					String group_name;
-					try {
-						Group group;
-						if(newGroup.isSelected()) {
-							boolean unique = true;
-							group_name = field.getText();
-							for(Group g : groupList.getItems()) if(g.group_name.equals(group_name)) {
-								unique = false;
-								break;
-							}
-							if(unique) {
-								database.insertGroup(group_name);
-								reloadGroups();
-							}
-							group = database.getGroup(group_name);
-						} else {
-							group = groupList.getSelectionModel().getSelectedItem();
-						}
-						List<String> currentItems = database.getGitems(group.group_id, false).stream().map(gitem -> gitem.getId()).collect(Collectors.toList());
-						database.insertGitems(group.group_id, items.stream().filter(gitem -> !currentItems.contains(gitem.getId())).collect(Collectors.toList()));
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-			});
-			
 		} else if(o.equals(createGroup) || o.equals(deleteGroup) || o.equals(renameGroup) || o.equals(refreshGroup) || o.equals(reloadGroup)) {
 			if(o.equals(createGroup)) {
 				List<Group> allGroups = choice.getItems();
@@ -674,10 +605,112 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		stage.show();
 	}
 	
-	// TODO 
+	public StackPane createAddToGroupPane() {
+		ToggleGroup toggle = new ToggleGroup();
+		RadioButton existing = new RadioButton("Existing group.");
+		existing.setToggleGroup(toggle);
+		RadioButton newGroup = new RadioButton("Make new group.");
+		newGroup.setToggleGroup(toggle);
+		
+		ChoiceBox<Group> groupList = new ChoiceBox<>();
+		groupList.getItems().addAll(choice.getItems());
+		
+		TextField field = new TextField();
+		field.setMinWidth(200);
+		field.setPromptText("Choose a unique name.");
+		
+		
+		existing.setOnAction(e -> {
+			if(existing.isSelected()) {
+				groupList.setDisable(false);
+				field.setDisable(true);
+			}
+		});
+		newGroup.setOnAction(e -> {
+			if(newGroup.isSelected()) {
+				groupList.setDisable(true);
+				field.setDisable(false);
+			}
+		});
+		
+		if(groupList.getItems().isEmpty()) {
+			existing.setDisable(true);
+			newGroup.fire();
+		} else {
+			existing.fire();
+			groupList.getSelectionModel().select(0);
+		}
+		
+		List<GitemType> items = new ArrayList<GitemType>();
+		searchResults.getChildren().stream().filter(object -> object instanceof SearchResult && ((SearchResult) object).isSelected()).forEach(result -> {
+			items.add(((SearchResult) result).gitem);
+		});
+		
+		/*dialog.showAndWait().ifPresent(choice -> {
+			if(choice == ButtonType.OK) {
+				
+			}
+		});*/
+		
+		Button ok = new Button("Finish");
+		Button cancel = new Button("Cancel");
+		HBox hbox = new HBox(10);
+		hbox.getChildren().addAll(cancel, ok);
+		hbox.setAlignment(Pos.CENTER_RIGHT);
+		
+		Label title = new Label("Add "+items.size()+" items to group: ");
+		title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+		
+		VBox vbox = new VBox(10);
+		vbox.setId("stackMenu");
+		vbox.setMaxHeight(0);
+		vbox.setMaxWidth(0);
+		vbox.setFillWidth(true);
+		vbox.setPadding(new Insets(25,25,25,25));
+		vbox.setAlignment(Pos.CENTER_LEFT);
+		vbox.getChildren().addAll(title, existing, groupList, newGroup, field, hbox);
+		
+		StackPane glass = new StackPane();
+		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);"); 
+		glass.setMaxHeight(Double.MAX_VALUE);
+		glass.setMaxWidth(Double.MAX_VALUE);
+		glass.setAlignment(Pos.CENTER);
+		glass.getChildren().add(vbox);
+		cancel.setOnAction(ae -> {
+			layout.getChildren().remove(glass);
+		});
+		ok.setOnAction(ae -> {
+			String group_name;
+			try {
+				Group group;
+				if(newGroup.isSelected()) {
+					boolean unique = true;
+					group_name = field.getText();
+					for(Group g : groupList.getItems()) if(g.group_name.equals(group_name)) {
+						unique = false;
+						break;
+					}
+					if(unique) {
+						database.insertGroup(group_name);
+						reloadGroups();
+					}
+					group = database.getGroup(group_name);
+				} else {
+					group = groupList.getSelectionModel().getSelectedItem();
+				}
+				List<String> currentItems = database.getGitems(group.group_id, false).stream().map(gitem -> gitem.getId()).collect(Collectors.toList());
+				database.insertGitems(group.group_id, items.stream().filter(gitem -> !currentItems.contains(gitem.getId())).collect(Collectors.toList()));
+				layout.getChildren().remove(glass);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		});
+		return glass;
+	}
+	
 	public HBox createCommentsPane() {
-		HBox grid = new HBox();
-		grid.setAlignment(Pos.TOP_LEFT);
+		HBox hbox = new HBox();
+		hbox.setAlignment(Pos.TOP_LEFT);
 		
 		VBox context = new VBox(5);
 		context.setPadding(new Insets(5,5,5,5));
@@ -895,33 +928,47 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		type.getItems().addAll("Comments and Replies", "Comments Only", "Replies Only");
 		type.getSelectionModel().select(0);
 		
-		Label label3 = new Label("Sort by ");
-		label3.setAlignment(Pos.CENTER_RIGHT);
-		
 		orderby = new ComboBox<String>();
 		orderby.setMaxWidth(Double.MAX_VALUE);
 		orderby.getItems().addAll("Most Recent", "Least Recent", "Most Likes", "Most Replies", "Longest Comment", "Names (A to Z)", "Comments (A to Z)");
 		orderby.getSelectionModel().select(0);
 		
-		HBox orderbox = new HBox(5);
-		orderbox.setAlignment(Pos.CENTER_LEFT);
-		orderbox.getChildren().addAll(label3, orderby);
+		GridPane grid = new GridPane();
+		grid.setAlignment(Pos.TOP_CENTER);
+		grid.setVgap(10);
+		grid.setHgap(10);
+		ColumnConstraints cc1 = new ColumnConstraints();
+		ColumnConstraints cc2 = new ColumnConstraints();
+		cc2.setFillWidth(true);
+		grid.getColumnConstraints().addAll(cc1, cc2);
+		
+		grid.addRow(0, new Label("Sort by: "), orderby);
 		
 		userLike = new TextField();
-		userLike.setMaxWidth(Double.MAX_VALUE);
 		userLike.setPromptText("Username contains...");
+		GridPane.setHgrow(userLike, Priority.ALWAYS);
+		grid.addRow(1, new Label("Name like: "), userLike);
 		
 		textLike = new TextField();
-		textLike.setMaxWidth(Double.MAX_VALUE);
 		textLike.setPromptText("Comment contains...");
+		GridPane.setHgrow(textLike, Priority.ALWAYS);
+		grid.addRow(2, new Label("Text like: "), textLike);
+		
+		DatePicker afterDate = new DatePicker();
+		setDatePickerTime(afterDate, 0);
+		grid.addRow(3, new Label("Date from: "), afterDate);
+		
+		DatePicker beforeDate = new DatePicker();
+		setDatePickerTime(beforeDate, System.currentTimeMillis());
+		grid.addRow(4, new Label("Date To: "), beforeDate);
 		
 		find = new Button("Find Comments");
 		find.setMaxWidth(Double.MAX_VALUE);
 		find.setOnAction(e -> {
+			find.setDisable(true);
 			Task<Void> task = new Task<Void>() {
 				protected Void call() throws Exception {
 					try {
-						find.setDisable(true);
 						String group_name = cgroup.getValue().group_name;
 						int order = orderby.getSelectionModel().getSelectedIndex();
 						String user = userLike.getText();
@@ -936,6 +983,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 								.nameLike(user)
 								.textLike(text)
 								.limit(limit)
+								.after(getDatePickerDate(afterDate, false))
+								.before(getDatePickerDate(beforeDate, true))
 								.cType(comment_type);
 						loadQueryPage(1);
 					} catch (SQLException e) {
@@ -947,16 +996,48 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			new Thread(task).start();
 		});
 		
-		searchBox.getChildren().addAll(label1, cgroup, citem, videoContext, label2, type, orderbox, userLike, textLike, find);
-		grid.getChildren().addAll(context, resultBox, searchBox);
+		searchBox.getChildren().addAll(label1, cgroup, citem, videoContext, label2, type, grid, find);
+		hbox.getChildren().addAll(context, resultBox, searchBox);
 		HBox.setHgrow(resultBox, Priority.ALWAYS);
 		
-		return grid;
+		return hbox;
+	}
+	
+	public void setDatePickerTime(DatePicker picker, long time) {
+		LocalDate date = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalDate();
+		picker.setValue(date);
+	}
+	
+	public Date getDatePickerDate(DatePicker picker, boolean midnightTonight) {
+		LocalDate localDate = picker.getValue();
+		Instant instant = Instant.from(localDate.atStartOfDay(ZoneId.systemDefault()));
+		Date date = Date.from(instant);
+		
+		if(midnightTonight) {
+			Calendar calEnd = new GregorianCalendar();
+			calEnd.setTime(date);
+			calEnd.set(Calendar.DAY_OF_YEAR, calEnd.get(Calendar.DAY_OF_YEAR)+1);
+			calEnd.set(Calendar.HOUR_OF_DAY, 0);
+			calEnd.set(Calendar.MINUTE, 0);
+			calEnd.set(Calendar.SECOND, 0);
+			calEnd.set(Calendar.MILLISECOND, 0);
+			return calEnd.getTime();
+		} else {
+			Calendar calStart = new GregorianCalendar();
+			calStart.setTime(date);
+			calStart.set(Calendar.HOUR_OF_DAY, 0);
+			calStart.set(Calendar.MINUTE, 0);
+			calStart.set(Calendar.SECOND, 0);
+			calStart.set(Calendar.MILLISECOND, 0);
+			return calStart.getTime();
+		}
 	}
 	
 	public void loadQueryPage(int page) throws SQLException {
 		this.page = page;
-		setNodesDisabled(false, find, prevPageC, nextPageC, firstPage, lastPage);
+		Platform.runLater(() -> {
+			setNodesDisabled(true, find, prevPageC, nextPageC, firstPage, lastPage);
+		});
 		final List<CommentResult> list = query.get(page).stream()
 				.map(c -> new CommentResult(c, true))
 				.collect(Collectors.toList());
@@ -975,6 +1056,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			vValue = 0;
 			cscroll.layout();
 			cscroll.setVvalue(vValue);
+			setNodesDisabled(false, find);
 		});
 	}
 	
@@ -1203,6 +1285,11 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		search = new Button("Search");
 		search.setOnAction(this);
 		grid.add(search, 2, 0);
+		searchField.setOnKeyPressed(ke -> {
+			if(ke.getCode().equals(KeyCode.ENTER)) {
+				search.fire();
+			}
+		});
 		
 		searchOrder = new ComboBox<>();
 		searchOrder.getItems().addAll("Relevance", "Date", "Title", "Rating", "Views");
@@ -1210,7 +1297,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		grid.add(searchOrder, 3, 0);
 		
 		searchType = new ComboBox<>();
-		searchType.getItems().addAll("All Types", "Video", "Channel", "Playlist", "Movie", "Show");
+		searchType.getItems().addAll("All Types", "Video", "Channel", "Playlist");
 		searchType.getSelectionModel().select(0);
 		grid.add(searchType, 4, 0);
 		
@@ -1226,7 +1313,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		grid2.add(scroll, 0, 0);
 		GridPane.setHgrow(scroll, Priority.ALWAYS);
 		
-		HBox hbox = new HBox(5);
 		selectAll = new Button("Select All");
 		selectAll.setTooltip(new Tooltip("Select or deselect all visible items."));
 		selectAll.setDisable(true);
@@ -1239,6 +1325,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		
 		addToGroup = new Button("Add To Group");
 		addToGroup.setTooltip(new Tooltip("Add selected results to a group."));
+		addToGroup.setStyle("-fx-base: derive(cornflowerblue, 60%)");
 		addToGroup.setDisable(true);
 		addToGroup.setOnAction(this);
 		
@@ -1248,8 +1335,12 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		nextPage.setOnAction(this);
 		
 		resultStatus = new Label();
+		
+		HBox hbox = new HBox(5);
 		hbox.setAlignment(Pos.CENTER);
 		hbox.getChildren().addAll(selectAll, clearResults, addToGroup, nextPage, resultStatus);
+		hbox.setPadding(new Insets(0,0,5,0));
+		
 		grid2.add(hbox, 0, 1);
 		
 		return grid;
@@ -1329,18 +1420,14 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	}
 	
 	public StackPane createSetupPane() {
-		String gradient = "-fx-background-color: linear-gradient(rgba(200,200,200,0.7), rgba(220,220,220,0.95), rgba(200,200,200,0.99), rgba(220,220,220,1)) ";
-		StackPane glass = new StackPane();
-		glass.setStyle(gradient); 
-		glass.setMaxHeight(Double.MAX_VALUE);
-		glass.setMaxWidth(Double.MAX_VALUE);
-		glass.setAlignment(Pos.CENTER);
-		
 		GridPane form = new GridPane();
+		form.setId("stackMenu");
 		form.setAlignment(Pos.CENTER);
 		form.setHgap(10);
 		form.setVgap(10);
-		form.setPadding(new Insets(15,15,15,15));
+		form.setMaxHeight(0);
+		form.setMaxWidth(0);
+		form.setPadding(new Insets(25,25,25,25));
 		
 		Text text = new Text("Youtube Setup");
 		text.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
@@ -1377,6 +1464,12 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		
 		form.add(hBtn, 3, 6);
 		
+		String gradient = "-fx-background-color: rgba(127,127,127,0.5);";
+		StackPane glass = new StackPane();
+		glass.setStyle(gradient); 
+		glass.setMaxHeight(Double.MAX_VALUE);
+		glass.setMaxWidth(Double.MAX_VALUE);
+		glass.setAlignment(Pos.CENTER);
 		glass.getChildren().add(form);
 		return glass;
 	}

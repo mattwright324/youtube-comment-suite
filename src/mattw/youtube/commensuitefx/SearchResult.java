@@ -3,6 +3,7 @@ package mattw.youtube.commensuitefx;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContextMenu;
@@ -51,6 +52,7 @@ public class SearchResult extends HBox {
 		setMaxHeight(height);
 		setPrefHeight(height);
 		setMinHeight(height);
+		setPadding(new Insets(0,10,0,10));
 		
 		author = new Label(gitem.getChannelTitle());
 		publishedAt = new Date(gitem.getPublished());
@@ -70,6 +72,7 @@ public class SearchResult extends HBox {
 		ImageView img = new ImageView(gitem.fetchThumb());
 		img.setFitHeight(80);
 		img.setFitWidth(80 * img.getImage().getWidth() / img.getImage().getHeight());
+		// img.setCursor(Cursor.HAND);
 		
 		VBox thumb = new VBox(5);
 		thumb.setAlignment(Pos.CENTER);
@@ -94,15 +97,20 @@ public class SearchResult extends HBox {
 		
 		ContextMenu context = new ContextMenu();
 		MenuItem open = new MenuItem("Open in Browser");
-		open.setOnAction(e -> {
+		open.setOnAction(ae -> {
 			CommentSuiteFX.openInBrowser(gitem.getYoutubeLink());
 		});
 		context.getItems().addAll(open);
-		setOnMouseClicked(e -> {
-			if(e.isPopupTrigger()) {
-				context.show(this, e.getScreenX(), e.getScreenY());
+		
+		setOnMouseClicked(me -> {
+			if(me.isPopupTrigger()) {
+				context.show(this, me.getScreenX(), me.getScreenY());
 			} else {
-				setSelected(!select.isSelected());
+				if(me.getSource().equals(img)) {
+					CommentSuiteFX.openInBrowser(gitem.getYoutubeLink());
+				} else {
+					setSelected(!select.isSelected());
+				}
 			}
 		});
 	}

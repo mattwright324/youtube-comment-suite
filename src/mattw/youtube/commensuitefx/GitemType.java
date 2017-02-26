@@ -37,7 +37,7 @@ public class GitemType extends YoutubeObject {
 		type_id = type;
 		typeText = type_id == 0 ? "comment" : type_id == 1 ? "channel" : type_id == 2 ? "playlist" : "???";
 		this.gitemId = -1;
-		this.channelTitle = item.snippet.title;
+		this.channelTitle = item.snippet.channelTitle;
 		this.published = item.snippet.publishedAt.getTime();
 		this.lastChecked = 0;
 	}

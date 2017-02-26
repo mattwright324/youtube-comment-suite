@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +41,7 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -323,6 +326,7 @@ public class GroupManager extends StackPane {
 		menu.getChildren().addAll(loadAnalytics, choice, type);
 		
 		abox = new VBox(5);
+		abox.setAlignment(Pos.TOP_CENTER);
 		
 		vbox2.getChildren().addAll(menu, abox);
 		
@@ -330,6 +334,101 @@ public class GroupManager extends StackPane {
 		tabs.getTabs().addAll(analytics, items);
 		
 		loadAnalytics.fire();
+	}
+	
+	class ViewerEntry extends HBox {
+		
+		public ImageView thumb;
+		public Label num;
+		public TextField author, about;
+		public VBox vbox;
+		
+		public Viewer viewer;
+		public Comment comment;
+		public VideoType video;
+		
+		public SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+		
+		private ViewerEntry(int pos) {
+			super(10);
+			setAlignment(Pos.CENTER_LEFT);
+			
+			if(pos % 2 == 0) {
+				setId("odd");
+			}
+			
+			author = new TextField("...");
+			author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+			author.setEditable(false);
+			author.setId("context");
+			
+			about = new TextField("...");
+			about.setEditable(false);
+			about.setId("context");
+			
+			num = new Label(pos+".");
+			num.setPrefWidth(35);
+			num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+			
+			vbox = new VBox();
+			vbox.setFillWidth(true);
+		}
+		
+		public ViewerEntry(int pos, Viewer viewer) {
+			this(pos);
+			this.viewer = viewer;
+			
+			author.setText(DatabaseManager.getChannel(viewer.channelId).getTitle());
+			
+			thumb = new ImageView(CommentResult.BLANK_PROFILE);
+			thumb.setFitHeight(26);
+			thumb.setFitWidth(26);
+			thumb.setCursor(Cursor.HAND);
+			thumb.setOnMouseClicked(e -> {
+				CommentSuiteFX.openInBrowser(DatabaseManager.getChannel(viewer.channelId).getYoutubeLink());
+			});
+			if(DatabaseManager.getChannel(viewer.channelId).hasThumb()) {
+				thumb.setImage(DatabaseManager.getChannel(viewer.channelId).fetchThumb());
+			}
+			
+			setText();
+			vbox.getChildren().addAll(author, about);
+			getChildren().addAll(num, thumb, vbox);
+		}
+		
+		public ViewerEntry(int pos, Comment comment) {
+			this(pos);
+			setMaxWidth(500);
+			setPrefWidth(500);
+			this.comment = comment;
+			
+			HBox.setHgrow(vbox, Priority.ALWAYS);
+			
+			author.setText(comment.commentText);
+			
+			setText();
+			vbox.getChildren().addAll(author, about);
+			getChildren().addAll(num, vbox);
+		}
+		
+		public ViewerEntry(int pos, VideoType video) {
+			this(pos);
+			this.video = video;
+			
+			thumb = new ImageView(video.fetchThumb());
+			thumb.setFitHeight(32);
+			thumb.setFitWidth(57);
+			thumb.setCursor(Cursor.HAND);
+			thumb.setOnMouseClicked(e -> {
+				CommentSuiteFX.openInBrowser(video.getYoutubeLink());
+			});
+			
+			setText();
+			vbox.getChildren().addAll(author, about);
+			getChildren().addAll(num, thumb, vbox);
+		}
+		
+		public void setText() {}
 	}
 	
 	public void loadAnalytics(GitemType gitem, int type) {
@@ -386,8 +485,12 @@ public class GroupManager extends StackPane {
 			ScrollPane scroll = new ScrollPane(flow);
 			scroll.setFitToWidth(true);
 			
+			ProgressIndicator prog = new ProgressIndicator();
+			prog.setMaxWidth(50);
+			prog.setMaxHeight(50);
+			
 			Platform.runLater(() -> {
-				abox.getChildren().addAll(scroll);
+				abox.getChildren().addAll(scroll, prog);
 			});
 			
 			try {
@@ -409,51 +512,19 @@ public class GroupManager extends StackPane {
 				}
 			} catch (SQLException e1) {}
 			
-			ChannelType ct = null;
+			
 			try {
 				List<Viewer> mostActive = database.getMostActiveViewers(group_id, gitem.getGitemId(), 25);
 				int pos = 1;
 				for(Viewer viewer : mostActive) {
-					ct = DatabaseManager.getChannel(viewer.channelId);
-					HBox entry = new HBox(10);
-					entry.setAlignment(Pos.CENTER_LEFT);
+					final int num = pos;
 					Platform.runLater(() -> {
-						active.getChildren().add(entry);
+						active.getChildren().add(new ViewerEntry(num, viewer) {
+							public void setText() {
+								about.setText(viewer.totalComments+" total comments");
+							}
+						});
 					});
-					
-					TextField author = new TextField(ct.getTitle());
-					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-					author.setEditable(false);
-					author.setId("context");
-					
-					TextField about = new TextField(viewer.totalComments+" total comments");
-					about.setEditable(false);
-					about.setId("context");
-					
-					
-					Label num = new Label(pos+". ");
-					num.setPrefWidth(35);
-					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-					
-					ImageView profile = new ImageView(CommentResult.BLANK_PROFILE);
-					profile.setFitHeight(26);
-					profile.setFitWidth(26);
-					profile.setCursor(Cursor.HAND);
-					profile.setOnMouseClicked(e -> {
-						CommentSuiteFX.openInBrowser(DatabaseManager.getChannel(viewer.channelId).getYoutubeLink());
-					});
-					if(ct.hasThumb()) {
-						profile.setImage(ct.fetchThumb());
-					}
-					
-					VBox vbox = new VBox();
-					vbox.setFillWidth(true);
-					
-					Platform.runLater(() -> {
-						vbox.getChildren().addAll(author, about);
-						entry.getChildren().addAll(num, profile, vbox);
-					});
-					
 					pos++;
 				}
 			} catch (SQLException e) {}
@@ -462,45 +533,14 @@ public class GroupManager extends StackPane {
 				List<Viewer> mostPopular = database.getMostPopularViewers(group_id, gitem.getGitemId(), 25);
 				int pos = 1;
 				for(Viewer viewer : mostPopular) {
-					ct = DatabaseManager.getChannel(viewer.channelId);
-					HBox entry = new HBox(10);
-					entry.setAlignment(Pos.CENTER_LEFT);
+					final int num = pos;
 					Platform.runLater(() -> {
-						popular.getChildren().add(entry);
+						popular.getChildren().add(new ViewerEntry(num, viewer) {
+							public void setText() {
+								about.setText(viewer.totalLikes+" total likes");
+							}
+						});
 					});
-					
-					TextField author = new TextField(ct.getTitle());
-					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-					author.setEditable(false);
-					author.setId("context");
-					
-					TextField about = new TextField(viewer.totalLikes+" total likes");
-					about.setEditable(false);
-					about.setId("context");
-					
-					Label num = new Label(pos+". ");
-					num.setPrefWidth(35);
-					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-					
-					ImageView profile = new ImageView(CommentResult.BLANK_PROFILE);
-					profile.setFitHeight(26);
-					profile.setFitWidth(26);
-					profile.setCursor(Cursor.HAND);
-					profile.setOnMouseClicked(e -> {
-						CommentSuiteFX.openInBrowser(DatabaseManager.getChannel(viewer.channelId).getYoutubeLink());
-					});
-					if(ct.hasThumb()) {
-						profile.setImage(ct.fetchThumb());
-					}
-					
-					VBox vbox = new VBox();
-					vbox.setFillWidth(true);
-					
-					Platform.runLater(() -> {
-						vbox.getChildren().addAll(author, about);
-						entry.getChildren().addAll(num, profile, vbox);
-					});
-					
 					pos++;
 				}
 			} catch (SQLException e) {}
@@ -508,43 +548,23 @@ public class GroupManager extends StackPane {
 			try {
 				List<Comment> list = database.getMostCommonComments(group_id, gitem.getGitemId(), 25);
 				int pos = 1;
-				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 				for(Comment c : list) {
-					HBox entry = new HBox(10);
-					entry.setAlignment(Pos.CENTER_LEFT);
+					final int num = pos;
 					Platform.runLater(() -> {
-						comments.getChildren().add(entry);
+						comments.getChildren().add(new ViewerEntry(num, c){
+							public void setText() {
+								about.setText(c.occurances+" times Last on "+sdf.format(new Date(c.lastCommentOn)));
+							}
+						});
 					});
-					
-					
-					Label num = new Label(pos+". ");
-					num.setPrefWidth(35);
-					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-					
-					TextField text = new TextField(c.commentText);
-					text.setMaxWidth(600);
-					text.setPrefWidth(600);
-					text.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-					text.setEditable(false);
-					text.setId("context");
-					
-					TextField info = new TextField(c.occurances+" times Last on "+sdf.format(new Date(c.lastCommentOn)));
-					info.setEditable(false);
-					info.setId("context");
-					
-					VBox vbox = new VBox();
-					vbox.setFillWidth(true);
-					
-					Platform.runLater(() -> {
-						vbox.getChildren().addAll(text, info);
-						entry.getChildren().addAll(num, vbox);
-					});
-					
 					pos++;
 				}
 				
 			} catch (SQLException e) {}
 			
+			Platform.runLater(() -> {
+				abox.getChildren().remove(prog);
+			});
 		} else if(type == 1) {
 			chart.setTitle("Video Counts by Week");
 			yAxis.setLabel("Videos");
@@ -582,8 +602,12 @@ public class GroupManager extends StackPane {
 			ScrollPane scroll = new ScrollPane(flow);
 			scroll.setFitToWidth(true);
 			
+			ProgressIndicator prog = new ProgressIndicator();
+			prog.setMaxWidth(50);
+			prog.setMaxHeight(50);
+			
 			Platform.runLater(() -> {
-				abox.getChildren().addAll(scroll);
+				abox.getChildren().addAll(scroll, prog);
 			});
 			
 			try {
@@ -609,41 +633,15 @@ public class GroupManager extends StackPane {
 				List<VideoType> videos = database.getMostPopularVideos(group_id, gitem.getGitemId(), 10);
 				int pos = 1;
 				for(VideoType v : videos) {
-					HBox entry = new HBox(10);
-					entry.setAlignment(Pos.CENTER_LEFT);
+					final int num = pos;
 					Platform.runLater(() -> {
-						popular.getChildren().add(entry);
+						popular.getChildren().add(new ViewerEntry(num, v){
+							public void setText() {
+								author.setText(video.getTitle());
+								about.setText(video.getViews()+" views");
+							}
+						});
 					});
-					
-					TextField author = new TextField(v.getTitle());
-					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-					author.setEditable(false);
-					author.setId("context");
-					
-					TextField about = new TextField(v.getViews()+" views");
-					about.setEditable(false);
-					about.setId("context");
-					
-					Label num = new Label(pos+". ");
-					num.setPrefWidth(35);
-					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-
-					ImageView thumb = new ImageView(v.fetchThumb());
-					thumb.setFitHeight(32);
-					thumb.setFitWidth(57);
-					thumb.setCursor(Cursor.HAND);
-					thumb.setOnMouseClicked(e -> {
-						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
-					});
-					
-					VBox vbox = new VBox();
-					vbox.setFillWidth(true);
-					
-					Platform.runLater(() -> {
-						vbox.getChildren().addAll(author, about);
-						entry.getChildren().addAll(num, thumb, vbox);
-					});
-					
 					pos++;
 				}
 			} catch (SQLException e) {}
@@ -652,41 +650,15 @@ public class GroupManager extends StackPane {
 				List<VideoType> videos = database.getMostDislikedVideos(group_id, gitem.getGitemId(), 10);
 				int pos = 1;
 				for(VideoType v : videos) {
-					HBox entry = new HBox(10);
-					entry.setAlignment(Pos.CENTER_LEFT);
+					final int num = pos;
 					Platform.runLater(() -> {
-						disliked.getChildren().add(entry);
+						disliked.getChildren().add(new ViewerEntry(num, v){
+							public void setText() {
+								author.setText(video.getTitle());
+								about.setText(video.getDislikes()+" dislikes");
+							}
+						});
 					});
-					
-					TextField author = new TextField(v.getTitle());
-					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-					author.setEditable(false);
-					author.setId("context");
-					
-					TextField about = new TextField(v.getDislikes()+" dislikes");
-					about.setEditable(false);
-					about.setId("context");
-					
-					Label num = new Label(pos+". ");
-					num.setPrefWidth(35);
-					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-
-					ImageView thumb = new ImageView(v.fetchThumb());
-					thumb.setFitHeight(32);
-					thumb.setFitWidth(57);
-					thumb.setCursor(Cursor.HAND);
-					thumb.setOnMouseClicked(e -> {
-						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
-					});
-					
-					VBox vbox = new VBox();
-					vbox.setFillWidth(true);
-					
-					Platform.runLater(() -> {
-						vbox.getChildren().addAll(author, about);
-						entry.getChildren().addAll(num, thumb, vbox);
-					});
-					
 					pos++;
 				}
 			} catch (SQLException e) {}
@@ -695,41 +667,15 @@ public class GroupManager extends StackPane {
 				List<VideoType> videos = database.getMostCommentedVideos(group_id, gitem.getGitemId(), 10);
 				int pos = 1;
 				for(VideoType v : videos) {
-					HBox entry = new HBox(10);
-					entry.setAlignment(Pos.CENTER_LEFT);
+					final int num = pos;
 					Platform.runLater(() -> {
-						comments.getChildren().add(entry);
+						comments.getChildren().add(new ViewerEntry(num, v){
+							public void setText() {
+								author.setText(video.getTitle());
+								about.setText(video.getComments()+" comments");
+							}
+						});
 					});
-					
-					TextField author = new TextField(v.getTitle());
-					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-					author.setEditable(false);
-					author.setId("context");
-					
-					TextField about = new TextField(v.getComments()+" comments");
-					about.setEditable(false);
-					about.setId("context");
-					
-					Label num = new Label(pos+". ");
-					num.setPrefWidth(35);
-					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-
-					ImageView thumb = new ImageView(v.fetchThumb());
-					thumb.setFitHeight(32);
-					thumb.setFitWidth(57);
-					thumb.setCursor(Cursor.HAND);
-					thumb.setOnMouseClicked(e -> {
-						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
-					});
-					
-					VBox vbox = new VBox();
-					vbox.setFillWidth(true);
-					
-					Platform.runLater(() -> {
-						vbox.getChildren().addAll(author, about);
-						entry.getChildren().addAll(num, thumb, vbox);
-					});
-					
 					pos++;
 				}
 			} catch (SQLException e) {}
@@ -744,45 +690,23 @@ public class GroupManager extends StackPane {
 					});
 				}
 				for(VideoType v : videos) {
-					HBox entry = new HBox(10);
-					entry.setAlignment(Pos.CENTER_LEFT);
+					final int num = pos;
 					Platform.runLater(() -> {
-						disabled.getChildren().add(entry);
+						disabled.getChildren().add(new ViewerEntry(num, v){
+							public void setText() {
+								author.setText(video.getTitle());
+								about.setText(v.getHttpCode() == 403 ? "Comments Disabled" : "HTTP "+v.getHttpCode());
+								about.setStyle("-fx-text-fill: firebrick");
+							}
+						});
 					});
-					
-					TextField author = new TextField(v.getTitle());
-					author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-					author.setEditable(false);
-					author.setId("context");
-					
-					TextField about = new TextField(v.getHttpCode() == 403 ? "Comments Disabled" : "HTTP "+v.getHttpCode());
-					about.setEditable(false);
-					about.setStyle("-fx-text-fill: firebrick");
-					about.setId("context");
-					
-					Label num = new Label(pos+". ");
-					num.setPrefWidth(35);
-					num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-
-					ImageView thumb = new ImageView(v.fetchThumb());
-					thumb.setFitHeight(32);
-					thumb.setFitWidth(57);
-					thumb.setCursor(Cursor.HAND);
-					thumb.setOnMouseClicked(e -> {
-						CommentSuiteFX.openInBrowser(v.getYoutubeLink());
-					});
-					
-					VBox vbox = new VBox();
-					vbox.setFillWidth(true);
-					
-					Platform.runLater(() -> {
-						vbox.getChildren().addAll(author, about);
-						entry.getChildren().addAll(num, thumb, vbox);
-					});
-					
 					pos++;
 				}
 			} catch (SQLException e) {}
+			
+			Platform.runLater(() -> {
+				abox.getChildren().remove(prog);
+			});
 		}
 	}
 	
@@ -829,22 +753,30 @@ public class GroupManager extends StackPane {
 		refreshing = true;
 		
 		StackPane stack = new StackPane();
-		stack.setStyle("-fx-background-color: linear-gradient(rgba(200,200,200,0.2), rgba(220,220,200,0.9), rgba(220,220,200,0.95), rgba(220,220,220,1))");
+		stack.setStyle("-fx-background-color: rgba(127,127,127,0.5)");
 		stack.setMaxHeight(Double.MAX_VALUE);
 		stack.setMaxWidth(Double.MAX_VALUE);
 		getChildren().add(stack);
 		
 		GridPane grid = new GridPane();
+		grid.setId("stackMenu");
 		grid.setAlignment(Pos.CENTER);
 		grid.setHgap(10);
 		grid.setVgap(10);
-		grid.setPadding(new Insets(25,25,25,25));
+		grid.setMaxHeight(0);
+		grid.setMaxWidth(0);
+		grid.setPadding(new Insets(25,35,25,35));
 		stack.getChildren().add(grid);
 		
-		Label label = new Label("Progress");
+		ProgressIndicator progress = new ProgressIndicator();
+		progress.setMaxHeight(36);
+		progress.setMaxWidth(36);
+		grid.add(progress, 0, 0);
+		
+		/*Label label = new Label("Progress");
 		label.setAlignment(Pos.CENTER);
 		label.setFont(Font.font("Tahoma", FontWeight.BOLD, 20));
-		grid.add(label, 0, 0);
+		*/
 		
 		Label status = new Label("Part 1 of 3. Checking for new videos.");
 		status.setAlignment(Pos.CENTER);
@@ -869,12 +801,16 @@ public class GroupManager extends StackPane {
 		chart.getData().add(cseries);
 		chart.getData().add(rseries);
 		chart.setPrefWidth(600);
+		chart.setMaxWidth(600);
+		chart.setMinWidth(600);
 		chart.setPrefHeight(300);
+		chart.setPrefHeight(300);
+		chart.setMinHeight(300);
 		grid.add(chart, 0, 2, 2, 1);
 		
 		HBox hbox = new HBox();
 		hbox.setAlignment(Pos.CENTER_RIGHT);
-		close = new Button("Close");
+		close = new Button("Finish");
 		close.setDisable(true);
 		close.setOnAction(e -> {
 			vseries.getData().clear();
@@ -896,8 +832,8 @@ public class GroupManager extends StackPane {
 			private long total_comments = 0;
 			
 			private List<String> existingVideoIds = new ArrayList<String>();
-			private List<String> existingCommentIds = new ArrayList<String>();
-			private List<String> existingChannelIds = new ArrayList<String>();
+			private Set<String> existingCommentIds = new HashSet<String>();
+			private Set<String> existingChannelIds = new HashSet<String>();
 			private List<VideoGroup> existingVideoGroups = new ArrayList<VideoGroup>();
 			private List<GitemType> existingGroupItems = new ArrayList<GitemType>();
 			
@@ -910,7 +846,7 @@ public class GroupManager extends StackPane {
 			private List<ChannelType> updateChannels = new ArrayList<ChannelType>();
 			private List<VideoGroup> insertVideoGroups = new ArrayList<VideoGroup>();
 			
-			private List<String> insertedCommentIds = new ArrayList<String>();
+			// private List<String> insertedCommentIds = new ArrayList<String>();
 			
 			private List<String> gitemVideos = new ArrayList<String>();
 			private List<GitemType> gitemChannels = new ArrayList<GitemType>();
@@ -1028,6 +964,7 @@ public class GroupManager extends StackPane {
 						status.setText("Complete.");
 						status2.setText("Elapsed time: "+time);
 						reloadGroupData();
+						progress.setVisible(false);
 					});
 					database.setAutoCommit(true);
 					close.setDisable(false);
@@ -1143,6 +1080,7 @@ public class GroupManager extends StackPane {
 					final long prog = video_progress;
 					final long t1 = timer.getSeconds(), c1 = new_comments;
 					Platform.runLater(() -> {
+						// progress.setProgress(prog / (1.0 * videos.size()));
 						status2.setText(total_comments+" total comments   "+prog+" / "+videos.size()+" videos");
 						if(t1 > last_second+3) {
 							last_second = t1;
@@ -1176,6 +1114,8 @@ public class GroupManager extends StackPane {
 								boolean contains = commentThreadReplies.containsKey(commentId);
 								if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != commentThreadReplies.get(item.snippet.topLevelComment.id))) {
 									commentThreadIds.put(commentId, videoId);
+								} else {
+									total_comments += item.snippet.totalReplyCount;
 								}
 								if(!existingCommentIds.contains(commentId)) {
 									checkChannel(item.snippet.topLevelComment, null, false);
@@ -1234,6 +1174,7 @@ public class GroupManager extends StackPane {
 						final long prog = thread_progress;
 						final long t1 = timer.getSeconds(), c1 = new_comments;
 						Platform.runLater(() -> {
+							// progress.setProgress(prog / (1.0 * threads.size()));
 							status2.setText(total_comments+" total comments   "+prog+" / "+threads.size()+" comment threads");
 							if(t1 > last_second+3) {
 								last_second = t1;
@@ -1294,8 +1235,8 @@ public class GroupManager extends StackPane {
 				if(comments.size() > 0) {
 					new_comments += comments.size();
 					database.insertComments(comments.stream()
-							.filter(ct -> !insertedCommentIds.contains(ct.getId()) && !existingCommentIds.contains(ct.getId()))
-							.peek(ct -> insertedCommentIds.add(ct.getId()))
+							.filter(ct -> !existingCommentIds.contains(ct.getId()))
+							//.peek(ct -> insertedCommentIds.add(ct.getId()))
 							.collect(Collectors.toList()));
 					final long t2 = timer.getSeconds(), c = new_comments;
 					if(t2 > last_second+3) {

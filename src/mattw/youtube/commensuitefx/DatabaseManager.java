@@ -717,7 +717,6 @@ public class DatabaseManager {
 	}
 	
 	/*
-	 * TODO
 	 * Analytics
 	 */
 	

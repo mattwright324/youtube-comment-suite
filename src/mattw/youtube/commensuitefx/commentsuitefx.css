@@ -27,6 +27,12 @@
 	-fx-text-box-border: transparent;
 }
 
+#stackMenu {
+	-fx-background-color:#eeeeee; 
+	-fx-opacity:1; 
+	-fx-background-radius: 5px;
+}
+
 #context:focused {
 	-fx-focus-color: transparent;
 }
@@ -45,6 +51,10 @@
 
 #commentLikes {
 	-fx-text-fill: cornflowerblue;
+}
+
+#odd {
+	-fx-background-color: rgba(220,220,220,0.5);
 }
 
 #commentMine {
