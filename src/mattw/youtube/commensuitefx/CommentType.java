@@ -18,7 +18,7 @@ public class CommentType extends YoutubeObject {
 	
 	public CommentType(String commentId, String videoId, String channelId, String text, Date date, int likes, int replies, boolean isReply, String parentId) {
 		super(commentId, null);
-		type_id = 3;
+		typeId = 3;
 		this.text = text;
 		this.date = date;
 		this.videoId = videoId;
@@ -31,7 +31,7 @@ public class CommentType extends YoutubeObject {
 	
 	public CommentType(CommentsList.Item item, String videoId) {
 		super(item.id, null);
-		type_id = 3;
+		typeId = 3;
 		this.text = item.snippet.textDisplay;
 		this.date = item.snippet.publishedAt;
 		this.videoId = videoId;
@@ -49,7 +49,7 @@ public class CommentType extends YoutubeObject {
 	
 	public CommentType(CommentThreadsList.Item item) {
 		super(item.snippet.topLevelComment.id, null);
-		type_id = 3;
+		typeId = 3;
 		this.text = item.snippet.topLevelComment.snippet.textDisplay;
 		this.date = item.snippet.topLevelComment.snippet.publishedAt;
 		this.videoId = item.snippet.videoId;
@@ -102,7 +102,7 @@ public class CommentType extends YoutubeObject {
 	}
 	
 	public String getYoutubeLink() {
-		switch(type_id){
+		switch(typeId){
 		case 3: 
 			return "https://www.youtube.com/watch?v="+getVideoId()+"&lc="+getId();
 		default:

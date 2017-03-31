@@ -623,7 +623,7 @@ public class GroupManager extends StackPane {
 						series.getData().add(point);
 						Tooltip.install(point.getNode(), new Tooltip("Week of "+date+" - "+sdf.format(new Date(time+604800000-60*60*24*1000))+"\nNew Videos: "+histogram.get(time)+""));
 						point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)");
-						point.getNode().setOnMouseEntered(e -> point.getNode().setStyle("-fx-background-color: orange"));
+						point.getNode().setOnMouseEntered(e -> point.getNode().setStyle("-fx-background-color: red"));
 						point.getNode().setOnMouseExited(e -> point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)"));
 					});
 				}
@@ -822,7 +822,8 @@ public class GroupManager extends StackPane {
 		
 		es = Executors.newCachedThreadPool();
 		Task<Void> task = new Task<Void>() {
-			private final int THREADS = 8;
+			private final int VTHREADS = 10;
+			private final int CTHREADS = 20;
 			private final int COMMENT_INSERT_SIZE = 500;
 			private ElapsedTime timer = new ElapsedTime();
 			private long last_second = -1;
@@ -872,15 +873,15 @@ public class GroupManager extends StackPane {
 					commentThreadReplies = database.getCommentThreadReplyCounts(group_id);
 					
 					for(GitemType gi : existingGroupItems) {
-						if(gi.type_id == 0) {
+						if(gi.typeId == 0) {
 							VideoGroup vg = new VideoGroup(gi.getGitemId(), gi.getId());
 							if(!existingVideoGroups.contains(vg)) {
 								insertVideoGroups.add(vg);
 							}
 							gitemVideos.add(gi.getId());
-						} else if(gi.type_id == 1) {
+						} else if(gi.typeId == 1) {
 							gitemChannels.add(gi);
-						} else if(gi.type_id == 2) {
+						} else if(gi.typeId == 2) {
 							gitemPlaylists.add(gi);
 						}
 					}
@@ -918,7 +919,7 @@ public class GroupManager extends StackPane {
 						});
 						List<String> videosInGroup = database.getVideoIds(group_id);
 						ExecutorService es = Executors.newCachedThreadPool();
-						for(int i=0; i < THREADS; i++) {
+						for(int i=0; i < VTHREADS; i++) {
 							final int offset = i;
 							es.execute(() -> commentsThread(videosInGroup, offset));
 						}
@@ -939,7 +940,7 @@ public class GroupManager extends StackPane {
 						});
 						es = Executors.newCachedThreadPool();
 						final List<String> threads = commentThreadIds.keySet().stream().collect(Collectors.toList());
-						for(int i=0; i < THREADS+8; i++) {
+						for(int i=0; i < CTHREADS; i++) {
 							final int offset = i;
 							es.execute(() -> repliesThread(threads, offset));
 						}
@@ -1090,7 +1091,7 @@ public class GroupManager extends StackPane {
 							});
 						}
 					});
-					pos += THREADS;
+					pos += VTHREADS;
 				}
 			}
 			
@@ -1190,7 +1191,7 @@ public class GroupManager extends StackPane {
 						System.out.println("Something broke. "+threadId);
 						e.printStackTrace();
 					}
-					pos += THREADS+8;
+					pos += CTHREADS;
 				}
 			}
 			

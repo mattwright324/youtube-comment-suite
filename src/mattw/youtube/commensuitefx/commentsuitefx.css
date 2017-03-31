@@ -15,6 +15,14 @@
 	-fx-border-color: white white indianred white;
 }
 
+#completeForm {
+	-fx-base: derive(cornflowerblue, 60%);
+}
+
+#account:hover {
+	-fx-background-color: rgba(127,127,200,0.2);
+}
+
 #searchScroll {
 	-fx-unit-increment: 1000;
 	-fx-block-increment: 2000;

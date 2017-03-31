@@ -13,7 +13,7 @@ public class VideoType extends YoutubeObject {
 	
 	public VideoType(String youtubeId, String channelId, String title, String thumbUrl, boolean fetchThumb, String description, long comments, long likes, long dislikes, long views, Date publishDate, Date grabDate, int httpCode) {
 		super(youtubeId, title, thumbUrl, fetchThumb);
-		type_id = 0;
+		typeId = 0;
 		this.title = title;
 		this.description = description;
 		this.publishDate = publishDate.getTime();

@@ -1,5 +1,6 @@
 package mattw.youtube.commensuitefx;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -124,9 +125,59 @@ public class DatabaseManager {
 	 * TODO
 	 * Removes all data related to a group and the thumbnails associated.
 	 */
+	public void deleteUnlinkedChannels() throws SQLException {
+		Statement s = con.createStatement();
+		s.executeUpdate("WITH clist AS (SELECT DISTINCT channel_id FROM videos UNION SELECT channel_id FROM comments) DELETE FROM channels WHERE channel_id NOT IN clist");
+		s.close();
+	}
+	
 	public void removeGroupAndData(Group group) throws SQLException {
+		List<String> ids = getUniqueVideoIds(group.group_id);
+		PreparedStatement delVid = con.prepareStatement("DELETE FROM videos WHERE video_id = ?");
+		PreparedStatement delComs = con.prepareStatement("DELETE FROM comments WHERE video_id = ?");
+		for(String videoId : ids) {
+			File f = new File("Thumbs\\"+videoId+".jpg");
+			if(f.exists()) {
+				f.delete();
+			}
+			delVid.setString(1, videoId);
+			delVid.addBatch();
+			delComs.setString(1, videoId);
+			delComs.addBatch();
+		}
+		delVid.executeBatch();
+		delVid.close();
+		delComs.executeBatch();
+		delComs.close();
+		deleteUnlinkedChannels();
 		deleteGroup(group.group_id);
-		deleteGitems(group.group_id);
+		deleteUniqueGitems(group.group_id);
+	}
+	
+	public void deleteUniqueGitems(int groupId) throws SQLException {
+		PreparedStatement ps = con.prepareStatement("WITH glist AS (SELECT gitem_id, group_id FROM gitem_list JOIN group_gitem USING (gitem_id)) "
+				+ "DELETE FROM gitem_list WHERE gitem_id IN (SELECT gitem_id FROM glist WHERE group_id = ?) "
+				+ "AND gitem_id NOT IN (SELECT gitem_id FROM glist WHERE group_id != ?)");
+		ps.setInt(1, groupId);
+		ps.setInt(2, groupId);
+		ps.executeUpdate();
+		ps.close();
+	}
+	
+	public List<String> getUniqueVideoIds(int groupId) throws SQLException {
+		List<String> ids = new ArrayList<String>();
+		PreparedStatement ps = con.prepareStatement("WITH vlist AS (SELECT video_id, group_id FROM video_group JOIN group_gitem USING (gitem_id)) "
+				+ "SELECT video_id FROM videos WHERE video_id IN (SELECT video_id FROM vlist WHERE group_id = ?) "
+				+ "AND video_id NOT IN (SELECT video_id FROM vlist WHERE group_id != ?)");
+		ps.setInt(1, groupId);
+		ps.setInt(2, groupId);
+		ResultSet rs = ps.executeQuery();
+		while(rs.next()) {
+			ids.add(rs.getString("video_id"));
+		}
+		rs.close();
+		ps.close();
+		return ids;
 	}
 	
 	public void dropTables() throws SQLException {
@@ -197,7 +248,7 @@ public class DatabaseManager {
 		private String fullQuery = "";
 		private long totalResults = 0;
 		
-		private String groupName = "Default";
+		private int groupId = 0;
 		private GitemType gitem = null;
 		private int orderBy = 0;
 		private int cType = 0;
@@ -218,8 +269,8 @@ public class DatabaseManager {
 			"comment_text ASC "
 		};
 		
-		public CommentQuery group(String group_name) {
-			this.groupName = group_name;
+		public CommentQuery group(int groupId) {
+			this.groupId = groupId;
 			return this;
 		}
 		
@@ -291,7 +342,7 @@ public class DatabaseManager {
 						+ "JOIN video_group USING (video_id) "
 						+ "JOIN group_gitem USING (gitem_id) "
 						+ "JOIN groups USING (group_id) "
-						+ "WHERE "+(gitem != null ? "group_gitem = ? " : "group_name = ? ")
+						+ "WHERE "+(gitem != null ? "gitem_id = ? " : "group_id = ? ")
 						+ "AND channel_name LIKE ? AND comment_text LIKE ? "
 						+ "AND comment_date > ? AND comment_date < ? "+(cType != 0 ? "AND is_reply = ? ":"")
 						+ ") ORDER BY "+order[orderBy];
@@ -301,13 +352,13 @@ public class DatabaseManager {
 						+ "JOIN video_group USING (video_id) "
 						+ "JOIN group_gitem USING (gitem_id) "
 						+ "JOIN groups USING (group_id) "
-						+ "WHERE "+(gitem != null ? "group_gitem = ?" : "group_name = ?")
+						+ "WHERE "+(gitem != null ? "gitem_id = ?" : "group_id = ?")
 						+ ") AND channel_name LIKE ? AND comment_text LIKE ? AND comment_date > ? AND comment_date < ? "+(cType != 0 ? "AND is_reply = ? ":"")+"ORDER BY "+order[orderBy];
 			}
 			fullQuery = query;
 			System.out.println(fullQuery);
 			PreparedStatement ps = con.prepareStatement(fullQuery);
-			if(gitem != null) ps.setInt(1, gitem.getGitemId()); else ps.setString(1, groupName);
+			if(gitem != null) ps.setInt(1, gitem.getGitemId()); else ps.setInt(1, groupId);
 			ps.setString(2, "%"+nameLike+"%");
 			ps.setString(3, "%"+textLike+"%");
 			ps.setLong(4, after);
@@ -382,6 +433,20 @@ public class DatabaseManager {
 		ps.close();
 		rs.close();
 		return map;
+	}
+	
+	public void deleteCommentsInGroup(int groupId) throws SQLException { // TODO Comments may be in same video from another group.
+		PreparedStatement ps = con.prepareStatement("DELETE * FROM comments WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+		ps.setInt(1, groupId);
+		ps.executeUpdate();
+		ps.close();
+	}
+	
+	public void deleteCommentsInGitem(int gitemId) throws SQLException { // TODO Comments may be in same video from another group.
+		PreparedStatement ps = con.prepareStatement("DELETE * FROM comments WHERE video_id IN (SELECT video_id FROM video_group WHERE gitem_id = ?)");
+		ps.setInt(1, gitemId);
+		ps.executeUpdate();
+		ps.close();
 	}
 	
 	public void insertGroup(String groupName) throws SQLException {
@@ -466,7 +531,7 @@ public class DatabaseManager {
 			next_id++;
 			gitem.setGitemId(next_id);
 			ps.setInt(1, next_id);
-			ps.setInt(2, gitem.type_id);
+			ps.setInt(2, gitem.typeId);
 			ps.setString(3, gitem.getId());
 			ps.setString(4, gitem.getTitle());
 			ps.setString(5, gitem.getChannelTitle());
@@ -501,13 +566,6 @@ public class DatabaseManager {
 			ps.addBatch();
 		}
 		ps.executeBatch();
-		ps.close();
-	}
-	
-	public void deleteGitems(int group_id) throws SQLException {
-		PreparedStatement ps = con.prepareStatement("DELETE FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
-		ps.setInt(1, group_id);
-		ps.executeUpdate();
 		ps.close();
 	}
 	
@@ -565,6 +623,20 @@ public class DatabaseManager {
 		ps.close();
 		rs.close();
 		return list;
+	}
+	
+	public void deleteVideosInGroup(int groupId) throws SQLException { // TODO videos may be in other groups.
+		PreparedStatement ps = con.prepareStatement("DELETE * FROM videos WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+		ps.setInt(1, groupId);
+		ps.executeUpdate();
+		ps.close();
+	}
+	
+	public void deleteVideosInGitem(int gitemId) throws SQLException { // TODO  videos may be in other gitems/groups.
+		PreparedStatement ps = con.prepareStatement("DELETE * FROM videos WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+		ps.setInt(1, gitemId);
+		ps.executeUpdate();
+		ps.close();
 	}
 	
 	public void insertVideos(List<VideoType> list) throws SQLException {

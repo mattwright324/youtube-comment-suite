@@ -51,7 +51,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -65,8 +64,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	/**
 	 * TODO
 	 * More Search Options
-	 * 		Before Date
-	 * 		After Date
 	 * 		Random, Random Amount, Random Fairness
 	 * 		Choose specific video by text search, display top 5 matches in combobox.
 	 */
@@ -95,7 +92,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public Button saveAndSetup, exitSetup;
 	public Button signin;
 	public Label status;
-	public PasswordField keyField;
 	
 	public String pageToken = "";
 	public Button search, selectAll, clearResults, addToGroup, nextPage;
@@ -132,7 +128,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public void saveConfig() {
 		Platform.runLater(() -> {
 			if(layout.getChildren().contains(setup)) {
-				config.setYoutubeKey(keyField.getText());
 				try {
 					config.save();
 					loadConfig();
@@ -146,7 +141,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public void loadConfig() throws IOException {
 		config.load();
 		Platform.runLater(() -> {
-			keyField.setText(config.getYoutubeKey());
 			welcome.setText("Welcome, "+config.getUsername());
 			author.setText(config.getUsername());
 			if(config.getAccessTokens() != null) {
@@ -212,7 +206,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			if(o.equals(saveAndSetup)) {
 				Task<Void> task = new Task<Void>(){
 					protected Void call() throws Exception {
-						setNodesDisabled(true, saveAndSetup, keyField);
+						setNodesDisabled(true, saveAndSetup);
 						saveConfig();
 						return null;
 					}
@@ -486,67 +480,158 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			}
 		} else if(o.equals(cleanDB) || o.equals(resetDB)) {
 			if(o.equals(cleanDB)) {
-				Task<Void> task = new Task<Void>() {
-					protected Void call() throws Exception {
-						setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB, videoToggle, commentToggle);
-						try {
-							database.clean();
-						} catch (SQLException e) {
-							e.printStackTrace();
-						}
-						setNodesDisabled(false, choice, createGroup, cleanDB, resetDB, videoToggle, commentToggle);
-						if(manager != null) {
-							setupWithManager(manager);
-						}
-						return null;
-					}
-				};
-				Thread thread = new Thread(task);
-				thread.setDaemon(true);
-				thread.start();
+				layout.getChildren().add(createCleanDbPane());
 			} else if(o.equals(resetDB)) {
-				Dialog<ButtonType> dialog = new Dialog<>();
-				dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-				dialog.setContentText("Reseting the database will delete everything. Are you sure?");
-				dialog.showAndWait().ifPresent(result -> {
-					if(result == ButtonType.OK) {
-						Task<Void> task = new Task<Void>(){
-							protected Void call() throws Exception {
-								setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB, videoToggle, commentToggle);
-								try {
-									database.dropTables();
-									database.setup();
-									database.clean();
-									Platform.runLater(() -> {
-										try {
-											reloadGroups();
-										} catch (SQLException e) {
-											e.printStackTrace();
-										}
-									});
-									File thumbs = new File("Thumbs/");
-									if(thumbs.exists()) {
-										for(File f : thumbs.listFiles()) {
-											f.delete();
-										}
-									}
-								} catch (SQLException e) {
-									e.printStackTrace();
-								}
-								setNodesDisabled(false, choice, createGroup, cleanDB, resetDB, videoToggle, commentToggle);
-								if(manager != null) {
-									setupWithManager(manager);
-								}
-								return null;
-							}
-						};
-						Thread thread = new Thread(task);
-						thread.setDaemon(true);
-						thread.start();
-					}
-				});
+				layout.getChildren().add(createResetDbPane());
 			}
 		}
+	}
+	
+	public StackPane createCleanDbPane() {
+		Label title = new Label("Clean Database");
+		title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+		
+		Label about = new Label("Repacks database into smallest size (VACUUM).");
+		Label warn = new Label("Warning: This may take some time.");
+		
+		ProgressIndicator pi = new ProgressIndicator();
+		pi.setMaxHeight(20);
+		pi.setMaxWidth(20);
+		pi.setVisible(false);
+		
+		Button cancel = new Button("Cancel");
+		Button clean = new Button("Clean");
+		clean.setStyle("-fx-base: derive(cornflowerblue, 80%);");
+		
+		HBox hbox = new HBox(10);
+		hbox.setAlignment(Pos.CENTER_RIGHT);
+		hbox.getChildren().addAll(pi, cancel, clean);
+		
+		VBox vbox = new VBox(10);
+		vbox.setId("stackMenu");
+		vbox.setPadding(new Insets(25,25,25,25));
+		vbox.setMaxWidth(350);
+		vbox.setMaxHeight(0);
+		vbox.getChildren().addAll(title, about, warn, hbox);
+		
+		StackPane glass = new StackPane();
+		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);"); 
+		glass.setMaxHeight(Double.MAX_VALUE);
+		glass.setMaxWidth(Double.MAX_VALUE);
+		glass.setAlignment(Pos.CENTER);
+		glass.getChildren().add(vbox);
+		cancel.setOnAction(ae -> {
+			layout.getChildren().remove(glass);
+		});
+		clean.setOnAction(ae -> {
+			Task<Void> task = new Task<Void>() {
+				protected Void call() throws Exception {
+					setNodesDisabled(true, cancel, clean);
+					pi.setVisible(true);
+					try {
+						database.clean();
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+					Platform.runLater(() -> {
+						cancel.setText("Close");
+						clean.setVisible(false);
+						clean.setManaged(false);
+						pi.setVisible(false);
+					});
+					setNodesDisabled(false, cancel, clean);
+					if(manager != null) {
+						setupWithManager(manager);
+					}
+					return null;
+				}
+			};
+			Thread thread = new Thread(task);
+			thread.setDaemon(true);
+			thread.start();
+		});
+		return glass;
+	}
+	
+	public StackPane createResetDbPane() {
+		Label title = new Label("Reset Database");
+		title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+		
+		Label warn = new Label("Warning: There is no going back!");
+		warn.setStyle("-fx-text-fill: red;");
+		
+		ProgressIndicator pi = new ProgressIndicator();
+		pi.setMaxHeight(20);
+		pi.setMaxWidth(20);
+		pi.setVisible(false);
+		
+		Button cancel = new Button("Cancel");
+		Button reset = new Button("Yes, delete everything.");
+		reset.setStyle("-fx-base: firebrick;");
+		
+		HBox hbox = new HBox(10);
+		hbox.setAlignment(Pos.CENTER_RIGHT);
+		hbox.getChildren().addAll(pi, reset, cancel);
+		
+		VBox vbox = new VBox(10);
+		vbox.setId("stackMenu");
+		vbox.setPadding(new Insets(25,25,25,25));
+		vbox.setMaxWidth(350);
+		vbox.setMaxHeight(0);
+		vbox.getChildren().addAll(title, new Label("Delete all data and thumbnails."), new Label("Does not remove Youtube sign-ins."), warn, hbox);
+		
+		StackPane glass = new StackPane();
+		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);"); 
+		glass.setMaxHeight(Double.MAX_VALUE);
+		glass.setMaxWidth(Double.MAX_VALUE);
+		glass.setAlignment(Pos.CENTER);
+		glass.getChildren().add(vbox);
+		cancel.setOnAction(ae -> {
+			layout.getChildren().remove(glass);
+		});
+		reset.setOnAction(ae -> {
+			Task<Void> task = new Task<Void>(){
+				protected Void call() throws Exception {
+					setNodesDisabled(true, reset, cancel);
+					pi.setVisible(true);
+					try {
+						database.dropTables();
+						database.setup();
+						database.clean();
+						Platform.runLater(() -> {
+							try {
+								reloadGroups();
+							} catch (SQLException e) {
+								e.printStackTrace();
+							}
+						});
+						File thumbs = new File("Thumbs/");
+						if(thumbs.exists()) {
+							for(File f : thumbs.listFiles()) {
+								f.delete();
+							}
+						}
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+					Platform.runLater(() -> {
+						cancel.setText("Close");
+						reset.setVisible(false);
+						reset.setManaged(false);
+						pi.setVisible(false);
+					});
+					setNodesDisabled(false, reset, cancel);
+					if(manager != null) {
+						setupWithManager(manager);
+					}
+					return null;
+				}
+			};
+			Thread thread = new Thread(task);
+			thread.setDaemon(true);
+			thread.start();
+		});
+		return glass;
 	}
 	
 	public void start(Stage arg0) throws Exception {
@@ -969,7 +1054,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			Task<Void> task = new Task<Void>() {
 				protected Void call() throws Exception {
 					try {
-						String group_name = cgroup.getValue().group_name;
+						int groupId = cgroup.getValue().group_id;
 						int order = orderby.getSelectionModel().getSelectedIndex();
 						String user = userLike.getText();
 						String text = textLike.getText();
@@ -977,7 +1062,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 						GitemType gitem = citem.getValue().getGitemId() != -1 ? citem.getValue() : null;
 						int comment_type =  type.getSelectionModel().getSelectedIndex();
 						query = database.newCommentQuery()
-								.group(group_name)
+								.group(groupId)
 								.groupItem(gitem)
 								.orderBy(order)
 								.nameLike(user)
@@ -1011,26 +1096,18 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public Date getDatePickerDate(DatePicker picker, boolean midnightTonight) {
 		LocalDate localDate = picker.getValue();
 		Instant instant = Instant.from(localDate.atStartOfDay(ZoneId.systemDefault()));
-		Date date = Date.from(instant);
-		
+
+		Calendar cal = new GregorianCalendar();
+		cal.setTime(Date.from(instant));
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
 		if(midnightTonight) {
-			Calendar calEnd = new GregorianCalendar();
-			calEnd.setTime(date);
-			calEnd.set(Calendar.DAY_OF_YEAR, calEnd.get(Calendar.DAY_OF_YEAR)+1);
-			calEnd.set(Calendar.HOUR_OF_DAY, 0);
-			calEnd.set(Calendar.MINUTE, 0);
-			calEnd.set(Calendar.SECOND, 0);
-			calEnd.set(Calendar.MILLISECOND, 0);
-			return calEnd.getTime();
-		} else {
-			Calendar calStart = new GregorianCalendar();
-			calStart.setTime(date);
-			calStart.set(Calendar.HOUR_OF_DAY, 0);
-			calStart.set(Calendar.MINUTE, 0);
-			calStart.set(Calendar.SECOND, 0);
-			calStart.set(Calendar.MILLISECOND, 0);
-			return calStart.getTime();
+			cal.set(Calendar.DAY_OF_YEAR, cal.get(Calendar.DAY_OF_YEAR)+1);
 		}
+		System.out.println(cal.getTime().toString());
+		return cal.getTime();
 	}
 	
 	public void loadQueryPage(int page) throws SQLException {
@@ -1325,7 +1402,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		
 		addToGroup = new Button("Add To Group");
 		addToGroup.setTooltip(new Tooltip("Add selected results to a group."));
-		addToGroup.setStyle("-fx-base: derive(cornflowerblue, 60%)");
+		addToGroup.setId("completeForm");
 		addToGroup.setDisable(true);
 		addToGroup.setOnAction(this);
 		
@@ -1420,57 +1497,59 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	}
 	
 	public StackPane createSetupPane() {
-		GridPane form = new GridPane();
-		form.setId("stackMenu");
-		form.setAlignment(Pos.CENTER);
-		form.setHgap(10);
-		form.setVgap(10);
-		form.setMaxHeight(0);
-		form.setMaxWidth(0);
-		form.setPadding(new Insets(25,25,25,25));
+		Label title = new Label("Login to Youtube");
+		title.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
 		
-		Text text = new Text("Youtube Setup");
-		text.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-		form.add(text, 0, 0, 2, 1);
+		Label desc = new Label("Sign in to leave comments and replies.");
+		desc.setWrapText(true);
 		
-		Label label1 = new Label("Data API Key");
-		form.add(label1, 0, 1);
+		Button addAccount = new Button("Add Account");
 		
-		keyField = new PasswordField();
-		keyField.setPromptText("Paste your Youtube Data API key here.");
-		keyField.setTooltip(new Tooltip("This key is required for everything to function. Do not clear this field."));
-		keyField.setId("form-plain");
-		keyField.setDisable(true);
-		form.add(keyField, 1, 1, 3, 1);
+		class Account extends VBox {
+			public Button signout = new Button("Sign out");
+			public Label name;
+			public Account(String username) {
+				super(4);
+				setId("account");
+				setPadding(new Insets(2,2,2,2));
+				setFillWidth(true);
+				name = new Label(username);
+				name.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+				signout.setStyle("-fx-base: firebrick");
+				getChildren().addAll(name, signout);
+			}
+		}
 		
-		Text text2 = new Text("Youtube Login (OAuth2)");
-		text2.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-		form.add(text2, 0, 3, 2, 1);
-		
-		signin = new Button("Sign in");
+		signin = new Button("Add Account");
 		signin.setOnAction(this);
-		form.add(signin, 0, 4);
 		
-		status = new Label("Sign in to leave comments and replies.");
-		form.add(status, 1, 4, 3, 1);
+		VBox accountList = new VBox(8);
+		accountList.getChildren().addAll(new Account("John Smith"), new Account("YoutubeChannel12345"));
 		
 		HBox hBtn = new HBox(10);
 		saveAndSetup = new Button("Save and Setup");
 		saveAndSetup.setOnAction(this);
+		saveAndSetup.setId("completeForm");
 		exitSetup = new Button("Close");
 		exitSetup.setOnAction(this);
 		hBtn.setAlignment(Pos.BOTTOM_RIGHT);
-		hBtn.getChildren().addAll(saveAndSetup, exitSetup);
+		hBtn.getChildren().addAll(exitSetup, saveAndSetup);
 		
-		form.add(hBtn, 3, 6);
+		VBox vbox = new VBox(10);
+		vbox.setId("stackMenu");
+		vbox.setAlignment(Pos.TOP_CENTER);
+		vbox.setMaxWidth(300);
+		vbox.setMaxHeight(0);
+		vbox.setFillWidth(true);
+		vbox.setPadding(new Insets(25,25,25,25));
+		vbox.getChildren().addAll(title, desc, addAccount, accountList, hBtn);
 		
-		String gradient = "-fx-background-color: rgba(127,127,127,0.5);";
 		StackPane glass = new StackPane();
-		glass.setStyle(gradient); 
+		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);"); 
 		glass.setMaxHeight(Double.MAX_VALUE);
 		glass.setMaxWidth(Double.MAX_VALUE);
 		glass.setAlignment(Pos.CENTER);
-		glass.getChildren().add(form);
+		glass.getChildren().add(vbox);
 		return glass;
 	}
 	

@@ -24,9 +24,9 @@ public class GitemType extends YoutubeObject {
 	
 	public GitemType(SearchList.Item item, boolean saveThumb) {
 		super(findId(item), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true, false);
-		int type = 0;
+		int type = 3;
 		if(item.id.videoId != null) {
-			type = 0;
+			type = 3;
 		} else if(item.id.channelId != null) {
 			type = 1;
 		} else if(item.id.playlistId != null) {
@@ -34,8 +34,8 @@ public class GitemType extends YoutubeObject {
 		} else {
 			type = -1;
 		}
-		type_id = type;
-		typeText = type_id == 0 ? "comment" : type_id == 1 ? "channel" : type_id == 2 ? "playlist" : "???";
+		typeId = type;
+		typeText = typeId == 0 ? "comment" : typeId == 1 ? "channel" : typeId == 2 ? "playlist" : typeId == 3 ? "video" : "???";
 		this.gitemId = -1;
 		this.channelTitle = item.snippet.channelTitle;
 		this.published = item.snippet.publishedAt.getTime();
@@ -44,7 +44,7 @@ public class GitemType extends YoutubeObject {
 	
 	public GitemType(int gitemId, String title) {
 		super(null, title, null, false);
-		type_id = -1;
+		typeId = -1;
 		typeText = "gitem";
 		this.gitemId = gitemId;
 		this.published = 0;
@@ -54,8 +54,8 @@ public class GitemType extends YoutubeObject {
 	
 	public GitemType(int type, int gitemId, String youtubeId, String title, String channelTitle, String thumbUrl, boolean fetchThumb, Date published, Date lastChecked) {
 		super(youtubeId, title, thumbUrl, fetchThumb);
-		type_id = type;
-		typeText = type_id == 0 ? "comment" : type_id == 1 ? "channel" : type_id == 2 ? "playlist" : "???";
+		typeId = type;
+		typeText = typeId == 0 ? "comment" : typeId == 1 ? "channel" : typeId == 2 ? "playlist" : "???";
 		this.gitemId = gitemId;
 		this.channelTitle = channelTitle;
 		this.published = published.getTime();

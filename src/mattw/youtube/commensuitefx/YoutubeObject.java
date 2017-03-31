@@ -10,7 +10,7 @@ import javafx.scene.image.Image;
 
 public abstract class YoutubeObject {
 	
-	public int type_id;
+	public int typeId;
 	final private String youtubeId;
 	final private String title;
 	final private String thumbUrl;
@@ -84,7 +84,7 @@ public abstract class YoutubeObject {
 	}
 	
 	public String getYoutubeLink() {
-		switch(type_id){
+		switch(typeId){
 		case 0:
 			return "https://youtu.be/"+youtubeId;
 		case 1:

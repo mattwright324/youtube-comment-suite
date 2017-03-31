@@ -10,7 +10,7 @@ public class ChannelType extends YoutubeObject {
 	
 	protected ChannelType(String channeId, String name, String thumbUrl, boolean fetchThumb) {
 		super(channeId, name, thumbUrl, fetchThumb);
-		type_id = 1;
+		typeId = 1;
 	}
 	
 	/**
