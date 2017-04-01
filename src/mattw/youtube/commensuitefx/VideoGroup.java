@@ -1,9 +1,9 @@
 package mattw.youtube.commensuitefx;
 
-public class VideoGroup {
+class VideoGroup {
 	
-	public int gitem_id;
-	public String video_id;
+	public final int gitem_id;
+	public final String video_id;
 	
 	public VideoGroup(int gitem_id, String video_id) {
 		this.gitem_id = gitem_id;

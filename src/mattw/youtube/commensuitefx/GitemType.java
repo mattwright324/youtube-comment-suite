@@ -24,7 +24,7 @@ public class GitemType extends YoutubeObject {
 	
 	public GitemType(SearchList.Item item, boolean saveThumb) {
 		super(findId(item), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true, false);
-		int type = 3;
+		int type;
 		if(item.id.videoId != null) {
 			type = 3;
 		} else if(item.id.channelId != null) {

@@ -71,31 +71,33 @@ import mattw.youtube.datav3.list.CommentsList;
 import mattw.youtube.datav3.list.PlaylistItemsList;
 import mattw.youtube.datav3.list.VideosList;
 
-public class GroupManager extends StackPane {
+class GroupManager extends StackPane {
 	
-	public static Map<Integer, GroupManager> managers = new HashMap<Integer, GroupManager>();
-	public GroupManager manager;
+	public static final Map<Integer, GroupManager> managers = new HashMap<>();
+	private final GroupManager manager;
 	
-	public ObservableList<GitemType> gi_list = FXCollections.observableArrayList();
-	public ObservableList<VideoType> v_list = FXCollections.observableArrayList();
-	public ObservableList<GitemType> choiceList = FXCollections.observableArrayList();
+	private final ObservableList<GitemType> gi_list = FXCollections.observableArrayList();
+	private final ObservableList<VideoType> v_list = FXCollections.observableArrayList();
+	private final ObservableList<GitemType> choiceList = FXCollections.observableArrayList();
 	
-	public TabPane tabs = new TabPane();
-	public Tab items, analytics;
-	public Label gi_label, v_label;
-	public VBox abox;
-	public Button loadAnalytics;
-	public ChoiceBox<GitemType> choice;
-	public ChoiceBox<String> type;
+	private final TabPane tabs = new TabPane();
+	private final Tab items;
+    private final Tab analytics;
+	private final Label gi_label;
+    private final Label v_label;
+	private final VBox abox;
+	private final Button loadAnalytics;
+	private ChoiceBox<GitemType> choice;
+	private ChoiceBox<String> type;
 	
-	public ExecutorService es;
-	public boolean refreshing = false;
-	public Button close;
+	private ExecutorService es;
+	private boolean refreshing = false;
+	private Button close;
 	
-	public Group group;
-	public int group_id;
-	public static DatabaseManager database;
-	public static YoutubeData data;
+	private Group group;
+	private final int group_id;
+	private static DatabaseManager database;
+	private static YoutubeData data;
 	
 	public GroupManager(Group g, DatabaseManager database, YoutubeData data) {
 		super();
@@ -159,7 +161,7 @@ public class GroupManager extends StackPane {
 		TableColumn<GitemType, Long> gi_checkedCol = new TableColumn<>("Last checked");
 		gi_checkedCol.setCellValueFactory(new PropertyValueFactory<>("lastChecked"));
 		gi_checkedCol.setCellFactory(col -> new TableCell<GitemType, Long>(){
-			private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+			private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 			public void updateItem(Long item, boolean empty) {
 				if(empty || item == null) {
 					setText(null);
@@ -212,13 +214,13 @@ public class GroupManager extends StackPane {
 			}
 		});
 		TableColumn<VideoType,VideoType> v_aboutCol = new TableColumn<>("About");
-		v_aboutCol.setCellValueFactory(celldata -> new ReadOnlyObjectWrapper<VideoType>(celldata.getValue()));
+		v_aboutCol.setCellValueFactory(celldata -> new ReadOnlyObjectWrapper<>(celldata.getValue()));
 		v_aboutCol.setCellFactory(col -> new TableCell<VideoType,VideoType>(){
 			private VBox vbox;
 			private Label author;
 			private Label published;
 			private Label comments;
-			private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+			private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 			{
 				vbox = new VBox();
 				author = createLabel();
@@ -257,7 +259,7 @@ public class GroupManager extends StackPane {
 		TableColumn<VideoType,Long> v_checkedCol = new TableColumn<>("Last checked");
 		v_checkedCol.setCellValueFactory(new PropertyValueFactory<>("grabDate"));
 		v_checkedCol.setCellFactory(col -> new TableCell<VideoType, Long>(){
-			private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+			private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 			public void updateItem(Long item, boolean empty) {
 				if(empty || item == null) {
 					setText(null);
@@ -339,15 +341,16 @@ public class GroupManager extends StackPane {
 	class ViewerEntry extends HBox {
 		
 		public ImageView thumb;
-		public Label num;
-		public TextField author, about;
-		public VBox vbox;
+		public final Label num;
+		public final TextField author;
+        public final TextField about;
+		public final VBox vbox;
 		
 		public Viewer viewer;
 		public Comment comment;
 		public VideoType video;
 		
-		public SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+		public final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 		
 		private ViewerEntry(int pos) {
 			super(10);
@@ -384,9 +387,7 @@ public class GroupManager extends StackPane {
 			thumb.setFitHeight(26);
 			thumb.setFitWidth(26);
 			thumb.setCursor(Cursor.HAND);
-			thumb.setOnMouseClicked(e -> {
-				CommentSuiteFX.openInBrowser(DatabaseManager.getChannel(viewer.channelId).getYoutubeLink());
-			});
+			thumb.setOnMouseClicked(e -> CommentSuiteFX.openInBrowser(DatabaseManager.getChannel(viewer.channelId).getYoutubeLink()));
 			if(DatabaseManager.getChannel(viewer.channelId).hasThumb()) {
 				thumb.setImage(DatabaseManager.getChannel(viewer.channelId).fetchThumb());
 			}
@@ -419,9 +420,7 @@ public class GroupManager extends StackPane {
 			thumb.setFitHeight(32);
 			thumb.setFitWidth(57);
 			thumb.setCursor(Cursor.HAND);
-			thumb.setOnMouseClicked(e -> {
-				CommentSuiteFX.openInBrowser(video.getYoutubeLink());
-			});
+			thumb.setOnMouseClicked(e -> CommentSuiteFX.openInBrowser(video.getYoutubeLink()));
 			
 			setText();
 			vbox.getChildren().addAll(author, about);
@@ -431,10 +430,8 @@ public class GroupManager extends StackPane {
 		public void setText() {}
 	}
 	
-	public void loadAnalytics(GitemType gitem, int type) {
-		Platform.runLater(() -> {
-			abox.getChildren().clear();
-		});
+	private void loadAnalytics(GitemType gitem, int type) {
+		Platform.runLater(() -> abox.getChildren().clear());
 		
 		CategoryAxis xAxis = new CategoryAxis();
 		xAxis.setLabel("Weeks");
@@ -446,9 +443,7 @@ public class GroupManager extends StackPane {
 		chart.setLegendVisible(false);
 		XYChart.Series<String,Number> series = new XYChart.Series<>();
 		chart.getData().add(series);
-		Platform.runLater(() -> {
-			abox.getChildren().addAll(chart);
-		});
+		Platform.runLater(() -> abox.getChildren().addAll(chart));
 		
 		FlowPane flow = new FlowPane();
 		flow.setPadding(new Insets(10,10,10,10));
@@ -489,15 +484,11 @@ public class GroupManager extends StackPane {
 			prog.setMaxWidth(50);
 			prog.setMaxHeight(50);
 			
-			Platform.runLater(() -> {
-				abox.getChildren().addAll(scroll, prog);
-			});
+			Platform.runLater(() -> abox.getChildren().addAll(scroll, prog));
 			
 			try {
 				Map<Long,Long> histogram = database.getWeekByWeekCommentHistogram(group_id, gitem.getGitemId());
-				Platform.runLater(() -> {
-					xAxis.setLabel("Weeks ("+histogram.size()+" total)");
-				});
+				Platform.runLater(() -> xAxis.setLabel("Weeks ("+histogram.size()+" total)"));
 				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
 				for(long time : histogram.keySet()) {
 					String date = sdf.format(new Date(time));
@@ -510,7 +501,7 @@ public class GroupManager extends StackPane {
 						point.getNode().setOnMouseExited(e -> point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)"));
 					});
 				}
-			} catch (SQLException e1) {}
+			} catch (SQLException ignored) {}
 			
 			
 			try {
@@ -518,53 +509,45 @@ public class GroupManager extends StackPane {
 				int pos = 1;
 				for(Viewer viewer : mostActive) {
 					final int num = pos;
-					Platform.runLater(() -> {
-						active.getChildren().add(new ViewerEntry(num, viewer) {
-							public void setText() {
-								about.setText(viewer.totalComments+" total comments");
-							}
-						});
-					});
+					Platform.runLater(() -> active.getChildren().add(new ViewerEntry(num, viewer) {
+                        public void setText() {
+                            about.setText(viewer.totalComments+" total comments");
+                        }
+                    }));
 					pos++;
 				}
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 			
 			try {
 				List<Viewer> mostPopular = database.getMostPopularViewers(group_id, gitem.getGitemId(), 25);
 				int pos = 1;
 				for(Viewer viewer : mostPopular) {
 					final int num = pos;
-					Platform.runLater(() -> {
-						popular.getChildren().add(new ViewerEntry(num, viewer) {
-							public void setText() {
-								about.setText(viewer.totalLikes+" total likes");
-							}
-						});
-					});
+					Platform.runLater(() -> popular.getChildren().add(new ViewerEntry(num, viewer) {
+                        public void setText() {
+                            about.setText(viewer.totalLikes+" total likes");
+                        }
+                    }));
 					pos++;
 				}
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 			
 			try {
 				List<Comment> list = database.getMostCommonComments(group_id, gitem.getGitemId(), 25);
 				int pos = 1;
 				for(Comment c : list) {
 					final int num = pos;
-					Platform.runLater(() -> {
-						comments.getChildren().add(new ViewerEntry(num, c){
-							public void setText() {
-								about.setText(c.occurances+" times Last on "+sdf.format(new Date(c.lastCommentOn)));
-							}
-						});
-					});
+					Platform.runLater(() -> comments.getChildren().add(new ViewerEntry(num, c){
+                        public void setText() {
+                            about.setText(c.occurances+" times Last on "+sdf.format(new Date(c.lastCommentOn)));
+                        }
+                    }));
 					pos++;
 				}
 				
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 			
-			Platform.runLater(() -> {
-				abox.getChildren().remove(prog);
-			});
+			Platform.runLater(() -> abox.getChildren().remove(prog));
 		} else if(type == 1) {
 			chart.setTitle("Video Counts by Week");
 			yAxis.setLabel("Videos");
@@ -606,15 +589,11 @@ public class GroupManager extends StackPane {
 			prog.setMaxWidth(50);
 			prog.setMaxHeight(50);
 			
-			Platform.runLater(() -> {
-				abox.getChildren().addAll(scroll, prog);
-			});
+			Platform.runLater(() -> abox.getChildren().addAll(scroll, prog));
 			
 			try {
 				Map<Long,Long> histogram = database.getWeekByWeekVideoHistogram(group_id, gitem.getGitemId());
-				Platform.runLater(() -> {
-					xAxis.setLabel("Weeks ("+histogram.size()+" total)");
-				});
+				Platform.runLater(() -> xAxis.setLabel("Weeks ("+histogram.size()+" total)"));
 				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
 				for(long time : histogram.keySet()) {
 					String date = sdf.format(new Date(time));
@@ -627,86 +606,74 @@ public class GroupManager extends StackPane {
 						point.getNode().setOnMouseExited(e -> point.getNode().setStyle("-fx-background-color: rgba(255,255,255,0.0)"));
 					});
 				}
-			} catch (SQLException e1) {}
+			} catch (SQLException ignored) {}
 			
 			try {
 				List<VideoType> videos = database.getMostPopularVideos(group_id, gitem.getGitemId(), 10);
 				int pos = 1;
 				for(VideoType v : videos) {
 					final int num = pos;
-					Platform.runLater(() -> {
-						popular.getChildren().add(new ViewerEntry(num, v){
-							public void setText() {
-								author.setText(video.getTitle());
-								about.setText(video.getViews()+" views");
-							}
-						});
-					});
+					Platform.runLater(() -> popular.getChildren().add(new ViewerEntry(num, v){
+                        public void setText() {
+                            author.setText(video.getTitle());
+                            about.setText(video.getViews()+" views");
+                        }
+                    }));
 					pos++;
 				}
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 			
 			try {
 				List<VideoType> videos = database.getMostDislikedVideos(group_id, gitem.getGitemId(), 10);
 				int pos = 1;
 				for(VideoType v : videos) {
 					final int num = pos;
-					Platform.runLater(() -> {
-						disliked.getChildren().add(new ViewerEntry(num, v){
-							public void setText() {
-								author.setText(video.getTitle());
-								about.setText(video.getDislikes()+" dislikes");
-							}
-						});
-					});
+					Platform.runLater(() -> disliked.getChildren().add(new ViewerEntry(num, v){
+                        public void setText() {
+                            author.setText(video.getTitle());
+                            about.setText(video.getDislikes()+" dislikes");
+                        }
+                    }));
 					pos++;
 				}
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 			
 			try {
 				List<VideoType> videos = database.getMostCommentedVideos(group_id, gitem.getGitemId(), 10);
 				int pos = 1;
 				for(VideoType v : videos) {
 					final int num = pos;
-					Platform.runLater(() -> {
-						comments.getChildren().add(new ViewerEntry(num, v){
-							public void setText() {
-								author.setText(video.getTitle());
-								about.setText(video.getComments()+" comments");
-							}
-						});
-					});
+					Platform.runLater(() -> comments.getChildren().add(new ViewerEntry(num, v){
+                        public void setText() {
+                            author.setText(video.getTitle());
+                            about.setText(video.getComments()+" comments");
+                        }
+                    }));
 					pos++;
 				}
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 			
 			try {
 				List<VideoType> videos = database.getDisabledVideos(group_id, gitem.getGitemId());
 				int pos = 1;
 				if(videos.isEmpty()) {
 					Label none = new Label("No comments disabled.");
-					Platform.runLater(() -> {
-						disabled.getChildren().add(none);
-					});
+					Platform.runLater(() -> disabled.getChildren().add(none));
 				}
 				for(VideoType v : videos) {
 					final int num = pos;
-					Platform.runLater(() -> {
-						disabled.getChildren().add(new ViewerEntry(num, v){
-							public void setText() {
-								author.setText(video.getTitle());
-								about.setText(v.getHttpCode() == 403 ? "Comments Disabled" : "HTTP "+v.getHttpCode());
-								about.setStyle("-fx-text-fill: firebrick");
-							}
-						});
-					});
+					Platform.runLater(() -> disabled.getChildren().add(new ViewerEntry(num, v){
+                        public void setText() {
+                            author.setText(video.getTitle());
+                            about.setText(v.getHttpCode() == 403 ? "Comments Disabled" : "HTTP "+v.getHttpCode());
+                            about.setStyle("-fx-text-fill: firebrick");
+                        }
+                    }));
 					pos++;
 				}
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 			
-			Platform.runLater(() -> {
-				abox.getChildren().remove(prog);
-			});
+			Platform.runLater(() -> abox.getChildren().remove(prog));
 		}
 	}
 	
@@ -749,7 +716,7 @@ public class GroupManager extends StackPane {
 		return refreshing;
 	}
 	
-	public void refresh() throws InterruptedException {
+	public void refresh() {
 		refreshing = true;
 		
 		StackPane stack = new StackPane();
@@ -825,33 +792,33 @@ public class GroupManager extends StackPane {
 			private final int VTHREADS = 10;
 			private final int CTHREADS = 20;
 			private final int COMMENT_INSERT_SIZE = 500;
-			private ElapsedTime timer = new ElapsedTime();
+			private final ElapsedTime timer = new ElapsedTime();
 			private long last_second = -1;
 			private long new_comments = 0;
 			private long thread_progress = 0;
 			private long video_progress = 0;
 			private long total_comments = 0;
 			
-			private List<String> existingVideoIds = new ArrayList<String>();
-			private Set<String> existingCommentIds = new HashSet<String>();
-			private Set<String> existingChannelIds = new HashSet<String>();
-			private List<VideoGroup> existingVideoGroups = new ArrayList<VideoGroup>();
-			private List<GitemType> existingGroupItems = new ArrayList<GitemType>();
+			private final List<String> existingVideoIds = new ArrayList<>();
+			private final Set<String> existingCommentIds = new HashSet<>();
+			private final Set<String> existingChannelIds = new HashSet<>();
+			private final List<VideoGroup> existingVideoGroups = new ArrayList<>();
+			private final List<GitemType> existingGroupItems = new ArrayList<>();
 			
-			private Map<String, String> commentThreadIds = new HashMap<String, String>(); // <commentThreadId, videoId>
+			private final Map<String, String> commentThreadIds = new HashMap<>(); // <commentThreadId, videoId>
 			private Map<String, Integer> commentThreadReplies;
 			
-			private List<VideoType> insertVideos = new ArrayList<VideoType>();
-			private List<VideoType> updateVideos = new ArrayList<VideoType>();
-			private List<ChannelType> insertChannels = new ArrayList<ChannelType>();
-			private List<ChannelType> updateChannels = new ArrayList<ChannelType>();
-			private List<VideoGroup> insertVideoGroups = new ArrayList<VideoGroup>();
+			private final List<VideoType> insertVideos = new ArrayList<>();
+			private final List<VideoType> updateVideos = new ArrayList<>();
+			private final List<ChannelType> insertChannels = new ArrayList<>();
+			private final List<ChannelType> updateChannels = new ArrayList<>();
+			private final List<VideoGroup> insertVideoGroups = new ArrayList<>();
 			
 			// private List<String> insertedCommentIds = new ArrayList<String>();
 			
-			private List<String> gitemVideos = new ArrayList<String>();
-			private List<GitemType> gitemChannels = new ArrayList<GitemType>();
-			private List<GitemType> gitemPlaylists = new ArrayList<GitemType>();
+			private final List<String> gitemVideos = new ArrayList<>();
+			private final List<GitemType> gitemChannels = new ArrayList<>();
+			private final List<GitemType> gitemPlaylists = new ArrayList<>();
 			
 			/*private boolean listContainsId(List<YoutubeObject> list, String youtubeId) {
 				for(YoutubeObject obj : list) {
@@ -900,9 +867,7 @@ public class GroupManager extends StackPane {
 						} catch (JsonSyntaxException | IOException e) {
 							e.printStackTrace();
 						}
-						Platform.runLater(() -> {
-							status.setText("Part 1 of 3. Inserting new videos (committing).");
-						});
+						Platform.runLater(() -> status.setText("Part 1 of 3. Inserting new videos (committing)."));
 						database.insertVideos(insertVideos);
 						database.updateVideos(updateVideos);
 						database.insertVideoGroups(insertVideoGroups);
@@ -935,11 +900,9 @@ public class GroupManager extends StackPane {
 						});
 						database.commit();
 						
-						Platform.runLater(() -> {
-							status.setText("Part 3 of 3. Finding new comment replies.");
-						});
+						Platform.runLater(() -> status.setText("Part 3 of 3. Finding new comment replies."));
 						es = Executors.newCachedThreadPool();
-						final List<String> threads = commentThreadIds.keySet().stream().collect(Collectors.toList());
+						final List<String> threads = new ArrayList<>(commentThreadIds.keySet());
 						for(int i=0; i < CTHREADS; i++) {
 							final int offset = i;
 							es.execute(() -> repliesThread(threads, offset));
@@ -978,11 +941,9 @@ public class GroupManager extends StackPane {
 			}
 			
 			private boolean videoListContainsId(List<VideoType> list, String id) {
-				for(VideoType video : list)
-					if(video.getId().equals(id)) return true;
-				return false;
+				return list.stream().anyMatch(vt -> vt.getId().equals(id));
 			}
-			
+
 			private void clearAll(Collection<?>... lists) {
 				for(Collection<?> list : lists) {
 					list.clear();
@@ -1004,9 +965,9 @@ public class GroupManager extends StackPane {
 			}
 			
 			private void handlePlaylist(final String playlistId, int gitem_id) throws JsonSyntaxException, IOException {
-				PlaylistItemsList pil = null;
+				PlaylistItemsList pil;
 				String pageToken = "";
-				List<String> videos = new ArrayList<String>();
+				List<String> videos = new ArrayList<>();
 				do {
 					pil = data.getPlaylistItems(PlaylistItemsList.PART_SNIPPET, playlistId, PlaylistItemsList.MAX_RESULTS, pageToken);
 					pageToken = pil.nextPageToken;
@@ -1032,7 +993,7 @@ public class GroupManager extends StackPane {
 							}
 						}
 					}
-					String ids = sublist.stream().filter(id -> !videoListContainsId(insertVideos, id) && !videoListContainsId(updateVideos, id)).collect(Collectors.joining(","));
+					String ids = sublist.stream().filter(id -> videoListContainsId(insertVideos, id) && videoListContainsId(updateVideos, id)).collect(Collectors.joining(","));
 					handleVideos(ids);
 				}
 			}
@@ -1055,17 +1016,15 @@ public class GroupManager extends StackPane {
 					long dislikes = itemStat.statistics.dislikeCount;
 					long comments = itemStat.statistics.commentCount;
 					VideoType video = new VideoType(videoId, channelId, title, thumbUrl, true, description, comments, likes, dislikes, views, itemSnip.snippet.publishedAt, new Date(), 200);
-					if(!existingVideoIds.contains(itemSnip.id) && !videoListContainsId(insertVideos, itemSnip.id) && !videoListContainsId(updateVideos, itemSnip.id)) {
+					if(!existingVideoIds.contains(itemSnip.id) && videoListContainsId(insertVideos, itemSnip.id) && videoListContainsId(updateVideos, itemSnip.id)) {
 						insertVideos.add(video);
 					} else {
-						if(!videoListContainsId(updateVideos, itemSnip.id))
+						if(videoListContainsId(updateVideos, itemSnip.id))
 							updateVideos.add(video);
 					}
 				}
 				final long t = timer.getSeconds(), v = insertVideos.size();
-				Platform.runLater(() -> {
-					vseries.getData().add(new XYChart.Data<>(t, v));
-				});
+				Platform.runLater(() -> vseries.getData().add(new XYChart.Data<>(t, v)));
 			}
 			
 			private void commentsThread(final List<String> videos, final int offset) {
@@ -1086,9 +1045,7 @@ public class GroupManager extends StackPane {
 						if(t1 > last_second+3) {
 							last_second = t1;
 							System.out.println(t1);
-							Platform.runLater(() -> {
-								cseries.getData().add(new XYChart.Data<>(t1, c1));
-							});
+							Platform.runLater(() -> cseries.getData().add(new XYChart.Data<>(t1, c1)));
 						}
 					});
 					pos += VTHREADS;
@@ -1096,7 +1053,7 @@ public class GroupManager extends StackPane {
 			}
 			
 			private void getComments(final String videoId) throws JsonSyntaxException, SQLException {
-				List<CommentType> comments = new ArrayList<CommentType>();
+				List<CommentType> comments = new ArrayList<>();
 				CommentThreadsList snippet = null;
 				String snipToken = "";
 				int fails = 0;
@@ -1180,9 +1137,7 @@ public class GroupManager extends StackPane {
 							if(t1 > last_second+3) {
 								last_second = t1;
 								System.out.println(t1);
-								Platform.runLater(() -> {
-									rseries.getData().add(new XYChart.Data<>(t1, c1));
-								});
+								Platform.runLater(() -> rseries.getData().add(new XYChart.Data<>(t1, c1)));
 							}
 						});
 					} catch (JsonSyntaxException e) {
@@ -1196,41 +1151,39 @@ public class GroupManager extends StackPane {
 			}
 			
 			private void getReplies(final String threadId, final String videoId) throws JsonSyntaxException, SQLException {
-				List<CommentType> replies = new ArrayList<CommentType>();
-				CommentsList cl = null;
-				String pageToken = "";
-				int fails = 0;
-				do {
-					if(replies.size() >= COMMENT_INSERT_SIZE) {
-						submitComments(replies, rseries);
-						replies.clear();
-					}
-					try {
-						cl = data.getCommentsByParentId(threadId, CommentsList.MAX_RESULTS, pageToken);
-						total_comments += cl.items.length;
-						pageToken = cl.nextPageToken;
-						for(CommentsList.Item reply : cl.items) {
-							if(!existingCommentIds.contains(reply.id)) {
-								checkChannel(reply, null, false);
-								CommentType comment = new CommentType(reply, videoId);
-								if(!comment.getChannelId().equals("")) {
-									replies.add(comment);
-								} else {
-									System.out.println("Google Plus comment? "+reply.snippet.authorChannelUrl);
-								}
-							}
-						}
-					} catch (IOException e) {
-						fails++;
-					}
-				} while (cl.nextPageToken != null && fails < 5);
-				if(replies.size() > 0) {
-					submitComments(replies, rseries);
-					replies.clear();
-				}
-			}
-			
-			// UC9RM-iSvTu1uPJb8X5yp3EQ
+                List<CommentType> replies = new ArrayList<>();
+                CommentsList cl = null;
+                String pageToken = "";
+                int fails = 0;
+                do {
+                    if (replies.size() >= COMMENT_INSERT_SIZE) {
+                        submitComments(replies, rseries);
+                        replies.clear();
+                    }
+                    try {
+                        cl = data.getCommentsByParentId(threadId, CommentsList.MAX_RESULTS, pageToken);
+                        total_comments += cl.items.length;
+                        pageToken = cl.nextPageToken;
+                        for (CommentsList.Item reply : cl.items) {
+                            if (!existingCommentIds.contains(reply.id)) {
+                                checkChannel(reply, null, false);
+                                CommentType comment = new CommentType(reply, videoId);
+                                if (!comment.getChannelId().equals("")) {
+                                    replies.add(comment);
+                                } else {
+                                    System.out.println("Google Plus comment? " + reply.snippet.authorChannelUrl);
+                                }
+                            }
+                        }
+                    } catch (IOException e) {
+                        fails++;
+                    }
+                } while (cl != null && cl.nextPageToken != null && fails < 5);
+                if (replies.size() > 0) {
+                    submitComments(replies, rseries);
+                    replies.clear();
+                }
+            }
 			
 			private void submitComments(List<CommentType> comments, final XYChart.Series<Number,Number> series) throws SQLException {
 				if(comments.size() > 0) {
@@ -1242,9 +1195,7 @@ public class GroupManager extends StackPane {
 					final long t2 = timer.getSeconds(), c = new_comments;
 					if(t2 > last_second+3) {
 						last_second = t2;
-						Platform.runLater(() -> {
-							series.getData().add(new XYChart.Data<>(t2, c));
-						});
+						Platform.runLater(() -> series.getData().add(new XYChart.Data<>(t2, c)));
 					}
 				}
 			}

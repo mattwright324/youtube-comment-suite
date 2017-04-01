@@ -19,11 +19,11 @@ public class DatabaseManager {
 	final private Connection con;
 	final private Statement s;
 	
-	final public static Map<String, ChannelType> channelCache = new HashMap<String, ChannelType>();
+	final public static Map<String, ChannelType> channelCache = new HashMap<>();
 	
-	public DatabaseManager(String file) throws SQLException, ClassNotFoundException {
+	public DatabaseManager() throws SQLException, ClassNotFoundException {
 		Class.forName("org.sqlite.JDBC");
-		con = DriverManager.getConnection("jdbc:sqlite:"+file);
+		con = DriverManager.getConnection("jdbc:sqlite:commentsuite.db");
 		s = con.createStatement();
 	}
 	
@@ -125,7 +125,7 @@ public class DatabaseManager {
 	 * TODO
 	 * Removes all data related to a group and the thumbnails associated.
 	 */
-	public void deleteUnlinkedChannels() throws SQLException {
+	private void deleteUnlinkedChannels() throws SQLException {
 		Statement s = con.createStatement();
 		s.executeUpdate("WITH clist AS (SELECT DISTINCT channel_id FROM videos UNION SELECT channel_id FROM comments) DELETE FROM channels WHERE channel_id NOT IN clist");
 		s.close();
@@ -154,7 +154,7 @@ public class DatabaseManager {
 		deleteUniqueGitems(group.group_id);
 	}
 	
-	public void deleteUniqueGitems(int groupId) throws SQLException {
+	private void deleteUniqueGitems(int groupId) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("WITH glist AS (SELECT gitem_id, group_id FROM gitem_list JOIN group_gitem USING (gitem_id)) "
 				+ "DELETE FROM gitem_list WHERE gitem_id IN (SELECT gitem_id FROM glist WHERE group_id = ?) "
 				+ "AND gitem_id NOT IN (SELECT gitem_id FROM glist WHERE group_id != ?)");
@@ -164,8 +164,8 @@ public class DatabaseManager {
 		ps.close();
 	}
 	
-	public List<String> getUniqueVideoIds(int groupId) throws SQLException {
-		List<String> ids = new ArrayList<String>();
+	private List<String> getUniqueVideoIds(int groupId) throws SQLException {
+		List<String> ids = new ArrayList<>();
 		PreparedStatement ps = con.prepareStatement("WITH vlist AS (SELECT video_id, group_id FROM video_group JOIN group_gitem USING (gitem_id)) "
 				+ "SELECT video_id FROM videos WHERE video_id IN (SELECT video_id FROM vlist WHERE group_id = ?) "
 				+ "AND video_id NOT IN (SELECT video_id FROM vlist WHERE group_id != ?)");
@@ -232,7 +232,7 @@ public class DatabaseManager {
 		ps.setString(1, parentId);
 		ps.setString(2, parentId);
 		ResultSet rs = ps.executeQuery();
-		List<CommentType> list = new ArrayList<CommentType>();
+		List<CommentType> list = new ArrayList<>();
 		String channelId;
 		while(rs.next()) {
 			channelId = rs.getString("channel_id");
@@ -371,7 +371,7 @@ public class DatabaseManager {
 			long end = limit * page;
 			long pos = 0;
 			String channelId;
-			List<CommentType> list = new ArrayList<CommentType>();
+			List<CommentType> list = new ArrayList<>();
 			System.out.println(start+", "+end);
 			while(rs.next()) {
 				if(pos >= start && pos < end) {
@@ -412,7 +412,7 @@ public class DatabaseManager {
 		PreparedStatement ps = con.prepareStatement("SELECT comment_id FROM comments JOIN video_group USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
 		ps.setInt(1, groupId);
 		ResultSet rs = ps.executeQuery();
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(rs.getString("comment_id"));
 		}
@@ -426,7 +426,7 @@ public class DatabaseManager {
 		ps.setBoolean(1, false);
 		ps.setInt(2, groupId);
 		ResultSet rs = ps.executeQuery();
-		Map<String,Integer> map = new HashMap<String,Integer>();
+		Map<String,Integer> map = new HashMap<>();
 		while(rs.next()) {
 			map.put(rs.getString("comment_id"), rs.getInt("db_replies"));
 		}
@@ -485,7 +485,7 @@ public class DatabaseManager {
 	public List<Group> getGroups() throws SQLException {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM groups");
 		ResultSet rs = ps.executeQuery();
-		List<Group> list = new ArrayList<Group>();
+		List<Group> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToGroup(rs));
 		}
@@ -501,7 +501,7 @@ public class DatabaseManager {
 		ps.executeUpdate();
 	}
 	
-	public void deleteGroup(int groupId) throws SQLException {
+	private void deleteGroup(int groupId) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("DELETE FROM groups WHERE group_id = ?");
 		ps.setInt(1, groupId);
 		ps.executeUpdate();
@@ -513,7 +513,7 @@ public class DatabaseManager {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
 		ps.setInt(1, groupId);
 		ResultSet rs = ps.executeQuery();
-		List<GitemType> list = new ArrayList<GitemType>();
+		List<GitemType> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToGitem(rs, fetchThumb));
 		}
@@ -545,7 +545,7 @@ public class DatabaseManager {
 		System.out.println("Inserting "+list+" gitems");
 	}
 	
-	public void insertGroupGitem(int groupId, List<GitemType> list) throws SQLException {
+	private void insertGroupGitem(int groupId, List<GitemType> list) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("INSERT INTO group_gitem (group_id, gitem_id) VALUES (?, ?)");
 		for(GitemType gitem : list) {
 			ps.setInt(1, groupId);
@@ -587,7 +587,7 @@ public class DatabaseManager {
 	public List<String> getVideoIds() throws SQLException {
 		PreparedStatement ps = con.prepareStatement("SELECT video_id FROM videos");
 		ResultSet rs = ps.executeQuery();
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(rs.getString("video_id"));
 		}
@@ -600,7 +600,7 @@ public class DatabaseManager {
 		PreparedStatement ps = con.prepareStatement("SELECT video_id FROM videos WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
 		ps.setInt(1, groupId);
 		ResultSet rs = ps.executeQuery();
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(rs.getString("video_id"));
 		}
@@ -613,7 +613,7 @@ public class DatabaseManager {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos JOIN channels USING(channel_id) WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
 		ps.setInt(1, groupId);
 		ResultSet rs = ps.executeQuery();
-		List<VideoType> list = new ArrayList<VideoType>();
+		List<VideoType> list = new ArrayList<>();
 		String channelId;
 		while(rs.next()) {
 			channelId = rs.getString("channel_id");
@@ -704,7 +704,7 @@ public class DatabaseManager {
 				ps.setBoolean(4, c.willFetchThumb());
 				ps.addBatch();
 			} else {
-				System.out.println("NULL VALUE ON CHANNEL INSERT c:"+(c==null)+"");
+				System.err.println("Error: Null value on channel insert.");
 			}
 		}
 		ps.executeBatch();
@@ -755,7 +755,7 @@ public class DatabaseManager {
 	public List<String> getChannelIds() throws SQLException {
 		PreparedStatement ps = con.prepareStatement("SELECT channel_id FROM channels");
 		ResultSet rs = ps.executeQuery();
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(rs.getString("channel_id"));
 		}
@@ -767,7 +767,7 @@ public class DatabaseManager {
 	public List<VideoGroup> getVideoGroups() throws SQLException {
 		PreparedStatement ps = con.prepareStatement("SELECT * from video_group");
 		ResultSet rs = ps.executeQuery();
-		List<VideoGroup> list = new ArrayList<VideoGroup>();
+		List<VideoGroup> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToVideoGroup(rs));
 		}
@@ -796,7 +796,7 @@ public class DatabaseManager {
 		PreparedStatement ps = con.prepareStatement("SELECT CAST(comment_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE "+(gitem_id != -1 ? "gitem_id":"group_id")+" = ?) GROUP BY week ORDER BY week");
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ResultSet rs = ps.executeQuery();
-		Map<Long,Long> data = new LinkedHashMap<Long,Long>();
+		Map<Long,Long> data = new LinkedHashMap<>();
 		while(rs.next()) {
 			data.put(rs.getLong("week"), rs.getLong("count"));
 		}
@@ -834,7 +834,7 @@ public class DatabaseManager {
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ps.setInt(2, limit);
 		ResultSet rs = ps.executeQuery();
-		List<Viewer> list = new ArrayList<Viewer>();
+		List<Viewer> list = new ArrayList<>();
 		String channelId;
 		while(rs.next()) {
 			channelId = rs.getString("channel_id");
@@ -854,7 +854,7 @@ public class DatabaseManager {
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ps.setInt(2, limit);
 		ResultSet rs = ps.executeQuery();
-		List<Viewer> list = new ArrayList<Viewer>();
+		List<Viewer> list = new ArrayList<>();
 		String channelId;
 		while(rs.next()) {
 			channelId = rs.getString("channel_id");
@@ -874,7 +874,7 @@ public class DatabaseManager {
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ps.setInt(2, limit);
 		ResultSet rs = ps.executeQuery();
-		List<Comment> list = new ArrayList<Comment>();
+		List<Comment> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(new Comment(rs.getInt("count"), rs.getLong("last_appearance"), rs.getString("comment_text")));
 		}
@@ -887,7 +887,7 @@ public class DatabaseManager {
 		PreparedStatement ps = con.prepareStatement("SELECT CAST(publish_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM videos WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE "+(gitem_id != -1 ? "gitem_id":"group_id")+" = ?) GROUP BY week ORDER BY week");
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ResultSet rs = ps.executeQuery();
-		Map<Long,Long> data = new LinkedHashMap<Long,Long>();
+		Map<Long,Long> data = new LinkedHashMap<>();
 		while(rs.next()) {
 			data.put(rs.getLong("week"), rs.getLong("count"));
 		}
@@ -901,7 +901,7 @@ public class DatabaseManager {
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ps.setInt(2, limit);
 		ResultSet rs = ps.executeQuery();
-		List<VideoType> list = new ArrayList<VideoType>();
+		List<VideoType> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToVideo(rs, true));
 		}
@@ -915,7 +915,7 @@ public class DatabaseManager {
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ps.setInt(2, limit);
 		ResultSet rs = ps.executeQuery();
-		List<VideoType> list = new ArrayList<VideoType>();
+		List<VideoType> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToVideo(rs, true));
 		}
@@ -929,7 +929,7 @@ public class DatabaseManager {
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ps.setInt(2, limit);
 		ResultSet rs = ps.executeQuery();
-		List<VideoType> list = new ArrayList<VideoType>();
+		List<VideoType> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToVideo(rs, true));
 		}
@@ -943,7 +943,7 @@ public class DatabaseManager {
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ps.setInt(2, limit);
 		ResultSet rs = ps.executeQuery();
-		List<VideoType> list = new ArrayList<VideoType>();
+		List<VideoType> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToVideo(rs, true));
 		}
@@ -956,7 +956,7 @@ public class DatabaseManager {
 		PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM video_group JOIN group_gitem USING (gitem_id) WHERE "+(gitem_id != -1 ? "gitem_id":"group_id")+" = ?) AND http_code != 200 ORDER BY publish_date DESC");
 		if(gitem_id != -1) ps.setInt(1, gitem_id); else ps.setInt(1, group_id);
 		ResultSet rs = ps.executeQuery();
-		List<VideoType> list = new ArrayList<VideoType>();
+		List<VideoType> list = new ArrayList<>();
 		while(rs.next()) {
 			list.add(resultSetToVideo(rs, true));
 		}

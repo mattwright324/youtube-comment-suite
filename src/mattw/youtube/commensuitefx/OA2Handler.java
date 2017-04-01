@@ -18,10 +18,10 @@ import mattw.youtube.datav3.list.CommentsList;
 
 public class OA2Handler {
 	
-	final static Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();
-	final static String client_id = "972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com";
-	final static String client_secret = "QuTdoA-KArupKMWwDrrxOcoS";
-	final static String redirect_uri = "urn:ietf:wg:oauth:2.0:oob";
+	private final static Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();
+	private final static String client_id = "972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com";
+	private final static String client_secret = "QuTdoA-KArupKMWwDrrxOcoS";
+	private final static String redirect_uri = "urn:ietf:wg:oauth:2.0:oob";
 	
 	public static void postNewReply(String parentId, String textOriginal) {
 		try {
@@ -58,17 +58,19 @@ public class OA2Handler {
 		url.setRequestProperty("Content-Type", "application/json");
 		OutputStream os = url.getOutputStream();
 		os.write(payload.getBytes("UTF-8"));
-		String response = "";
+		StringBuilder response = new StringBuilder();
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.getInputStream()));
 			String line;
-			while((line = br.readLine()) != null) {response+=line;}
-			return gson.fromJson(response, CommentsList.Item.class);
+			while((line = br.readLine()) != null) {
+				response.append(line);}
+			return gson.fromJson(response.toString(), CommentsList.Item.class);
 		} catch (IOException e) {
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.getErrorStream()));
 			String line;
-			while((line = br.readLine()) != null) {response+=line;}
-			return gson.fromJson(response, GlobalDomainError.class);
+			while((line = br.readLine()) != null) {
+				response.append(line);}
+			return gson.fromJson(response.toString(), GlobalDomainError.class);
 		}
 	}
 	
@@ -78,7 +80,7 @@ public class OA2Handler {
 			snippet.parentId = parentId;
 			snippet.textOriginal = textOriginal;
 		}
-		public Snippet snippet;
+		public final Snippet snippet;
 		public class Snippet {
 			public String parentId;
 			public String textOriginal;

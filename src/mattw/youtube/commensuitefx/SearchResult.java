@@ -16,13 +16,16 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import mattw.youtube.datav3.list.SearchList;
 
-public class SearchResult extends HBox {
+class SearchResult extends HBox {
 	
-	final Label author, title, description, published;
+	private final Label author;
+	private final Label title;
+	private final Label description;
+	private final Label published;
 	final private CheckBox select;
 	
-	final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
-	final Date publishedAt;
+	private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+	private final Date publishedAt;
 	
 	final GitemType gitem;
 	
@@ -61,9 +64,7 @@ public class SearchResult extends HBox {
 		title = new Label(gitem.getTitle());
 		
 		select = new CheckBox();
-		select.setOnAction(e -> {
-			setSelected(select.isSelected());
-		});
+		select.setOnAction(e -> setSelected(select.isSelected()));
 		
 		Label type = new Label(gitem.getTypeText());
 		type.setAlignment(Pos.CENTER);
@@ -97,9 +98,7 @@ public class SearchResult extends HBox {
 		
 		ContextMenu context = new ContextMenu();
 		MenuItem open = new MenuItem("Open in Browser");
-		open.setOnAction(ae -> {
-			CommentSuiteFX.openInBrowser(gitem.getYoutubeLink());
-		});
+		open.setOnAction(ae -> CommentSuiteFX.openInBrowser(gitem.getYoutubeLink()));
 		context.getItems().addAll(open);
 		
 		setOnMouseClicked(me -> {

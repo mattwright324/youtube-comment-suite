@@ -8,7 +8,7 @@ import javax.imageio.ImageIO;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 
-public abstract class YoutubeObject {
+abstract class YoutubeObject {
 	
 	public int typeId;
 	final private String youtubeId;
@@ -20,15 +20,15 @@ public abstract class YoutubeObject {
 	final private static File thumbs = new File("Thumbs/");
 	final private File thumbFile;
 	
-	protected YoutubeObject(String youtubeId, String title) {
+	YoutubeObject(String youtubeId, String title) {
 		this(youtubeId, title, null, false);
 	}
 	
-	protected YoutubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb) {
+	YoutubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb) {
 		this(youtubeId, title, thumbUrl, fetchThumb, true);
 	}
 	
-	protected YoutubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb, boolean saveThumb) {
+	YoutubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb, boolean saveThumb) {
 		this.youtubeId = youtubeId != null ? youtubeId : "";
 		this.title = title;
 		this.thumbUrl = thumbUrl;
@@ -50,11 +50,11 @@ public abstract class YoutubeObject {
 		}
 	}
 	
-	public void trySaveImage() {
+	private void trySaveImage() {
 		try {
 			System.out.println("Downloading thumb for id ("+youtubeId+")");
 			ImageIO.write(SwingFXUtils.fromFXImage(image, null), "jpg", thumbFile);
-		} catch (IOException e) {}
+		} catch (IOException ignored) {}
 	}
 	
 	public abstract String toString();
@@ -97,9 +97,6 @@ public abstract class YoutubeObject {
 	}
 	
 	public boolean equals(Object o) {
-		if(o instanceof YoutubeObject) {
-			return ((YoutubeObject) o).getId().equals(getId());
-		}
-		return false;
+		return o instanceof YoutubeObject && ((YoutubeObject) o).getId().equals(getId());
 	}
 }

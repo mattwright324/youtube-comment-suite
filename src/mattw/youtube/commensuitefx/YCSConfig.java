@@ -31,7 +31,7 @@ public class YCSConfig {
 		access_tokens = tokens;
 	}
 	
-	public void setYoutubeKey(String key) {
+	private void setYoutubeKey(String key) {
 		youtube_data_key = key;
 	}
 	
@@ -81,13 +81,13 @@ public class YCSConfig {
 			save();
 		}
 		BufferedReader br = new BufferedReader(new FileReader(CONFIG_FILE));
-		String json = "";
+		StringBuilder json = new StringBuilder();
 		String line;
 		while((line = br.readLine()) != null) {
-			json += line;
+			json.append(line);
 		}
 		br.close();
-		loadAs(gson.fromJson(json, YCSConfig.class));
+		loadAs(gson.fromJson(json.toString(), YCSConfig.class));
 	}
 	
 }

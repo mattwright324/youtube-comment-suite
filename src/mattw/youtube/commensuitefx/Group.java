@@ -1,10 +1,10 @@
 package mattw.youtube.commensuitefx;
 
 public class Group {
-	public int group_id;
-	public String group_name;
+	public final int group_id;
+	public final String group_name;
 	
-	public boolean refreshing = false;
+	private boolean refreshing = false;
 	
 	public Group(int group_id, String group_name) {
 		this.group_id = group_id;

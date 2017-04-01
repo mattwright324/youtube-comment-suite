@@ -1,7 +1,6 @@
 package mattw.youtube.commensuitefx;
 
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,28 +25,37 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-public class CommentResult extends HBox {
+class CommentResult extends HBox {
 	
-	final static Map<String,Image> profileMap = new HashMap<String,Image>();
+	final static Map<String,Image> profileMap = new HashMap<>();
 	final static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/blank_profile.jpg"));
 	
-	public static CommentResult lastSelected = null;
+	private static CommentResult lastSelected = null;
 	
-	final CommentType ct;
+	private final CommentType ct;
 	
-	final ImageView img;
-	final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
-	final Hyperlink author;
-	final Label date, textShort, likes;
-	final Hyperlink reply, viewtree, viewfulltext;
-	final MenuItem loadProfile, openInBrowser, copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink;
+	private final ImageView img;
+	private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+	private final Hyperlink author;
+	private final Label date;
+	private final Label textShort;
+	private final Label likes;
+	private final Hyperlink reply;
+	private final Hyperlink viewtree;
+	private final Hyperlink viewfulltext;
+	private final MenuItem loadProfile;
+	private final MenuItem openInBrowser;
+	private final MenuItem copyName;
+	private final MenuItem copyText;
+	private final MenuItem copyChannelLink;
+	private final MenuItem copyVideoLink;
+	private final MenuItem copyCommentLink;
 	
-	final String parsedText;
-	
+	private final String parsedText;
 	
 	private boolean selected;
 	
-	public void setSelected(boolean select) {
+	private void setSelected(boolean select) {
 		selected = select;
 		if(selected) {
 			if(lastSelected != null) lastSelected.setSelected(false);
@@ -56,7 +64,7 @@ public class CommentResult extends HBox {
 			Platform.runLater(() -> {
 				try {
 					CommentSuiteFX.app.loadContext(ct.getVideoId());
-				} catch (SQLException | ParseException e) {
+				} catch (SQLException e) {
 					e.printStackTrace();
 				}
 			});
@@ -65,7 +73,7 @@ public class CommentResult extends HBox {
 		}
 	}
 	
-	public boolean isSelected() {
+	private boolean isSelected() {
 		return selected;
 	}
 	
@@ -95,9 +103,7 @@ public class CommentResult extends HBox {
 		box.getChildren().addAll(img, c.isReply() ? new Label("Reply") : new Label("Comment"));
 		
 		author = new Hyperlink(DatabaseManager.getChannel(c.getChannelId()).getTitle());
-		author.setOnAction(e -> {
-			CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.getChannelId());
-		});
+		author.setOnAction(e -> CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.getChannelId()));
 		if(c.getChannelId().equals(CommentSuiteFX.app.config.getChannelId())) {
 			author.setId("commentMine");
 		}
@@ -113,9 +119,7 @@ public class CommentResult extends HBox {
 		textShort.setWrapText(true);
 		
 		reply = new Hyperlink("Reply");
-		reply.setOnAction(e -> {
-			replyToComment();
-		});
+		reply.setOnAction(e -> replyToComment());
 		
 		viewtree = new Hyperlink("View Tree"+(c.getReplies() > 0 ? " ("+c.getReplies()+" replies)" : ""));
 		viewtree.setDisable(!showTreeLink);
@@ -128,9 +132,7 @@ public class CommentResult extends HBox {
 		});
 		
 		viewfulltext = new Hyperlink("Show Full Comment");
-		viewfulltext.setOnAction(e -> {
-			viewFullComment();
-		});
+		viewfulltext.setOnAction(e -> viewFullComment());
 		
 		HBox hbox = new HBox(10);
 		hbox.setAlignment(Pos.CENTER_LEFT);
@@ -149,9 +151,7 @@ public class CommentResult extends HBox {
 		ContextMenu context = new ContextMenu();
 		
 		openInBrowser = new MenuItem("Open in Browser");
-		openInBrowser.setOnAction(e -> {
-			CommentSuiteFX.openInBrowser(ct.getYoutubeLink());
-		});
+		openInBrowser.setOnAction(e -> CommentSuiteFX.openInBrowser(ct.getYoutubeLink()));
 		
 		loadProfile = new MenuItem("Load Profile Image");
 		loadProfile.setOnAction(e -> {
@@ -163,29 +163,19 @@ public class CommentResult extends HBox {
 		});
 		
 		copyName = new MenuItem("Copy Username");
-		copyName.setOnAction(e -> {
-			Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getTitle());
-		});
+		copyName.setOnAction(e -> Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getTitle()));
 		
 		copyText = new MenuItem("Copy Comment");
-		copyText.setOnAction(e -> {
-			Clipboards.setClipboard(ct.getText());
-		});
+		copyText.setOnAction(e -> Clipboards.setClipboard(ct.getText()));
 		
 		copyChannelLink = new MenuItem("Copy Channel Link");
-		copyChannelLink.setOnAction(e -> {
-			Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getYoutubeLink());
-		});
+		copyChannelLink.setOnAction(e -> Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getYoutubeLink()));
 		
 		copyVideoLink = new MenuItem("Copy Video Link");
-		copyVideoLink.setOnAction(e -> {
-			Clipboards.setClipboard("https://youtu.be/"+ct.getVideoId());
-		});
+		copyVideoLink.setOnAction(e -> Clipboards.setClipboard("https://youtu.be/"+ct.getVideoId()));
 		
 		copyCommentLink = new MenuItem("Copy Comment Link");
-		copyCommentLink.setOnAction(e -> {
-			Clipboards.setClipboard(ct.getYoutubeLink());
-		});
+		copyCommentLink.setOnAction(e -> Clipboards.setClipboard(ct.getYoutubeLink()));
 		
 		context.getItems().addAll(openInBrowser, loadProfile, new SeparatorMenuItem(), copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);
 		
@@ -203,8 +193,8 @@ public class CommentResult extends HBox {
 		});
 	}
 	
-	public void replyToComment() {
-		Dialog<ButtonType> dialog = new Dialog<ButtonType>();
+	private void replyToComment() {
+		Dialog<ButtonType> dialog = new Dialog<>();
 		dialog.setTitle("Reply");
 		DialogPane pane = new DialogPane();
 		pane.getButtonTypes().addAll(ButtonType.FINISH, ButtonType.CANCEL);
@@ -242,8 +232,8 @@ public class CommentResult extends HBox {
 		});
 	}
 	
-	public void viewFullComment() {
-		Dialog<Void> dialog = new Dialog<Void>();
+	private void viewFullComment() {
+		Dialog<Void> dialog = new Dialog<>();
 		dialog.setTitle("Viewing Full Comment");
 		DialogPane pane = new DialogPane();
 		pane.getButtonTypes().add(ButtonType.CLOSE);
@@ -289,7 +279,7 @@ public class CommentResult extends HBox {
 			img.setImage(channel.fetchThumb());
 	}
 	
-	public void loadProfileImage() throws SQLException {
+	private void loadProfileImage() throws SQLException {
 		ChannelType channel = DatabaseManager.getChannel(ct.getChannelId());
 		if(!channel.hasThumb()) {
 			CommentSuiteFX.app.database.updateChannelFetchThumb(channel.getId(), true);
