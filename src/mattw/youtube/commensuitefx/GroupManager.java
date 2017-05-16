@@ -993,7 +993,7 @@ class GroupManager extends StackPane {
 							}
 						}
 					}
-					String ids = sublist.stream().filter(id -> videoListContainsId(insertVideos, id) && videoListContainsId(updateVideos, id)).collect(Collectors.joining(","));
+					String ids = sublist.stream().filter(id -> !videoListContainsId(insertVideos, id)).collect(Collectors.joining(","));
 					handleVideos(ids);
 				}
 			}
@@ -1016,7 +1016,8 @@ class GroupManager extends StackPane {
 					long dislikes = itemStat.statistics.dislikeCount;
 					long comments = itemStat.statistics.commentCount;
 					VideoType video = new VideoType(videoId, channelId, title, thumbUrl, true, description, comments, likes, dislikes, views, itemSnip.snippet.publishedAt, new Date(), 200);
-					if(!existingVideoIds.contains(itemSnip.id) && videoListContainsId(insertVideos, itemSnip.id) && videoListContainsId(updateVideos, itemSnip.id)) {
+					System.out.println(videoId+": "+title);
+					if(!(existingVideoIds.contains(itemSnip.id) || videoListContainsId(insertVideos, itemSnip.id) || videoListContainsId(updateVideos, itemSnip.id))) {
 						insertVideos.add(video);
 					} else {
 						if(videoListContainsId(updateVideos, itemSnip.id))

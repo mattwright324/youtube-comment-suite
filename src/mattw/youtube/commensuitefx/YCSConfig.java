@@ -6,65 +6,53 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class YCSConfig {
 	
-	private final Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();
+	private final Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL, Modifier.PROTECTED).create();
 	private final File CONFIG_FILE = new File("config.ycs");
 	
 	private String youtube_data_key = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
-	private String username = "Guest";
-	private String channelId = "";
-	private OA2Tokens access_tokens;
-	
+	public List<Account> accounts = new ArrayList<>();
+
+	public boolean isSignedIn(String channelId) {
+		return accounts.stream().anyMatch(cid -> cid.equals(channelId));
+	}
+
+	public String getWelcomeStatement() {
+		if(accounts.isEmpty()) {
+			return "Welcome, Guest";
+		}
+		if(accounts.size() == 1) {
+			return "Welcome, "+accounts.get(0).getUsername();
+		}
+		return "Welcome, "+accounts.get(0).getUsername()+" and "+(accounts.size()-1)+" more";
+	}
+
+	public void submitTokens(OA2Tokens tokens) {
+		accounts.add(new Account(tokens, true));
+		try { save(); } catch (IOException ignored) {}
+	}
+
 	private void loadAs(YCSConfig config) {
+		accounts = config.accounts;
 		setYoutubeKey(config.youtube_data_key);
-		setUsername(config.username);
-		setChannelId(config.channelId);
-		setAccessTokens(config.access_tokens);
 	}
-	
-	public void setAccessTokens(OA2Tokens tokens) {
-		access_tokens = tokens;
+
+	public String getYoutubeKey() {
+		return youtube_data_key;
 	}
-	
 	private void setYoutubeKey(String key) {
 		youtube_data_key = key;
 	}
 	
-	public void setUsername(String user) {
-		if(user.equals("")) {
-			username = "Guest";
-		} else {
-			username = user;
-		}
-	}
-	
-	public void setChannelId(String id) {
-		channelId = id;
-	}
-	
 	public boolean isSetup() {
 		return !youtube_data_key.equals("");
-	}
-	
-	public OA2Tokens getAccessTokens() {
-		return access_tokens;
-	}
-	
-	public String getYoutubeKey() {
-		return youtube_data_key;
-	}
-	
-	public String getUsername() {
-		return username;
-	}
-	
-	public String getChannelId() {
-		return channelId;
 	}
 	
 	public void save() throws IOException {
@@ -80,6 +68,7 @@ public class YCSConfig {
 		if(!CONFIG_FILE.exists()) {
 			save();
 		}
+		System.out.println("Loading config");
 		BufferedReader br = new BufferedReader(new FileReader(CONFIG_FILE));
 		StringBuilder json = new StringBuilder();
 		String line;

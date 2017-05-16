@@ -17,8 +17,8 @@ abstract class YoutubeObject {
 	
 	final private boolean willFetch;
 	final private Image image;
-	final private static File thumbs = new File("Thumbs/");
-	final private File thumbFile;
+	//final private static File thumbs = new File("Thumbs/");
+	//final private File thumbFile;
 	
 	YoutubeObject(String youtubeId, String title) {
 		this(youtubeId, title, null, false);
@@ -33,7 +33,12 @@ abstract class YoutubeObject {
 		this.title = title;
 		this.thumbUrl = thumbUrl;
 		this.willFetch = fetchThumb;
-		if(fetchThumb) {
+		if(this.willFetch) {
+			image = new Image(thumbUrl);
+		} else {
+			image = CommentResult.BLANK_PROFILE;
+		}
+		/*if(fetchThumb) {
 			thumbs.mkdir();
 			thumbFile = new File(thumbs, youtubeId+".jpg");
 			if(thumbFile.exists()) {
@@ -47,15 +52,15 @@ abstract class YoutubeObject {
 		} else {
 			thumbFile = null;
 			image = null;
-		}
+		}*/
 	}
 	
-	private void trySaveImage() {
+	/*private void trySaveImage() {
 		try {
 			System.out.println("Downloading thumb for id ("+youtubeId+")");
 			ImageIO.write(SwingFXUtils.fromFXImage(image, null), "jpg", thumbFile);
 		} catch (IOException ignored) {}
-	}
+	}*/
 	
 	public abstract String toString();
 	

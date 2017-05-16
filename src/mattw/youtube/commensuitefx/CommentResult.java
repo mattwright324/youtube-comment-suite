@@ -5,20 +5,13 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
+import javafx.scene.control.*;
+import javafx.scene.layout.StackPane;
 import org.jsoup.Jsoup;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.DialogPane;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -104,7 +97,7 @@ class CommentResult extends HBox {
 		
 		author = new Hyperlink(DatabaseManager.getChannel(c.getChannelId()).getTitle());
 		author.setOnAction(e -> CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.getChannelId()));
-		if(c.getChannelId().equals(CommentSuiteFX.app.config.getChannelId())) {
+		if(CommentSuiteFX.getConfig().isSignedIn(c.getChannelId())) {
 			author.setId("commentMine");
 		}
 		date = new Label(sdf.format(c.getDate()));
@@ -138,7 +131,7 @@ class CommentResult extends HBox {
 		hbox.setAlignment(Pos.CENTER_LEFT);
 		hbox.getChildren().add(date); // save can_reply
 		if(c.getLikes() > 0) hbox.getChildren().add(likes);
-		if(CommentSuiteFX.app.config.getAccessTokens() != null) hbox.getChildren().add(reply);
+		if(!CommentSuiteFX.getConfig().accounts.isEmpty() || true) hbox.getChildren().add(reply);
 		if(c.getReplies() > 0 || c.isReply()) hbox.getChildren().add(viewtree);
 		hbox.getChildren().add(viewfulltext);
 		
@@ -194,56 +187,49 @@ class CommentResult extends HBox {
 	}
 	
 	private void replyToComment() {
-		Dialog<ButtonType> dialog = new Dialog<>();
-		dialog.setTitle("Reply");
-		DialogPane pane = new DialogPane();
-		pane.getButtonTypes().addAll(ButtonType.FINISH, ButtonType.CANCEL);
-		dialog.setDialogPane(pane);
-		
-		VBox vbox = new VBox();
-		vbox.setPadding(new Insets(10,10,10,10));
-		vbox.setFillWidth(true);
-		pane.setContent(vbox);
-		
+		ComboBox<Account> account = new ComboBox<>();
+		account.getItems().addAll(CommentSuiteFX.getConfig().accounts);
+		if(!account.getItems().isEmpty()) {
+			account.getSelectionModel().select(0);
+		}
+
+		Button reply = new Button("Reply");
+		reply.setStyle("-fx-base: derive(cornflowerblue, 80%);");
+		reply.disableProperty().bind(account.getSelectionModel().selectedIndexProperty().isEqualTo(-1));
+		Button cancel = new Button("Cancel");
+
 		TextArea text = new TextArea();
+		text.setMinHeight(150);
 		text.setPromptText("Write your response here.");
-		int width = 450;
-		int height = 500;
-		text.setMaxWidth(width);
-		text.setPrefWidth(width);
-		text.setMinWidth(width);
-		text.setMaxHeight(height);
-		text.setPrefHeight(height);
-		text.setMinHeight(height);
-		text.setWrapText(true);
-		
-		if(ct.isReply()) text.setText("+"+DatabaseManager.getChannel(ct.getChannelId()).getTitle()+" ");
-		
-		vbox.getChildren().addAll(text);
-		VBox.setVgrow(text, Priority.ALWAYS);
-		
-		dialog.showAndWait().ifPresent(result -> {
-			if(result == ButtonType.FINISH) {
-				if(!text.getText().equals("")) {
-					System.out.println("Commenting");
-					OA2Handler.postNewReply(ct.isReply() ? ct.getParentId() : ct.getId(), text.getText());
-				}
-			}
+		if(ct.isReply()) { text.setText("+"+DatabaseManager.getChannel(ct.getChannelId()).getTitle()+" "); }
+
+		HBox hbox = new HBox(10);
+		hbox.setAlignment(Pos.CENTER_RIGHT);
+		hbox.getChildren().addAll(reply, cancel);
+
+		VBox vbox = new VBox(10);
+		vbox.setId("stackMenu");
+		vbox.setPadding(new Insets(25,25,25,25));
+		vbox.setFillWidth(true);
+		vbox.setMaxWidth(450);
+		vbox.setMaxHeight(0);
+		vbox.getChildren().addAll(account, text, hbox);
+
+		StackPane stack = new StackPane();
+		stack.setStyle("-fx-background-color: rgba(127,127,127,0.5);");
+		stack.setAlignment(Pos.CENTER);
+		stack.getChildren().add(vbox);
+
+		Platform.runLater(() -> CommentSuiteFX.addOverlay(stack));
+		cancel.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getMainStackPane().getChildren().remove(stack)));
+		reply.setOnAction(ae -> {
+			reply.setDisable(true);
+			OA2Handler.postNewReply(ct.isReply() ? ct.getParentId() : ct.getId(), text.getText(), account.getValue());
+			cancel.fire();
 		});
 	}
 	
 	private void viewFullComment() {
-		Dialog<Void> dialog = new Dialog<>();
-		dialog.setTitle("Viewing Full Comment");
-		DialogPane pane = new DialogPane();
-		pane.getButtonTypes().add(ButtonType.CLOSE);
-		dialog.setDialogPane(pane);
-		
-		VBox vbox = new VBox(10);
-		vbox.setPadding(new Insets(10,10,10,10));
-		vbox.setFillWidth(true);
-		pane.setContent(vbox);
-		
 		ImageView img = new ImageView(BLANK_PROFILE);
 		img.setFitHeight(32);
 		img.setFitWidth(32);
@@ -251,25 +237,45 @@ class CommentResult extends HBox {
 		if(thumb != null) {
 			img.setImage(thumb);
 		}
-		HBox hbox = new HBox(5);
+
 		Hyperlink label = new Hyperlink(author.getText());
 		label.setOnAction(author.getOnAction());
+
+		HBox hbox = new HBox(5);
+		hbox.setAlignment(Pos.CENTER_LEFT);
 		hbox.getChildren().addAll(img, label);
-		
-		int width = 450;
-		int height = 350;
+
 		TextArea text = new TextArea(parsedText);
-		text.setMaxWidth(width);
-		text.setPrefWidth(width);
-		text.setMinWidth(width);
-		text.setMaxHeight(height);
-		text.setPrefHeight(height);
-		text.setMinHeight(height);
+		text.setMaxHeight(300);
 		text.setWrapText(true);
 		text.setEditable(false);
-		vbox.getChildren().addAll(hbox, text);
 		VBox.setVgrow(text, Priority.ALWAYS);
-		dialog.showAndWait();
+
+		Button close = new Button("Close");
+		HBox hbox1 = new HBox(10);
+		hbox1.setAlignment(Pos.CENTER_RIGHT);
+		hbox1.getChildren().addAll(close);
+
+		VBox vbox = new VBox(10);
+		vbox.setMaxWidth(450);
+		vbox.setAlignment(Pos.CENTER);
+		vbox.setPadding(new Insets(25,25,25,25));
+		vbox.setId("stackMenu");
+		vbox.setFillWidth(true);
+		vbox.getChildren().addAll(hbox, text, hbox1);
+
+		VBox pad = new VBox();
+		pad.setAlignment(Pos.CENTER);
+		pad.setPadding(new Insets(50,25,50,25));
+		pad.getChildren().add(vbox);
+
+		StackPane stack = new StackPane();
+		stack.setStyle("-fx-background-color: rgba(127,127,127,0.5);");
+		stack.setAlignment(Pos.CENTER);
+		stack.getChildren().add(pad);
+
+		Platform.runLater(() -> CommentSuiteFX.addOverlay(stack));
+		close.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getMainStackPane().getChildren().remove(stack)));
 	}
 	
 	

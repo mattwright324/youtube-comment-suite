@@ -28,7 +28,7 @@ public class DatabaseManager {
 	}
 	
 	public void setup() throws SQLException {
-		s.executeUpdate("CREATE TABLE IF NOT EXISTS gitem_type (type_id INTEGER PRIMARY KEY, name STRING);");
+		s.executeUpdate("CREATE TABLE IF NOT EXISTS gitem_type (type_id INTEGER PRIMARY KEY, nameProperty STRING);");
 		s.executeUpdate("INSERT OR IGNORE INTO gitem_type VALUES (0, 'video'),(1, 'channel'),(2, 'playlist');");
 		
 		s.executeUpdate("CREATE TABLE IF NOT EXISTS gitem_list ("
@@ -136,10 +136,6 @@ public class DatabaseManager {
 		PreparedStatement delVid = con.prepareStatement("DELETE FROM videos WHERE video_id = ?");
 		PreparedStatement delComs = con.prepareStatement("DELETE FROM comments WHERE video_id = ?");
 		for(String videoId : ids) {
-			File f = new File("Thumbs\\"+videoId+".jpg");
-			if(f.exists()) {
-				f.delete();
-			}
 			delVid.setString(1, videoId);
 			delVid.addBatch();
 			delComs.setString(1, videoId);

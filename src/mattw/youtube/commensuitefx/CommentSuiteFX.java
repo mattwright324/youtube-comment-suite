@@ -53,7 +53,6 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import mattw.youtube.commensuitefx.DatabaseManager.CommentQuery;
 import mattw.youtube.datav3.YoutubeData;
-import mattw.youtube.datav3.list.ChannelsList;
 import mattw.youtube.datav3.list.SearchList;
 
 public class CommentSuiteFX extends Application implements EventHandler<ActionEvent> {
@@ -66,10 +65,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	 */
 
 	public static CommentSuiteFX app;
-	private YoutubeData data;
-	public final YCSConfig config = new YCSConfig();
+	public static YoutubeData data;
+	private static final YCSConfig config = new YCSConfig();
 	private Stage stage;
-	private final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/placeholder4.png"));
+	public static final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/placeholder4.png"));
 
 	public DatabaseManager database;
 	private CommentQuery query;
@@ -100,6 +99,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	private Button exitSetup;
 	private Button signin;
 	public Label status;
+	private VBox accountList = new VBox(8);
 
 	private String pageToken = "";
 	private Button search;
@@ -157,6 +157,15 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		launch(args);
 	}
 
+	public static YCSConfig getConfig() { return config; }
+
+
+	public static StackPane getMainStackPane() { return app.layout; }
+	public static void addOverlay(StackPane stack) {
+		if(!app.layout.getChildren().contains(stack))
+			app.layout.getChildren().add(stack);
+	}
+
 	private void saveConfig() {
 		Platform.runLater(() -> {
 			if(layout.getChildren().contains(setup)) {
@@ -167,63 +176,42 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				layout.getChildren().remove(setup);
 			}
 		});
-
 	}
 
 	private void loadConfig() throws IOException {
 		config.load();
+		data = new YoutubeData(config.getYoutubeKey());
 		Platform.runLater(() -> {
-			welcome.setText("Welcome, "+config.getUsername());
-			author.setText(config.getUsername());
-			if(config.getAccessTokens() != null) {
-				signin.setText("Sign out");
-				signin.setStyle("-fx-base: firebrick");
-				data.setAccessToken(config.getAccessTokens().access_token);
-			} else {
-				signin.setText("Sign in");
-				signin.setStyle("");
+			System.out.println(getConfig().accounts.size());
+			welcome.setText(config.getWelcomeStatement());
+			accountList.getChildren().clear();
+			for(Account acc : getConfig().accounts) {
+				accountList.getChildren().add(new AccountPane(acc));
 			}
 		});
-		data = new YoutubeData(config.getYoutubeKey());
 		if(!config.isSetup()) {
 			Platform.runLater(() -> layout.getChildren().add(setup));
 		}
 	}
 
-	public void refreshTokens() {
-		if(config.getAccessTokens() != null) {
-			OA2Tokens old_tokens = config.getAccessTokens();
-			OA2Tokens new_tokens;
-			try {
-				new_tokens = OA2Handler.refreshAccessTokens(old_tokens);
-				new_tokens.setRefreshToken(old_tokens.refresh_token);
-				config.setAccessTokens(new_tokens);
-				data.setAccessToken(new_tokens.access_token);
-				config.save();
-				checkSignin(new_tokens);
-				System.out.println("Sign in success?");
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+	class AccountPane extends HBox {
+		public final Button signOut = new Button("Sign out");
+		public Label name = new Label("...");
+		public AccountPane(Account acc) {
+			super(10);
+			setId("account");
+			setPadding(new Insets(2,2,2,2));
+			setFillHeight(true);
+			acc.getUsername(); // sets stringproperty or get nullpointerexception
+			name.textProperty().bind(acc.nameProperty);
+			name.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+			signOut.setStyle("-fx-base: firebrick");
+			signOut.setOnAction(ae -> {
+				acc.signOut();
+				Platform.runLater(() -> accountList.getChildren().remove(this));
+			});
+			getChildren().addAll(signOut, name);
 		}
-	}
-
-	private void checkSignin(OA2Tokens tokens) throws JsonSyntaxException, IOException {
-		ChannelsList cl = data.getChannelsByMine(ChannelsList.PART_SNIPPET);
-		String title = cl.items[0].snippet.title;
-		config.setUsername(title);
-		config.setChannelId(cl.items[0].id);
-		config.setAccessTokens(tokens);
-		config.save();
-		loadConfig();
-		System.out.println("Signed in and loaded.");
-	}
-
-	private void signOut() throws IOException {
-		config.setUsername("Guest");
-		data.setAccessToken("");
-		config.setAccessTokens(null);
-		config.save();
 	}
 
 	private void setNodesDisabled(boolean disable, Node... nodes) {
@@ -247,66 +235,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			} else if(o.equals(exitSetup)) {
 				layout.getChildren().remove(setup);
 			} else if(o.equals(signin)) {
-				if(signin.getText().equals("Sign in")) {
-					Task<Void> task = new Task<Void>(){
-						protected Void call() throws Exception {
-							System.out.println("OAuth2");
-							Platform.runLater(() -> {
-								WebView web = new WebView();
-								WebEngine engine = web.getEngine();
-								try {
-									engine.load(OA2Handler.getOAuth2Url());
-									web.setPrefSize(400, 575);
 
-									Dialog<WebView> dialog = new Dialog<>();
-									dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL);
-									dialog.getDialogPane().setContent(web);
-									dialog.titleProperty().bind(engine.titleProperty());
-									engine.titleProperty().addListener(e -> {
-										System.out.println("CHANGE: "+engine.getTitle());
-										if(engine.getTitle() != null && (engine.getTitle().contains("code=") || engine.getTitle().contains("error="))) {
-											String response = engine.getTitle();
-											String code = response.substring(13, response.length());
-											web.setDisable(true);
-											try {
-												OA2Tokens tokens = OA2Handler.getAccessTokens(code);
-												data.setAccessToken(tokens.access_token);
-												checkSignin(tokens);
-												saveAndSetup.requestFocus();
-											} catch (IOException e1) {
-												e1.printStackTrace();
-											}
-											dialog.close();
-										} else {
-											System.out.println("    NO RESPONSE");
-										}
-									});
-									dialog.showAndWait();
-									System.out.println("OAuth2 Done");
-								} catch (UnsupportedEncodingException e) {
-									e.printStackTrace();
-								}
-							});
-							return null;
-						}
-					};
-					Thread thread = new Thread(task);
-					thread.setDaemon(true);
-					thread.start();
-				} else if(signin.getText().equals("Sign out")) {
-					Task<Void> task = new Task<Void>() {
-						protected Void call() throws Exception {
-							signOut();
-							loadConfig();
-							return null;
-						}
-					};
-					Thread thread = new Thread(task);
-					thread.setDaemon(true);
-					thread.start();
-				} else {
-					System.out.println("Sign in/out: Something broke.");
-				}
 			}
 		} else if(o.equals(videoToggle) || o.equals(groupToggle) || o.equals(commentToggle)) {
 			if(videoToggle.isSelected()) {
@@ -338,7 +267,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			}
 		} else if(o.equals(search) || o.equals(nextPage)) {
 			Task<Void> task = new Task<Void>() {
-				protected Void call() throws Exception {
+				protected Void call() {
 					setNodesDisabled(true, search, nextPage, searchField, searchMethod, locField, locDistance, searchOrder, searchType);
 					try {
 						String escaped_search = URLEncoder.encode(searchField.getText(), "UTF-8");
@@ -406,10 +335,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			setNodesDisabled(true, selectAll, clearResults, addToGroup, nextPage, resultStatus);
 			searchResults.getChildren().clear();
 		} else if(o.equals(addToGroup)) {
-			//Dialog<ButtonType> dialog = new Dialog<>();
-			//DialogPane pane = new DialogPane();
-			//dialog.setDialogPane(pane);
-			//pane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 			if(!layout.getChildren().contains(addGroup)) {
 				addGroup = createAddToGroupPane();
 				layout.getChildren().add(addGroup);
@@ -419,7 +344,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				List<Group> allGroups = choice.getItems();
 				TextInputDialog input = new TextInputDialog("");
 				input.setTitle("Create Group");
-				input.setContentText("Pick a unique name: ");
+				input.setContentText("Pick a unique nameProperty: ");
 				input.showAndWait().ifPresent(result -> {
 					boolean unique = true;
 					for(Group g : allGroups) {
@@ -468,7 +393,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				Group current = choice.getSelectionModel().getSelectedItem();
 				TextInputDialog input = new TextInputDialog(current.group_name);
 				input.setTitle("Rename Group");
-				input.setContentText("Pick a new name: ");
+				input.setContentText("Pick a new nameProperty: ");
 				input.showAndWait().ifPresent(result -> {
 					if(!current.group_name.equals(result)) {
 						try {
@@ -653,6 +578,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public void start(Stage arg0) throws Exception {
 		app = this;
 		stage = arg0;
+		loadConfig();
 
 		database = new DatabaseManager();
 		database.setup();
@@ -675,21 +601,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		GridPane.setHgrow(menu, Priority.ALWAYS);
 
 		layout.getChildren().addAll(main);
-		Task<Void> task = new Task<Void>(){
-			protected Void call() throws IOException {
-				loadConfig();
-				try {
-					reloadGroups();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-				return null;
-			}
-		};
-		Thread thread = new Thread(task);
-		thread.setDaemon(true);
-		thread.start();
 
+		reloadGroups();
 		videoToggle.fire();
 
 		Scene scene = new Scene(layout, 900, 550);
@@ -718,7 +631,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 
 		TextField field = new TextField();
 		field.setMinWidth(200);
-		field.setPromptText("Choose a unique name.");
+		field.setPromptText("Choose a unique nameProperty.");
 
 
 		existing.setOnAction(e -> {
@@ -847,7 +760,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		dislikes.setAlignment(Pos.CENTER_RIGHT);
 		dislikes.setStyle("-fx-text-fill: red");
 
-		description = new TextArea("Published Nov 18, 1918  This is an example description. You may select this text, the title, and author's name. Right click to copy or select all."
+		description = new TextArea("Published Nov 18, 1918  This is an example description. You may select this text, the title, and author's nameProperty. Right click to copy or select all."
 				+ "\n\nThe thumbnail and author's picture are clickable to open either the video or channel in your browser."
 				+ "\n\nComments may be replied to if you are signed in. Commentor names may be clicked to open their channel in browser."
 				+ "\n\nNote that grabbed comment numbers may be slightly off due to Youtube spam detection and the channel's user and phrase filters.");
@@ -1064,7 +977,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 						int order = orderby.getSelectionModel().getSelectedIndex();
 						String user = userLike.getText();
 						String text = textLike.getText();
-						int limit = 500;
+						int limit = 250;
 						GitemType gitem = citem.getValue().getGitemId() != -1 ? citem.getValue() : null;
 						int comment_type =  type.getSelectionModel().getSelectedIndex();
 						query = database.newCommentQuery()
@@ -1503,28 +1416,71 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		Label desc = new Label("Sign in to leave comments and replies.");
 		desc.setWrapText(true);
 
-		Button addAccount = new Button("Add Account");
-
-		class Account extends VBox {
-			public final Button signout = new Button("Sign out");
-			public Label name;
-			public Account(String username) {
-				super(4);
-				setId("account");
-				setPadding(new Insets(2,2,2,2));
-				setFillWidth(true);
-				name = new Label(username);
-				name.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
-				signout.setStyle("-fx-base: firebrick");
-				getChildren().addAll(name, signout);
-			}
-		}
-
 		signin = new Button("Add Account");
-		signin.setOnAction(this);
+		signin.setOnAction(ae -> {
+			Task<Void> task = new Task<Void>(){
+				protected Void call() throws Exception {
+					System.out.println("OAuth2");
+					Platform.runLater(() -> {
+						WebView web = new WebView();
+						WebEngine engine = web.getEngine();
+						try {
+							engine.load(OA2Handler.getOAuth2Url());
+							web.setPrefSize(400, 575);
+							Dialog<WebView> dialog = new Dialog<>();
+							dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL);
+							dialog.getDialogPane().setContent(web);
+							dialog.titleProperty().bind(engine.titleProperty());
+							engine.titleProperty().addListener(e -> {
+								System.out.println("CHANGE: "+engine.getTitle());
+								if(engine.getTitle() != null && (engine.getTitle().contains("code=") || engine.getTitle().contains("error="))) {
+									String response = engine.getTitle();
+									String code = response.substring(13, response.length());
+									web.setDisable(true);
+									try {
+										OA2Tokens tokens = OA2Handler.getAccessTokens(code);
+										getConfig().submitTokens(tokens);
+										accountList.getChildren().clear();
+										accountList.getChildren().addAll(getConfig().accounts.stream().map(acc -> new AccountPane(acc)).collect(Collectors.toList()));
+										saveAndSetup.requestFocus();
+									} catch (IOException e1) {
+										e1.printStackTrace();
+									}
+									dialog.close();
+								} else {
+									System.out.println("    NO RESPONSE");
+								}
+							});
+							dialog.showAndWait();
+							System.out.println("OAuth2 Done");
+						} catch (UnsupportedEncodingException e) {
+							e.printStackTrace();
+						}
+					});
+					return null;
+				}
+			};
+			Thread thread = new Thread(task);
+			thread.setDaemon(true);
+			thread.start();
+		});
 
-		VBox accountList = new VBox(8);
-		accountList.getChildren().addAll(new Account("John Smith"), new Account("YoutubeChannel12345"));
+		/*if(signin.getText().equals("Sign in")) {
+
+		} else if(signin.getText().equals("Sign out")) {
+			Task<Void> task = new Task<Void>() {
+				protected Void call() throws Exception {
+					signOut();
+					loadConfig();
+					return null;
+				}
+			};
+			Thread thread = new Thread(task);
+			thread.setDaemon(true);
+			thread.start();
+		} else {
+			System.out.println("Sign in/out: Something broke.");
+		}*/
 
 		HBox hBtn = new HBox(10);
 		saveAndSetup = new Button("Save and Setup");
@@ -1542,7 +1498,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		vbox.setMaxHeight(0);
 		vbox.setFillWidth(true);
 		vbox.setPadding(new Insets(25,25,25,25));
-		vbox.getChildren().addAll(title, desc, addAccount, accountList, hBtn);
+		vbox.getChildren().addAll(title, desc, signin, accountList, hBtn);
 
 		StackPane glass = new StackPane();
 		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);");

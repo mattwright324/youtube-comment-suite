@@ -23,12 +23,12 @@ public class OA2Handler {
 	private final static String client_secret = "QuTdoA-KArupKMWwDrrxOcoS";
 	private final static String redirect_uri = "urn:ietf:wg:oauth:2.0:oob";
 	
-	public static void postNewReply(String parentId, String textOriginal) {
+	public static void postNewReply(String parentId, String textOriginal, Account account) {
 		try {
 			Object response;
 			boolean tryagain = false;
 			do {
-				response = postReply(parentId, textOriginal);
+				response = postReply(parentId, textOriginal, account.getTokens());
 				if(response instanceof GlobalDomainError) {
 					GlobalDomainError gde = (GlobalDomainError) response;
 					for(GlobalDomainError.GlobalError.Error error : gde.error.errors) {
@@ -36,7 +36,7 @@ public class OA2Handler {
 					}
 					if(gde.error.code == 401) {
 						System.out.println("Refreshing tokens and trying again.");
-						CommentSuiteFX.app.refreshTokens();
+						account.refreshTokens();
 						tryagain = true;
 					}
 				} else if(response instanceof CommentsList.Item) {
@@ -48,10 +48,10 @@ public class OA2Handler {
 		}
 	}
 	
-	private static Object postReply(String parentId, String textOriginal) throws IOException {
+	private static Object postReply(String parentId, String textOriginal, OA2Tokens tokens) throws IOException {
 		System.out.println("Replying to ["+parentId+"]:    "+textOriginal);
 		String payload = new Gson().toJson(new MakeReply(parentId, textOriginal), MakeReply.class);
-		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token="+CommentSuiteFX.app.config.getAccessTokens().access_token).openConnection();
+		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token="+tokens.access_token).openConnection();
 		System.out.println("    "+url.getURL().toString());
 		url.setDoOutput(true);
 		url.setDoInput(true);
