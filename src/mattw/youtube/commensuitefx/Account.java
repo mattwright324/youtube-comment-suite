@@ -34,7 +34,7 @@ public class Account {
 			setTokens(new_tokens);
 			getData();
 			try {
-				CommentSuiteFX.getConfig().save();
+				CommentSuiteFX.getApp().getConfig().save();
 			} catch (IOException ignored) {}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -42,23 +42,23 @@ public class Account {
 	}
 
 	private void getData() throws IOException {
-		CommentSuiteFX.app.data.setAccessToken(tokens.access_token);
-		ChannelsList cl = CommentSuiteFX.app.data.getChannelsByMine(ChannelsList.PART_SNIPPET);
+		CommentSuiteFX.getApp().data.setAccessToken(tokens.access_token);
+		ChannelsList cl = CommentSuiteFX.getApp().data.getChannelsByMine(ChannelsList.PART_SNIPPET);
 		String title = cl.items[0].snippet.title;
 		setUsername(title);
 		setChannelId(cl.items[0].id);
 		setProfile(cl.items[0].snippet.thumbnails.default_thumb.url.toString());
 		try {
-			CommentSuiteFX.getConfig().save();
+			CommentSuiteFX.getApp().getConfig().save();
 		} catch (IOException ignored) {
 			ignored.printStackTrace();
 		}
 	}
 
 	public void signOut() {
-		CommentSuiteFX.getConfig().accounts.remove(this);
+		CommentSuiteFX.getApp().getConfig().accounts.remove(this);
 		try {
-			CommentSuiteFX.getConfig().save();
+			CommentSuiteFX.getApp().getConfig().save();
 		} catch (IOException ignored) {
 		}
 	}

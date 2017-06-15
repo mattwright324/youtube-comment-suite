@@ -154,7 +154,7 @@ public class OA2Handler {
 					}
 					if(gde.error.code == 401) {
 						System.out.println("Refreshing tokens and trying again.");
-						CommentSuiteFX.app.refreshTokens();
+						CommentSuiteFX.instance.refreshTokens();
 						tryagain = true;
 					}
 				} else if(response instanceof CommentThreadsList.Item) {
@@ -169,7 +169,7 @@ public class OA2Handler {
 	private static Object postComment(String channelId, String videoId, String textOriginal) throws IOException {
 		System.out.println("Commenting on ["+videoId+", "+channelId+"]:    "+textOriginal);
 		String payload = new Gson().toJson(new MakeComment(channelId, videoId, textOriginal), MakeComment.class);
-		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&access_token="+CommentSuiteFX.app.config.getAccessTokens().access_token).openConnection();
+		HttpURLConnection url = (HttpURLConnection) new URL("https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&access_token="+CommentSuiteFX.instance.config.getAccessTokens().access_token).openConnection();
 		url.setDoOutput(true);
 		url.setDoInput(true);
 		url.setRequestProperty("Content-Type", "application/json");

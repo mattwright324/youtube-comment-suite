@@ -3,17 +3,12 @@ package mattw.youtube.commensuitefx;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,7 +25,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Cursor;
-import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -718,86 +712,78 @@ class GroupManager extends StackPane {
 	
 	public void refresh() {
 		refreshing = true;
-		
+		ProgressIndicator progress = new ProgressIndicator();
+		progress.setMaxHeight(36);
+		progress.setMaxWidth(36);
+
+		Label title = new Label("Refreshing Group Data");
+		title.setAlignment(Pos.CENTER);
+		title.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
+
+		Label elapsedTime = new Label("");
+		elapsedTime.setStyle("-fx-text-fill: cornflowerblue;");
+		Label totalVideos = new Label("0");
+		Label newVideos = new Label("0");
+		newVideos.setStyle("-fx-text-fill: orange;");
+		Label videoProgress = new Label("0");
+		videoProgress.setStyle("-fx-text-fill: orange;");
+		Label threadProgress = new Label("0");
+		threadProgress.setStyle("-fx-text-fill: orange;");
+		Label totalComments = new Label("0");
+		Label newComments = new Label("0");
+		newComments.setStyle("-fx-text-fill: orange;");
+
+		GridPane grid = new GridPane();
+		grid.setMinWidth(350);
+		grid.setVgap(10);
+		grid.setHgap(10);
+		grid.addRow(0, new Label("Elapsed Time"), elapsedTime);
+		grid.addRow(1, new Label("Total Videos"), totalVideos);
+		grid.addRow(2, new Label("Total Comments"), totalComments);
+		grid.addRow(3);
+		grid.addRow(4, new Label("New Videos"), newVideos);
+		grid.addRow(5, new Label("Video Progress"), videoProgress);
+		grid.addRow(6, new Label("Comment Thread Progress"), threadProgress);
+		grid.addRow(7, new Label("New Comments"), newComments);
+
+		VBox vbox = new VBox(10);
+		vbox.setFillWidth(true);
+		vbox.setPadding(new Insets(25,35,25,35));
+		vbox.getChildren().addAll(title, grid);
+
+		HBox hbox = new HBox(10);
+		hbox.setAlignment(Pos.TOP_LEFT);
+		hbox.setFillHeight(true);
+		hbox.getChildren().addAll(progress, vbox);
+
+		VBox box = new VBox();
+		box.setId("stackMenu");
+		box.setMaxHeight(0);
+		box.setMaxWidth(0);
+		box.setAlignment(Pos.CENTER);
+		box.getChildren().addAll(hbox);
+
 		StackPane stack = new StackPane();
 		stack.setStyle("-fx-background-color: rgba(127,127,127,0.5)");
 		stack.setMaxHeight(Double.MAX_VALUE);
 		stack.setMaxWidth(Double.MAX_VALUE);
 		getChildren().add(stack);
-		
-		GridPane grid = new GridPane();
-		grid.setId("stackMenu");
-		grid.setAlignment(Pos.CENTER);
-		grid.setHgap(10);
-		grid.setVgap(10);
-		grid.setMaxHeight(0);
-		grid.setMaxWidth(0);
-		grid.setPadding(new Insets(25,35,25,35));
-		stack.getChildren().add(grid);
-		
-		ProgressIndicator progress = new ProgressIndicator();
-		progress.setMaxHeight(36);
-		progress.setMaxWidth(36);
-		grid.add(progress, 0, 0);
-		
-		/*Label label = new Label("Progress");
-		label.setAlignment(Pos.CENTER);
-		label.setFont(Font.font("Tahoma", FontWeight.BOLD, 20));
-		*/
-		
-		Label status = new Label("Part 1 of 3. Checking for new videos.");
-		status.setAlignment(Pos.CENTER);
-		status.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-		grid.add(status, 1, 0);
-		
-		Label status2 = new Label();
-		grid.add(status2, 1, 1);
-		
-		NumberAxis xAxis = new NumberAxis();
-		xAxis.setLabel("Elapsed Time (s)");
-		NumberAxis yAxis = new NumberAxis();
-		AreaChart<Number,Number> chart = new AreaChart<>(xAxis, yAxis);
-		chart.setCreateSymbols(false);
-		XYChart.Series<Number,Number> vseries = new XYChart.Series<>();
-		vseries.setName("New Videos");
-		XYChart.Series<Number,Number> cseries = new XYChart.Series<>();
-		cseries.setName("New Comments");
-		XYChart.Series<Number, Number> rseries = new XYChart.Series<>();
-		rseries.setName("New Replies");
-		chart.getData().add(vseries);
-		chart.getData().add(cseries);
-		chart.getData().add(rseries);
-		chart.setPrefWidth(600);
-		chart.setMaxWidth(600);
-		chart.setMinWidth(600);
-		chart.setPrefHeight(300);
-		chart.setPrefHeight(300);
-		chart.setMinHeight(300);
-		grid.add(chart, 0, 2, 2, 1);
-		
-		HBox hbox = new HBox();
-		hbox.setAlignment(Pos.CENTER_RIGHT);
+		stack.getChildren().add(box);
+
 		close = new Button("Finish");
 		close.setDisable(true);
-		close.setOnAction(e -> {
-			vseries.getData().clear();
-			cseries.getData().clear();
-			getChildren().remove(stack);
-		});
-		hbox.getChildren().add(close);
-		grid.add(hbox, 0, 3, 2, 1);
+		close.setOnAction(e -> getChildren().remove(stack) );
+		vbox.getChildren().add(close);
 		
 		es = Executors.newCachedThreadPool();
 		Task<Void> task = new Task<Void>() {
-			private final int VTHREADS = 10;
-			private final int CTHREADS = 20;
 			private final int COMMENT_INSERT_SIZE = 500;
 			private final ElapsedTime timer = new ElapsedTime();
-			private long last_second = -1;
-			private long new_comments = 0;
-			private long thread_progress = 0;
-			private long video_progress = 0;
-			private long total_comments = 0;
+			private AtomicLong new_comments = new AtomicLong(0);
+			private AtomicLong thread_progress = new AtomicLong(0);
+			private AtomicLong video_progress = new AtomicLong(0);
+			private AtomicLong total_comments = new AtomicLong(0);
+			private AtomicLong total_videos = new AtomicLong(0);
 			
 			private final List<String> existingVideoIds = new ArrayList<>();
 			private final Set<String> existingCommentIds = new HashSet<>();
@@ -807,31 +793,34 @@ class GroupManager extends StackPane {
 			
 			private final Map<String, String> commentThreadIds = new HashMap<>(); // <commentThreadId, videoId>
 			private Map<String, Integer> commentThreadReplies;
+			private final Queue<String> videosQueue = new ConcurrentLinkedQueue<>();
+			private final Queue<String> threadsQueue = new ConcurrentLinkedQueue<>(); // commentThreadIds.keySet()
 			
 			private final List<VideoType> insertVideos = new ArrayList<>();
 			private final List<VideoType> updateVideos = new ArrayList<>();
 			private final List<ChannelType> insertChannels = new ArrayList<>();
 			private final List<ChannelType> updateChannels = new ArrayList<>();
 			private final List<VideoGroup> insertVideoGroups = new ArrayList<>();
-			
-			// private List<String> insertedCommentIds = new ArrayList<String>();
-			
+
 			private final List<String> gitemVideos = new ArrayList<>();
 			private final List<GitemType> gitemChannels = new ArrayList<>();
 			private final List<GitemType> gitemPlaylists = new ArrayList<>();
-			
-			/*private boolean listContainsId(List<YoutubeObject> list, String youtubeId) {
-				for(YoutubeObject obj : list) {
-					if(obj.getId().equals(youtubeId)) 
-						return true;
-				}
-				return false;
-			}*/
-			
+
+			private boolean canDie1 = false, canDie2 = false;
+			private boolean stayAlive1 = true, stayAlive2 = true;
+
 			protected Void call() {
 				try {
+					ExecutorService es1 = Executors.newFixedThreadPool(1);
+					es1.execute(() -> {
+						while(refreshing) {
+							updateLabel(elapsedTime, timer.getTimeString());
+							try { Thread.sleep(137); } catch (Exception ignored) {}
+						}
+					});
+					es1.shutdown();
+
 					timer.set();
-					
 					existingVideoIds.addAll(database.getVideoIds());
 					existingCommentIds.addAll(database.getCommentIds(group_id));
 					existingChannelIds.addAll(database.getChannelIds());
@@ -853,13 +842,43 @@ class GroupManager extends StackPane {
 						}
 					}
 					database.updateGitems(existingGroupItems);
-					
 					try {
 						database.setAutoCommit(false);
-						Platform.runLater(() -> {
-							status.setText("Part 1 of 3. Finding new videos.");
-							vseries.getData().add(new XYChart.Data<>(0, 0));
-						});
+						ExecutorService ves = Executors.newCachedThreadPool();
+						for(int i=0; i < 10; i++) { // Video Queue Threads
+							ves.execute(() -> {
+								while(!videosQueue.isEmpty() || stayAlive1) {
+									if(canDie1 && stayAlive1) stayAlive1 = false;
+									try {
+										String videoId;
+										if((videoId = videosQueue.poll()) != null) {
+											getComments(videoId);
+											updateLabel(videoProgress, String.valueOf(video_progress.incrementAndGet()));
+										}
+									} catch (JsonSyntaxException | SQLException e) { e.printStackTrace(); }
+								}
+							});
+						}
+						ExecutorService ces = Executors.newCachedThreadPool();
+						for(int i=0; i < 20; i++) { // CommentThread Queue Threads
+							ces.execute(() -> {
+								while(!threadsQueue.isEmpty() || stayAlive2) {
+									if(canDie2 && stayAlive2) stayAlive2 = false;
+									final String threadId = threadsQueue.poll();
+									try {
+										if(threadId != null) {
+											getReplies(threadId, commentThreadIds.get(threadId));
+											updateLabel(threadProgress, String.valueOf(thread_progress.incrementAndGet())+" / "+commentThreadIds.size());
+										}
+									} catch (JsonSyntaxException e) {
+										e.printStackTrace();
+									} catch (Throwable e) {
+										System.err.println("Something broke for video: "+threadId);
+										e.printStackTrace();
+									}
+								}
+							});
+						}
 						try {
 							parseVideoItems(gitemVideos, -1);
 							parseChannelItems(gitemChannels);
@@ -867,54 +886,21 @@ class GroupManager extends StackPane {
 						} catch (JsonSyntaxException | IOException e) {
 							e.printStackTrace();
 						}
-						Platform.runLater(() -> status.setText("Part 1 of 3. Inserting new videos (committing)."));
+						videosQueue.addAll(database.getVideoIds(group_id));
 						database.insertVideos(insertVideos);
 						database.updateVideos(updateVideos);
 						database.insertVideoGroups(insertVideoGroups);
-						database.commit();
-						
 						clearAll(existingVideoIds, existingVideoGroups);
 						clearAll(insertVideos, updateVideos, insertVideoGroups);
 						clearAll(gitemVideos, gitemChannels, gitemPlaylists);
-						
-						final long t = timer.getSeconds();
-						Platform.runLater(() -> {
-							cseries.getData().add(new XYChart.Data<>(t, 0));
-							status.setText("Part 2 of 3. Finding new comments.");
-						});
-						List<String> videosInGroup = database.getVideoIds(group_id);
-						ExecutorService es = Executors.newCachedThreadPool();
-						for(int i=0; i < VTHREADS; i++) {
-							final int offset = i;
-							es.execute(() -> commentsThread(videosInGroup, offset));
-						}
-						es.shutdown();
-						es.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-						
-						
-						final long t3 = timer.getSeconds(), c = new_comments;
-						Platform.runLater(() -> {
-							cseries.getData().add(new XYChart.Data<>(t3, c));
-							rseries.getData().add(new XYChart.Data<>(t3, c));
-							status.setText("Part 2 of 3. Finding new comments (committing).");
-						});
-						database.commit();
-						
-						Platform.runLater(() -> status.setText("Part 3 of 3. Finding new comment replies."));
-						es = Executors.newCachedThreadPool();
-						final List<String> threads = new ArrayList<>(commentThreadIds.keySet());
-						for(int i=0; i < CTHREADS; i++) {
-							final int offset = i;
-							es.execute(() -> repliesThread(threads, offset));
-						}
-						es.shutdown();
-						es.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-						
-						final long t2 = timer.getSeconds(), c2 = new_comments;
-						Platform.runLater(() -> {
-							rseries.getData().add(new XYChart.Data<>(t2, c2));
-							status.setText("Part 3 of 3. Inserting channels and committing.");
-						});
+
+						canDie1 = true;
+						ves.shutdown();
+						ves.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+						canDie2 = true;
+						ces.shutdown();
+						ces.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
 						database.insertChannels(insertChannels);
 						database.updateChannels(updateChannels);
 						database.commit();
@@ -922,24 +908,25 @@ class GroupManager extends StackPane {
 						e.printStackTrace();
 					}
 					clearAll(insertChannels, updateChannels, existingCommentIds, existingChannelIds);
-					
-					final String time = timer.getTimeString();
+
 					Platform.runLater(() -> {
-						status.setText("Complete.");
-						status2.setText("Elapsed time: "+time);
 						reloadGroupData();
 						progress.setVisible(false);
 					});
 					database.setAutoCommit(true);
 					close.setDisable(false);
 					refreshing = false;
-					CommentSuiteFX.app.setupWithManager(manager);
+					CommentSuiteFX.getApp().setupWithManager(manager);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				return null;
 			}
-			
+
+			private void updateLabel(Label label, String text) {
+				Platform.runLater(() -> label.setText(text));
+			}
+
 			private boolean videoListContainsId(List<VideoType> list, String id) {
 				return list.stream().anyMatch(vt -> vt.getId().equals(id));
 			}
@@ -981,6 +968,7 @@ class GroupManager extends StackPane {
 			}
 			
 			private void parseVideoItems(List<String> videos, int gitem_id) throws JsonSyntaxException, IOException {
+				updateLabel(totalVideos, String.valueOf(total_videos.addAndGet(videos.size())));
 				for(int i=0; i<videos.size(); i += 50) {
 					List<String> sublist = videos.subList(i, i+50 < videos.size() ? i+50 : videos.size());
 					if(gitem_id != -1) {
@@ -1024,33 +1012,7 @@ class GroupManager extends StackPane {
 							updateVideos.add(video);
 					}
 				}
-				final long t = timer.getSeconds(), v = insertVideos.size();
-				Platform.runLater(() -> vseries.getData().add(new XYChart.Data<>(t, v)));
-			}
-			
-			private void commentsThread(final List<String> videos, final int offset) {
-				int pos = offset;
-				while(pos < videos.size()) {
-					String videoId = videos.get(pos);
-					try {
-						getComments(videoId);
-					} catch (JsonSyntaxException | SQLException e) {
-						e.printStackTrace();
-					}
-					video_progress++;
-					final long prog = video_progress;
-					final long t1 = timer.getSeconds(), c1 = new_comments;
-					Platform.runLater(() -> {
-						// progress.setProgress(prog / (1.0 * videos.size()));
-						status2.setText(total_comments+" total comments   "+prog+" / "+videos.size()+" videos");
-						if(t1 > last_second+3) {
-							last_second = t1;
-							System.out.println(t1);
-							Platform.runLater(() -> cseries.getData().add(new XYChart.Data<>(t1, c1)));
-						}
-					});
-					pos += VTHREADS;
-				}
+				updateLabel(newVideos, String.valueOf(insertVideos.size()));
 			}
 			
 			private void getComments(final String videoId) throws JsonSyntaxException, SQLException {
@@ -1060,21 +1022,22 @@ class GroupManager extends StackPane {
 				int fails = 0;
 				do {
 					if(comments.size() >= COMMENT_INSERT_SIZE) {
-						submitComments(comments, cseries);
+						submitComments(comments, null);
 						comments.clear();
 					}
 					try {
 						snippet = data.getCommentThreadsByVideoId(CommentThreadsList.PART_SNIPPET, videoId, CommentThreadsList.MAX_RESULTS, snipToken);
 						snipToken = snippet.nextPageToken;
-						total_comments += snippet.items.length;
+						total_comments.addAndGet(snippet.items.length);
 						for(CommentThreadsList.Item item : snippet.items) {
 							if(item.hasSnippet()) {
 								String commentId = item.snippet.topLevelComment.id;
 								boolean contains = commentThreadReplies.containsKey(commentId);
 								if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != commentThreadReplies.get(item.snippet.topLevelComment.id))) {
 									commentThreadIds.put(commentId, videoId);
+									threadsQueue.offer(commentId);
 								} else {
-									total_comments += item.snippet.totalReplyCount;
+									updateLabel(totalComments, String.valueOf(total_comments.addAndGet(item.snippet.totalReplyCount)));
 								}
 								if(!existingCommentIds.contains(commentId)) {
 									checkChannel(item.snippet.topLevelComment, null, false);
@@ -1118,36 +1081,8 @@ class GroupManager extends StackPane {
 					}
 				} while ((snippet == null || snippet.nextPageToken != null) && fails < 5);
 				if(comments.size() > 0) {
-					submitComments(comments, cseries);
+					submitComments(comments, null);
 					comments.clear();
-				}
-			}
-			
-			private void repliesThread(final List<String> threads, int offset) {
-				int pos = offset;
-				while(pos < threads.size()) {
-					final String threadId = threads.get(pos);
-					try {
-						getReplies(threadId, commentThreadIds.get(threadId));
-						thread_progress++;
-						final long prog = thread_progress;
-						final long t1 = timer.getSeconds(), c1 = new_comments;
-						Platform.runLater(() -> {
-							// progress.setProgress(prog / (1.0 * threads.size()));
-							status2.setText(total_comments+" total comments   "+prog+" / "+threads.size()+" comment threads");
-							if(t1 > last_second+3) {
-								last_second = t1;
-								System.out.println(t1);
-								Platform.runLater(() -> rseries.getData().add(new XYChart.Data<>(t1, c1)));
-							}
-						});
-					} catch (JsonSyntaxException e) {
-						e.printStackTrace();
-					} catch (Throwable e) {
-						System.out.println("Something broke. "+threadId);
-						e.printStackTrace();
-					}
-					pos += CTHREADS;
 				}
 			}
 			
@@ -1158,12 +1093,12 @@ class GroupManager extends StackPane {
                 int fails = 0;
                 do {
                     if (replies.size() >= COMMENT_INSERT_SIZE) {
-                        submitComments(replies, rseries);
+                        submitComments(replies, null);
                         replies.clear();
                     }
                     try {
                         cl = data.getCommentsByParentId(threadId, CommentsList.MAX_RESULTS, pageToken);
-                        total_comments += cl.items.length;
+                        total_comments.addAndGet(cl.items.length);
                         pageToken = cl.nextPageToken;
                         for (CommentsList.Item reply : cl.items) {
                             if (!existingCommentIds.contains(reply.id)) {
@@ -1176,28 +1111,23 @@ class GroupManager extends StackPane {
                                 }
                             }
                         }
+	                    updateLabel(totalComments, String.valueOf(total_comments.get()));
                     } catch (IOException e) {
                         fails++;
                     }
                 } while (cl != null && cl.nextPageToken != null && fails < 5);
                 if (replies.size() > 0) {
-                    submitComments(replies, rseries);
+                    submitComments(replies, null);
                     replies.clear();
                 }
             }
 			
 			private void submitComments(List<CommentType> comments, final XYChart.Series<Number,Number> series) throws SQLException {
 				if(comments.size() > 0) {
-					new_comments += comments.size();
+					updateLabel(newComments, String.valueOf(new_comments.addAndGet(comments.size())));
 					database.insertComments(comments.stream()
 							.filter(ct -> !existingCommentIds.contains(ct.getId()))
-							//.peek(ct -> insertedCommentIds.add(ct.getId()))
 							.collect(Collectors.toList()));
-					final long t2 = timer.getSeconds(), c = new_comments;
-					if(t2 > last_second+3) {
-						last_second = t2;
-						Platform.runLater(() -> series.getData().add(new XYChart.Data<>(t2, c)));
-					}
 				}
 			}
 			

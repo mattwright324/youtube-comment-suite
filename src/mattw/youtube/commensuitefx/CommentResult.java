@@ -56,7 +56,7 @@ class CommentResult extends HBox {
 			lastSelected = this;
 			Platform.runLater(() -> {
 				try {
-					CommentSuiteFX.app.loadContext(ct.getVideoId());
+					CommentSuiteFX.getApp().loadContext(ct.getVideoId());
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
@@ -97,7 +97,7 @@ class CommentResult extends HBox {
 		
 		author = new Hyperlink(DatabaseManager.getChannel(c.getChannelId()).getTitle());
 		author.setOnAction(e -> CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.getChannelId()));
-		if(CommentSuiteFX.getConfig().isSignedIn(c.getChannelId())) {
+		if(CommentSuiteFX.getApp().getConfig().isSignedIn(c.getChannelId())) {
 			author.setId("commentMine");
 		}
 		date = new Label(sdf.format(c.getDate()));
@@ -118,7 +118,7 @@ class CommentResult extends HBox {
 		viewtree.setDisable(!showTreeLink);
 		viewtree.setOnAction(e -> {
 			try {
-				CommentSuiteFX.app.viewTree(this.ct);
+				CommentSuiteFX.getApp().viewTree(this.ct);
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -131,7 +131,7 @@ class CommentResult extends HBox {
 		hbox.setAlignment(Pos.CENTER_LEFT);
 		hbox.getChildren().add(date); // save can_reply
 		if(c.getLikes() > 0) hbox.getChildren().add(likes);
-		if(!CommentSuiteFX.getConfig().accounts.isEmpty() || true) hbox.getChildren().add(reply);
+		if(!CommentSuiteFX.getApp().getConfig().accounts.isEmpty() || true) hbox.getChildren().add(reply);
 		if(c.getReplies() > 0 || c.isReply()) hbox.getChildren().add(viewtree);
 		hbox.getChildren().add(viewfulltext);
 		
@@ -188,7 +188,7 @@ class CommentResult extends HBox {
 	
 	private void replyToComment() {
 		ComboBox<Account> account = new ComboBox<>();
-		account.getItems().addAll(CommentSuiteFX.getConfig().accounts);
+		account.getItems().addAll(CommentSuiteFX.getApp().getConfig().accounts);
 		if(!account.getItems().isEmpty()) {
 			account.getSelectionModel().select(0);
 		}
@@ -221,7 +221,7 @@ class CommentResult extends HBox {
 		stack.getChildren().add(vbox);
 
 		Platform.runLater(() -> CommentSuiteFX.addOverlay(stack));
-		cancel.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getMainStackPane().getChildren().remove(stack)));
+		cancel.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getApp().getMainStackPane().getChildren().remove(stack)));
 		reply.setOnAction(ae -> {
 			reply.setDisable(true);
 			OA2Handler.postNewReply(ct.isReply() ? ct.getParentId() : ct.getId(), text.getText(), account.getValue());
@@ -275,7 +275,7 @@ class CommentResult extends HBox {
 		stack.getChildren().add(pad);
 
 		Platform.runLater(() -> CommentSuiteFX.addOverlay(stack));
-		close.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getMainStackPane().getChildren().remove(stack)));
+		close.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getApp().getMainStackPane().getChildren().remove(stack)));
 	}
 	
 	
@@ -288,10 +288,10 @@ class CommentResult extends HBox {
 	private void loadProfileImage() throws SQLException {
 		ChannelType channel = DatabaseManager.getChannel(ct.getChannelId());
 		if(!channel.hasThumb()) {
-			CommentSuiteFX.app.database.updateChannelFetchThumb(channel.getId(), true);
-			channel = CommentSuiteFX.app.database.getChannelById(channel.getId());
+			CommentSuiteFX.getApp().database.updateChannelFetchThumb(channel.getId(), true);
+			channel = CommentSuiteFX.getApp().database.getChannelById(channel.getId());
 			DatabaseManager.channelCache.put(channel.getId(), channel);
-			CommentSuiteFX.app.refreshResultProfiles();
+			CommentSuiteFX.getApp().refreshResultProfiles();
 		}
 	}
 }

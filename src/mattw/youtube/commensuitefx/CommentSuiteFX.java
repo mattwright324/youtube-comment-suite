@@ -64,9 +64,9 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	 * 		Choose specific video by text search, display top 5 matches in combobox.
 	 */
 
-	public static CommentSuiteFX app;
-	public static YoutubeData data;
-	private static final YCSConfig config = new YCSConfig();
+	private static CommentSuiteFX instance;
+	private final YCSConfig config = new YCSConfig();
+	public YoutubeData data;
 	private Stage stage;
 	public static final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/placeholder4.png"));
 
@@ -157,13 +157,15 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		launch(args);
 	}
 
-	public static YCSConfig getConfig() { return config; }
+	public static CommentSuiteFX getApp() { return instance; }
 
+	public YCSConfig getConfig() { return config; }
 
-	public static StackPane getMainStackPane() { return app.layout; }
+	public StackPane getMainStackPane() { return instance.layout; }
+
 	public static void addOverlay(StackPane stack) {
-		if(!app.layout.getChildren().contains(stack))
-			app.layout.getChildren().add(stack);
+		if(!instance.layout.getChildren().contains(stack))
+			instance.layout.getChildren().add(stack);
 	}
 
 	private void saveConfig() {
@@ -576,7 +578,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	}
 
 	public void start(Stage arg0) throws Exception {
-		app = this;
+		instance = this;
 		stage = arg0;
 		loadConfig();
 
