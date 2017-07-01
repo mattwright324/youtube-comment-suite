@@ -25,6 +25,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -333,7 +334,7 @@ class GroupManager extends StackPane {
 	}
 	
 	class ViewerEntry extends HBox {
-		
+
 		public ImageView thumb;
 		public final Label num;
 		public final TextField author;
@@ -476,7 +477,9 @@ class GroupManager extends StackPane {
 			
 			ProgressIndicator prog = new ProgressIndicator();
 			prog.setMaxWidth(50);
+			prog.setMinWidth(50);
 			prog.setMaxHeight(50);
+			prog.setMinHeight(50);
 			
 			Platform.runLater(() -> abox.getChildren().addAll(scroll, prog));
 			
@@ -714,11 +717,18 @@ class GroupManager extends StackPane {
 		refreshing = true;
 		ProgressIndicator progress = new ProgressIndicator();
 		progress.setMaxHeight(36);
+		progress.setMinHeight(36);
 		progress.setMaxWidth(36);
+		progress.setMinWidth(36);
 
 		Label title = new Label("Refreshing Group Data");
 		title.setAlignment(Pos.CENTER);
 		title.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
+
+		Label lbltc = new Label("Total Comments");
+		Label lblvp = new Label("Video Progress");
+		Label lblct = new Label("Comment Thread Progress");
+		Label lblnc = new Label("New Comments");
 
 		Label elapsedTime = new Label("");
 		elapsedTime.setStyle("-fx-text-fill: cornflowerblue;");
@@ -739,21 +749,21 @@ class GroupManager extends StackPane {
 		grid.setHgap(10);
 		grid.addRow(0, new Label("Elapsed Time"), elapsedTime);
 		grid.addRow(1, new Label("Total Videos"), totalVideos);
-		grid.addRow(2, new Label("Total Comments"), totalComments);
-		grid.addRow(3);
+		grid.addRow(2, lbltc, totalComments);
 		grid.addRow(4, new Label("New Videos"), newVideos);
-		grid.addRow(5, new Label("Video Progress"), videoProgress);
-		grid.addRow(6, new Label("Comment Thread Progress"), threadProgress);
-		grid.addRow(7, new Label("New Comments"), newComments);
+		grid.addRow(5, lblvp, videoProgress);
+		grid.addRow(6, lblct, threadProgress);
+		grid.addRow(7, lblnc, newComments);
+		setNodesDisabled(true, lbltc, lblvp, lblct, lblnc, totalComments, videoProgress, threadProgress, newComments);
 
 		VBox vbox = new VBox(10);
 		vbox.setFillWidth(true);
-		vbox.setPadding(new Insets(25,35,25,35));
 		vbox.getChildren().addAll(title, grid);
 
 		HBox hbox = new HBox(10);
 		hbox.setAlignment(Pos.TOP_LEFT);
 		hbox.setFillHeight(true);
+		hbox.setPadding(new Insets(25,35,25,35));
 		hbox.getChildren().addAll(progress, vbox);
 
 		VBox box = new VBox();
@@ -815,7 +825,7 @@ class GroupManager extends StackPane {
 					es1.execute(() -> {
 						while(refreshing) {
 							updateLabel(elapsedTime, timer.getTimeString());
-							try { Thread.sleep(137); } catch (Exception ignored) {}
+							try { Thread.sleep(100); } catch (Exception ignored) {}
 						}
 					});
 					es1.shutdown();
@@ -846,6 +856,7 @@ class GroupManager extends StackPane {
 						database.setAutoCommit(false);
 						ExecutorService ves = Executors.newCachedThreadPool();
 						for(int i=0; i < 10; i++) { // Video Queue Threads
+							final int tid = i;
 							ves.execute(() -> {
 								while(!videosQueue.isEmpty() || stayAlive1) {
 									if(canDie1 && stayAlive1) stayAlive1 = false;
@@ -856,11 +867,14 @@ class GroupManager extends StackPane {
 											updateLabel(videoProgress, String.valueOf(video_progress.incrementAndGet()));
 										}
 									} catch (JsonSyntaxException | SQLException e) { e.printStackTrace(); }
+									try { Thread.sleep(100); } catch (Exception ignored) {}
 								}
+								System.out.println("VQT"+tid+" has ended.");
 							});
 						}
 						ExecutorService ces = Executors.newCachedThreadPool();
 						for(int i=0; i < 20; i++) { // CommentThread Queue Threads
+							final int tid = i;
 							ces.execute(() -> {
 								while(!threadsQueue.isEmpty() || stayAlive2) {
 									if(canDie2 && stayAlive2) stayAlive2 = false;
@@ -876,7 +890,9 @@ class GroupManager extends StackPane {
 										System.err.println("Something broke for video: "+threadId);
 										e.printStackTrace();
 									}
+									try { Thread.sleep(100); } catch (Exception ignored) {}
 								}
+								System.out.println("CTQT"+tid+" has ended.");
 							});
 						}
 						try {
@@ -886,13 +902,15 @@ class GroupManager extends StackPane {
 						} catch (JsonSyntaxException | IOException e) {
 							e.printStackTrace();
 						}
-						videosQueue.addAll(database.getVideoIds(group_id));
 						database.insertVideos(insertVideos);
 						database.updateVideos(updateVideos);
 						database.insertVideoGroups(insertVideoGroups);
 						clearAll(existingVideoIds, existingVideoGroups);
 						clearAll(insertVideos, updateVideos, insertVideoGroups);
 						clearAll(gitemVideos, gitemChannels, gitemPlaylists);
+
+						videosQueue.addAll(database.getVideoIds(group_id));
+						setNodesDisabled(false, lbltc, lblvp, lblct, lblnc, totalComments, videoProgress, threadProgress, newComments);
 
 						canDie1 = true;
 						ves.shutdown();
@@ -1003,7 +1021,7 @@ class GroupManager extends StackPane {
 					long likes = itemStat.statistics.likeCount;
 					long dislikes = itemStat.statistics.dislikeCount;
 					long comments = itemStat.statistics.commentCount;
-					VideoType video = new VideoType(videoId, channelId, title, thumbUrl, true, description, comments, likes, dislikes, views, itemSnip.snippet.publishedAt, new Date(), 200);
+					VideoType video = new VideoType(videoId, channelId, title, thumbUrl, false, description, comments, likes, dislikes, views, itemSnip.snippet.publishedAt, new Date(), 200);
 					System.out.println(videoId+": "+title);
 					if(!(existingVideoIds.contains(itemSnip.id) || videoListContainsId(insertVideos, itemSnip.id) || videoListContainsId(updateVideos, itemSnip.id))) {
 						insertVideos.add(video);
@@ -1170,5 +1188,14 @@ class GroupManager extends StackPane {
 		};
 		es.execute(task);
 		es.shutdown();
+	}
+
+	private void setNodesDisabled(boolean disable, Node... nodes) {
+		for(Node n : nodes) {
+			n.setDisable(disable);
+			if(disable) {
+				n.setStyle("-fx-background-color: gray");
+			} else n.setStyle("-fx-background-color: transparent");
+		}
 	}
 }
