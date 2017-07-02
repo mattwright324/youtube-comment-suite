@@ -22,8 +22,8 @@ public class GitemType extends YoutubeObject {
 		return "";
 	}
 	
-	public GitemType(SearchList.Item item, boolean saveThumb) {
-		super(findId(item), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true, false);
+	public GitemType(SearchList.Item item) {
+		super(findId(item), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
 		int type;
 		if(item.id.videoId != null) {
 			type = 3;
@@ -35,7 +35,7 @@ public class GitemType extends YoutubeObject {
 			type = -1;
 		}
 		typeId = type;
-		typeText = typeId == 0 ? "comment" : typeId == 1 ? "channel" : typeId == 2 ? "playlist" : typeId == 3 ? "video" : "???";
+		typeText = typeId == 1 ? "channel" : typeId == 2 ? "playlist" : typeId == 3 ? "video" : "???";
 		this.gitemId = -1;
 		this.channelTitle = item.snippet.channelTitle;
 		this.published = item.snippet.publishedAt.getTime();

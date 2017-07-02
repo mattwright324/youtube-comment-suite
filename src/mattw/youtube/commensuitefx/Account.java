@@ -7,7 +7,8 @@ import mattw.youtube.datav3.list.ChannelsList;
 import java.io.IOException;
 
 public class Account {
-	protected StringProperty nameProperty = new SimpleStringProperty("");
+
+	public StringProperty nameProperty = new SimpleStringProperty("");
 	public String username = "", channelId, profile;
 	public OA2Tokens tokens;
 

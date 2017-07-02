@@ -131,7 +131,7 @@ class CommentResult extends HBox {
 		hbox.setAlignment(Pos.CENTER_LEFT);
 		hbox.getChildren().add(date); // save can_reply
 		if(c.getLikes() > 0) hbox.getChildren().add(likes);
-		if(!CommentSuiteFX.getApp().getConfig().accounts.isEmpty() || true) hbox.getChildren().add(reply);
+		if(!CommentSuiteFX.getApp().getConfig().accounts.isEmpty()) hbox.getChildren().add(reply);
 		if(c.getReplies() > 0 || c.isReply()) hbox.getChildren().add(viewtree);
 		hbox.getChildren().add(viewfulltext);
 		
@@ -195,7 +195,7 @@ class CommentResult extends HBox {
 
 		Button reply = new Button("Reply");
 		reply.setStyle("-fx-base: derive(cornflowerblue, 80%);");
-		reply.disableProperty().bind(account.getSelectionModel().selectedIndexProperty().isEqualTo(-1));
+		//reply.disableProperty().bind(account.getSelectionModel().selectedIndexProperty().isEqualTo(-1));
 		Button cancel = new Button("Cancel");
 
 		TextArea text = new TextArea();

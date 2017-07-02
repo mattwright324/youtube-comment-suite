@@ -21,7 +21,7 @@ public class YCSConfig {
 	public List<Account> accounts = new ArrayList<>();
 
 	public boolean isSignedIn(String channelId) {
-		return accounts.stream().anyMatch(cid -> cid.equals(channelId));
+		return accounts.stream().anyMatch(cid -> cid.getChannelId().equals(channelId));
 	}
 
 	public String getWelcomeStatement() {
@@ -57,7 +57,7 @@ public class YCSConfig {
 	
 	public void save() throws IOException {
 		if(!CONFIG_FILE.exists()) {
-			CONFIG_FILE.createNewFile();
+			if(!CONFIG_FILE.createNewFile()) { System.err.println("Failed to create config file."); }
 		}
 		FileWriter fr = new FileWriter(CONFIG_FILE);
 		fr.write(gson.toJson(this));

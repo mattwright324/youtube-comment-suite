@@ -17,15 +17,8 @@ import javafx.scene.text.FontWeight;
 import mattw.youtube.datav3.list.SearchList;
 
 class SearchResult extends HBox {
-	
-	private final Label author;
-	private final Label title;
-	private final Label description;
-	private final Label published;
+
 	final private CheckBox select;
-	
-	private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
-	private final Date publishedAt;
 	
 	final GitemType gitem;
 	
@@ -46,7 +39,7 @@ class SearchResult extends HBox {
 		super(5);
 		setAlignment(Pos.CENTER_LEFT);
 		setFillHeight(true);
-		gitem = new GitemType(item, false);
+		gitem = new GitemType(item);
 		int width = 850;
 		int height = 120;
 		setMaxWidth(width);
@@ -56,12 +49,13 @@ class SearchResult extends HBox {
 		setPrefHeight(height);
 		setMinHeight(height);
 		setPadding(new Insets(0,10,0,10));
-		
-		author = new Label(gitem.getChannelTitle());
-		publishedAt = new Date(gitem.getPublished());
-		description = new Label("Published on "+sdf.format(publishedAt)+"  "+item.snippet.description);
-		published = new Label();
-		title = new Label(gitem.getTitle());
+
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+		Label author = new Label(gitem.getChannelTitle());
+		Date publishedAt = new Date(gitem.getPublished());
+		Label description = new Label("Published on "+sdf.format(publishedAt)+"  "+item.snippet.description);
+		// Label published = new Label();
+		Label title = new Label(gitem.getTitle());
 		
 		select = new CheckBox();
 		select.setOnAction(e -> setSelected(select.isSelected()));

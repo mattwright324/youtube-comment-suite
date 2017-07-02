@@ -335,16 +335,16 @@ class GroupManager extends StackPane {
 	
 	class ViewerEntry extends HBox {
 
-		public ImageView thumb;
+		private ImageView thumb;
 		public final Label num;
 		public final TextField author;
         public final TextField about;
 		public final VBox vbox;
-		
+
 		public Viewer viewer;
 		public Comment comment;
 		public VideoType video;
-		
+
 		public final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 		
 		private ViewerEntry(int pos) {
@@ -789,11 +789,11 @@ class GroupManager extends StackPane {
 		Task<Void> task = new Task<Void>() {
 			private final int COMMENT_INSERT_SIZE = 500;
 			private final ElapsedTime timer = new ElapsedTime();
-			private AtomicLong new_comments = new AtomicLong(0);
-			private AtomicLong thread_progress = new AtomicLong(0);
-			private AtomicLong video_progress = new AtomicLong(0);
-			private AtomicLong total_comments = new AtomicLong(0);
-			private AtomicLong total_videos = new AtomicLong(0);
+			private final AtomicLong new_comments = new AtomicLong(0);
+			private final AtomicLong thread_progress = new AtomicLong(0);
+			private final AtomicLong video_progress = new AtomicLong(0);
+			private final AtomicLong total_comments = new AtomicLong(0);
+			private final AtomicLong total_videos = new AtomicLong(0);
 			
 			private final List<String> existingVideoIds = new ArrayList<>();
 			private final Set<String> existingCommentIds = new HashSet<>();
@@ -1011,7 +1011,7 @@ class GroupManager extends StackPane {
 				for(int i = 0; i<snip.items.length; i++) {
 					VideosList.Item itemSnip = snip.items[i];
 					VideosList.Item itemStat = stats.items[i];
-					checkChannel(null, itemSnip, true);
+					checkChannel(null, itemSnip, false);
 					String videoId = itemSnip.id;
 					String channelId = itemSnip.snippet.channelId;
 					String title = itemSnip.snippet.title;
@@ -1040,7 +1040,7 @@ class GroupManager extends StackPane {
 				int fails = 0;
 				do {
 					if(comments.size() >= COMMENT_INSERT_SIZE) {
-						submitComments(comments, null);
+						submitComments(comments);
 						comments.clear();
 					}
 					try {
@@ -1099,7 +1099,7 @@ class GroupManager extends StackPane {
 					}
 				} while ((snippet == null || snippet.nextPageToken != null) && fails < 5);
 				if(comments.size() > 0) {
-					submitComments(comments, null);
+					submitComments(comments);
 					comments.clear();
 				}
 			}
@@ -1111,7 +1111,7 @@ class GroupManager extends StackPane {
                 int fails = 0;
                 do {
                     if (replies.size() >= COMMENT_INSERT_SIZE) {
-                        submitComments(replies, null);
+                        submitComments(replies);
                         replies.clear();
                     }
                     try {
@@ -1135,12 +1135,17 @@ class GroupManager extends StackPane {
                     }
                 } while (cl != null && cl.nextPageToken != null && fails < 5);
                 if (replies.size() > 0) {
-                    submitComments(replies, null);
+                    submitComments(replies);
                     replies.clear();
                 }
             }
-			
-			private void submitComments(List<CommentType> comments, final XYChart.Series<Number,Number> series) throws SQLException {
+
+            /**
+             * Insert new comments into the database.
+             * @param comments list of comments
+             * @throws SQLException insert failed
+             */
+			private void submitComments(List<CommentType> comments) throws SQLException {
 				if(comments.size() > 0) {
 					updateLabel(newComments, String.valueOf(new_comments.addAndGet(comments.size())));
 					database.insertComments(comments.stream()
@@ -1148,7 +1153,13 @@ class GroupManager extends StackPane {
 							.collect(Collectors.toList()));
 				}
 			}
-			
+
+            /**
+             * Checks the channel associated with a comment or video to see if it is unique.
+             * @param comment null or a comment
+             * @param video null or a video
+             * @param fetchThumb fetch thumbnail of video or channel
+             */
 			private void checkChannel(CommentsList.Item comment, VideosList.Item video, boolean fetchThumb) {
 				String channelId = null;
 				if(comment != null && comment.snippet != null && comment.snippet.authorChannelId != null && comment.snippet.authorChannelId.value != null) {
@@ -1162,7 +1173,7 @@ class GroupManager extends StackPane {
 					if(!existingChannelIds.contains(channelId)) {
 						if(comment != null) {
 							channel = new ChannelType(comment, fetchThumb);
-						} else if(video != null) {
+						} else { // if(video != null)
 							try {
 								ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_SNIPPET, channelId, 1, "");
 								ChannelsList.Item item = cl.items[0];
@@ -1191,11 +1202,6 @@ class GroupManager extends StackPane {
 	}
 
 	private void setNodesDisabled(boolean disable, Node... nodes) {
-		for(Node n : nodes) {
-			n.setDisable(disable);
-			if(disable) {
-				n.setStyle("-fx-background-color: gray");
-			} else n.setStyle("-fx-background-color: transparent");
-		}
+		for(Node n : nodes) { n.setDisable(disable); }
 	}
 }

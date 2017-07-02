@@ -1,7 +1,6 @@
 package mattw.youtube.commensuitefx;
 
 import java.awt.Desktop;
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -99,7 +98,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	private Button exitSetup;
 	private Button signin;
 	public Label status;
-	private VBox accountList = new VBox(8);
+	private final VBox accountList = new VBox();
 
 	private String pageToken = "";
 	private Button search;
@@ -198,13 +197,16 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 
 	class AccountPane extends HBox {
 		public final Button signOut = new Button("Sign out");
-		public Label name = new Label("...");
+		public final Label name = new Label("...");
 		public AccountPane(Account acc) {
 			super(10);
 			setId("account");
-			setPadding(new Insets(2,2,2,2));
+			setPadding(new Insets(5,35,5,35));
 			setFillHeight(true);
-			acc.getUsername(); // sets stringproperty or get nullpointerexception
+			setAlignment(Pos.CENTER_LEFT);
+			setMinWidth(50);
+			setPrefWidth(300);
+			acc.getUsername();
 			name.textProperty().bind(acc.nameProperty);
 			name.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
 			signOut.setStyle("-fx-base: firebrick");
@@ -212,7 +214,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				acc.signOut();
 				Platform.runLater(() -> accountList.getChildren().remove(this));
 			});
-			getChildren().addAll(signOut, name);
+			ImageView iv = new ImageView(new Image(acc.getProfile()));
+			iv.setFitHeight(32);
+			iv.setFitWidth(32);
+			getChildren().addAll(signOut, iv, name);
 		}
 	}
 
@@ -232,7 +237,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					}
 				};
 				Thread thread = new Thread(task);
-				thread.setDaemon(true);
 				thread.start();
 			} else if(o.equals(exitSetup)) {
 				layout.getChildren().remove(setup);
@@ -313,7 +317,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				}
 			};
 			Thread thread = new Thread(task);
-			thread.setDaemon(true);
 			thread.start();
 		} else if(o.equals(selectAll)) {
 			ObservableList<Node> list = searchResults.getChildren();
@@ -387,7 +390,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 							}
 						};
 						Thread thread = new Thread(task);
-						thread.setDaemon(true);
 						thread.start();
 					}
 				});
@@ -492,7 +494,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				}
 			};
 			Thread thread = new Thread(task);
-			thread.setDaemon(true);
 			thread.start();
 		});
 		return glass;
@@ -548,12 +549,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 								e.printStackTrace();
 							}
 						});
-						File thumbs = new File("Thumbs/");
-						if(thumbs.exists()) {
-							for(File f : thumbs.listFiles()) {
-								f.delete();
-							}
-						}
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -571,7 +566,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				}
 			};
 			Thread thread = new Thread(task);
-			thread.setDaemon(true);
 			thread.start();
 		});
 		return glass;
@@ -856,7 +850,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		});
 		pageNum = new TextField();
 		pageNum.setEditable(false);
-		pageNum.textProperty().addListener((observable, oldValue, newValue) -> pageNum.setPrefWidth(pageNum.getText().length() * 6.5));
+		pageNum.textProperty().addListener((observable, oldValue, newValue) -> pageNum.setPrefWidth(pageNum.getText().length() * 7.5));
 		pageNum.setText(" Page 1 of 0 ");
 
 		HBox box = new HBox();
@@ -1426,6 +1420,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					Platform.runLater(() -> {
 						WebView web = new WebView();
 						WebEngine engine = web.getEngine();
+						engine.setJavaScriptEnabled(true);
 						try {
 							engine.load(OA2Handler.getOAuth2Url());
 							web.setPrefSize(400, 575);
@@ -1433,8 +1428,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 							dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL);
 							dialog.getDialogPane().setContent(web);
 							dialog.titleProperty().bind(engine.titleProperty());
-							engine.titleProperty().addListener(e -> {
-								System.out.println("CHANGE: "+engine.getTitle());
+							engine.titleProperty().addListener(e -> { // Check for correct token to appear in title.
+								System.out.println("Title Change: "+engine.getTitle());
 								if(engine.getTitle() != null && (engine.getTitle().contains("code=") || engine.getTitle().contains("error="))) {
 									String response = engine.getTitle();
 									String code = response.substring(13, response.length());
@@ -1443,14 +1438,12 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 										OA2Tokens tokens = OA2Handler.getAccessTokens(code);
 										getConfig().submitTokens(tokens);
 										accountList.getChildren().clear();
-										accountList.getChildren().addAll(getConfig().accounts.stream().map(acc -> new AccountPane(acc)).collect(Collectors.toList()));
+										accountList.getChildren().addAll(getConfig().accounts.stream().map(AccountPane::new).collect(Collectors.toList()));
 										saveAndSetup.requestFocus();
 									} catch (IOException e1) {
 										e1.printStackTrace();
 									}
 									dialog.close();
-								} else {
-									System.out.println("    NO RESPONSE");
 								}
 							});
 							dialog.showAndWait();
@@ -1463,26 +1456,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				}
 			};
 			Thread thread = new Thread(task);
-			thread.setDaemon(true);
 			thread.start();
 		});
-
-		/*if(signin.getText().equals("Sign in")) {
-
-		} else if(signin.getText().equals("Sign out")) {
-			Task<Void> task = new Task<Void>() {
-				protected Void call() throws Exception {
-					signOut();
-					loadConfig();
-					return null;
-				}
-			};
-			Thread thread = new Thread(task);
-			thread.setDaemon(true);
-			thread.start();
-		} else {
-			System.out.println("Sign in/out: Something broke.");
-		}*/
 
 		HBox hBtn = new HBox(10);
 		saveAndSetup = new Button("Save and Setup");
@@ -1496,7 +1471,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		VBox vbox = new VBox(10);
 		vbox.setId("stackMenu");
 		vbox.setAlignment(Pos.TOP_CENTER);
-		vbox.setMaxWidth(300);
+		vbox.setMaxWidth(500);
 		vbox.setMaxHeight(0);
 		vbox.setFillWidth(true);
 		vbox.setPadding(new Insets(25,25,25,25));
