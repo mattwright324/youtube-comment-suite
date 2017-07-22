@@ -21,7 +21,7 @@ import javafx.scene.layout.VBox;
 class CommentResult extends HBox {
 	
 	final static Map<String,Image> profileMap = new HashMap<>();
-	final static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/blank_profile.jpg"));
+	final static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commensuitefx/images/blank_profile.jpg"));
 	
 	private static CommentResult lastSelected = null;
 	

@@ -3,3 +3,5 @@
 out
 src/META-INF
 youtube-comment-suite.iml
+commentsuite.db
+config.ycs

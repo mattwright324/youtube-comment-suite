@@ -1,36 +1,28 @@
-# youtube-comment-suite
-Keep track of comments and replies from videos, channels, and playlists. Search for videos, playlists, and channels. Search through found comments by name, text, type. 
+# YouTube Comment Suite
 
-#### Requirements
-1. Java 8
-2. JavaFX (included with Java 8)
+Store and search through comments and replies from videos, channels, and playlists. Archive comments and video metadata that may disappear in the future.
 
-![Search your comments](http://i.imgur.com/orTeqX8.png)
+![Search example](http://i.imgur.com/mXfaC7N.png)
 
-### How-To
-#### How do I retrieve the comments from my channel, playlist, or videos?
-1. Starting off in the `Search Youtube` section, type keywords into the search-bar just like you would on the website. Click on the channel, playlist, and/or videos and then click `Add To Group` at the bottom. Add your selection to the Default group, another existing group, or create a new group with a unique name. 
-2. Go to the `Manage Groups` section and select the group you chose from above. Here you can view the last time you checked all the items in your group. Click `Refresh` at the top to begin checking the group items for new videos (channels or playlists), comments, and replies. 
+### Features
+* Cross-platform using Java 8 and JavaFX.
+* Add any number of videos, playlists, and channels into a single group that can be refreshed for new comments and videos.
+* Sign into multiple YouTube accounts. Reply with any account signed in.
+* Archive comments and video metadata.
+* Search by name, text, likes, type, and more.
+* Discover frequency in activity by week of published videos & comments and see the most active & liked commentors.
+* Discover which videos have their comments disabled.
+* Achieve similar abilities of the *Comments* section under *Community* for any and every channel.
+* View and search offline, sans thumbnails, once a group has been archived. *Thumbnails are not saved locally!*
 
-    First-time refreshing takes the longest because everything is new and saving to the `commentsuite.db` database file. Future refreshes will take significantly less time as only new content has to be saved. For example, a larger channel with anywhere from 100 to 1000 videos and approximately 600 to 3000 comments per videos may take approximately 25 minutes the first time and only 3 to 8 minutes the next time.
-    
-3. You may now search through all the comments on your channel, playlist, and or videos and even reply to them if you are signed in.
+**Does not** download thumbnails until they are viewed to conserve bandwidth & disk usage. Video and profile thumbnails are cached temporarily when viewed. Profile thumbnails will only show for the video channel owner and those that appear in the top 25 *Most Active Viewers* and *Most Liked Viewers* in a group. Locally saving thumbnails wastes bandwidth & disk space.
 
-#### How do I sign in?
-You may sign in by clicking `Setup` at the top right corner and then `Sign in`. You may sign out at any time.
+### Creating a Group
 
+In order to create a group, first you must search through YouTube as you would on the website using the *Search Youtube* tab at the top. Additional search by location can be done by changing the search type from *Normal* to *Location* left of the search box. Select the results and add them to an existing group or create a new one.
 
-## Gallery
+### Managing a Group
 
-![Search for your channels.](http://i.imgur.com/WwjkmIz.png)
-Search Youtube for your channels just as you would on the standard website.
+Managing a group of channels or videos is simple. Select a group from the item box and information will appear below. **Refresh** while on a selected group in order to download and store new videos, video metadata, and comments & replies on those videos.
 
-![See interesting statistics](http://i.imgur.com/OG07CKM.png)
-See interesting statistics: most active and popular viewers, most comment comments, comment counts per week, video counts per week, most popular, disliked, and commented videos, and a list of disabled videos. 
-
-![See progress as you refresh a group](http://i.imgur.com/lJyS1ms.png)
-See how much is new as you refresh a group. 
-
-![Manage several channels](http://i.imgur.com/68bReJ2.png)
-Check what you've already found and what exists in your group.
-
+Once a group has been refreshed, comments can be searched through in the *Search Comments* tab. Activity and information about the videos, comments, and commentors can be found while still in *Manage Groups*. Clicking **Load** in the *Overview* tab for comments (amount by week, most active views, most popular viewers, most common comments) or videos (amount by week, most popular, most disliked, most commented, comments disabled) will display relevant information.

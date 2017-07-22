@@ -67,7 +67,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	private final YCSConfig config = new YCSConfig();
 	public YoutubeData data;
 	private Stage stage;
-	public static final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commentsuite/images/placeholder4.png"));
+	public static final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commensuitefx/images/placeholder4.png"));
 
 	public DatabaseManager database;
 	private CommentQuery query;
@@ -251,7 +251,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					main.add(videos, 0, 1);
 					GridPane.setVgrow(videos, Priority.ALWAYS);
 				}
-				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commentsuite/images/youtube.png")));
+				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/youtube.png")));
 			} else if(groupToggle.isSelected()) {
 				if(main.getChildren().contains(videos)) main.getChildren().remove(videos);
 				if(main.getChildren().contains(comments)) main.getChildren().remove(comments);
@@ -259,7 +259,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					main.add(groups, 0, 1);
 					GridPane.setVgrow(groups, Priority.ALWAYS);
 				}
-				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commentsuite/images/manage.png")));
+				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/manage.png")));
 			} else if(commentToggle.isSelected()) {
 				if(main.getChildren().contains(videos)) main.getChildren().remove(videos);
 				if(main.getChildren().contains(groups)) main.getChildren().remove(groups);
@@ -267,7 +267,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					main.add(comments, 0, 1);
 					GridPane.setVgrow(comments, Priority.ALWAYS);
 				}
-				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commentsuite/images/search.png")));
+				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/search.png")));
 			} else {
 				System.out.println("Menu Toggle: Something broke.");
 			}
@@ -524,7 +524,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		vbox.setPadding(new Insets(25,25,25,25));
 		vbox.setMaxWidth(350);
 		vbox.setMaxHeight(0);
-		vbox.getChildren().addAll(title, new Label("Delete all data and thumbnails."), new Label("Does not remove Youtube sign-ins."), warn, hbox);
+		vbox.getChildren().addAll(title, new Label("Delete all data and thumbnails."), new Label("Does not remove YouTube sign-ins."), warn, hbox);
 
 		StackPane glass = new StackPane();
 		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);");
@@ -606,8 +606,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 				getClass().getResource("commentsuitefx.css").toExternalForm()
 		);
 		stage.setScene(scene);
-		stage.setTitle("Youtube Comment Suite");
-		stage.getIcons().add(new Image(getClass().getResourceAsStream("/mattw/youtube/commentsuite/images/fxicon.png")));
+		stage.setTitle("YouTube Comment Suite");
+		stage.getIcons().add(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/fxicon.png")));
 		stage.setOnCloseRequest(e -> {
 			Platform.exit();
 			System.exit(0);
@@ -730,7 +730,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		thumbnail.setFitHeight(180);
 		thumbnail.setFitWidth(320);
 
-		title = new TextField("Youtube Comment Suite");
+		title = new TextField("YouTube Comment Suite");
 		title.setId("context");
 		title.setFont(Font.font("Arial", FontWeight.NORMAL, 18));
 		title.setEditable(false);
@@ -759,7 +759,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		description = new TextArea("Published Nov 18, 1918  This is an example description. You may select this text, the title, and author's nameProperty. Right click to copy or select all."
 				+ "\n\nThe thumbnail and author's picture are clickable to open either the video or channel in your browser."
 				+ "\n\nComments may be replied to if you are signed in. Commentor names may be clicked to open their channel in browser."
-				+ "\n\nNote that grabbed comment numbers may be slightly off due to Youtube spam detection and the channel's user and phrase filters.");
+				+ "\n\nNote that grabbed comment numbers may be slightly off due to YouTube spam detection and the channel's user and phrase filters.");
 		description.setEditable(false);
 		description.setWrapText(true);
 		description.setMaxWidth(320);
@@ -1344,7 +1344,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		grid.setMaxHeight(height);
 
 		StackPane img = new StackPane();
-		header = new ImageView(new Image(getClass().getResourceAsStream("/mattw/youtube/commentsuite/images/youtube.png")));
+		header = new ImageView(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/youtube.png")));
 		header.setFitHeight(height);
 		header.setFitWidth(height * header.getImage().getWidth() / header.getImage().getHeight());
 		img.getChildren().add(header);
@@ -1363,7 +1363,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			}
 		});
 
-		videoToggle = new ToggleButton("Search Youtube");
+		videoToggle = new ToggleButton("Search YouTube");
 		videoToggle.setMaxHeight(height);
 		videoToggle.setToggleGroup(toggle);
 		videoToggle.setId("menuButton");
@@ -1406,7 +1406,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	}
 
 	private StackPane createSetupPane() {
-		Label title = new Label("Login to Youtube");
+		Label title = new Label("Login to YouTube");
 		title.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
 
 		Label desc = new Label("Sign in to leave comments and replies.");
