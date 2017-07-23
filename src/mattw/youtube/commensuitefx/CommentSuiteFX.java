@@ -21,6 +21,7 @@ import com.google.gson.JsonSyntaxException;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -30,10 +31,12 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
+import javafx.scene.CacheHint;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -45,6 +48,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebEngine;
@@ -67,7 +71,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	private final YCSConfig config = new YCSConfig();
 	public YoutubeData data;
 	private Stage stage;
-	public static final Image placeholder = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commensuitefx/images/placeholder4.png"));
+	public static final Image placeholder = new Image(CommentResult.class.getResourceAsStream("./images/placeholder4.png"));
 
 	public DatabaseManager database;
 	private CommentQuery query;
@@ -92,12 +96,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	private ToggleButton groupToggle;
 	private ToggleButton commentToggle;
 	private Label welcome;
-	private Hyperlink gotoSetup;
 
 	private Button saveAndSetup;
 	private Button exitSetup;
 	private Button signin;
-	public Label status;
 	private final VBox accountList = new VBox();
 
 	private String pageToken = "";
@@ -251,7 +253,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					main.add(videos, 0, 1);
 					GridPane.setVgrow(videos, Priority.ALWAYS);
 				}
-				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/youtube.png")));
+				header.setImage(new Image(getClass().getResourceAsStream("./images/youtube.png")));
 			} else if(groupToggle.isSelected()) {
 				if(main.getChildren().contains(videos)) main.getChildren().remove(videos);
 				if(main.getChildren().contains(comments)) main.getChildren().remove(comments);
@@ -259,7 +261,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					main.add(groups, 0, 1);
 					GridPane.setVgrow(groups, Priority.ALWAYS);
 				}
-				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/manage.png")));
+				header.setImage(new Image(getClass().getResourceAsStream("./images/manage.png")));
 			} else if(commentToggle.isSelected()) {
 				if(main.getChildren().contains(videos)) main.getChildren().remove(videos);
 				if(main.getChildren().contains(groups)) main.getChildren().remove(groups);
@@ -267,7 +269,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 					main.add(comments, 0, 1);
 					GridPane.setVgrow(comments, Priority.ALWAYS);
 				}
-				header.setImage(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/search.png")));
+				header.setImage(new Image(getClass().getResourceAsStream("./images/search.png")));
 			} else {
 				System.out.println("Menu Toggle: Something broke.");
 			}
@@ -607,7 +609,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		);
 		stage.setScene(scene);
 		stage.setTitle("YouTube Comment Suite");
-		stage.getIcons().add(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/fxicon.png")));
+		stage.getIcons().add(new Image(getClass().getResourceAsStream("./images/fxicon.png")));
 		stage.setOnCloseRequest(e -> {
 			Platform.exit();
 			System.exit(0);
@@ -653,10 +655,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 
 		List<GitemType> items = new ArrayList<>();
 		searchResults.getChildren().stream().filter(object -> object instanceof SearchResult && ((SearchResult) object).isSelected()).forEach(result -> items.add(((SearchResult) result).gitem));
-		
+
 		/*dialog.showAndWait().ifPresent(choice -> {
 			if(choice == ButtonType.OK) {
-				
+
 			}
 		});*/
 
@@ -870,7 +872,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		searchBox.setMinWidth(320);
 		searchBox.setMaxWidth(320);
 		searchBox.setPrefWidth(320);
-		searchBox.setPadding(new Insets(5,5,5,5));
+		searchBox.setPadding(new Insets(5,10,5,10));
 		searchBox.setAlignment(Pos.TOP_CENTER);
 		searchBox.setFillWidth(true);
 
@@ -997,6 +999,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		});
 
 		searchBox.getChildren().addAll(label1, cgroup, citem, videoContext, label2, type, grid, find);
+		searchBox.setOnKeyPressed(ke -> {
+			if(ke.getCode().equals(KeyCode.ENTER)) find.fire();
+		});
+
 		hbox.getChildren().addAll(context, resultBox, searchBox);
 		HBox.setHgrow(resultBox, Priority.ALWAYS);
 
@@ -1104,7 +1110,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			citem.getItems().add(new GitemType(-1, "All Items ("+items.size()+")"));
 			citem.getItems().addAll(items);
 			citem.getSelectionModel().select(0);
-			// Not smart to load all relevant videos into another ChoiceBox, too slow and list has potential to be gigantic. 
+			// Not smart to load all relevant videos into another ChoiceBox, too slow and list has potential to be gigantic.
 		});
 	}
 
@@ -1344,7 +1350,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		grid.setMaxHeight(height);
 
 		StackPane img = new StackPane();
-		header = new ImageView(new Image(getClass().getResourceAsStream("/mattw/youtube/commensuitefx/images/youtube.png")));
+		header = new ImageView(new Image(getClass().getResourceAsStream("./images/youtube.png")));
 		header.setFitHeight(height);
 		header.setFitWidth(height * header.getImage().getWidth() / header.getImage().getHeight());
 		img.getChildren().add(header);
@@ -1390,14 +1396,33 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		welcome.setMaxWidth(Double.MAX_VALUE);
 		grid.add(welcome, 4, 0);
 
-		gotoSetup = new Hyperlink("Setup");
-		gotoSetup.setOnAction(e -> {
-			if(!layout.getChildren().contains(setup)) {
-				saveAndSetup.setDisable(false);
-				layout.getChildren().add(setup);
+		Image settings = new Image(getClass().getResourceAsStream("./images/settings.png"));
+		ImageView view = new ImageView(settings), clip = new ImageView(settings);
+		StackPane set = new StackPane(view);
+		view.setFitWidth(24);
+		view.setFitHeight(24);
+		clip.setFitWidth(24);
+		clip.setFitHeight(24);
+		view.setClip(clip);
+
+		ColorAdjust monochrome = new ColorAdjust();
+		monochrome.setBrightness(1.0);
+		Blend blush = new Blend(BlendMode.MULTIPLY, monochrome, new ColorInput(0, 0, 24, 24, Color.CORNFLOWERBLUE));
+		view.effectProperty().bind(Bindings.when(set.hoverProperty()).then((Effect) blush).otherwise((Effect) null));
+		view.setCache(true);
+		view.setCacheHint(CacheHint.SPEED);
+
+		set.setPadding(new Insets(0, 10, 0, 0));
+		set.setOnMouseClicked(me -> {
+			if(me.getClickCount() == 1) {
+				if(!layout.getChildren().contains(setup)) {
+					saveAndSetup.setDisable(false);
+					layout.getChildren().add(setup);
+				}
 			}
 		});
-		grid.add(gotoSetup, 5, 0);
+		set.setCursor(Cursor.HAND);
+		grid.add(set, 5, 0);
 
 		GridPane.setValignment(welcome, VPos.CENTER);
 		GridPane.setHgrow(welcome, Priority.ALWAYS);

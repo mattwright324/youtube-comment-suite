@@ -367,7 +367,9 @@ class GroupManager extends StackPane {
 			num = new Label(pos+".");
 			num.setPrefWidth(35);
 			num.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
-			
+			num.setAlignment(Pos.CENTER);
+			HBox.setHgrow(num, Priority.ALWAYS);
+
 			vbox = new VBox();
 			vbox.setFillWidth(true);
 		}

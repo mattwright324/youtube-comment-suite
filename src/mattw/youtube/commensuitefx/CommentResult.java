@@ -19,14 +19,14 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 class CommentResult extends HBox {
-	
+
 	final static Map<String,Image> profileMap = new HashMap<>();
-	final static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("/mattw/youtube/commensuitefx/images/blank_profile.jpg"));
-	
+	final static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("./images/blank_profile.png"));
+
 	private static CommentResult lastSelected = null;
-	
+
 	private final CommentType ct;
-	
+
 	private final ImageView img;
 	private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 	private final Hyperlink author;
@@ -43,11 +43,11 @@ class CommentResult extends HBox {
 	private final MenuItem copyChannelLink;
 	private final MenuItem copyVideoLink;
 	private final MenuItem copyCommentLink;
-	
+
 	private final String parsedText;
-	
+
 	private boolean selected;
-	
+
 	private void setSelected(boolean select) {
 		selected = select;
 		if(selected) {
@@ -65,11 +65,11 @@ class CommentResult extends HBox {
 			setId(ct.isReply() ? "commentReply" : "");
 		}
 	}
-	
+
 	private boolean isSelected() {
 		return selected;
 	}
-	
+
 	public CommentResult(CommentType c, boolean showTreeLink) {
 		super();
 		ct = c;
@@ -81,7 +81,7 @@ class CommentResult extends HBox {
 		setMaxWidth(950);
 		setSelected(false);
 		setAlignment(Pos.CENTER_LEFT);
-		
+
 		VBox box = new VBox();
 		box.setMaxWidth(75);
 		box.setPrefWidth(75);
@@ -94,7 +94,7 @@ class CommentResult extends HBox {
 		if(thumb != null)
 			img.setImage(thumb);
 		box.getChildren().addAll(img, c.isReply() ? new Label("Reply") : new Label("Comment"));
-		
+
 		author = new Hyperlink(DatabaseManager.getChannel(c.getChannelId()).getTitle());
 		author.setOnAction(e -> CommentSuiteFX.openInBrowser("https://www.youtube.com/channel/"+c.getChannelId()));
 		if(CommentSuiteFX.getApp().getConfig().isSignedIn(c.getChannelId())) {
@@ -102,18 +102,18 @@ class CommentResult extends HBox {
 		}
 		date = new Label(sdf.format(c.getDate()));
 		date.setId("commentDate");
-		
+
 		likes = new Label(c.getLikes() > 0 ? "+"+c.getLikes() : "");
 		likes.setId("commentLikes");
-		
+
 		int length = 400;
 		parsedText = Jsoup.parse(c.getText().replace("<br />", "\r\n")).text();
 		textShort = new Label(parsedText.length() > length ? parsedText.substring(0, length-3)+"..." : parsedText);
 		textShort.setWrapText(true);
-		
+
 		reply = new Hyperlink("Reply");
 		reply.setOnAction(e -> replyToComment());
-		
+
 		viewtree = new Hyperlink("View Tree"+(c.getReplies() > 0 ? " ("+c.getReplies()+" replies)" : ""));
 		viewtree.setDisable(!showTreeLink);
 		viewtree.setOnAction(e -> {
@@ -123,10 +123,10 @@ class CommentResult extends HBox {
 				e1.printStackTrace();
 			}
 		});
-		
+
 		viewfulltext = new Hyperlink("Show Full Comment");
 		viewfulltext.setOnAction(e -> viewFullComment());
-		
+
 		HBox hbox = new HBox(10);
 		hbox.setAlignment(Pos.CENTER_LEFT);
 		hbox.getChildren().add(date); // save can_reply
@@ -134,18 +134,18 @@ class CommentResult extends HBox {
 		if(!CommentSuiteFX.getApp().getConfig().accounts.isEmpty()) hbox.getChildren().add(reply);
 		if(c.getReplies() > 0 || c.isReply()) hbox.getChildren().add(viewtree);
 		hbox.getChildren().add(viewfulltext);
-		
+
 		VBox text = new VBox();
 		text.setAlignment(Pos.CENTER_LEFT);
 		text.getChildren().addAll(author, textShort, hbox);
-		
+
 		getChildren().addAll(box, text);
-		
+
 		ContextMenu context = new ContextMenu();
-		
+
 		openInBrowser = new MenuItem("Open in Browser");
 		openInBrowser.setOnAction(e -> CommentSuiteFX.openInBrowser(ct.getYoutubeLink()));
-		
+
 		loadProfile = new MenuItem("Load Profile Image");
 		loadProfile.setOnAction(e -> {
 			try {
@@ -154,24 +154,24 @@ class CommentResult extends HBox {
 				e1.printStackTrace();
 			}
 		});
-		
+
 		copyName = new MenuItem("Copy Username");
 		copyName.setOnAction(e -> Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getTitle()));
-		
+
 		copyText = new MenuItem("Copy Comment");
 		copyText.setOnAction(e -> Clipboards.setClipboard(ct.getText()));
-		
+
 		copyChannelLink = new MenuItem("Copy Channel Link");
 		copyChannelLink.setOnAction(e -> Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getYoutubeLink()));
-		
+
 		copyVideoLink = new MenuItem("Copy Video Link");
 		copyVideoLink.setOnAction(e -> Clipboards.setClipboard("https://youtu.be/"+ct.getVideoId()));
-		
+
 		copyCommentLink = new MenuItem("Copy Comment Link");
 		copyCommentLink.setOnAction(e -> Clipboards.setClipboard(ct.getYoutubeLink()));
-		
+
 		context.getItems().addAll(openInBrowser, loadProfile, new SeparatorMenuItem(), copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);
-		
+
 		setOnMouseClicked(e -> {
 			if(e.isPopupTrigger()) {
 				if(!context.isShowing()) {
@@ -185,13 +185,19 @@ class CommentResult extends HBox {
 			}
 		});
 	}
-	
+
 	private void replyToComment() {
+		Label lbl = new Label("Reply as");
+
 		ComboBox<Account> account = new ComboBox<>();
 		account.getItems().addAll(CommentSuiteFX.getApp().getConfig().accounts);
 		if(!account.getItems().isEmpty()) {
 			account.getSelectionModel().select(0);
 		}
+
+		HBox hbox0 = new HBox(10);
+		hbox0.setAlignment(Pos.CENTER_LEFT);
+		hbox0.getChildren().addAll(lbl, account);
 
 		Button reply = new Button("Reply");
 		reply.setStyle("-fx-base: derive(cornflowerblue, 80%);");
@@ -203,9 +209,9 @@ class CommentResult extends HBox {
 		text.setPromptText("Write your response here.");
 		if(ct.isReply()) { text.setText("+"+DatabaseManager.getChannel(ct.getChannelId()).getTitle()+" "); }
 
-		HBox hbox = new HBox(10);
-		hbox.setAlignment(Pos.CENTER_RIGHT);
-		hbox.getChildren().addAll(reply, cancel);
+		HBox hbox1 = new HBox(10);
+		hbox1.setAlignment(Pos.CENTER_RIGHT);
+		hbox1.getChildren().addAll(reply, cancel);
 
 		VBox vbox = new VBox(10);
 		vbox.setId("stackMenu");
@@ -213,7 +219,7 @@ class CommentResult extends HBox {
 		vbox.setFillWidth(true);
 		vbox.setMaxWidth(450);
 		vbox.setMaxHeight(0);
-		vbox.getChildren().addAll(account, text, hbox);
+		vbox.getChildren().addAll(hbox0, text, hbox1);
 
 		StackPane stack = new StackPane();
 		stack.setStyle("-fx-background-color: rgba(127,127,127,0.5);");
@@ -228,7 +234,7 @@ class CommentResult extends HBox {
 			cancel.fire();
 		});
 	}
-	
+
 	private void viewFullComment() {
 		ImageView img = new ImageView(BLANK_PROFILE);
 		img.setFitHeight(32);
@@ -277,14 +283,14 @@ class CommentResult extends HBox {
 		Platform.runLater(() -> CommentSuiteFX.addOverlay(stack));
 		close.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getApp().getMainStackPane().getChildren().remove(stack)));
 	}
-	
-	
+
+
 	public void refreshImage() {
 		ChannelType channel = DatabaseManager.getChannel(ct.getChannelId());
 		if(channel.hasThumb())
 			img.setImage(channel.fetchThumb());
 	}
-	
+
 	private void loadProfileImage() throws SQLException {
 		ChannelType channel = DatabaseManager.getChannel(ct.getChannelId());
 		if(!channel.hasThumb()) {

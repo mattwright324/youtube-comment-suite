@@ -10,6 +10,7 @@ Store and search through comments and replies from videos, channels, and playlis
 * Sign into multiple YouTube accounts. Reply with any account signed in.
 * Archive comments and video metadata.
 * Search by name, text, likes, type, and more.
+* Search for videos by location *latitude,longitude* within a *distance* from 1km to 1000km.
 * Discover frequency in activity by week of published videos & comments and see the most active & liked commentors.
 * Discover which videos have their comments disabled.
 * Achieve similar abilities of the *Comments* section under *Community* for any and every channel.
@@ -23,6 +24,6 @@ In order to create a group, first you must search through YouTube as you would o
 
 ### Managing a Group
 
-Managing a group of channels or videos is simple. Select a group from the item box and information will appear below. **Refresh** while on a selected group in order to download and store new videos, video metadata, and comments & replies on those videos.
+Managing a group of channels or videos is simple. Select a group from the item box and information will appear below. **Refresh** while on a selected group in order to download, update, and store new video metadata, and comments & replies on those videos.
 
 Once a group has been refreshed, comments can be searched through in the *Search Comments* tab. Activity and information about the videos, comments, and commentors can be found while still in *Manage Groups*. Clicking **Load** in the *Overview* tab for comments (amount by week, most active views, most popular viewers, most common comments) or videos (amount by week, most popular, most disliked, most commented, comments disabled) will display relevant information.
