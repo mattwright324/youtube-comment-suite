@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class Account {
 
-	public StringProperty nameProperty = new SimpleStringProperty("");
+	protected StringProperty nameProperty = new SimpleStringProperty("");
 	public String username = "", channelId, profile;
 	public OA2Tokens tokens;
 

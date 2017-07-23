@@ -60,13 +60,6 @@ import mattw.youtube.datav3.list.SearchList;
 
 public class CommentSuiteFX extends Application implements EventHandler<ActionEvent> {
 
-	/**
-	 * TODO
-	 * More Search Options
-	 * 		Random, Random Amount, Random Fairness
-	 * 		Choose specific video by text search, display top 5 matches in combobox.
-	 */
-
 	private static CommentSuiteFX instance;
 	private final YCSConfig config = new YCSConfig();
 	public YoutubeData data;
@@ -576,7 +569,9 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	public void start(Stage arg0) throws Exception {
 		instance = this;
 		stage = arg0;
-		loadConfig();
+		try {
+			loadConfig();
+		} catch (Exception e) { e.printStackTrace(); }
 
 		database = new DatabaseManager();
 		database.setup();
@@ -1432,7 +1427,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 
 	private StackPane createSetupPane() {
 		Label title = new Label("Login to YouTube");
-		title.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
+		title.setFont(Font.font("Tahoma", FontWeight.NORMAL, 18));
 
 		Label desc = new Label("Sign in to leave comments and replies.");
 		desc.setWrapText(true);
@@ -1496,18 +1491,37 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		VBox vbox = new VBox(10);
 		vbox.setId("stackMenu");
 		vbox.setAlignment(Pos.TOP_CENTER);
-		vbox.setMaxWidth(500);
-		vbox.setMaxHeight(0);
 		vbox.setFillWidth(true);
 		vbox.setPadding(new Insets(25,25,25,25));
 		vbox.getChildren().addAll(title, desc, signin, accountList, hBtn);
+
+		Tab login = new Tab("YouTube");
+		login.setContent(vbox);
+
+		Label title1 = new Label("About");
+		title1.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
+
+		VBox vbox1 = new VBox(10);
+		vbox1.setId("stackMenu");
+		vbox1.setAlignment(Pos.TOP_CENTER);
+		vbox1.setFillWidth(true);
+		vbox1.setPadding(new Insets(25,25,25,25));
+		vbox1.getChildren().addAll(title1);
+
+		Tab about = new Tab("About");
+		about.setContent(vbox1);
+
+		TabPane tabs = new TabPane();
+		tabs.setMaxWidth(500);
+		tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+		tabs.getTabs().addAll(login, about);
 
 		StackPane glass = new StackPane();
 		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);");
 		glass.setMaxHeight(Double.MAX_VALUE);
 		glass.setMaxWidth(Double.MAX_VALUE);
 		glass.setAlignment(Pos.CENTER);
-		glass.getChildren().add(vbox);
+		glass.getChildren().add(tabs);
 		return glass;
 	}
 

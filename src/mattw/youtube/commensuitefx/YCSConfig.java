@@ -78,5 +78,4 @@ public class YCSConfig {
 		br.close();
 		loadAs(gson.fromJson(json.toString(), YCSConfig.class));
 	}
-	
 }

@@ -1,8 +1,13 @@
 # YouTube Comment Suite
 
-Store and search through comments and replies from videos, channels, and playlists. Archive comments and video metadata that may disappear in the future.
+Aggregate YouTube comments from numerous videos, playlists, and channels for archiving, general search, and showing activity.
 
-![Search example](http://i.imgur.com/mXfaC7N.png)
+Want to see how often a keyword/topic comes up?
+Have a question that may have been answered in the swath of comments?
+Want to know who the most active fans are?
+Want to see a user's comment history over an entire channel or channels?
+
+![Search example](http://i.imgur.com/RF2O718.png)
 
 ### Features
 * Cross-platform using Java 8 and JavaFX.
@@ -13,7 +18,7 @@ Store and search through comments and replies from videos, channels, and playlis
 * Search for videos by location *latitude,longitude* within a *distance* from 1km to 1000km.
 * Discover frequency in activity by week of published videos & comments and see the most active & liked commentors.
 * Discover which videos have their comments disabled.
-* Achieve similar abilities of the *Comments* section under *Community* for any and every channel.
+* Achieve similar abilities of the *Comments* section under *Community* that YouTube creators use for any and every channel.
 * View and search offline, sans thumbnails, once a group has been archived. *Thumbnails are not saved locally!*
 
 **Does not** download thumbnails until they are viewed to conserve bandwidth & disk usage. Video and profile thumbnails are cached temporarily when viewed. Profile thumbnails will only show for the video channel owner and those that appear in the top 25 *Most Active Viewers* and *Most Liked Viewers* in a group. Locally saving thumbnails wastes bandwidth & disk space.
