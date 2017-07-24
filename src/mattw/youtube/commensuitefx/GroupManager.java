@@ -67,7 +67,9 @@ import mattw.youtube.datav3.list.PlaylistItemsList;
 import mattw.youtube.datav3.list.VideosList;
 
 class GroupManager extends StackPane {
-	
+
+	private static int VIDEO_THREAD_COUNT = 10;
+	private static int COMMMENT_THREAD_COUNT = 20;
 	public static final Map<Integer, GroupManager> managers = new HashMap<>();
 	private final GroupManager manager;
 	
@@ -857,7 +859,7 @@ class GroupManager extends StackPane {
 					try {
 						database.setAutoCommit(false);
 						ExecutorService ves = Executors.newCachedThreadPool();
-						for(int i=0; i < 10; i++) { // Video Queue Threads
+						for(int i=0; i < VIDEO_THREAD_COUNT; i++) { // Video Queue Threads
 							final int tid = i;
 							ves.execute(() -> {
 								while(!videosQueue.isEmpty() || stayAlive1) {
@@ -875,7 +877,7 @@ class GroupManager extends StackPane {
 							});
 						}
 						ExecutorService ces = Executors.newCachedThreadPool();
-						for(int i=0; i < 20; i++) { // CommentThread Queue Threads
+						for(int i=0; i < COMMMENT_THREAD_COUNT; i++) { // CommentThread Queue Threads
 							final int tid = i;
 							ces.execute(() -> {
 								while(!threadsQueue.isEmpty() || stayAlive2) {
@@ -936,7 +938,7 @@ class GroupManager extends StackPane {
 					database.setAutoCommit(true);
 					close.setDisable(false);
 					refreshing = false;
-					CommentSuiteFX.getApp().setupWithManager(manager);
+					// CommentSuiteFX.getApp().setupWithManager(manager);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

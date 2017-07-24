@@ -56,7 +56,9 @@ class CommentResult extends HBox {
 			lastSelected = this;
 			Platform.runLater(() -> {
 				try {
-					CommentSuiteFX.getApp().loadContext(ct.getVideoId());
+					CommentSuiteFX.getApp()
+							.getCommentSearchPane()
+							.loadContext(ct.getVideoId());
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
@@ -118,7 +120,9 @@ class CommentResult extends HBox {
 		viewtree.setDisable(!showTreeLink);
 		viewtree.setOnAction(e -> {
 			try {
-				CommentSuiteFX.getApp().viewTree(this.ct);
+				CommentSuiteFX.getApp()
+						.getCommentSearchPane()
+						.viewTree(this.ct);
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -227,7 +231,7 @@ class CommentResult extends HBox {
 		stack.getChildren().add(vbox);
 
 		Platform.runLater(() -> CommentSuiteFX.addOverlay(stack));
-		cancel.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getApp().getMainStackPane().getChildren().remove(stack)));
+		cancel.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getApp().getMainPane().getChildren().remove(stack)));
 		reply.setOnAction(ae -> {
 			reply.setDisable(true);
 			OA2Handler.postNewReply(ct.isReply() ? ct.getParentId() : ct.getId(), text.getText(), account.getValue());
@@ -281,7 +285,7 @@ class CommentResult extends HBox {
 		stack.getChildren().add(pad);
 
 		Platform.runLater(() -> CommentSuiteFX.addOverlay(stack));
-		close.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getApp().getMainStackPane().getChildren().remove(stack)));
+		close.setOnAction(ae -> Platform.runLater(() -> CommentSuiteFX.getApp().getMainPane().getChildren().remove(stack)));
 	}
 
 
@@ -294,10 +298,12 @@ class CommentResult extends HBox {
 	private void loadProfileImage() throws SQLException {
 		ChannelType channel = DatabaseManager.getChannel(ct.getChannelId());
 		if(!channel.hasThumb()) {
-			CommentSuiteFX.getApp().database.updateChannelFetchThumb(channel.getId(), true);
-			channel = CommentSuiteFX.getApp().database.getChannelById(channel.getId());
+			CommentSuiteFX.getDatabase().updateChannelFetchThumb(channel.getId(), true);
+			channel = CommentSuiteFX.getDatabase().getChannelById(channel.getId());
 			DatabaseManager.channelCache.put(channel.getId(), channel);
-			CommentSuiteFX.getApp().refreshResultProfiles();
+			CommentSuiteFX.getApp()
+					.getCommentSearchPane()
+					.refreshResultProfiles();
 		}
 	}
 }

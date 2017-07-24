@@ -43,8 +43,8 @@ public class Account {
 	}
 
 	private void getData() throws IOException {
-		CommentSuiteFX.getApp().data.setAccessToken(tokens.access_token);
-		ChannelsList cl = CommentSuiteFX.getApp().data.getChannelsByMine(ChannelsList.PART_SNIPPET);
+		CommentSuiteFX.getYoutube().setAccessToken(tokens.access_token);
+		ChannelsList cl = CommentSuiteFX.getYoutube().getChannelsByMine(ChannelsList.PART_SNIPPET);
 		String title = cl.items[0].snippet.title;
 		setUsername(title);
 		setChannelId(cl.items[0].id);

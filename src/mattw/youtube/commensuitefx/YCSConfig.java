@@ -16,12 +16,13 @@ public class YCSConfig {
 	
 	private final Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL, Modifier.PROTECTED).create();
 	private final File CONFIG_FILE = new File("config.ycs");
-	
-	private String youtube_data_key = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
+	private final String youtube_data_key = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
+
 	public List<Account> accounts = new ArrayList<>();
+	public boolean downloadThumbs = false;
 
 	public boolean isSignedIn(String channelId) {
-		return accounts.stream().anyMatch(cid -> cid.getChannelId().equals(channelId));
+		return accounts.stream().anyMatch(acc -> acc.getChannelId().equals(channelId));
 	}
 
 	public String getWelcomeStatement() {
@@ -41,15 +42,12 @@ public class YCSConfig {
 
 	private void loadAs(YCSConfig config) {
 		accounts = config.accounts;
-		setYoutubeKey(config.youtube_data_key);
 	}
 
 	public String getYoutubeKey() {
 		return youtube_data_key;
 	}
-	private void setYoutubeKey(String key) {
-		youtube_data_key = key;
-	}
+
 	
 	public boolean isSetup() {
 		return !youtube_data_key.equals("");
