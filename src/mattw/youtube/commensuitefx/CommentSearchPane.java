@@ -29,15 +29,15 @@ import java.util.stream.Collectors;
 public class CommentSearchPane extends HBox implements EventHandler<ActionEvent> {
 
     private DatabaseManager.CommentQuery query;
-    private Button nextPageC;
-    private Button prevPageC;
+    private Button nextPage;
+    private Button prevPage;
     private Button firstPage;
     private Button lastPage;
     private TextField pageNum;
     private int page = 1;
 
     private VBox commentResults;
-    private ScrollPane cscroll;
+    private ScrollPane scroll;
     private double vValue = 0.0;
     private ImageView thumbnail;
     private ImageView authorThumb;
@@ -48,15 +48,15 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
     private Label dislikes;
     private Label resultCount;
     private TextArea description;
-    private ChoiceBox<Group> cgroup;
-    private ChoiceBox<GitemType> citem;
+    private ChoiceBox<Group> group;
+    private ChoiceBox<GitemType> groupItem;
     private ToggleButton videoContext;
     private TextField userLike;
     private TextField textLike;
     private Button find;
     private Button backToResults;
     private ComboBox<String> type;
-    private ComboBox<String> orderby;
+    private ComboBox<String> orderBy;
     private List<CommentResult> results;
     private List<CommentResult> tree;
 
@@ -67,14 +67,6 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
     public CommentSearchPane() {
         setAlignment(Pos.TOP_LEFT);
 
-        VBox context = new VBox(5);
-        context.setPadding(new Insets(5,5,5,5));
-        context.setFillWidth(true);
-        context.setAlignment(Pos.TOP_CENTER);
-        context.setMinWidth(330);
-        context.setMaxWidth(330);
-        context.setPrefWidth(330);
-
         thumbnail = new ImageView(CommentSuiteFX.PLACEHOLDER);
         thumbnail.setFitHeight(180);
         thumbnail.setFitWidth(320);
@@ -84,8 +76,6 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         title.setFont(Font.font("Arial", FontWeight.NORMAL, 18));
         title.setEditable(false);
 
-        HBox publisher = new HBox(5);
-        publisher.setAlignment(Pos.CENTER_LEFT);
         authorThumb = new ImageView(CommentResult.BLANK_PROFILE);
         authorThumb.setFitHeight(24);
         authorThumb.setFitWidth(24);
@@ -123,27 +113,28 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         stats.setFillWidth(true);
         stats.getChildren().addAll(views, likeDislike);
 
+        HBox publisher = new HBox(5);
+        publisher.setAlignment(Pos.CENTER_LEFT);
         publisher.getChildren().addAll(authorThumb, author, stats);
 
+        VBox context = new VBox(5);
+        context.setPadding(new Insets(0,10,5,5));
+        context.setFillWidth(true);
+        context.setAlignment(Pos.TOP_CENTER);
+        context.setMinWidth(330);
+        context.setMaxWidth(330);
+        context.setPrefWidth(330);
         context.getChildren().addAll(thumbnail, title, publisher, description);
-
-        VBox resultBox = new VBox(5);
-        resultBox.setFillWidth(true);
-        resultBox.setAlignment(Pos.TOP_CENTER);
 
         commentResults = new VBox(5);
         commentResults.setAlignment(Pos.TOP_CENTER);
         commentResults.setFillWidth(true);
 
-        cscroll = new ScrollPane(commentResults);
-        cscroll.setMaxWidth(Double.MAX_VALUE);
-        cscroll.setFitToWidth(true);
+        scroll = new ScrollPane(commentResults);
+        scroll.setMaxWidth(Double.MAX_VALUE);
+        scroll.setFitToWidth(true);
 
-        HBox resultControls = new HBox(5);
-        resultControls.setPadding(new Insets(0,0,5,0));
-        resultControls.setAlignment(Pos.CENTER);
-
-        Button clearComments = new Button("Clear Comments");
+        Button clearComments = new Button("Clear");
         clearComments.setOnAction(e -> {
             Platform.runLater(()->{
                 commentResults.getChildren().clear();
@@ -153,9 +144,9 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
             results.clear();
         });
 
-        nextPageC = new Button(">");
-        nextPageC.setDisable(true);
-        nextPageC.setOnAction(e -> {
+        nextPage = new Button(">");
+        nextPage.setDisable(true);
+        nextPage.setOnAction(e -> {
             if(query != null && page+1 <= query.getPageCount()) {
                 try {
                     loadQueryPage(++page);
@@ -164,9 +155,9 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
                 }
             }
         });
-        prevPageC = new Button("<");
-        prevPageC.setDisable(true);
-        prevPageC.setOnAction(e -> {
+        prevPage = new Button("<");
+        prevPage.setDisable(true);
+        prevPage.setOnAction(e -> {
             if(query != null && page-1 >= 1) {
                 try {
                     loadQueryPage(--page);
@@ -203,7 +194,7 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         pageNum.setText(" Page 1 of 0 ");
 
         HBox box = new HBox();
-        box.getChildren().addAll(firstPage, prevPageC, pageNum, nextPageC, lastPage);
+        box.getChildren().addAll(firstPage, prevPage, pageNum, nextPage, lastPage);
 
         resultCount = new Label("Showing 0 out of 0 results.");
 
@@ -212,44 +203,44 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         backToResults.setDisable(true);
         backToResults.setOnAction(e -> returnToResults());
 
-        resultControls.getChildren().addAll(clearComments, backToResults, box, resultCount);
-        resultBox.getChildren().addAll(cscroll, resultControls);
+        HBox resultControls = new HBox(5);
+        resultControls.setPadding(new Insets(5,0,0,0));
+        resultControls.setAlignment(Pos.CENTER);
+        resultControls.getChildren().addAll(clearComments, backToResults, box);
 
-        VBox searchBox = new VBox(10);
-        searchBox.setMinWidth(320);
-        searchBox.setMaxWidth(320);
-        searchBox.setPrefWidth(320);
-        searchBox.setPadding(new Insets(5,10,5,10));
-        searchBox.setAlignment(Pos.TOP_CENTER);
-        searchBox.setFillWidth(true);
+        VBox resultBox = new VBox(5);
+        resultBox.setFillWidth(true);
+        resultBox.setAlignment(Pos.TOP_CENTER);
+        resultBox.setPadding(new Insets(0,0,5,0));
+        resultBox.getChildren().addAll(scroll, resultControls, resultCount);
 
         Label label1 = new Label("Select Group");
         label1.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 16));
         label1.setAlignment(Pos.CENTER);
 
-        cgroup = new ChoiceBox<>(CommentSuiteFX.getApp().groupsList);
-        cgroup.setMaxWidth(300);
-        cgroup.setPrefWidth(300);
-        cgroup.setOnAction(e -> {
+        group = new ChoiceBox<>(CommentSuiteFX.getApp().groupsList);
+        group.setMaxWidth(300);
+        group.setPrefWidth(300);
+        group.setOnAction(e -> {
             Task<Void> task = new Task<Void>() {
                 protected Void call() throws Exception {
                     try {
-                        cgroup.setDisable(true);
-                        citem.setDisable(true);
-                        loadCGroup(cgroup.getValue());
+                        group.setDisable(true);
+                        groupItem.setDisable(true);
+                        loadCGroup(group.getValue());
                     } catch (SQLException e1) {
                         e1.printStackTrace();
                     }
-                    cgroup.setDisable(false);
-                    citem.setDisable(false);
+                    group.setDisable(false);
+                    groupItem.setDisable(false);
                     return null;
                 }
             };
             new Thread(task).start();
         });
-        citem = new ChoiceBox<>();
-        citem.setMaxWidth(300);
-        citem.setPrefWidth(300);
+        groupItem = new ChoiceBox<>();
+        groupItem.setMaxWidth(300);
+        groupItem.setPrefWidth(300);
 
         videoContext = new ToggleButton("Show Video Context");
         videoContext.setTooltip(new Tooltip("Context appears when you select a comment."));
@@ -266,6 +257,7 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
                 context.setPrefWidth(330);
             }
         });
+        videoContext.setMaxWidth(175);
         videoContext.fire();
 
         Label label2 = new Label("Restrict Results");
@@ -277,10 +269,10 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         type.getItems().addAll("Comments and Replies", "Comments Only", "Replies Only");
         type.getSelectionModel().select(0);
 
-        orderby = new ComboBox<>();
-        orderby.setMaxWidth(Double.MAX_VALUE);
-        orderby.getItems().addAll("Most Recent", "Least Recent", "Most Likes", "Most Replies", "Longest Comment", "Names (A to Z)", "Comments (A to Z)");
-        orderby.getSelectionModel().select(0);
+        orderBy = new ComboBox<>();
+        orderBy.setMaxWidth(Double.MAX_VALUE);
+        orderBy.getItems().addAll("Most Recent", "Least Recent", "Most Likes", "Most Replies", "Longest Comment", "Names (A to Z)", "Comments (A to Z)");
+        orderBy.getSelectionModel().select(0);
 
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.TOP_CENTER);
@@ -291,7 +283,7 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         cc2.setFillWidth(true);
         grid.getColumnConstraints().addAll(cc1, cc2);
 
-        grid.addRow(0, new Label("Sort by: "), orderby);
+        grid.addRow(0, new Label("Sort by: "), orderBy);
 
         userLike = new TextField();
         userLike.setPromptText("Username contains...");
@@ -312,30 +304,33 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         grid.addRow(4, new Label("Date To: "), beforeDate);
 
         find = new Button("Find Comments");
-        find.setMaxWidth(Double.MAX_VALUE);
+        find.setMaxWidth(175);
         find.setOnAction(e -> {
-            find.setDisable(true);
+            CommentSuiteFX.setNodesDisabled(true, find, beforeDate, afterDate, textLike, userLike, orderBy, type, group, groupItem);
             Task<Void> task = new Task<Void>() {
                 protected Void call() throws Exception {
                     try {
-                        int groupId = cgroup.getValue().group_id;
-                        int order = orderby.getSelectionModel().getSelectedIndex();
-                        String user = userLike.getText();
-                        String text = textLike.getText();
-                        int limit = 250;
-                        GitemType gitem = citem.getValue().getGitemId() != -1 ? citem.getValue() : null;
-                        int comment_type =  type.getSelectionModel().getSelectedIndex();
-                        query = CommentSuiteFX.getDatabase().newCommentQuery()
-                                .group(groupId)
-                                .groupItem(gitem)
-                                .orderBy(order)
-                                .nameLike(user)
-                                .textLike(text)
-                                .limit(limit)
-                                .after(getDatePickerDate(afterDate, false))
-                                .before(getDatePickerDate(beforeDate, true))
-                                .cType(comment_type);
-                        loadQueryPage(1);
+                        if(group.getValue() != null && orderBy.getValue() != null) {
+                            int groupId = group.getValue().group_id;
+                            int order = orderBy.getSelectionModel().getSelectedIndex();
+                            String user = userLike.getText();
+                            String text = textLike.getText();
+                            int limit = 250;
+                            GitemType gitem = groupItem.getValue().getGitemId() != -1 ? groupItem.getValue() : null;
+                            int comment_type =  type.getSelectionModel().getSelectedIndex();
+                            query = CommentSuiteFX.getDatabase().newCommentQuery()
+                                    .group(groupId)
+                                    .groupItem(gitem)
+                                    .orderBy(order)
+                                    .nameLike(user)
+                                    .textLike(text)
+                                    .limit(limit)
+                                    .after(getDatePickerDate(afterDate, false))
+                                    .before(getDatePickerDate(beforeDate, true))
+                                    .cType(comment_type);
+                            loadQueryPage(1);
+                        }
+                        CommentSuiteFX.setNodesDisabled(false, find, beforeDate, afterDate, textLike, userLike, orderBy, type, group, groupItem);
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
@@ -345,14 +340,20 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
             new Thread(task).start();
         });
 
-        searchBox.getChildren().addAll(label1, cgroup, citem, videoContext, label2, type, grid, find);
+        VBox searchBox = new VBox(10);
+        searchBox.setMinWidth(320);
+        searchBox.setMaxWidth(320);
+        searchBox.setPrefWidth(320);
+        searchBox.setPadding(new Insets(0,10,5,10));
+        searchBox.setAlignment(Pos.TOP_CENTER);
+        searchBox.setFillWidth(true);
+        searchBox.getChildren().addAll(label1, group, groupItem, videoContext, label2, type, grid, find);
         searchBox.setOnKeyPressed(ke -> {
             if(ke.getCode().equals(KeyCode.ENTER)) find.fire();
         });
 
         getChildren().addAll(context, resultBox, searchBox);
         HBox.setHgrow(resultBox, Priority.ALWAYS);
-
     }
 
     private void setDatePickerTime(DatePicker picker, long time) {
@@ -379,14 +380,14 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
 
     private void loadQueryPage(int page) throws SQLException {
         this.page = page;
-        Platform.runLater(() -> CommentSuiteFX.setNodesDisabled(true, find, prevPageC, nextPageC, firstPage, lastPage));
+        Platform.runLater(() -> CommentSuiteFX.setNodesDisabled(true, find, prevPage, nextPage, firstPage, lastPage));
         final List<CommentResult> list = query.get(page).stream()
                 .map(c -> new CommentResult(c, true))
                 .collect(Collectors.toList());
         results = list;
         Platform.runLater(() -> {
-            prevPageC.setDisable(page == 1);
-            nextPageC.setDisable(page == query.getPageCount());
+            prevPage.setDisable(page == 1);
+            nextPage.setDisable(page == query.getPageCount());
             firstPage.setDisable(page == 1);
             lastPage.setDisable(page == query.getPageCount());
             pageNum.setText(" Page "+page+" of "+query.getPageCount()+" ");
@@ -396,8 +397,8 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
             find.setDisable(false);
             backToResults.setDisable(true);
             vValue = 0;
-            cscroll.layout();
-            cscroll.setVvalue(vValue);
+            scroll.layout();
+            scroll.setVvalue(vValue);
             CommentSuiteFX.setNodesDisabled(false, find);
         });
     }
@@ -406,12 +407,12 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         backToResults.setDisable(true);
         commentResults.getChildren().clear();
         commentResults.getChildren().addAll(results);
-        cscroll.layout();
-        cscroll.setVvalue(vValue);
+        scroll.layout();
+        scroll.setVvalue(vValue);
     }
 
     public void viewTree(CommentType comment) throws SQLException {
-        vValue = cscroll.getVvalue();
+        vValue = scroll.getVvalue();
         tree = CommentSuiteFX.getDatabase().getCommentTree(comment.isReply() ? comment.getParentId() : comment.getId()).stream()
                 .map(c -> new CommentResult(c, false))
                 .collect(Collectors.toList());
@@ -419,8 +420,8 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         commentResults.getChildren().addAll(tree);
         find.setDisable(false);
         backToResults.setDisable(false);
-        cscroll.layout();
-        cscroll.setVvalue(0);
+        scroll.layout();
+        scroll.setVvalue(0);
     }
 
     public void loadContext(String videoId) throws SQLException {
@@ -452,10 +453,10 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
     private void loadCGroup(Group g) throws SQLException {
         final List<GitemType> items = CommentSuiteFX.getDatabase().getGitems(g.group_id, false);
         Platform.runLater(() -> {
-            citem.getItems().clear();
-            citem.getItems().add(new GitemType(-1, "All Items ("+items.size()+")"));
-            citem.getItems().addAll(items);
-            citem.getSelectionModel().select(0);
+            groupItem.getItems().clear();
+            groupItem.getItems().add(new GitemType(-1, "All Items ("+items.size()+")"));
+            groupItem.getItems().addAll(items);
+            groupItem.getSelectionModel().select(0);
             // Not smart to load all relevant videos into another ChoiceBox, too slow and list has potential to be gigantic.
         });
     }

@@ -20,6 +20,10 @@ public class YCSConfig {
 
 	public List<Account> accounts = new ArrayList<>();
 	public boolean downloadThumbs = false;
+	public boolean prefixReplies = true;
+	public boolean showWelcome = true;
+
+	public YCSConfig() {}
 
 	public boolean isSignedIn(String channelId) {
 		return accounts.stream().anyMatch(acc -> acc.getChannelId().equals(channelId));
@@ -28,11 +32,10 @@ public class YCSConfig {
 	public String getWelcomeStatement() {
 		if(accounts.isEmpty()) {
 			return "Welcome, Guest";
-		}
-		if(accounts.size() == 1) {
+		} else if(accounts.size() == 1) {
 			return "Welcome, "+accounts.get(0).getUsername();
-		}
-		return "Welcome, "+accounts.get(0).getUsername()+" and "+(accounts.size()-1)+" more";
+		} else
+			return "Welcome, "+accounts.get(0).getUsername()+" and "+(accounts.size()-1)+" more";
 	}
 
 	public void submitTokens(OA2Tokens tokens) {
@@ -40,15 +43,34 @@ public class YCSConfig {
 		try { save(); } catch (IOException ignored) {}
 	}
 
-	private void loadAs(YCSConfig config) {
-		accounts = config.accounts;
-	}
-
 	public String getYoutubeKey() {
 		return youtube_data_key;
 	}
 
-	
+	public boolean canDownloadThumbs() {
+		return downloadThumbs;
+	}
+
+	public void setDownloadThumbs(boolean b) {
+		downloadThumbs = b;
+	}
+
+	public boolean willPrefixReplies() {
+		return prefixReplies;
+	}
+
+	public void setPrefixReplies(boolean b) {
+		prefixReplies = b;
+	}
+
+	public boolean willShowWelcome() {
+		return showWelcome;
+	}
+
+	public void setShowWelcome(boolean b) {
+		showWelcome = b;
+	}
+
 	public boolean isSetup() {
 		return !youtube_data_key.equals("");
 	}
@@ -75,5 +97,9 @@ public class YCSConfig {
 		}
 		br.close();
 		loadAs(gson.fromJson(json.toString(), YCSConfig.class));
+	}
+
+	private void loadAs(YCSConfig config) {
+		accounts = config.accounts;
 	}
 }

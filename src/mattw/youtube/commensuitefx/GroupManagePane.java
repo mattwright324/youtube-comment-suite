@@ -24,89 +24,87 @@ public class GroupManagePane extends GridPane implements EventHandler<ActionEven
 
     public void handle(ActionEvent ae) {
         Object o = ae.getSource();
-        if(o.equals(createGroup) || o.equals(deleteGroup) || o.equals(renameGroup) || o.equals(refreshGroup) || o.equals(reloadGroup)) {
-            if(o.equals(createGroup)) {
-                List<Group> allGroups = choice.getItems();
-                TextInputDialog input = new TextInputDialog("");
-                input.setTitle("Create Group");
-                input.setContentText("Pick a unique nameProperty: ");
-                input.showAndWait().ifPresent(result -> {
-                    boolean unique = true;
-                    for(Group g : allGroups) {
-                        if(g.group_name.equals(result))
-                            unique = false;
-                    }
-                    if(unique) {
-                        try {
-                            CommentSuiteFX.getDatabase().insertGroup(result);
-                            CommentSuiteFX.reloadGroups();
-                        } catch (SQLException ignored) {}
-                    }
-                });
-            } else if(o.equals(deleteGroup)) {
-                Group current = choice.getSelectionModel().getSelectedItem();
-                Dialog<ButtonType> dialog = new Dialog<>();
-                dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-                dialog.setContentText("Are you sure you want to delete '"+current.group_name+"' and all of its data?");
-                dialog.showAndWait().ifPresent(result -> {
-                    if(result == ButtonType.OK) {
-                        Task<Void> task = new Task<Void>(){
-                            protected Void call() throws Exception {
-                                CommentSuiteFX.setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
-                                try {
-                                    CommentSuiteFX.getDatabase().removeGroupAndData(current);
-                                    Platform.runLater(() -> {
-                                        try {
-                                            CommentSuiteFX.reloadGroups();
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        }
-                                    });
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                                CommentSuiteFX.setNodesDisabled(false, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
-                                return null;
+        if(o.equals(createGroup)) {
+            List<Group> allGroups = choice.getItems();
+            TextInputDialog input = new TextInputDialog("");
+            input.setTitle("Create Group");
+            input.setContentText("Pick a unique nameProperty: ");
+            input.showAndWait().ifPresent(result -> {
+                boolean unique = true;
+                for(Group g : allGroups) {
+                    if(g.group_name.equals(result))
+                        unique = false;
+                }
+                if(unique) {
+                    try {
+                        CommentSuiteFX.getDatabase().insertGroup(result);
+                        CommentSuiteFX.reloadGroups();
+                    } catch (SQLException ignored) {}
+                }
+            });
+        } else if(o.equals(deleteGroup)) {
+            Group current = choice.getSelectionModel().getSelectedItem();
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            dialog.setContentText("Are you sure you want to delete '"+current.group_name+"' and all of its data?");
+            dialog.showAndWait().ifPresent(result -> {
+                if(result == ButtonType.OK) {
+                    Task<Void> task = new Task<Void>(){
+                        protected Void call() throws Exception {
+                            CommentSuiteFX.setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
+                            try {
+                                CommentSuiteFX.getDatabase().removeGroupAndData(current);
+                                Platform.runLater(() -> {
+                                    try {
+                                        CommentSuiteFX.reloadGroups();
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+                                });
+                            } catch (SQLException e) {
+                                e.printStackTrace();
                             }
-                        };
-                        Thread thread = new Thread(task);
-                        thread.start();
-                    }
-                });
-            } else if(o.equals(renameGroup)) {
-                Group current = choice.getSelectionModel().getSelectedItem();
-                TextInputDialog input = new TextInputDialog(current.group_name);
-                input.setTitle("Rename Group");
-                input.setContentText("Pick a new nameProperty: ");
-                input.showAndWait().ifPresent(result -> {
-                    if(!current.group_name.equals(result)) {
-                        try {
-                            CommentSuiteFX.getDatabase().updateGroupName(current.group_id, result);
-                            CommentSuiteFX.reloadGroups();
-                        } catch (SQLException ignored) {}
-                    }
-                });
-            } else if(o.equals(refreshGroup)) {
-                Task<Void> task = new Task<Void>() {
-                    protected Void call() throws Exception {
-                        if(manager != null) {
-                            Platform.runLater(() -> {
-                                manager.refresh();
-                                CommentSuiteFX.setNodesDisabled(true, deleteGroup, renameGroup, refreshGroup, reloadGroup);
-                            });
+                            CommentSuiteFX.setNodesDisabled(false, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
+                            return null;
                         }
-                        return null;
+                    };
+                    Thread thread = new Thread(task);
+                    thread.start();
+                }
+            });
+        } else if(o.equals(renameGroup)) {
+            Group current = choice.getSelectionModel().getSelectedItem();
+            TextInputDialog input = new TextInputDialog(current.group_name);
+            input.setTitle("Rename Group");
+            input.setContentText("Pick a new nameProperty: ");
+            input.showAndWait().ifPresent(result -> {
+                if(!current.group_name.equals(result)) {
+                    try {
+                        CommentSuiteFX.getDatabase().updateGroupName(current.group_id, result);
+                        CommentSuiteFX.reloadGroups();
+                    } catch (SQLException ignored) {}
+                }
+            });
+        } else if(o.equals(refreshGroup)) {
+            Task<Void> task = new Task<Void>() {
+                protected Void call() throws Exception {
+                    if(manager != null) {
+                        Platform.runLater(() -> {
+                            manager.refresh();
+                            CommentSuiteFX.setNodesDisabled(true, deleteGroup, renameGroup, refreshGroup, reloadGroup);
+                        });
                     }
-                };
-                new Thread(task).start();
-            } else if(o.equals(reloadGroup)) {
-                Platform.runLater(() -> {
-                    reloadGroup.setDisable(true);
-                    manager.reloadGroupData();
-                    reloadGroup.setDisable(false);
-                });
+                    return null;
+                }
+            };
+            new Thread(task).start();
+        } else if(o.equals(reloadGroup)) {
+            Platform.runLater(() -> {
+                reloadGroup.setDisable(true);
+                manager.reloadGroupData();
+                reloadGroup.setDisable(false);
+            });
 
-            }
         } else if(o.equals(cleanDB) || o.equals(resetDB)) {
             if(o.equals(cleanDB)) {
                 CommentSuiteFX.getMainPane().getChildren().add(createCleanDbPane());

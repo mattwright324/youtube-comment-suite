@@ -20,32 +20,12 @@ import javafx.scene.layout.VBox;
 
 class CommentResult extends HBox {
 
-	final static Map<String,Image> profileMap = new HashMap<>();
-	final static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("./images/blank_profile.png"));
-
+	public static Image BLANK_PROFILE = new Image(CommentResult.class.getResourceAsStream("./images/blank_profile.png"));
 	private static CommentResult lastSelected = null;
-
 	private final CommentType ct;
-
 	private final ImageView img;
-	private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 	private final Hyperlink author;
-	private final Label date;
-	private final Label textShort;
-	private final Label likes;
-	private final Hyperlink reply;
-	private final Hyperlink viewtree;
-	private final Hyperlink viewfulltext;
-	private final MenuItem loadProfile;
-	private final MenuItem openInBrowser;
-	private final MenuItem copyName;
-	private final MenuItem copyText;
-	private final MenuItem copyChannelLink;
-	private final MenuItem copyVideoLink;
-	private final MenuItem copyCommentLink;
-
 	private final String parsedText;
-
 	private boolean selected;
 
 	private void setSelected(boolean select) {
@@ -54,6 +34,7 @@ class CommentResult extends HBox {
 			if(lastSelected != null) lastSelected.setSelected(false);
 			setId("itemSelected");
 			lastSelected = this;
+
 			Platform.runLater(() -> {
 				try {
 					CommentSuiteFX.getApp()
@@ -102,21 +83,22 @@ class CommentResult extends HBox {
 		if(CommentSuiteFX.getApp().getConfig().isSignedIn(c.getChannelId())) {
 			author.setId("commentMine");
 		}
-		date = new Label(sdf.format(c.getDate()));
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+		Label date = new Label(sdf.format(c.getDate()));
 		date.setId("commentDate");
 
-		likes = new Label(c.getLikes() > 0 ? "+"+c.getLikes() : "");
+		Label likes = new Label(c.getLikes() > 0 ? "+" + c.getLikes() : "");
 		likes.setId("commentLikes");
 
 		int length = 400;
 		parsedText = Jsoup.parse(c.getText().replace("<br />", "\r\n")).text();
-		textShort = new Label(parsedText.length() > length ? parsedText.substring(0, length-3)+"..." : parsedText);
+		Label textShort = new Label(parsedText.length() > length ? parsedText.substring(0, length - 3) + "..." : parsedText);
 		textShort.setWrapText(true);
 
-		reply = new Hyperlink("Reply");
+		Hyperlink reply = new Hyperlink("Reply");
 		reply.setOnAction(e -> replyToComment());
 
-		viewtree = new Hyperlink("View Tree"+(c.getReplies() > 0 ? " ("+c.getReplies()+" replies)" : ""));
+		Hyperlink viewtree = new Hyperlink("View Tree" + (c.getReplies() > 0 ? " (" + c.getReplies() + " replies)" : ""));
 		viewtree.setDisable(!showTreeLink);
 		viewtree.setOnAction(e -> {
 			try {
@@ -128,7 +110,7 @@ class CommentResult extends HBox {
 			}
 		});
 
-		viewfulltext = new Hyperlink("Show Full Comment");
+		Hyperlink viewfulltext = new Hyperlink("Show Full Comment");
 		viewfulltext.setOnAction(e -> viewFullComment());
 
 		HBox hbox = new HBox(10);
@@ -147,10 +129,10 @@ class CommentResult extends HBox {
 
 		ContextMenu context = new ContextMenu();
 
-		openInBrowser = new MenuItem("Open in Browser");
+		MenuItem openInBrowser = new MenuItem("Open in Browser");
 		openInBrowser.setOnAction(e -> CommentSuiteFX.openInBrowser(ct.getYoutubeLink()));
 
-		loadProfile = new MenuItem("Load Profile Image");
+		MenuItem loadProfile = new MenuItem("Load Profile Image");
 		loadProfile.setOnAction(e -> {
 			try {
 				loadProfileImage();
@@ -159,19 +141,19 @@ class CommentResult extends HBox {
 			}
 		});
 
-		copyName = new MenuItem("Copy Username");
+		MenuItem copyName = new MenuItem("Copy Username");
 		copyName.setOnAction(e -> Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getTitle()));
 
-		copyText = new MenuItem("Copy Comment");
+		MenuItem copyText = new MenuItem("Copy Comment");
 		copyText.setOnAction(e -> Clipboards.setClipboard(ct.getText()));
 
-		copyChannelLink = new MenuItem("Copy Channel Link");
+		MenuItem copyChannelLink = new MenuItem("Copy Channel Link");
 		copyChannelLink.setOnAction(e -> Clipboards.setClipboard(DatabaseManager.getChannel(ct.getChannelId()).getYoutubeLink()));
 
-		copyVideoLink = new MenuItem("Copy Video Link");
+		MenuItem copyVideoLink = new MenuItem("Copy Video Link");
 		copyVideoLink.setOnAction(e -> Clipboards.setClipboard("https://youtu.be/"+ct.getVideoId()));
 
-		copyCommentLink = new MenuItem("Copy Comment Link");
+		MenuItem copyCommentLink = new MenuItem("Copy Comment Link");
 		copyCommentLink.setOnAction(e -> Clipboards.setClipboard(ct.getYoutubeLink()));
 
 		context.getItems().addAll(openInBrowser, loadProfile, new SeparatorMenuItem(), copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);

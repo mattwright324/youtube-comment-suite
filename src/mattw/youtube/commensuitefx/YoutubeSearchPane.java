@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEvent> {
 
     private StackPane addGroup;
-
     private String pageToken = "";
     private Label resultStatus;
     private VBox searchResults;

@@ -66,9 +66,9 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 	private ToggleButton commentToggle;
 	private Label welcome;
 
-	private Button saveAndSetup;
-	private Button exitSetup;
-	private Button signin;
+	private Button saveSettings;
+	private Button closeSettings;
+	private Button addAccount;
 	private final VBox accountList = new VBox();
 
 	public static void main(String[] args) {
@@ -150,22 +150,18 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 
 	public void handle(ActionEvent arg0) {
 		Object o = arg0.getSource();
-		if(o.equals(saveAndSetup) || o.equals(exitSetup) || o.equals(signin)) {
-			if(o.equals(saveAndSetup)) {
-				Task<Void> task = new Task<Void>(){
-					protected Void call() throws Exception {
-						setNodesDisabled(true, saveAndSetup);
-						saveConfig();
-						return null;
-					}
-				};
-				Thread thread = new Thread(task);
-				thread.start();
-			} else if(o.equals(exitSetup)) {
-				layout.getChildren().remove(setup);
-			} else if(o.equals(signin)) {
-
-			}
+		if(o.equals(saveSettings)) {
+			Task<Void> task = new Task<Void>(){
+				protected Void call() throws Exception {
+					setNodesDisabled(true, saveSettings);
+					saveConfig();
+					return null;
+				}
+			};
+			Thread thread = new Thread(task);
+			thread.start();
+		} else if(o.equals(closeSettings)) {
+			layout.getChildren().remove(setup);
 		} else if(o.equals(videoToggle) || o.equals(groupToggle) || o.equals(commentToggle)) {
 			if(videoToggle.isSelected()) {
 				if(main.getChildren().contains(groups)) main.getChildren().remove(groups);
@@ -196,8 +192,6 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			}
 		}
 	}
-
-
 
 	public void start(Stage stage) throws Exception {
 		instance = this;
@@ -324,7 +318,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		set.setOnMouseClicked(me -> {
 			if(me.getClickCount() == 1) {
 				if(!layout.getChildren().contains(setup)) {
-					saveAndSetup.setDisable(false);
+					saveSettings.setDisable(false);
 					layout.getChildren().add(setup);
 				}
 			}
@@ -342,7 +336,15 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		Label titleB = new Label("General");
 		titleB.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
-		CheckBox downloadThumbs = new CheckBox("Save Thumbnails Locally");
+		CheckBox downloadThumbs = new CheckBox("Save thumbnails locally (thumbs/)");
+		downloadThumbs.setDisable(true);
+
+		CheckBox prefixReplies = new CheckBox("Prefix username when replying to a comment");
+		prefixReplies.setSelected(true);
+		prefixReplies.setDisable(true);
+
+		CheckBox showWelcome = new CheckBox("Show welcome message");
+		showWelcome.setSelected(true);
 
 		Label titleA = new Label("Login to YouTube");
 		titleA.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
@@ -350,8 +352,8 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		Label desc = new Label("Sign in to leave comments and replies.");
 		desc.setWrapText(true);
 
-		signin = new Button("Add Account");
-		signin.setOnAction(ae -> {
+		addAccount = new Button("Add Account");
+		addAccount.setOnAction(ae -> {
 			Task<Void> task = new Task<Void>(){
 				protected Void call() throws Exception {
 					System.out.println("OAuth2");
@@ -377,7 +379,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 										getConfig().submitTokens(tokens);
 										accountList.getChildren().clear();
 										accountList.getChildren().addAll(getConfig().accounts.stream().map(AccountPane::new).collect(Collectors.toList()));
-										saveAndSetup.requestFocus();
+										saveSettings.requestFocus();
 									} catch (IOException e1) {
 										e1.printStackTrace();
 									}
@@ -397,24 +399,31 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			thread.start();
 		});
 
+		saveSettings = new Button("Save");
+		saveSettings.setOnAction(this);
+		saveSettings.setId("completeForm");
+
+		closeSettings = new Button("Close");
+		closeSettings.setOnAction(this);
+
 		HBox hBtn = new HBox(10);
-		saveAndSetup = new Button("Save and Setup");
-		saveAndSetup.setOnAction(this);
-		saveAndSetup.setId("completeForm");
-		exitSetup = new Button("Close");
-		exitSetup.setOnAction(this);
 		hBtn.setAlignment(Pos.BOTTOM_RIGHT);
-		hBtn.getChildren().addAll(exitSetup, saveAndSetup);
+		hBtn.getChildren().addAll(closeSettings, saveSettings);
 
 		VBox vbox = new VBox(10);
 		vbox.setId("stackMenu");
 		vbox.setAlignment(Pos.TOP_LEFT);
 		vbox.setFillWidth(true);
 		vbox.setPadding(new Insets(25,25,25,25));
-		vbox.getChildren().addAll(titleB, downloadThumbs, titleA, desc, signin, accountList, hBtn);
+		vbox.getChildren().addAll(titleB, showWelcome, downloadThumbs, prefixReplies, titleA, desc, addAccount, accountList, hBtn);
+
+		ScrollPane scroll = new ScrollPane(vbox);
+		scroll.setFitToWidth(true);
+		scroll.setFitToHeight(true);
+		scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
 		Tab login = new Tab("YouTube");
-		login.setContent(vbox);
+		login.setContent(scroll);
 
 		Label title1 = new Label("About");
 		title1.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
@@ -430,7 +439,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		title2.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
 		TextArea license = new TextArea("MIT License\n\n" +
-				"Copyright (c) 2016 Matthew Wright\n\n" +
+				"Copyright (c) 2017 Matthew Wright\n\n" +
 				"Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\n" +
 				"The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\n" +
 				"THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
