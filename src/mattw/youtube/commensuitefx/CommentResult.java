@@ -193,7 +193,9 @@ class CommentResult extends HBox {
 		TextArea text = new TextArea();
 		text.setMinHeight(150);
 		text.setPromptText("Write your response here.");
-		if(ct.isReply()) { text.setText("+"+DatabaseManager.getChannel(ct.getChannelId()).getTitle()+" "); }
+		if(CommentSuiteFX.getConfig().willPrefixReplies()) {
+			text.setText("+"+DatabaseManager.getChannel(ct.getChannelId()).getTitle()+" ");
+		}
 
 		HBox hbox1 = new HBox(10);
 		hbox1.setAlignment(Pos.CENTER_RIGHT);

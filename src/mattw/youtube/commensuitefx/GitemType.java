@@ -5,8 +5,7 @@ import java.util.Date;
 import mattw.youtube.datav3.list.SearchList;
 
 public class GitemType extends YoutubeObject {
-	
-	private final String typeText;
+
 	private final long published, lastChecked;
 	private final String channelTitle;
 	private int gitemId;
@@ -26,7 +25,7 @@ public class GitemType extends YoutubeObject {
 		super(findId(item), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
 		int type;
 		if(item.id.videoId != null) {
-			type = 3;
+			type = 0;
 		} else if(item.id.channelId != null) {
 			type = 1;
 		} else if(item.id.playlistId != null) {
@@ -35,7 +34,6 @@ public class GitemType extends YoutubeObject {
 			type = -1;
 		}
 		typeId = type;
-		typeText = typeId == 1 ? "channel" : typeId == 2 ? "playlist" : typeId == 3 ? "video" : "???";
 		this.gitemId = -1;
 		this.channelTitle = item.snippet.channelTitle;
 		this.published = item.snippet.publishedAt.getTime();
@@ -45,7 +43,6 @@ public class GitemType extends YoutubeObject {
 	public GitemType(int gitemId, String title) {
 		super(null, title, null, false);
 		typeId = -1;
-		typeText = "gitem";
 		this.gitemId = gitemId;
 		this.published = 0;
 		this.lastChecked = 0;
@@ -55,7 +52,6 @@ public class GitemType extends YoutubeObject {
 	public GitemType(int type, int gitemId, String youtubeId, String title, String channelTitle, String thumbUrl, boolean fetchThumb, Date published, Date lastChecked) {
 		super(youtubeId, title, thumbUrl, fetchThumb);
 		typeId = type;
-		typeText = typeId == 0 ? "comment" : typeId == 1 ? "channel" : typeId == 2 ? "playlist" : "???";
 		this.gitemId = gitemId;
 		this.channelTitle = channelTitle;
 		this.published = published.getTime();
@@ -80,10 +76,6 @@ public class GitemType extends YoutubeObject {
 	
 	public Long getLastChecked() {
 		return lastChecked;
-	}
-	
-	public String getTypeText() {
-		return typeText;
 	}
 	
 	public String toString() {

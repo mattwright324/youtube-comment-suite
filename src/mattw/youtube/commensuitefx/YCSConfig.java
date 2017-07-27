@@ -30,7 +30,9 @@ public class YCSConfig {
 	}
 
 	public String getWelcomeStatement() {
-		if(accounts.isEmpty()) {
+		if(!showWelcome) {
+			return "";
+		} else if(accounts.isEmpty()) {
 			return "Welcome, Guest";
 		} else if(accounts.size() == 1) {
 			return "Welcome, "+accounts.get(0).getUsername();

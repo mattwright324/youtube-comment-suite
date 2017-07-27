@@ -68,7 +68,18 @@ abstract class YoutubeObject {
 		case 0:  return "https://youtu.be/"+youtubeId;
 		case 1:  return "https://www.youtube.com/channel/"+youtubeId;
 		case 2:  return "https://www.youtube.com/playlist?list="+youtubeId;
+		case 3:  return "https://www.youtube.com/watch?v="+(this instanceof CommentType ? ((CommentType) this).getVideoId() : "typeError")+"&lc="+getId();
 		default: return "https://www.youtube.com/error/"+youtubeId;
+		}
+	}
+
+	public String getTypeName() {
+		switch(typeId) {
+		case 0: return "Video";
+		case 1: return "Channel";
+		case 2: return "Playlist";
+		case 3: return "Comment";
+		default: return "Error";
 		}
 	}
 

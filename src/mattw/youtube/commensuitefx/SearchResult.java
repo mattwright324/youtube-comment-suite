@@ -60,7 +60,7 @@ class SearchResult extends HBox {
 		select = new CheckBox();
 		select.setOnAction(e -> setSelected(select.isSelected()));
 		
-		Label type = new Label(gitem.getTypeText());
+		Label type = new Label(gitem.getTypeName());
 		type.setAlignment(Pos.CENTER);
 		type.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 14));
 		

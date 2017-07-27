@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javafx.application.Application;
@@ -29,12 +31,7 @@ import javafx.scene.effect.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -43,7 +40,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import mattw.youtube.datav3.YoutubeData;
 
-public class CommentSuiteFX extends Application implements EventHandler<ActionEvent> {
+public class CommentSuiteFX extends Application {
 
 	private final YCSConfig config = new YCSConfig();
 	private YoutubeData data;
@@ -55,20 +52,19 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 
 	private StackPane layout;
 	private StackPane setup;
-	private GridPane main;
+	private VBox main;
 	private YoutubeSearchPane videos;
 	private GroupManagePane groups;
 	private CommentSearchPane comments;
 
 	private ImageView header;
-	private ToggleButton videoToggle;
-	private ToggleButton groupToggle;
-	private ToggleButton commentToggle;
+	private Pane lastSetPane;
+	private ToggleButton startPage;
 	private Label welcome;
 
 	private Button saveSettings;
-	private Button closeSettings;
 	private Button addAccount;
+	private CheckBox downloadThumbs, showWelcome, prefixReplies;
 	private final VBox accountList = new VBox();
 
 	public static void main(String[] args) {
@@ -90,23 +86,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			instance.layout.getChildren().add(stack);
 	}
 
-	private void saveConfig() {
-		Platform.runLater(() -> {
-			if(layout.getChildren().contains(setup)) {
-				try {
-					config.save();
-					loadConfig();
-				} catch (IOException ignored) {}
-				layout.getChildren().remove(setup);
-			}
-		});
-	}
-
-	private void loadConfig() throws IOException {
+	private void applyConfig() throws IOException {
 		config.load();
 		data = new YoutubeData(config.getYoutubeKey());
 		Platform.runLater(() -> {
-			System.out.println("Loaded Accounts: "+getConfig().accounts.size());
 			welcome.setText(config.getWelcomeStatement());
 			accountList.getChildren().clear();
 			for(Account acc : getConfig().accounts) {
@@ -148,55 +131,10 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		for(Node n : nodes) n.setDisable(disable);
 	}
 
-	public void handle(ActionEvent arg0) {
-		Object o = arg0.getSource();
-		if(o.equals(saveSettings)) {
-			Task<Void> task = new Task<Void>(){
-				protected Void call() throws Exception {
-					setNodesDisabled(true, saveSettings);
-					saveConfig();
-					return null;
-				}
-			};
-			Thread thread = new Thread(task);
-			thread.start();
-		} else if(o.equals(closeSettings)) {
-			layout.getChildren().remove(setup);
-		} else if(o.equals(videoToggle) || o.equals(groupToggle) || o.equals(commentToggle)) {
-			if(videoToggle.isSelected()) {
-				if(main.getChildren().contains(groups)) main.getChildren().remove(groups);
-				if(main.getChildren().contains(comments)) main.getChildren().remove(comments);
-				if(!main.getChildren().contains(videos)) {
-					main.add(videos, 0, 1);
-					GridPane.setVgrow(videos, Priority.ALWAYS);
-				}
-				header.setImage(new Image(getClass().getResourceAsStream("./images/youtube.png")));
-			} else if(groupToggle.isSelected()) {
-				if(main.getChildren().contains(videos)) main.getChildren().remove(videos);
-				if(main.getChildren().contains(comments)) main.getChildren().remove(comments);
-				if(!main.getChildren().contains(groups)) {
-					main.add(groups, 0, 1);
-					GridPane.setVgrow(groups, Priority.ALWAYS);
-				}
-				header.setImage(new Image(getClass().getResourceAsStream("./images/manage.png")));
-			} else if(commentToggle.isSelected()) {
-				if(main.getChildren().contains(videos)) main.getChildren().remove(videos);
-				if(main.getChildren().contains(groups)) main.getChildren().remove(groups);
-				if(!main.getChildren().contains(comments)) {
-					main.add(comments, 0, 1);
-					GridPane.setVgrow(comments, Priority.ALWAYS);
-				}
-				header.setImage(new Image(getClass().getResourceAsStream("./images/search.png")));
-			} else {
-				System.out.println("Menu Toggle: Something broke.");
-			}
-		}
-	}
-
 	public void start(Stage stage) throws Exception {
 		instance = this;
 		try {
-			loadConfig();
+			applyConfig();
 		} catch (Exception e) { e.printStackTrace(); }
 
 		database = new DatabaseManager();
@@ -204,25 +142,19 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 
 		layout = new StackPane();
 		setup = createSettingsPane();
-		GridPane menu = createMenuBar();
 		videos = new YoutubeSearchPane();
 		groups = new GroupManagePane();
 		comments = new CommentSearchPane();
+		GridPane menu = createMenuBar();
 
-		main = new GridPane();
+		main = new VBox();
 		main.setAlignment(Pos.TOP_LEFT);
-		main.setVgap(10);
-		ColumnConstraints col = new ColumnConstraints();
-		col.setPercentWidth(100);
-		main.getColumnConstraints().add(col);
-
-		main.add(menu, 0, 0);
-		GridPane.setHgrow(menu, Priority.ALWAYS);
+		main.setFillWidth(true);
+		main.getChildren().add(menu);
 
 		layout.getChildren().addAll(main);
-
+		startPage.fire();
 		reloadGroups();
-		videoToggle.fire();
 
 		Scene scene = new Scene(layout, 900, 550);
 		scene.getStylesheets().add(
@@ -250,6 +182,7 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		grid.setId("menuBar");
 		grid.setMaxWidth(Double.MAX_VALUE);
 		grid.setMaxHeight(height);
+		grid.setPadding(new Insets(0,0,10,0));
 
 		StackPane img = new StackPane();
 		header = new ImageView(new Image(getClass().getResourceAsStream("./images/youtube.png")));
@@ -271,26 +204,43 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			}
 		});
 
-		videoToggle = new ToggleButton("Search YouTube");
+		Map<ToggleButton,Pane> pages = new HashMap<>();
+		EventHandler<ActionEvent> changePage = new EventHandler<ActionEvent>(){
+			public void handle(ActionEvent ae) {
+				if(lastSetPane != null && main.getChildren().contains(lastSetPane)) main.getChildren().remove(lastSetPane);
+				lastSetPane = pages.get(ae.getSource());
+				if(lastSetPane != null && !main.getChildren().contains(lastSetPane)) {
+					main.getChildren().add(lastSetPane);
+					VBox.setVgrow(lastSetPane, Priority.ALWAYS);
+				}
+			}
+		};
+
+		ToggleButton videoToggle = new ToggleButton("Search YouTube");
 		videoToggle.setMaxHeight(height);
 		videoToggle.setToggleGroup(toggle);
 		videoToggle.setId("menuButton");
-		videoToggle.setOnAction(this);
+		videoToggle.setOnAction(changePage);
+		pages.put(videoToggle, videos);
 		grid.add(videoToggle, 1, 0);
 
-		groupToggle = new ToggleButton("Manage Groups");
+		ToggleButton groupToggle = new ToggleButton("Manage Groups");
 		groupToggle.setMaxHeight(height);
 		groupToggle.setToggleGroup(toggle);
 		groupToggle.setId("menuButton");
-		groupToggle.setOnAction(this);
+		groupToggle.setOnAction(changePage);
+		pages.put(groupToggle, groups);
 		grid.add(groupToggle, 2, 0);
 
-		commentToggle = new ToggleButton("Search Comments");
+		ToggleButton commentToggle = new ToggleButton("Search Comments");
 		commentToggle.setMaxHeight(height);
 		commentToggle.setToggleGroup(toggle);
 		commentToggle.setId("menuButton");
-		commentToggle.setOnAction(this);
+		commentToggle.setOnAction(changePage);
+		pages.put(commentToggle, comments);
 		grid.add(commentToggle, 3, 0);
+
+		startPage = videoToggle;
 
 		welcome = new Label();
 		welcome.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 14));
@@ -336,14 +286,13 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 		Label titleB = new Label("General");
 		titleB.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
-		CheckBox downloadThumbs = new CheckBox("Save thumbnails locally (thumbs/)");
+		downloadThumbs = new CheckBox("Save thumbnails locally (thumbs/)");
 		downloadThumbs.setDisable(true);
 
-		CheckBox prefixReplies = new CheckBox("Prefix username when replying to a comment");
+		prefixReplies = new CheckBox("Prefix username when replying to a comment");
 		prefixReplies.setSelected(true);
-		prefixReplies.setDisable(true);
 
-		CheckBox showWelcome = new CheckBox("Show welcome message");
+		showWelcome = new CheckBox("Show welcome message");
 		showWelcome.setSelected(true);
 
 		Label titleA = new Label("Login to YouTube");
@@ -399,12 +348,23 @@ public class CommentSuiteFX extends Application implements EventHandler<ActionEv
 			thread.start();
 		});
 
-		saveSettings = new Button("Save");
-		saveSettings.setOnAction(this);
-		saveSettings.setId("completeForm");
+		Button closeSettings = new Button("Close");
+		closeSettings.setOnAction(ae -> layout.getChildren().remove(setup));
 
-		closeSettings = new Button("Close");
-		closeSettings.setOnAction(this);
+		saveSettings = new Button("Save");
+		saveSettings.setOnAction(ae -> {
+			try {
+				config.setShowWelcome(showWelcome.isSelected());
+				config.setDownloadThumbs(downloadThumbs.isSelected());
+				config.setPrefixReplies(prefixReplies.isSelected());
+				config.save();
+				applyConfig();
+				closeSettings.fire();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+		saveSettings.setId("completeForm");
 
 		HBox hBtn = new HBox(10);
 		hBtn.setAlignment(Pos.BOTTOM_RIGHT);

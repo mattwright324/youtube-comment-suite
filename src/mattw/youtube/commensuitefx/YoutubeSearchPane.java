@@ -263,7 +263,9 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
         }
 
         List<GitemType> items = new ArrayList<>();
-        searchResults.getChildren().stream().filter(object -> object instanceof SearchResult && ((SearchResult) object).isSelected()).forEach(result -> items.add(((SearchResult) result).gitem));
+        searchResults.getChildren().stream()
+                .filter(object -> object instanceof SearchResult && ((SearchResult) object).isSelected())
+                .forEach(result -> items.add(((SearchResult) result).gitem));
 
         Button ok = new Button("Finish");
         Button cancel = new Button("Cancel");

@@ -100,13 +100,4 @@ public class CommentType extends YoutubeObject {
 	public String toString() {
 		return getId();
 	}
-	
-	public String getYoutubeLink() {
-		switch(typeId){
-		case 3: 
-			return "https://www.youtube.com/watch?v="+getVideoId()+"&lc="+getId();
-		default:
-			return "https://www.youtube.com/error/"+getId();
-		}
-	}
 }
