@@ -101,7 +101,7 @@ public class GroupManagePane extends GridPane implements EventHandler<ActionEven
         } else if(o.equals(reloadGroup)) {
             Platform.runLater(() -> {
                 reloadGroup.setDisable(true);
-                manager.reloadGroupData();
+                manager.reload();
                 reloadGroup.setDisable(false);
             });
 

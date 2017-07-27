@@ -382,8 +382,8 @@ public class CommentSuiteFX extends Application {
 		scroll.setFitToHeight(true);
 		scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
-		Tab login = new Tab("YouTube");
-		login.setContent(scroll);
+		Tab settings = new Tab("YouTube");
+		settings.setContent(scroll);
 
 		Label title1 = new Label("About");
 		title1.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
@@ -420,7 +420,7 @@ public class CommentSuiteFX extends Application {
 		TabPane tabs = new TabPane();
 		tabs.setMaxWidth(600);
 		tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-		tabs.getTabs().addAll(login, about);
+		tabs.getTabs().addAll(settings, about);
 
 		StackPane glass = new StackPane();
 		glass.setStyle("-fx-background-color: rgba(127,127,127,0.5);");

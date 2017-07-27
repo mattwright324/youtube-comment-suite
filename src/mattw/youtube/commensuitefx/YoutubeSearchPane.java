@@ -118,9 +118,9 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
         setHgap(5);
         setVgap(10);
 
-        GridPane grid2 = new GridPane();
-        grid2.setHgap(5);
-        grid2.setVgap(10);
+        GridPane btnGrid = new GridPane();
+        btnGrid.setHgap(5);
+        btnGrid.setVgap(10);
 
         locField = new TextField();
         locField.setPromptText("40.7058253,-74.1180864");
@@ -141,7 +141,7 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
                     add(searchOrder, 3, 0);
                     add(searchType, 4, 0);
                     searchType.setDisable(false);
-                    GridPane.setColumnSpan(grid2, 5);
+                    GridPane.setColumnSpan(btnGrid, 5);
                 }
             } else if(method.equals("Location")) {
                 if(!list.contains(locField)) {
@@ -153,7 +153,7 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
                     add(searchType, 6, 0);
                     searchType.getSelectionModel().select(1);
                     searchType.setDisable(true);
-                    GridPane.setColumnSpan(grid2, 7);
+                    GridPane.setColumnSpan(btnGrid, 7);
                 }
             }
         });
@@ -168,11 +168,6 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
         search = new Button("Search");
         search.setOnAction(this);
         add(search, 2, 0);
-        searchField.setOnKeyPressed(ke -> {
-            if(ke.getCode().equals(KeyCode.ENTER)) {
-                search.fire();
-            }
-        });
 
         searchOrder = new ComboBox<>();
         searchOrder.getItems().addAll("Relevance", "Date", "Title", "Rating", "Views");
@@ -184,7 +179,7 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
         searchType.getSelectionModel().select(0);
         add(searchType, 4, 0);
 
-        add(grid2, 0, 1, 5, 1);
+        add(btnGrid, 0, 1, 5, 1);
 
         searchResults = new VBox();
         searchResults.setPadding(new Insets(10,10,10,10));
@@ -193,7 +188,7 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
         ScrollPane scroll = new ScrollPane(searchResults);
         scroll.setFitToWidth(true);
         scroll.setFitToHeight(true);
-        grid2.add(scroll, 0, 0);
+        btnGrid.add(scroll, 0, 0);
         GridPane.setHgrow(scroll, Priority.ALWAYS);
 
         selectAll = new Button("Select All");
@@ -224,7 +219,7 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
         hbox.getChildren().addAll(selectAll, clearResults, addToGroup, nextPage, resultStatus);
         hbox.setPadding(new Insets(0,0,5,0));
 
-        grid2.add(hbox, 0, 1);
+        btnGrid.add(hbox, 0, 1);
     }
 
     private StackPane createAddToGroupPane() {

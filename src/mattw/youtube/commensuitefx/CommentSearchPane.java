@@ -1,6 +1,7 @@
 package mattw.youtube.commensuitefx;
 
 import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -95,7 +96,7 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
         dislikes.setAlignment(Pos.CENTER_RIGHT);
         dislikes.setStyle("-fx-text-fill: red");
 
-        description = new TextArea("Published Nov 18, 1918  This is an example description. You may select this text, the title, and author's nameProperty. Right click to copy or select all."
+        description = new TextArea("Published Nov 18, 1918  This is an example description. You may select this text, the title, and author's name. Right click to copy or select all."
                 + "\n\nThe thumbnail and author's picture are clickable to open either the video or channel in your browser."
                 + "\n\nComments may be replied to if you are signed in. Commentor names may be clicked to open their channel in browser."
                 + "\n\nNote that grabbed comment numbers may be slightly off due to YouTube spam detection and the channel's user and phrase filters.");
@@ -238,6 +239,14 @@ public class CommentSearchPane extends HBox implements EventHandler<ActionEvent>
             };
             new Thread(task).start();
         });
+        group.getItems().addListener(new ListChangeListener<Group>() {
+            public void onChanged(Change c) {
+                if(group.getSelectionModel().getSelectedIndex() == -1 && !group.getItems().isEmpty()) {
+                    group.getSelectionModel().select(0);
+                }
+            }
+        });
+
         groupItem = new ChoiceBox<>();
         groupItem.setMaxWidth(300);
         groupItem.setPrefWidth(300);

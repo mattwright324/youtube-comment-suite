@@ -142,7 +142,7 @@ class GroupManager extends StackPane {
 		gi_table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 		gi_table.setItems(gi_list);
 		TableColumn<GitemType, String> typeCol = new TableColumn<>("Type");
-		typeCol.setCellValueFactory(new PropertyValueFactory<>("typeText"));
+		typeCol.setCellValueFactory(new PropertyValueFactory<>("typeName"));
 		typeCol.setCellFactory(col -> new TableCell<GitemType, String>(){
 			public void updateItem(String item, boolean empty) {
 				if(empty || item == null) {
@@ -329,25 +329,23 @@ class GroupManager extends StackPane {
 		
 		vbox2.getChildren().addAll(menu, abox);
 		
-		reloadGroupData();
+		reload();
 		tabs.getTabs().addAll(analytics, items);
 		
 		loadAnalytics.fire();
 	}
 	
 	class ViewerEntry extends HBox {
-
 		private ImageView thumb;
 		public final Label num;
 		public final TextField author;
         public final TextField about;
 		public final VBox vbox;
+		public final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 
 		public Viewer viewer;
 		public Comment comment;
 		public VideoType video;
-
-		public final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 		
 		private ViewerEntry(int pos) {
 			super(10);
@@ -428,7 +426,13 @@ class GroupManager extends StackPane {
 		
 		public void setText() {}
 	}
-	
+
+	/**
+	 * Creates and loads display of basic stats for the group and group-item(s).
+	 *
+	 * @param gitem
+	 * @param type
+	 */
 	private void loadAnalytics(GitemType gitem, int type) {
 		Platform.runLater(() -> abox.getChildren().clear());
 		
@@ -677,8 +681,11 @@ class GroupManager extends StackPane {
 			Platform.runLater(() -> abox.getChildren().remove(prog));
 		}
 	}
-	
-	public void reloadGroupData() {
+
+	/**
+	 * Regrabs group and video information from the database and updates the display.
+	 */
+	public void reload() {
 		gi_list.clear();
 		v_list.clear();
 		choiceList.clear();
@@ -716,7 +723,11 @@ class GroupManager extends StackPane {
 	public boolean isRefreshing() {
 		return refreshing;
 	}
-	
+
+	/**
+	 * Refresh a group to check for new videos and comments.
+	 * Creates display and process for refresh.
+	 */
 	public void refresh() {
 		refreshing = true;
 		ProgressIndicator progress = new ProgressIndicator();
@@ -932,7 +943,7 @@ class GroupManager extends StackPane {
 					clearAll(insertChannels, updateChannels, existingCommentIds, existingChannelIds);
 
 					Platform.runLater(() -> {
-						reloadGroupData();
+						reload();
 						progress.setVisible(false);
 					});
 					database.setAutoCommit(true);
