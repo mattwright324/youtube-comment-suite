@@ -1,4 +1,4 @@
-package mattw.youtube.commensuitefx;
+package mattw.youtube.commentsuitefx;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;

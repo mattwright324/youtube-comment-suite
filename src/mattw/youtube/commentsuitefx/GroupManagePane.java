@@ -1,4 +1,4 @@
-package mattw.youtube.commensuitefx;
+package mattw.youtube.commentsuitefx;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
