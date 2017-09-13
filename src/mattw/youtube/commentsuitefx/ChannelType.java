@@ -2,9 +2,9 @@ package mattw.youtube.commentsuitefx;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import mattw.youtube.datav3.list.ChannelsList;
-import mattw.youtube.datav3.list.CommentThreadsList;
-import mattw.youtube.datav3.list.CommentsList;
+import mattw.youtube.datav3.resources.ChannelsList;
+import mattw.youtube.datav3.resources.CommentThreadsList;
+import mattw.youtube.datav3.resources.CommentsList;
 
 public class ChannelType extends YoutubeObject {
 	
@@ -22,7 +22,7 @@ public class ChannelType extends YoutubeObject {
 	}
 
 	ChannelType(ChannelsList.Item item, boolean fetchThumb) {
-		this(item.id, StringEscapeUtils.unescapeHtml4(item.snippet.title), item.snippet.thumbnails.default_thumb.url.toString(), fetchThumb);
+		this(item.getId(), StringEscapeUtils.unescapeHtml4(item.snippet.title), item.snippet.thumbnails.default_thumb.url.toString(), fetchThumb);
 	}
 	
 	public String toString() {

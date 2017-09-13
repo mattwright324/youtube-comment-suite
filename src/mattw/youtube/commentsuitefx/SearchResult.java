@@ -14,7 +14,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import mattw.youtube.datav3.list.SearchList;
+import mattw.youtube.datav3.resources.SearchList;
 
 class SearchResult extends HBox {
 

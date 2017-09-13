@@ -2,7 +2,7 @@ package mattw.youtube.commentsuitefx;
 
 import java.util.Date;
 
-import mattw.youtube.datav3.list.SearchList;
+import mattw.youtube.datav3.resources.SearchList;
 
 public class GitemType extends YoutubeObject {
 

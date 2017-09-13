@@ -38,12 +38,12 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
-import mattw.youtube.datav3.YoutubeData;
+import mattw.youtube.datav3.YouTubeData3;
 
 public class CommentSuiteFX extends Application {
 
 	private final YCSConfig config = new YCSConfig();
-	private YoutubeData data;
+	private YouTubeData3 data;
 	private DatabaseManager database;
 	private static CommentSuiteFX instance;
 
@@ -78,7 +78,7 @@ public class CommentSuiteFX extends Application {
 	public static DatabaseManager getDatabase() { return instance.database; }
 	public static YCSConfig getConfig() { return instance.config; }
 	public static StackPane getMainPane() { return instance.layout; }
-	public static YoutubeData getYoutube() { return instance.data; }
+	public static YouTubeData3 getYoutube() { return instance.data; }
 
 	public YoutubeSearchPane getYoutubeSearchPane() { return videos; }
 	public GroupManagePane getGroupManagePane() { return groups; }
@@ -91,7 +91,8 @@ public class CommentSuiteFX extends Application {
 
 	private void applyConfig() throws IOException {
 		config.load();
-		data = new YoutubeData(config.getYoutubeKey());
+		data = new YouTubeData3(config.getYoutubeKey());
+		data.setRequestHeader("Referer", "https://github.com/mattwright324/youtube-data-list");
 		Platform.runLater(() -> {
 			welcome.setText(config.getWelcomeStatement());
 			accountList.getChildren().clear();

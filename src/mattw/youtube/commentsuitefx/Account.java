@@ -2,7 +2,8 @@ package mattw.youtube.commentsuitefx;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import mattw.youtube.datav3.list.ChannelsList;
+import mattw.youtube.datav3.YouTubeErrorException;
+import mattw.youtube.datav3.resources.ChannelsList;
 
 import java.io.IOException;
 
@@ -23,8 +24,7 @@ public class Account {
 		if(first) {
 			try {
 				getData();
-			} catch (IOException ignored) {
-			}
+			} catch (Exception ignored) {}
 		}
 		setUsername(username);
 	}
@@ -39,17 +39,17 @@ public class Account {
 			try {
 				CommentSuiteFX.getApp().getConfig().save();
 			} catch (IOException ignored) {}
-		} catch (IOException e) {
+		} catch (IOException | YouTubeErrorException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void getData() throws IOException {
-		CommentSuiteFX.getYoutube().setAccessToken(tokens.access_token);
-		ChannelsList cl = CommentSuiteFX.getYoutube().getChannelsByMine(ChannelsList.PART_SNIPPET);
+	private void getData() throws IOException, YouTubeErrorException {
+		CommentSuiteFX.getYoutube().setProfileAccessToken(tokens.access_token);
+		ChannelsList cl = CommentSuiteFX.getYoutube().channelsList().getMine(ChannelsList.PART_SNIPPET, "");
 		String title = cl.items[0].snippet.title;
 		setUsername(title);
-		setChannelId(cl.items[0].id);
+		setChannelId(cl.items[0].getId());
 		setProfile(cl.items[0].snippet.thumbnails.default_thumb.url.toString());
 		try {
 			CommentSuiteFX.getApp().getConfig().save();

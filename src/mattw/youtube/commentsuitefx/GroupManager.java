@@ -59,12 +59,13 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import mattw.youtube.commentsuitefx.DatabaseManager.Comment;
 import mattw.youtube.commentsuitefx.DatabaseManager.Viewer;
-import mattw.youtube.datav3.YoutubeData;
-import mattw.youtube.datav3.list.ChannelsList;
-import mattw.youtube.datav3.list.CommentThreadsList;
-import mattw.youtube.datav3.list.CommentsList;
-import mattw.youtube.datav3.list.PlaylistItemsList;
-import mattw.youtube.datav3.list.VideosList;
+import mattw.youtube.datav3.YouTubeData3;
+import mattw.youtube.datav3.YouTubeErrorException;
+import mattw.youtube.datav3.resources.ChannelsList;
+import mattw.youtube.datav3.resources.CommentThreadsList;
+import mattw.youtube.datav3.resources.CommentsList;
+import mattw.youtube.datav3.resources.PlaylistItemsList;
+import mattw.youtube.datav3.resources.VideosList;
 
 class GroupManager extends StackPane {
 
@@ -94,9 +95,9 @@ class GroupManager extends StackPane {
 	private Group group;
 	private final int group_id;
 	private static DatabaseManager database;
-	private static YoutubeData data;
+	private static YouTubeData3 data;
 	
-	public GroupManager(Group g, DatabaseManager database, YoutubeData data) {
+	public GroupManager(Group g, DatabaseManager database, YouTubeData3 data) {
 		super();
 		manager = this;
 		GroupManager.database = database;
@@ -970,26 +971,32 @@ class GroupManager extends StackPane {
 				}
 			}
 			
-			private void parseChannelItems(List<GitemType> channels) throws JsonSyntaxException, IOException {
+			private void parseChannelItems(List<GitemType> channels) throws JsonSyntaxException, IOException, YouTubeErrorException {
 				for(GitemType gi : channels) {
-					ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_CONTENT_DETAILS, gi.getId(), ChannelsList.MAX_RESULTS, "");
-					String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
-					handlePlaylist(uploadPlaylistId, gi.getGitemId());
+					System.out.println(gi.getId());
+					ChannelsList cl = data.channelsList().getByChannel(ChannelsList.PART_CONTENT_DETAILS, gi.getId(), "");
+					if(cl.hasItems() && cl.items[0].hasContentDetails()) {
+						String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
+						handlePlaylist(uploadPlaylistId, gi.getGitemId());
+					} else {
+						System.err.println("ERROR: Channel "+gi.getId()+" has no items or details.");
+					}
 				}
 			}
 			
-			private void parsePlaylistItems(List<GitemType> playlists) throws JsonSyntaxException, IOException {
+			private void parsePlaylistItems(List<GitemType> playlists) throws JsonSyntaxException, IOException, YouTubeErrorException {
 				for(GitemType gi : playlists) {
 					handlePlaylist(gi.getId(), gi.getGitemId());
 				}
 			}
 			
-			private void handlePlaylist(final String playlistId, int gitem_id) throws JsonSyntaxException, IOException {
+			private void handlePlaylist(final String playlistId, int gitem_id) throws JsonSyntaxException, IOException, YouTubeErrorException {
 				PlaylistItemsList pil;
 				String pageToken = "";
 				List<String> videos = new ArrayList<>();
 				do {
-					pil = data.getPlaylistItems(PlaylistItemsList.PART_SNIPPET, playlistId, PlaylistItemsList.MAX_RESULTS, pageToken);
+					// pil = data.getPlaylistItems(PlaylistItemsList.PART_SNIPPET, playlistId, PlaylistItemsList.MAX_RESULTS, pageToken);
+					pil = data.playlistItemsList().get(PlaylistItemsList.PART_SNIPPET, playlistId, pageToken);
 					pageToken = pil.nextPageToken;
 					for(PlaylistItemsList.Item item : pil.items) {
 						if(item.hasSnippet()) {
@@ -1000,7 +1007,7 @@ class GroupManager extends StackPane {
 				parseVideoItems(videos, gitem_id);
 			}
 			
-			private void parseVideoItems(List<String> videos, int gitem_id) throws JsonSyntaxException, IOException {
+			private void parseVideoItems(List<String> videos, int gitem_id) throws JsonSyntaxException, IOException, YouTubeErrorException {
 				updateLabel(totalVideos, String.valueOf(total_videos.addAndGet(videos.size())));
 				for(int i=0; i<videos.size(); i += 50) {
 					List<String> sublist = videos.subList(i, i+50 < videos.size() ? i+50 : videos.size());
@@ -1019,15 +1026,15 @@ class GroupManager extends StackPane {
 				}
 			}
 			
-			private void handleVideos(final String ids) throws JsonSyntaxException, IOException {
+			private void handleVideos(final String ids) throws JsonSyntaxException, IOException, YouTubeErrorException {
 				System.out.println("Videos: "+ids);
-				VideosList snip = data.getVideosById(VideosList.PART_SNIPPET, ids, VideosList.MAX_RESULTS, "");
-				VideosList stats = data.getVideosById(VideosList.PART_STATISTICS, ids, VideosList.MAX_RESULTS, "");
+				VideosList snip = data.videosList().getByIds(VideosList.PART_SNIPPET, ids, "");
+				VideosList stats = data.videosList().getByIds(VideosList.PART_STATISTICS, ids, "");
 				for(int i = 0; i<snip.items.length; i++) {
 					VideosList.Item itemSnip = snip.items[i];
 					VideosList.Item itemStat = stats.items[i];
 					checkChannel(null, itemSnip, false);
-					String videoId = itemSnip.id;
+					String videoId = itemSnip.getId();
 					String channelId = itemSnip.snippet.channelId;
 					String title = itemSnip.snippet.title;
 					String thumbUrl = itemSnip.snippet.thumbnails.medium.url.toString();
@@ -1038,10 +1045,10 @@ class GroupManager extends StackPane {
 					long comments = itemStat.statistics.commentCount;
 					VideoType video = new VideoType(videoId, channelId, title, thumbUrl, false, description, comments, likes, dislikes, views, itemSnip.snippet.publishedAt, new Date(), 200);
 					System.out.println(videoId+": "+title);
-					if(!(existingVideoIds.contains(itemSnip.id) || videoListContainsId(insertVideos, itemSnip.id) || videoListContainsId(updateVideos, itemSnip.id))) {
+					if(!(existingVideoIds.contains(itemSnip.getId()) || videoListContainsId(insertVideos, itemSnip.getId()) || videoListContainsId(updateVideos, itemSnip.getId()))) {
 						insertVideos.add(video);
 					} else {
-						if(videoListContainsId(updateVideos, itemSnip.id))
+						if(videoListContainsId(updateVideos, itemSnip.getId()))
 							updateVideos.add(video);
 					}
 				}
@@ -1059,14 +1066,14 @@ class GroupManager extends StackPane {
 						comments.clear();
 					}
 					try {
-						snippet = data.getCommentThreadsByVideoId(CommentThreadsList.PART_SNIPPET, videoId, CommentThreadsList.MAX_RESULTS, snipToken);
+						snippet = data.commentThreadsList().getThreadsByVideo(CommentThreadsList.PART_SNIPPET, videoId, snipToken);
 						snipToken = snippet.nextPageToken;
 						total_comments.addAndGet(snippet.items.length);
 						for(CommentThreadsList.Item item : snippet.items) {
 							if(item.hasSnippet()) {
-								String commentId = item.snippet.topLevelComment.id;
+								String commentId = item.snippet.topLevelComment.getId();
 								boolean contains = commentThreadReplies.containsKey(commentId);
-								if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != commentThreadReplies.get(item.snippet.topLevelComment.id))) {
+								if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != commentThreadReplies.get(item.snippet.topLevelComment.getId()))) {
 									commentThreadIds.put(commentId, videoId);
 									threadsQueue.offer(commentId);
 								} else {
@@ -1083,34 +1090,35 @@ class GroupManager extends StackPane {
 								}
 							}
 						}
+					} catch (YouTubeErrorException e) {
+						fails++;
+						try {
+							switch(e.getError().code){
+								case 400:
+									System.err.println("Bad Request (400): Retry #"+fails+"  http://youtu.be/"+videoId);
+									break;
+								case 403:
+									System.err.println("Comments Disabled (403): http://youtu.be/"+videoId);
+									database.updateVideoHttpCode(videoId, e.getError().code);
+									fails = 10;
+									break;
+								case 404:
+									System.err.println("Not found (404): http://youtu.be/"+videoId);
+									database.updateVideoHttpCode(videoId, e.getError().code);
+									fails = 10;
+									break;
+								default:
+									System.err.println("Unknown Error ("+e.getError().code+"): http://youtu.be/"+videoId);
+									database.updateVideoHttpCode(videoId, e.getError().code);
+									fails = 10;
+									break;
+							}
+						} catch (SQLException e1) {
+							e1.printStackTrace();
+						}
 					} catch (IOException e) {
 						fails++;
-						if(e.getMessage().contains("HTTP response code")) {
-							Pattern p = Pattern.compile("([0-9]{3}) for URL");
-							Matcher m = p.matcher(e.getMessage());
-							if(m.find()) {
-								try {
-									int code = Integer.parseInt(m.group(1));
-									if(code == 400) { // Retry / Bad request.
-										System.err.println("Bad Request (400): Retry #"+fails+"  http://youtu.be/"+videoId);
-									} else if(code == 403) { // Comments Disabled or Forbidden
-										System.err.println("Comments Disabled (403): http://youtu.be/"+videoId);
-										database.updateVideoHttpCode(videoId, code);
-										break;
-									} else if(code == 404) { // Not found.
-										System.err.println("Not found (404): http://youtu.be/"+videoId);
-										database.updateVideoHttpCode(videoId, code);
-										break;
-									} else { // Unknown error.
-										System.err.println("Unknown Error ("+code+"): http://youtu.be/"+videoId);
-										database.updateVideoHttpCode(videoId, code);
-										break;
-									}
-								} catch (SQLException e1) {
-									e1.printStackTrace();
-								}
-							}
-						}
+						e.printStackTrace();
 					}
 				} while ((snippet == null || snippet.nextPageToken != null) && fails < 5);
 				if(comments.size() > 0) {
@@ -1119,7 +1127,7 @@ class GroupManager extends StackPane {
 				}
 			}
 			
-			private void getReplies(final String threadId, final String videoId) throws JsonSyntaxException, SQLException {
+			private void getReplies(final String threadId, final String videoId) throws JsonSyntaxException, SQLException, YouTubeErrorException {
                 List<CommentType> replies = new ArrayList<>();
                 CommentsList cl = null;
                 String pageToken = "";
@@ -1130,11 +1138,11 @@ class GroupManager extends StackPane {
                         replies.clear();
                     }
                     try {
-                        cl = data.getCommentsByParentId(threadId, CommentsList.MAX_RESULTS, pageToken);
+						cl = data.commentsList().getByParentId(CommentsList.PART_SNIPPET, threadId, pageToken);
                         total_comments.addAndGet(cl.items.length);
                         pageToken = cl.nextPageToken;
                         for (CommentsList.Item reply : cl.items) {
-                            if (!existingCommentIds.contains(reply.id)) {
+                            if (!existingCommentIds.contains(reply.getId())) {
                                 checkChannel(reply, null, false);
                                 CommentType comment = new CommentType(reply, videoId);
                                 if (!comment.getChannelId().equals("")) {
@@ -1190,10 +1198,11 @@ class GroupManager extends StackPane {
 							channel = new ChannelType(comment, fetchThumb);
 						} else { // if(video != null)
 							try {
-								ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_SNIPPET, channelId, 1, "");
+								// ChannelsList cl = data.getChannelsByChannelId(ChannelsList.PART_SNIPPET, channelId, 1, "");
+								ChannelsList cl = data.channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
 								ChannelsList.Item item = cl.items[0];
 								channel = new ChannelType(item, true);
-							} catch (JsonSyntaxException | IOException e) {
+							} catch (JsonSyntaxException | IOException | YouTubeErrorException e) {
 								e.printStackTrace();
 							}
 						}

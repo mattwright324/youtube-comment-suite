@@ -10,10 +10,12 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import mattw.youtube.datav3.list.SearchList;
+import mattw.youtube.datav3.YouTubeErrorException;
+import mattw.youtube.datav3.resources.SearchList;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -54,9 +56,15 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
                         }
                         SearchList sl;
                         if(method == 0) {
-                            sl = CommentSuiteFX.getYoutube().getSearch(escaped_search, 25, token, order, type);
+                            sl = CommentSuiteFX.getYoutube().searchList()
+                                    .maxResults(25)
+                                    .order(order)
+                                    .get(SearchList.PART_SNIPPET, escaped_search, type, token);
                         } else {
-                            sl = CommentSuiteFX.getYoutube().getSearchVideosAtLocation(escaped_search, 25, token, order, location, distance);
+                            sl = CommentSuiteFX.getYoutube().searchList()
+                                    .maxResults(25)
+                                    .order(order)
+                                    .getByLocation(SearchList.PART_SNIPPET, escaped_search, token, location, distance);
                         }
                         for(SearchList.Item item : sl.items) {
                             final SearchResult result = new SearchResult(item);
@@ -70,7 +78,7 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
                             CommentSuiteFX.setNodesDisabled(false, nextPage);
                             pageToken = sl.nextPageToken;
                         }
-                    } catch (JsonSyntaxException | IOException e) {
+                    } catch (JsonSyntaxException | IOException | YouTubeErrorException e) {
                         Platform.runLater(() -> resultStatus.setText(e.getMessage()));
                         e.printStackTrace();
                     }
@@ -217,6 +225,12 @@ public class YoutubeSearchPane extends GridPane implements EventHandler<ActionEv
         hbox.setAlignment(Pos.CENTER);
         hbox.getChildren().addAll(selectAll, clearResults, addToGroup, nextPage, resultStatus);
         hbox.setPadding(new Insets(0,0,5,0));
+
+        setOnKeyPressed(ke -> {
+            if(ke.getCode().equals(KeyCode.ENTER)) {
+                search.fire();
+            }
+        });
 
         btnGrid.add(hbox, 0, 1);
     }

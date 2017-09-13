@@ -14,7 +14,7 @@ import org.jsoup.nodes.Document;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import mattw.youtube.datav3.list.CommentsList;
+import mattw.youtube.datav3.resources.CommentsList;
 
 public class OA2Handler {
 	

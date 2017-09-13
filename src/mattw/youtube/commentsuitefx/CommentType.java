@@ -4,8 +4,8 @@ import java.util.Date;
 
 import com.google.gson.Gson;
 
-import mattw.youtube.datav3.list.CommentThreadsList;
-import mattw.youtube.datav3.list.CommentsList;
+import mattw.youtube.datav3.resources.CommentThreadsList;
+import mattw.youtube.datav3.resources.CommentsList;
 
 public class CommentType extends YoutubeObject {
 	
@@ -30,7 +30,7 @@ public class CommentType extends YoutubeObject {
 	}
 	
 	public CommentType(CommentsList.Item item, String videoId) {
-		super(item.id, null);
+		super(item.getId(), null);
 		typeId = 3;
 		this.text = item.snippet.textDisplay;
 		this.date = item.snippet.publishedAt;
@@ -48,7 +48,7 @@ public class CommentType extends YoutubeObject {
 	}
 	
 	public CommentType(CommentThreadsList.Item item) {
-		super(item.snippet.topLevelComment.id, null);
+		super(item.snippet.topLevelComment.getId(), null);
 		typeId = 3;
 		this.text = item.snippet.topLevelComment.snippet.textDisplay;
 		this.date = item.snippet.topLevelComment.snippet.publishedAt;
