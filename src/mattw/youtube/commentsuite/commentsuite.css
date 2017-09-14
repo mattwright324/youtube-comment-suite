@@ -1,0 +1,20 @@
+#menuButton {
+    -fx-font-weight: 700;
+    -fx-background-color: #eeeeee;
+	-fx-base: rgba(255,255,255,0.5);
+	-fx-focus-color: transparent;
+	-fx-border-width: 0 1 3 1;
+	-fx-border-color: white #eeeeee white #eeeeee;
+}
+
+#menuButton:selected {
+    -fx-background-color: derive(firebrick, 95%);
+	-fx-border-width: 0 1 3 1;
+	-fx-border-color: white #eeeeee firebrick #eeeeee;
+}
+
+#menuButton:hover {
+    -fx-background-color: rgba(255,127,127,0.2);
+	-fx-border-width: 0 1 3 1;
+	-fx-border-color: white #eeeeee indianred #eeeeee;
+}

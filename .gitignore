@@ -4,4 +4,5 @@ out
 src/META-INF
 youtube-comment-suite.iml
 commentsuite.db
+commentsuite.sqlite3
 config.ycs
