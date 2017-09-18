@@ -7,7 +7,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
-class Clipboards {
+public class Clipboards {
 	
 	public static String getClipboard() throws UnsupportedFlavorException, IOException {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();

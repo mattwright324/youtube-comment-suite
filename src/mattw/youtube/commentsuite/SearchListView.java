@@ -15,7 +15,9 @@ import mattw.youtube.datav3.resources.SearchList;
 import java.text.SimpleDateFormat;
 
 public class SearchListView extends HBox {
+
     private SearchList.Item item;
+
     public SearchListView(SearchList.Item item, int number) {
         super(10);
         this.item = item;
@@ -23,7 +25,7 @@ public class SearchListView extends HBox {
         ImageView view = new ImageView(item.snippet.thumbnails.medium.url.toString());
         view.setFitHeight(80);
         view.setFitWidth(80 * view.getImage().getWidth() / view.getImage().getHeight());
-        Label type = new Label(item.id.kind.replace("youtube#", ""));
+        Label type = new Label(getType());
 
         VBox vbox = new VBox(5);
         vbox.setMaxWidth(160);
@@ -70,5 +72,29 @@ public class SearchListView extends HBox {
 
     public SearchList.Item getItem() {
         return item;
+    }
+
+    public String getYouTubeLink() {
+        if(item.id.channelId != null) {
+            return "https://youtube.com/channel/"+item.id.channelId;
+        } else if(item.id.playlistId != null) {
+            return "https://youtube.com/playlist?list="+item.id.playlistId;
+        } else if (item.id.videoId != null) {
+            return "https://youtu.be/"+item.id.videoId;
+        } else {
+            return "https://youtube.com/error/"+item.id.videoId;
+        }
+    }
+
+    public String getType() {
+        if(item.id.channelId != null) {
+            return "Channel";
+        } else if(item.id.playlistId != null) {
+            return "Playlist";
+        } else if (item.id.videoId != null) {
+            return "Video";
+        } else {
+            return "Error";
+        }
     }
 }

@@ -1,13 +1,22 @@
 package mattw.youtube.commentsuite;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CommentDatabase {
 
     private final Connection con;
+
+    private final ObservableList<Group> groupsList = FXCollections.observableArrayList();
+    private final ObservableList<YouTubeAccount> accountsList = FXCollections.observableArrayList();
+    private final Map<String,YouTubeChannel> channelCache = new HashMap<>();
 
     public CommentDatabase(String dbfile) throws SQLException, ClassNotFoundException {
         Class.forName("org.sqlite.JDBC");
@@ -21,7 +30,7 @@ public class CommentDatabase {
         s.addBatch("CREATE TABLE IF NOT EXISTS gitem_type (type_id INTEGER PRIMARY KEY, nameProperty STRING);");
         s.addBatch("INSERT OR IGNORE INTO gitem_type VALUES (0, 'video'),(1, 'channel'),(2, 'playlist');");
         s.addBatch("CREATE TABLE IF NOT EXISTS gitem_list ("
-                + "gitem_id INTEGER PRIMARY KEY,"
+                + "gitem_id STRING PRIMARY KEY,"
                 + "type_id INTEGER,"
                 + "youtube_id STRING UNIQUE,"
                 + "title STRING,"
@@ -34,11 +43,11 @@ public class CommentDatabase {
         s.addBatch("INSERT OR IGNORE INTO groups VALUES (0, 'Default');");
         s.addBatch("CREATE TABLE IF NOT EXISTS group_gitem ("
                 + "group_id INTEGER,"
-                + "gitem_id INTEGER,"
+                + "gitem_id STRING,"
                 + "FOREIGN KEY(group_id) REFERENCES groups(group_id),"
                 + "FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id));");
-        s.addBatch("CREATE TABLE IF NOT EXISTS video_group ("
-                + "gitem_id INTEGER,"
+        s.addBatch("CREATE TABLE IF NOT EXISTS gitem_video ("
+                + "gitem_id STRING,"
                 + "video_id STRING,"
                 + "FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id),"
                 + "FOREIGN KEY(video_id) REFERENCES videos(video_id));");
@@ -81,5 +90,4 @@ public class CommentDatabase {
     public void commit() throws SQLException {
         con.commit();
     }
-
 }

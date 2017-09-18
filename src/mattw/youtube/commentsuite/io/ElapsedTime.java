@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.io;
 
-class ElapsedTime {
+public class ElapsedTime {
 	
 	private long start = 0;
 	
