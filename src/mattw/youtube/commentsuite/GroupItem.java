@@ -11,14 +11,17 @@ import java.security.MessageDigest;
  */
 public class GroupItem extends YouTubeObject {
 
+    public static String NO_ITEMS = "GI000";
+    public static String ALL_ITEMS = "GI001";
+
     private String gitemId;
-    private String youtubeId;
-    private String title;
-    private String thumbUrl;
+    private String channelTitle;
     private long published;
     private long lastChecked;
-    private boolean fetchThumb = false;
 
+    /**
+     * Used for converting selected search items for inserting into database.
+     */
     public GroupItem(SearchList.Item item) {
         super(item.id.getId(), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
         this.gitemId = generateId();
@@ -26,10 +29,29 @@ public class GroupItem extends YouTubeObject {
         this.lastChecked = 0;
     }
 
-    public GroupItem(String gitemId, String youtubeId, String title, String thumbUrl, boolean fetchThumb, long published, long lastChecked) {
-        super(youtubeId, title, thumbUrl, fetchThumb);
+    /**
+     * Used for "All Items (#)" and "No items" display in the "Comment Search" and "Group Manager" ComboBoxes.
+     */
+    public GroupItem(String gitemId, String title) {
+        super(null, title, null, false);
         this.gitemId = gitemId;
     }
+
+    /**
+     * Used for database init.
+     */
+    public GroupItem(String gitemId, String youtubeId, String title, String channelTitle, String thumbUrl, boolean fetchThumb, long published, long lastChecked) {
+        super(youtubeId, title, thumbUrl, fetchThumb);
+        this.gitemId = gitemId;
+        this.channelTitle = channelTitle;
+        this.published = published;
+        this.lastChecked = lastChecked;
+    }
+
+    public String getItemId() { return gitemId; }
+    public String getChannelTitle() { return channelTitle; }
+    public long getPublished() { return published; }
+    public long getLastChecked() { return lastChecked; }
 
     private String generateId() {
         try {
@@ -41,4 +63,6 @@ public class GroupItem extends YouTubeObject {
             return String.valueOf(System.nanoTime());
         }
     }
+
+    public String toString() { return getTitle(); }
 }

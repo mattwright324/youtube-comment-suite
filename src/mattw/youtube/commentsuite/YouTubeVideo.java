@@ -21,6 +21,9 @@ public class YouTubeVideo extends YouTubeObject {
         this.comments = itemStat.statistics.commentCount;
     }
 
+    /**
+     * Used for database init.
+     */
     public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long publishDate, long grabDate, long comments, long likes, long dislikes, long views, int httpCode) {
         super(videoId, title, thumbUrl, false);
         this.channelId = channelId;

@@ -14,6 +14,9 @@ import mattw.youtube.datav3.resources.SearchList;
 
 import java.text.SimpleDateFormat;
 
+/**
+ * Display for videos, playlists, and channels for "YouTube Search" ListView.
+ */
 public class SearchListView extends HBox {
 
     private SearchList.Item item;
@@ -62,9 +65,6 @@ public class SearchListView extends HBox {
         vbox2.getChildren().addAll(title, author, desc, num);
         HBox.setHgrow(vbox2, Priority.ALWAYS);
 
-        setOnMouseEntered(me -> num.setTextFill(Color.RED));
-        setOnMouseExited(me -> num.setTextFill(Color.LIGHTGRAY));
-
         setPadding(new Insets(15));
         setFillHeight(true);
         getChildren().addAll(vbox, vbox2);
@@ -82,7 +82,7 @@ public class SearchListView extends HBox {
         } else if (item.id.videoId != null) {
             return "https://youtu.be/"+item.id.videoId;
         } else {
-            return "https://youtube.com/error/"+item.id.videoId;
+            return "https://youtube.com/error/no_id";
         }
     }
 

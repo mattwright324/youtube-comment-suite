@@ -10,10 +10,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
- * Display for comments in the database.
+ * Display for comments in the database for the "Search Comments" ListView.
  */
 public class YouTubeCommentView extends HBox {
 
@@ -25,27 +24,27 @@ public class YouTubeCommentView extends HBox {
         this.channel = channel;
         this.comment = comment;
 
-        ImageView iv = new ImageView(CommentSuite.IMG_BLANK_PROFILE);
+        ImageView iv = new ImageView(channel.getThumbnail());
         iv.setFitHeight(30);
         iv.setFitWidth(30);
 
         VBox vbox0 = new VBox(5);
         vbox0.setAlignment(Pos.CENTER);
-        vbox0.getChildren().addAll(iv, new Label("Comment"));
+        vbox0.getChildren().addAll(iv, new Label(comment.isReply() ? "Reply" : "Comment"));
 
-        Label author = new Label("Name");
+        Label author = new Label(channel.getTitle());
         author.setMinWidth(0);
         author.setPrefWidth(0);
         author.setMaxWidth(Double.MAX_VALUE);
 
-        Label alltext = new Label("Text");
+        Label alltext = new Label(comment.getText());
         alltext.setMinWidth(0);
         alltext.setPrefWidth(0);
         alltext.setMaxWidth(Double.MAX_VALUE);
 
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 
-        Label date = new Label(sdf.format(new Date(System.currentTimeMillis())));
+        Label date = new Label(sdf.format(comment.getDate()));
         date.setTextFill(Color.LIGHTGRAY);
 
         Hyperlink showMore = new Hyperlink("Show more");
@@ -67,4 +66,7 @@ public class YouTubeCommentView extends HBox {
         setFillHeight(true);
         getChildren().addAll(vbox0, vbox1);
     }
+
+    public YouTubeComment getComment() { return comment; }
+    public YouTubeChannel getChannel() { return channel; }
 }

@@ -3,26 +3,51 @@ package mattw.youtube.commentsuite;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CommentDatabase {
 
     private final Connection con;
 
-    private final ObservableList<Group> groupsList = FXCollections.observableArrayList();
-    private final ObservableList<YouTubeAccount> accountsList = FXCollections.observableArrayList();
-    private final Map<String,YouTubeChannel> channelCache = new HashMap<>();
+    private final Group noGroup = new Group(Group.NO_GROUP, "No groups");
+    private final GroupItem noItems = new GroupItem(GroupItem.NO_ITEMS, "No items");
+
+    public final ObservableList<Group> groupsList = FXCollections.observableArrayList();
+    public final Map<String,YouTubeChannel> channelCache = new HashMap<>();
 
     public CommentDatabase(String dbfile) throws SQLException, ClassNotFoundException {
         Class.forName("org.sqlite.JDBC");
         con = DriverManager.getConnection("jdbc:sqlite:"+dbfile);
         con.setAutoCommit(false);
         create();
+    }
+
+    public void refreshGroups() throws SQLException {
+        Statement s = con.createStatement();
+        ResultSet rs = s.executeQuery("SELECT * FROM groups");
+        List<Group> groups = new ArrayList<>();
+        while(rs.next()) {
+            groups.add(resultSetToGroup(rs));
+        }
+        rs.close();
+        s.close();
+        for(int i=0; i<groupsList.size(); i++) {
+            if(!groups.contains(groupsList.get(i))) {
+                groupsList.remove(i);
+            }
+        }
+        for(Group g : groups) {
+            if(!groupsList.contains(g)) {
+                groupsList.add(g);
+            }
+        }
+        if(groupsList.isEmpty()) {
+            groupsList.add(noGroup);
+        }
     }
 
     public void create() throws SQLException {
@@ -39,10 +64,10 @@ public class CommentDatabase {
                 + "last_checked DATE,"
                 + "thumb_url STRING, "
                 + "FOREIGN KEY(type_id) REFERENCES gitem_type(type_id));");
-        s.addBatch("CREATE TABLE IF NOT EXISTS groups (group_id INTEGER PRIMARY KEY AUTOINCREMENT, group_name STRING UNIQUE);");
-        s.addBatch("INSERT OR IGNORE INTO groups VALUES (0, 'Default');");
+        s.addBatch("CREATE TABLE IF NOT EXISTS groups (group_id STRING PRIMARY KEY, group_name STRING UNIQUE);");
+        s.addBatch("INSERT OR IGNORE INTO groups VALUES ('28da132f5f5b48d881264d892aba790a', 'Default');");
         s.addBatch("CREATE TABLE IF NOT EXISTS group_gitem ("
-                + "group_id INTEGER,"
+                + "group_id STRING,"
                 + "gitem_id STRING,"
                 + "FOREIGN KEY(group_id) REFERENCES groups(group_id),"
                 + "FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id));");
@@ -89,5 +114,65 @@ public class CommentDatabase {
 
     public void commit() throws SQLException {
         con.commit();
+    }
+
+    private Group resultSetToGroup(ResultSet rs) throws SQLException {
+        return new Group(rs.getString("group_id"), rs.getString("group_name"));
+    }
+
+    private GroupItem resultSetToGroupItem(ResultSet rs) throws SQLException {
+        return new GroupItem(rs.getString("gitem_id"), rs.getString("youtube_id"), rs.getString("title"), rs.getString("channel_title"), rs.getString("thumb_url"), true, rs.getLong("published"), rs.getLong("last_checked"));
+    }
+
+    private YouTubeChannel resultSetToChannel(ResultSet rs) throws SQLException {
+        return new YouTubeChannel(rs.getString("channel_id"),
+                rs.getString("channel_name"),
+                rs.getString("channel_profile_url"),
+                rs.getBoolean("download_profile"));
+    }
+
+    private YouTubeComment resultSetToComment(ResultSet rs) throws SQLException {
+        return new YouTubeComment(rs.getString("comment_id"),
+                rs.getString("comment_text"),
+                rs.getLong("comment_date"),
+                rs.getString("video_id"),
+                rs.getString("channel_id"),
+                rs.getInt("likes"),
+                rs.getInt("replies"),
+                rs.getBoolean("is_reply"),
+                rs.getString("parent_id"));
+    }
+
+    private YouTubeVideo resultSetToVideo(ResultSet rs) throws SQLException {
+        return new YouTubeVideo(rs.getString("video_id"),
+                rs.getString("channel_id"),
+                rs.getString("video_title"),
+                rs.getString("video_desc"),
+                rs.getString("thumb_url"),
+                rs.getLong("publish_date"),
+                rs.getLong("grab_date"),
+                rs.getLong("total_comments"),
+                rs.getLong("total_likes"),
+                rs.getLong("total_dislikes"),
+                rs.getLong("total_views"),
+                rs.getInt("http_code"));
+    }
+
+    public List<GroupItem> getGroupItems(Group g) {
+        List<GroupItem> items = new ArrayList<>();
+        try {
+            PreparedStatement ps = con.prepareStatement("SELECT * FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+            ps.setString(1, g.getId());
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                items.add(resultSetToGroupItem(rs));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if(items.isEmpty()) { items.add(noItems); }
+        return items;
     }
 }

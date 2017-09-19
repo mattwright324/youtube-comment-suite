@@ -48,6 +48,9 @@ public class YouTubeComment extends YouTubeObject {
         }
     }
 
+    /**
+     * Used for database init.
+     */
     public YouTubeComment(String commentId, String text, long date, String videoId, String channelId, int likes, int replies, boolean isReply, String parentId) {
         super(commentId, null, null, false);
         this.text = text;

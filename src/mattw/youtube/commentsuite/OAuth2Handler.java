@@ -64,21 +64,22 @@ public class OAuth2Handler {
     }
 
     class MakeReply {
-        public MakeReply(String parentId, String textOriginal) {
+        MakeReply(String parentId, String textOriginal) {
             snippet = new Snippet();
             snippet.parentId = parentId;
             snippet.textOriginal = textOriginal;
         }
         public final Snippet snippet;
-        public class Snippet {
-            public String parentId;
-            public String textOriginal;
+        class Snippet {
+            String parentId, textOriginal;
         }
     }
 
+    /**
+     * Posts a reply to a comment, parentId.
+     */
     public CommentsList.Item postReply(String parentId, String textOriginal) throws IOException, YouTubeErrorException {
         String payload = gson.toJson(new MakeReply(parentId, textOriginal));
-        boolean tryAgain = false;
         do {
             HttpsURLConnection conn = (HttpsURLConnection) new URL("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token="+tokens.access_token).openConnection();
             conn.setDoInput(true);
@@ -91,18 +92,16 @@ public class OAuth2Handler {
             if(conn.getResponseCode() < HttpsURLConnection.HTTP_BAD_REQUEST) {
                 return gson.fromJson(response, CommentsList.Item.class);
             } else if(conn.getResponseCode() == 401) {
-                tryAgain = true;
                 System.out.println("Refreshing tokens and trying again.");
             } else {
                 throw gson.fromJson(response, YouTubeErrorException.class);
             }
             os.close();
             conn.disconnect();
-        } while(tryAgain);
-        return null;
+        } while(true);
     }
 
-    public byte[] toByteArray(InputStream is) throws IOException {
+    private byte[] toByteArray(InputStream is) throws IOException {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] b = new byte[4096];
             int n;

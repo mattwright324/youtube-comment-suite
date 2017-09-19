@@ -19,6 +19,13 @@
 	-fx-border-color: white #eeeeee indianred #eeeeee;
 }
 
+#control {
+    -fx-height: 30;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
 #context {
 	-fx-background-color: transparent;
     -fx-background-insets: 0;

@@ -24,6 +24,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.commentsuite.io.Geolocation;
@@ -35,7 +37,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -45,9 +46,20 @@ import java.util.stream.Collectors;
 
 public class CommentSuite extends Application {
 
-    private OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
-    private YouTubeData3 data = new YouTubeData3("AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ");
-    private CommentDatabase database;
+    private static OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
+    private static YouTubeData3 data = new YouTubeData3("AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ");
+    private static CommentDatabase database;
+    private static Config config = new Config("commentsuite.json");
+
+    static {
+        data.setRequestHeader("Referer", "https://github.com/mattwright324/youtube-data-youtubeList");
+        try {
+            database = new CommentDatabase("commentsuite.sqlite3");
+            database.refreshGroups();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static final Image IMG_MANAGE = new Image("/mattw/youtube/commentsuite/img/manage.png");
     public static final Image IMG_SEARCH = new Image("/mattw/youtube/commentsuite/img/search.png");
@@ -59,18 +71,18 @@ public class CommentSuite extends Application {
 
     private boolean doNewSearch = true;
     private StackPane searchYouTube = buildSearchYouTubePane();
+
+    private SimpleStringProperty managerGroupId = new SimpleStringProperty(Group.NO_GROUP);
+    private StackPane managerDisplay = new StackPane();
     private StackPane manageGroups = buildManageGroupsPane();
+
+    private SimpleStringProperty commentsGroupId = new SimpleStringProperty(Group.NO_GROUP);
     private StackPane searchComments = buildSearchCommentsPane();
     private StackPane settings = buildSettingsPane();
 
-    {
-        data.setRequestHeader("Referer", "https://github.com/mattwright324/youtube-data-youtubeList");
-        try {
-            database = new CommentDatabase("commentsuite.sqlite3");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    public static OAuth2Handler oauth2() { return oauth2; }
+    public static YouTubeData3 youtube() { return data; }
+    public static CommentDatabase db() { return database; }
 
     public static void main(String[] args) {
         launch(args);
@@ -94,37 +106,37 @@ public class CommentSuite extends Application {
         });
 
         ToggleButton toggleSearch = new ToggleButton("Search YouTube");
+        toggleSearch.setMaxHeight(33);
+        toggleSearch.setMinHeight(33);
         toggleSearch.setId("menuButton");
         toggleSearch.setToggleGroup(tg);
-        toggleSearch.setOnAction(ae -> {
-            Platform.runLater(() -> {
-                img.setImage(IMG_YOUTUBE);
-                display.getChildren().clear();
-                display.getChildren().add(searchYouTube);
-            });
-        });
+        toggleSearch.setOnAction(ae -> Platform.runLater(() -> {
+            img.setImage(IMG_YOUTUBE);
+            display.getChildren().clear();
+            display.getChildren().add(searchYouTube);
+        }));
 
         ToggleButton toggleManage = new ToggleButton("Manage Groups");
+        toggleManage.setMaxHeight(33);
+        toggleManage.setMinHeight(33);
         toggleManage.setId("menuButton");
         toggleManage.setToggleGroup(tg);
-        toggleManage.setOnAction(ae -> {
-            Platform.runLater(() -> {
-                img.setImage(IMG_MANAGE);
-                display.getChildren().clear();
-                display.getChildren().add(manageGroups);
-            });
-        });
+        toggleManage.setOnAction(ae -> Platform.runLater(() -> {
+            img.setImage(IMG_MANAGE);
+            display.getChildren().clear();
+            display.getChildren().add(manageGroups);
+        }));
 
         ToggleButton toggleComments = new ToggleButton("Search Comments");
+        toggleComments.setMaxHeight(33);
+        toggleComments.setMinHeight(33);
         toggleComments.setId("menuButton");
         toggleComments.setToggleGroup(tg);
-        toggleComments.setOnAction(ae -> {
-            Platform.runLater(() -> {
-                img.setImage(IMG_SEARCH);
-                display.getChildren().clear();
-                display.getChildren().add(searchComments);
-            });
-        });
+        toggleComments.setOnAction(ae -> Platform.runLater(() -> {
+            img.setImage(IMG_SEARCH);
+            display.getChildren().clear();
+            display.getChildren().add(searchComments);
+        }));
 
         HBox bgroup = new HBox();
         bgroup.getChildren().addAll(toggleComments, toggleManage, toggleSearch);
@@ -190,17 +202,19 @@ public class CommentSuite extends Application {
 
     public StackPane buildSettingsPane() {
         Label title = new Label("Settings");
-        // title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 14));
+        title.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
         title.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(title, Priority.ALWAYS);
 
         ImageView closeImg = new ImageView("/mattw/youtube/commentsuite/img/close.png");
-        closeImg.setFitWidth(25);
-        closeImg.setFitHeight(25);
+        closeImg.setFitWidth(22);
+        closeImg.setFitHeight(22);
 
-        StackPane close = new StackPane(closeImg);
+        Button close = new Button();
+        close.setStyle("-fx-border-color: transparent; -fx-background-color: transparent; -fx-padding: 0;");
+        close.setGraphic(closeImg);
         close.setCursor(Cursor.HAND);
-        close.setOnMouseClicked(me -> {
+        close.setOnAction(ae -> {
             if(main.getChildren().contains(settings)) {
                 main.getChildren().remove(settings);
             }
@@ -219,12 +233,79 @@ public class CommentSuite extends Application {
         divider.setMaxHeight(4);
         divider.setStyle("-fx-background-color: derive(firebrick, 80%);");
 
+        // TODO Add settings for Config
+
+        Label label1 = new Label("General");
+        label1.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
+
+        CheckBox prefixReplies = new CheckBox("Use prefix +{name} when replying to comments.");
+        prefixReplies.setSelected(true);
+
+        CheckBox saveLocally = new CheckBox("Save thumbnails locally (./thumbs/)");
+        saveLocally.setDisable(true);
+
+        Label label2 = new Label("YouTube Accounts");
+        label2.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
+
+        Button signIn = new Button("Add Account");
+
+        ListView<Node> accountList = new ListView<>();
+        accountList.setMinHeight(150);
+        accountList.setMaxHeight(150);
+        VBox.setVgrow(accountList, Priority.ALWAYS);
+
+        Label label4 = new Label("Maintenance");
+        label4.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
+
+        Button vacuum = new Button("Clean");
+        vacuum.setTooltip(new Tooltip("Performs a 'VACUUM' command to reduce database size."));
+        vacuum.setOnAction(ae -> {
+
+        });
+
+        Button reset = new Button("Reset");
+        reset.setStyle("-fx-base: firebrick;");
+        reset.setTooltip(new Tooltip("Completely wipes the database and starts over."));
+        reset.setOnAction(ae -> {
+
+        });
+
+        HBox hbox2 = new HBox(10);
+        hbox2.getChildren().addAll(vacuum, reset);
+
+        Label label3 = new Label("About");
+        label3.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
+
+        Label about = new Label("MIT License. Copyright (c) 2017 Matthew Wright.");
+
+        ImageView gitImg = new ImageView("/mattw/youtube/commentsuite/img/github.png");
+        gitImg.setFitWidth(20);
+        gitImg.setFitHeight(20);
+
+        Hyperlink git = new Hyperlink("mattwright324/youtube-comment-suite");
+        git.setMaxHeight(20);
+        git.setGraphic(gitImg);
+        git.setOnAction(ae -> openInBrowser("https://github.com/mattwright324/youtube-comment-suite"));
+
         VBox vbox2 = new VBox(10);
         vbox2.setPadding(new Insets(10));
+        vbox2.setAlignment(Pos.TOP_LEFT);
+        vbox2.getChildren().addAll(label1, prefixReplies, saveLocally, label2, signIn, accountList, label4, hbox2, label3, about, git);
 
         ScrollPane scroll = new ScrollPane(vbox2);
+        scroll.setStyle("-fx-border-color: transparent; -fx-background-color: transparent;");
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+
+        Button save = new Button("Save and Close");
+
+        HBox hbox = new HBox();
+        hbox.setPadding(new Insets(10));
+        hbox.setAlignment(Pos.CENTER_RIGHT);
+        hbox.getChildren().add(save);
 
         VBox vbox = new VBox();
         vbox.setMaxWidth(420);
@@ -232,9 +313,76 @@ public class CommentSuite extends Application {
         vbox.setFillWidth(true);
         vbox.setAlignment(Pos.TOP_CENTER);
         vbox.setStyle("-fx-background-color: #eeeeee; -fx-opacity: 1;");
-        vbox.getChildren().addAll(control, divider, scroll);
+        vbox.getChildren().addAll(control, divider, scroll, hbox);
 
-        StackPane stack = new StackPane(vbox);
+        Label title2 = new Label("YouTube Account Sign-in");
+        title2.setPadding(new Insets(0, 10, 0, 10));
+        title2.setMaxHeight(33);
+        title2.setMinHeight(33);
+        title2.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
+        title2.setMaxWidth(Double.MAX_VALUE);
+
+        Label divider2 = new Label();
+        divider2.setMaxWidth(Double.MAX_VALUE);
+        divider2.setMinHeight(4);
+        divider2.setMaxHeight(4);
+        divider2.setStyle("-fx-background-color: derive(green, 80%);");
+
+        WebView wv = new WebView();
+        wv.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(wv, Priority.ALWAYS);
+
+        WebEngine engine = wv.getEngine();
+
+        ScrollPane scroll2 = new ScrollPane(wv);
+        scroll2.setFitToHeight(true);
+        scroll2.setFitToWidth(true);
+
+        Button exit = new Button("Exit");
+
+        HBox ebox = new HBox();
+        ebox.setPadding(new Insets(10));
+        ebox.setAlignment(Pos.CENTER_RIGHT);
+        ebox.getChildren().add(exit);
+
+        VBox vboxWeb = new VBox();
+        vboxWeb.setVisible(false);
+        vboxWeb.setManaged(false);
+        vboxWeb.setMaxWidth(420);
+        vboxWeb.setPrefWidth(420);
+        vboxWeb.setFillWidth(true);
+        vboxWeb.setAlignment(Pos.TOP_CENTER);
+        vboxWeb.setStyle("-fx-background-color: #eeeeee; -fx-opacity: 1;");
+        vboxWeb.getChildren().addAll(title2, divider2, scroll2, ebox);
+        vbox.disableProperty().bind(vboxWeb.managedProperty());
+
+        exit.setOnAction(ae -> {
+            Platform.runLater(() -> {
+                vboxWeb.setVisible(false);
+                vboxWeb.setManaged(false);
+            });
+        });
+
+        signIn.setOnAction(ae -> {
+            Platform.runLater(() -> {
+                vboxWeb.setVisible(true);
+                vboxWeb.setManaged(true);
+                try { engine.load(oauth2.getAuthURL()); } catch (Exception ignored) {}
+            });
+        });
+
+        save.setOnAction(ae -> {
+            // TODO
+            close.fire();
+        });
+
+        HBox hbox3 = new HBox();
+        hbox3.setFillHeight(true);
+        hbox3.setAlignment(Pos.CENTER_RIGHT);
+        hbox3.getChildren().addAll(vboxWeb, vbox);
+        VBox.setVgrow(hbox3, Priority.ALWAYS);
+
+        StackPane stack = new StackPane(hbox3);
         stack.setAlignment(Pos.CENTER_RIGHT);
         stack.setStyle("-fx-background-color: rgba(127,127,127,0.4)");
         return stack;
@@ -319,62 +467,16 @@ public class CommentSuite extends Application {
             contextBox.setVisible(disable);
         });
 
+        YouTubeChannel channel = new YouTubeChannel("channelId", "John Smith", "/mattw/youtube/commentsuite/img/youtube.png", false);
+        YouTubeComment comment = new YouTubeComment("commentId", "Hello world", System.currentTimeMillis(), "12345678", "channelId", 15, 7, false, "parentId");
+        YouTubeCommentView ycv = new YouTubeCommentView(comment, channel);
 
-        class CommentView extends HBox {
-            public CommentView(String name, String profile, String text) {
-                super(10);
-
-                ImageView iv = new ImageView(profile);
-                iv.setFitHeight(30);
-                iv.setFitWidth(30);
-
-                VBox vbox0 = new VBox(5);
-                vbox0.setAlignment(Pos.CENTER);
-                vbox0.getChildren().addAll(iv, new Label("Comment"));
-
-                Label author = new Label(name);
-                author.setMinWidth(0);
-                author.setPrefWidth(0);
-                author.setMaxWidth(Double.MAX_VALUE);
-
-                Label alltext = new Label(text);
-                alltext.setMinWidth(0);
-                alltext.setPrefWidth(0);
-                alltext.setMaxWidth(Double.MAX_VALUE);
-
-                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
-
-                Label date = new Label(sdf.format(new Date(System.currentTimeMillis())));
-                date.setTextFill(Color.LIGHTGRAY);
-
-                Hyperlink showMore = new Hyperlink("Show more");
-                Hyperlink reply = new Hyperlink("Reply");
-                Hyperlink allReplies = new Hyperlink("View Tree");
-
-                HBox hbox = new HBox(10);
-                hbox.setAlignment(Pos.CENTER_LEFT);
-                hbox.getChildren().addAll(date, reply, allReplies, showMore);
-
-                VBox vbox1 = new VBox(5);
-                vbox1.setMinWidth(0);
-                vbox1.setPrefWidth(0);
-                vbox1.setMaxWidth(Double.MAX_VALUE);
-                vbox1.setAlignment(Pos.CENTER_LEFT);
-                vbox1.getChildren().addAll(author, alltext, hbox);
-                HBox.setHgrow(vbox1, Priority.ALWAYS);
-
-                setFillHeight(true);
-                getChildren().addAll(vbox0, vbox1);
-            }
-        }
-
-
-        class ListViewEmptyCellFactory extends ListCell<Node> {
+        class ListViewEmptyCellFactory extends ListCell<YouTubeCommentView> {
             private double height = 25;
             public ListViewEmptyCellFactory(double height) {
                 this.height = height;
             }
-            protected void updateItem(Node item, boolean empty) {
+            protected void updateItem(YouTubeCommentView item, boolean empty) {
                 super.updateItem(item, empty);
                 if(empty) {
                     setPrefHeight(height);
@@ -388,24 +490,35 @@ public class CommentSuite extends Application {
 
         MenuItem openProfile = new MenuItem("Open Profile(s)");
 
-        MenuItem copyText = new MenuItem("Copy Comment Text");
+        MenuItem copyText = new MenuItem("Copy Comment Text(s)");
 
         ContextMenu menu = new ContextMenu();
         menu.getItems().addAll(openProfile, copyText);
 
-        ListView<Node> commentsList = new ListView<>();
+        ListView<YouTubeCommentView> commentsList = new ListView<>();
         commentsList.setCellFactory(cf -> new ListViewEmptyCellFactory(70));
         commentsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        commentsList.getItems().addAll(
-                new CommentView("John Doe", "/mattw/youtube/commentsuite/img/blankProfile.png", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
-                new CommentView("Sue Smith", "/mattw/youtube/commentsuite/img/blankProfile.png", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
-                new CommentView("Pennywise", "/mattw/youtube/commentsuite/img/blankProfile.png", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
-        );
+        commentsList.getItems().addAll(ycv);
         commentsList.setContextMenu(menu);
-        commentsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
-            System.out.println("Selection change");
-        });
+        commentsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> System.out.println("Selection change"));
         VBox.setVgrow(commentsList, Priority.ALWAYS);
+
+        openProfile.setOnAction(ae -> {
+            List<String> toOpen = new ArrayList<>();
+            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                if(!toOpen.contains(yc.getComment().getChannelId()))
+                    toOpen.add(yc.getComment().getChannelId());
+            }
+            for(String channelId : toOpen) openInBrowser("https://youtube.com/channel/"+channelId);
+        });
+
+        copyText.setOnAction(ae -> {
+            List<String> toCopy = new ArrayList<>();
+            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                toCopy.add(yc.getComment().getText());
+            }
+            Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
+        });
 
         VBox commentsBox = new VBox(10);
         commentsBox.setPadding(new Insets(10));
@@ -415,11 +528,41 @@ public class CommentSuite extends Application {
         Label label1 = new Label("Select Group");
         label1.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 16));
 
-        ChoiceBox<String> group = new ChoiceBox<>();
-        group.setMaxWidth(Double.MAX_VALUE);
-
-        ChoiceBox<String> groupItem = new ChoiceBox<>();
+        ComboBox<GroupItem> groupItem = new ComboBox<>();
+        groupItem.setId("control");
+        groupItem.setDisable(true);
         groupItem.setMaxWidth(Double.MAX_VALUE);
+        groupItem.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> groupItem.setDisable(nv == null || nv.getItemId().equals(GroupItem.NO_ITEMS)));
+
+        ComboBox<Group> group = new ComboBox<>();
+        group.setId("control");
+        group.setDisable(true);
+        group.setMaxWidth(Double.MAX_VALUE);
+        group.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            group.setDisable(nv == null || nv.getId().equals(Group.NO_GROUP));
+            if(nv != null) commentsGroupId.setValue(nv.getId());
+            if(!group.isDisabled()) {
+                List<GroupItem> items = database.getGroupItems(nv);
+                System.out.println(items);
+                GroupItem allItems = new GroupItem(GroupItem.ALL_ITEMS, "All items ("+items.size()+")");
+                Platform.runLater(() -> {
+                    groupItem.getItems().clear();
+                    if(!items.isEmpty()) {
+                        if(!items.get(0).getItemId().equals(GroupItem.NO_ITEMS)) {
+                            groupItem.getItems().add(allItems);
+                        }
+                        groupItem.getItems().addAll(items);
+                        groupItem.getSelectionModel().select(0);
+                    }
+                });
+            }
+        });
+        group.itemsProperty().addListener((o, ov, nv) -> {
+            if(group.getSelectionModel().getSelectedIndex() == -1 && group.getItems().size() > 0) {
+                group.getSelectionModel().select(0);
+            }
+        });
+        group.setItems(database.groupsList);
 
         Label label2 = new Label("Restrict Results");
         label2.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 16));
@@ -435,34 +578,42 @@ public class CommentSuite extends Application {
         grid.getColumnConstraints().addAll(col1, col2);
 
         ChoiceBox<String> type = new ChoiceBox<>();
+        type.setId("control");
         type.getItems().addAll("Comments and Replies", "Comments Only", "Replies Only");
         type.getSelectionModel().select(0);
         grid.addRow(row++, new Label("Type"), type);
 
         ChoiceBox<String> orderBy = new ChoiceBox<>();
+        orderBy.setId("control");
         orderBy.getItems().addAll("Most Recent", "Least Recent", "Most Likes", "Most Replies", "Longest Comment", "Names (A to Z)", "Comments (A to Z)");
         orderBy.getSelectionModel().select(0);
         grid.addRow(row++, new Label("Order by"), orderBy);
 
         TextField nameLike = new TextField();
+        nameLike.setId("control");
         nameLike.setPromptText("Username contains...");
         grid.addRow(row++, new Label("Name like"), nameLike);
 
         TextField textLike = new TextField();
+        textLike.setId("control");
         textLike.setPromptText("Text contains...");
         grid.addRow(row++, new Label("Text like"), textLike);
 
         DatePicker dateFrom = new DatePicker();
+        dateFrom.setId("control");
         setDatePickerTime(dateFrom, 0);
         grid.addRow(row++, new Label("Date from"), dateFrom);
 
         DatePicker dateTo = new DatePicker();
+        dateTo.setId("control");
         setDatePickerTime(dateTo, System.currentTimeMillis());
         grid.addRow(row++, new Label("Date to"), dateTo);
 
         Button search = new Button("Find Comments");
+        search.setId("control");
 
         Button clear = new Button("Clear Results");
+        clear.setId("control");
 
         HBox hbox2 = new HBox(10);
         hbox2.setAlignment(Pos.CENTER);
@@ -509,20 +660,36 @@ public class CommentSuite extends Application {
     }
 
     public StackPane buildManageGroupsPane() {
+        Label message = new Label("Create groups of YouTube videos, playlists, and channels.");
+        message.setTextFill(Color.LIGHTGRAY);
+
         Label label = new Label("Select a group: ");
 
-        ComboBox<String> groupList = new ComboBox<>();
+        ComboBox<Group> groupList = new ComboBox<>();
+        groupList.setDisable(true);
+        groupList.setId("control");
         groupList.setPrefWidth(200);
         groupList.setMaxWidth(200);
         groupList.setStyle("-fx-background-color: transparent");
-        groupList.getItems().addAll("No groups.");
-        groupList.setDisable(true);
-        groupList.setOnAction(ae -> {
-
+        groupList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            groupList.setDisable(nv == null || nv.getId().equals(Group.NO_GROUP));
+            if(nv != null) managerGroupId.setValue(nv.getId());
+            managerDisplay.getChildren().clear();
+            if(!groupList.isDisabled()) {
+                managerDisplay.getChildren().add(new Label(nv.getId()));
+            } else {
+                managerDisplay.getChildren().add(message);
+            }
         });
-        groupList.getSelectionModel().select(0);
+        groupList.itemsProperty().addListener((o, ov, nv) -> {
+            if(groupList.getSelectionModel().getSelectedIndex() == -1 && groupList.getItems().size() > 0) {
+                groupList.getSelectionModel().select(0);
+            }
+        });
+        groupList.setItems(database.groupsList);
 
         Button create = new Button("Create Group");
+        create.setId("control");
 
         HBox control = new HBox(10);
         control.setPadding(new Insets(0, 0, 10, 0));
@@ -535,19 +702,16 @@ public class CommentSuite extends Application {
         divider.setMaxHeight(4);
         divider.setStyle("-fx-background-color: derive(firebrick, 95%);");
 
-        Label message = new Label("Create groups of YouTube videos, playlists, and channels.");
-        message.setTextFill(Color.LIGHTGRAY);
-
-        StackPane manDisplay = new StackPane(message);
-        manDisplay.setPadding(new Insets(10));
+        managerDisplay.setPadding(new Insets(10));
         // manDisplay.setStyle("-fx-background-color: #eeeeee; -fx-opacity: 1;");
-        manDisplay.setAlignment(Pos.CENTER);
-        VBox.setVgrow(manDisplay, Priority.ALWAYS);
+        managerDisplay.setAlignment(Pos.CENTER);
+        managerDisplay.getChildren().add(message);
+        VBox.setVgrow(managerDisplay, Priority.ALWAYS);
 
         VBox vbox = new VBox();
         vbox.setFillWidth(true);
         vbox.setAlignment(Pos.TOP_CENTER);
-        vbox.getChildren().addAll(control, divider, manDisplay);
+        vbox.getChildren().addAll(control, divider, managerDisplay);
 
         StackPane stack = new StackPane(vbox);
         stack.setPadding(new Insets(10,0,0,0));
@@ -556,32 +720,39 @@ public class CommentSuite extends Application {
 
     public StackPane buildSearchYouTubePane() {
         TextField searchTerms = new TextField();
+        searchTerms.setId("control");
         searchTerms.setPromptText("Search");
         HBox.setHgrow(searchTerms, Priority.ALWAYS);
 
         TextField location = new TextField();
+        location.setId("control");
         location.setPromptText("40.7058253,-74.1180864");
 
         ImageView img = new ImageView("/mattw/youtube/commentsuite/img/location.png");
-        img.setFitHeight(20);
-        img.setFitWidth(20);
+        img.setFitHeight(18);
+        img.setFitWidth(18);
 
         Button grabLoc = new Button();
+        grabLoc.setId("control");
+        grabLoc.maxHeightProperty().bind(location.heightProperty());
         grabLoc.setTooltip(new Tooltip("Get your coordinates through ip-geolocation."));
         grabLoc.setGraphic(img);
 
         HBox hbox = new HBox();
+        hbox.setId("control");
         hbox.getChildren().addAll(location, grabLoc);
 
         ComboBox<String> distance = new ComboBox<>();
+        distance.setId("control");
         distance.getItems().addAll("1km", "2km", "5km", "10km", "15km", "20km", "25km", "30km", "50km", "75km", "100km", "200km", "500km", "1000km");
         distance.getSelectionModel().select(3);
 
         ImageView imgSearch = new ImageView(IMG_SEARCH);
-        imgSearch.setFitWidth(20);
-        imgSearch.setFitHeight(20);
+        imgSearch.setFitWidth(18);
+        imgSearch.setFitHeight(18);
 
         Button search = new Button();
+        search.setId("control");
         search.setGraphic(imgSearch);
 
         HBox hbox2 = new HBox();
@@ -589,14 +760,17 @@ public class CommentSuite extends Application {
         HBox.setHgrow(hbox2, Priority.ALWAYS);
 
         ComboBox<String> orderBy = new ComboBox<>();
+        orderBy.setId("control");
         orderBy.getItems().addAll("Relevance", "Date", "Title", "Rating", "Views");
         orderBy.getSelectionModel().select(0);
 
         ComboBox<String> type = new ComboBox<>();
+        type.setId("control");
         type.getItems().addAll("All types", "Video", "Channel", "Playlist");
         type.getSelectionModel().select(0);
 
         ComboBox<String> method = new ComboBox<>();
+        method.setId("control");
         method.getItems().addAll("Normal", "Location");
         method.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
             int index = method.getSelectionModel().getSelectedIndex();
@@ -643,7 +817,7 @@ public class CommentSuite extends Application {
         ContextMenu menu = new ContextMenu();
         menu.getItems().addAll(openBrowser, copyLinks);
 
-        ListView<SearchListView> youtubeList = new ListView();
+        ListView<SearchListView> youtubeList = new ListView<>();
         youtubeList.setContextMenu(menu);
         youtubeList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         VBox.setVgrow(youtubeList, Priority.ALWAYS);
@@ -674,11 +848,12 @@ public class CommentSuite extends Application {
         });
 
         Button addGroup = new Button("Add to Group");
+        addGroup.setTooltip(new Tooltip("Select results to add to a group."));
         addGroup.disableProperty().bind(youtubeList.getSelectionModel().selectedIndexProperty().isEqualTo(-1));
         addGroup.setOnAction(ae -> {
             List<SearchList.Item> items = youtubeList.getSelectionModel()
                     .getSelectedItems().stream()
-                    .map(slv -> slv.getItem()).collect(Collectors.toList());
+                    .map(SearchListView::getItem).collect(Collectors.toList());
             // TODO: Add items to group...
         });
 
@@ -737,9 +912,7 @@ public class CommentSuite extends Application {
                         });
                         number++;
                     }
-                    Platform.runLater(() -> {
-                        control.setDisable(false);
-                    });
+                    Platform.runLater(() -> control.setDisable(false));
                 } catch (YouTubeErrorException | IOException e) {
                     e.printStackTrace();
                 }
