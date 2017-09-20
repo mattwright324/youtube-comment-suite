@@ -13,6 +13,7 @@ public class YouTubeVideo extends YouTubeObject {
 
     public YouTubeVideo(VideosList.Item itemSnip, VideosList.Item itemStat) {
         super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.medium.url.toString(), false);
+        this.typeId = 0;
         this.channelId = itemSnip.snippet.channelId;
         this.description = itemSnip.snippet.description;
         this.views = itemStat.statistics.viewCount;
@@ -26,6 +27,7 @@ public class YouTubeVideo extends YouTubeObject {
      */
     public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long publishDate, long grabDate, long comments, long likes, long dislikes, long views, int httpCode) {
         super(videoId, title, thumbUrl, false);
+        this.typeId = 0;
         this.channelId = channelId;
         this.title = title;
         this.description = description;

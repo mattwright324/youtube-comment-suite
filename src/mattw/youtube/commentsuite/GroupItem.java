@@ -27,6 +27,9 @@ public class GroupItem extends YouTubeObject {
         this.gitemId = generateId();
         this.published = item.snippet.publishedAt.getTime();
         this.lastChecked = 0;
+        if(item.id.videoId != null) typeId = 1;
+        if(item.id.channelId != null) typeId = 2;
+        if(item.id.playlistId != null) typeId = 3;
     }
 
     /**
@@ -40,8 +43,9 @@ public class GroupItem extends YouTubeObject {
     /**
      * Used for database init.
      */
-    public GroupItem(String gitemId, String youtubeId, String title, String channelTitle, String thumbUrl, boolean fetchThumb, long published, long lastChecked) {
-        super(youtubeId, title, thumbUrl, fetchThumb);
+    public GroupItem(String gitemId, int typeId, String youtubeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
+        super(youtubeId, title, thumbUrl, true);
+        this.typeId = typeId;
         this.gitemId = gitemId;
         this.channelTitle = channelTitle;
         this.published = published;
@@ -56,7 +60,7 @@ public class GroupItem extends YouTubeObject {
     private String generateId() {
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
-            md5.update(StandardCharsets.UTF_8.encode(String.valueOf(System.nanoTime())));
+            md5.update(StandardCharsets.UTF_8.encode(String.valueOf(System.nanoTime())+this.channelTitle));
             return String.format("%032x", new BigInteger(1, md5.digest()));
         } catch (Exception e) {
             e.printStackTrace();

@@ -16,6 +16,8 @@ import java.text.SimpleDateFormat;
  */
 public class YouTubeCommentView extends HBox {
 
+    private ImageView thumb = new ImageView(CommentSuite.IMG_BLANK_PROFILE);
+
     private YouTubeComment comment;
     private YouTubeChannel channel;
 
@@ -24,13 +26,13 @@ public class YouTubeCommentView extends HBox {
         this.channel = channel;
         this.comment = comment;
 
-        ImageView iv = new ImageView(channel.getThumbnail());
-        iv.setFitHeight(30);
-        iv.setFitWidth(30);
+        if(channel.fetchThumb()) { updateProfileThumb(); }
+        thumb.setFitHeight(30);
+        thumb.setFitWidth(30);
 
         VBox vbox0 = new VBox(5);
         vbox0.setAlignment(Pos.CENTER);
-        vbox0.getChildren().addAll(iv, new Label(comment.isReply() ? "Reply" : "Comment"));
+        vbox0.getChildren().addAll(thumb, new Label(comment.isReply() ? "Reply" : "Comment"));
 
         Label author = new Label(channel.getTitle());
         author.setMinWidth(0);
@@ -69,4 +71,18 @@ public class YouTubeCommentView extends HBox {
 
     public YouTubeComment getComment() { return comment; }
     public YouTubeChannel getChannel() { return channel; }
+
+    /**
+     * Forces the channel to grab and cache the profile thumbnail.
+     */
+    public void updateProfileThumb() { thumb.setImage(channel.getThumbnail()); }
+
+    /**
+     * Checks if the thumbnail has been cached before loading.
+     */
+    public void checkProfileThumb() {
+        if(YouTubeObject.thumbCache.containsKey(channel.getYouTubeId())) {
+            updateProfileThumb();
+        }
+    }
 }

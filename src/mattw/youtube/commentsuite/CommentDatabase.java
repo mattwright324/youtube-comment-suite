@@ -121,7 +121,14 @@ public class CommentDatabase {
     }
 
     private GroupItem resultSetToGroupItem(ResultSet rs) throws SQLException {
-        return new GroupItem(rs.getString("gitem_id"), rs.getString("youtube_id"), rs.getString("title"), rs.getString("channel_title"), rs.getString("thumb_url"), true, rs.getLong("published"), rs.getLong("last_checked"));
+        return new GroupItem(rs.getString("gitem_id"),
+                rs.getInt("type_id"),
+                rs.getString("youtube_id"),
+                rs.getString("title"),
+                rs.getString("channel_title"),
+                rs.getString("thumb_url"),
+                rs.getLong("published"),
+                rs.getLong("last_checked"));
     }
 
     private YouTubeChannel resultSetToChannel(ResultSet rs) throws SQLException {
@@ -158,6 +165,10 @@ public class CommentDatabase {
                 rs.getInt("http_code"));
     }
 
+    /**
+     * Returns list of GroupItems for a given Group.
+     * If no GroupItems are present, returns a "No groups" Item with id GroupItem.NO_ITEMS
+     */
     public List<GroupItem> getGroupItems(Group g) {
         List<GroupItem> items = new ArrayList<>();
         try {
@@ -174,5 +185,32 @@ public class CommentDatabase {
         }
         if(items.isEmpty()) { items.add(noItems); }
         return items;
+    }
+
+    /**
+     * Attempts insert of a new group. Throws exception if name already exists.
+     * Commits and refreshes groupsList.
+     */
+    public Group createGroup(String name) throws SQLException {
+        Group group = new Group(name);
+        PreparedStatement ps = con.prepareStatement("INSERT INTO groups (group_id, group_name) VALUES (?, ?)");
+        ps.setString(1, group.getId());
+        ps.setString(2, group.getName());
+        ps.executeUpdate();
+        ps.close();
+        commit();
+        refreshGroups();
+        return group;
+    }
+
+    public Group renameGroup(Group g, String newName) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("UPDATE groups SET group_name = ? WHERE group_id = ?");
+        ps.setString(1, newName);
+        ps.setString(2, g.getId());
+        ps.executeUpdate();
+        ps.close();
+        commit();
+        g.setName(newName);
+        return g;
     }
 }

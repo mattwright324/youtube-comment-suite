@@ -17,6 +17,7 @@ public class YouTubeComment extends YouTubeObject {
 
     public YouTubeComment(CommentsList.Item item, String videoId) {
         super(item.getId(), null, null, false);
+        this.typeId = 3;
         this.text = item.snippet.textDisplay;
         this.date = item.snippet.publishedAt;
         this.videoId = videoId; // this.videoId = item.snippet.videoId;
@@ -33,6 +34,7 @@ public class YouTubeComment extends YouTubeObject {
 
     public YouTubeComment(CommentThreadsList.Item item) {
         super(item.getId(), null, null, false);
+        this.typeId = 3;
         this.videoId = item.snippet.videoId;
         this.replies = item.snippet.totalReplyCount;
         CommentsList.Item tlc = item.snippet.topLevelComment;
@@ -53,6 +55,7 @@ public class YouTubeComment extends YouTubeObject {
      */
     public YouTubeComment(String commentId, String text, long date, String videoId, String channelId, int likes, int replies, boolean isReply, String parentId) {
         super(commentId, null, null, false);
+        this.typeId = 3;
         this.text = text;
         this.date = new Date(date);
         this.videoId = videoId;

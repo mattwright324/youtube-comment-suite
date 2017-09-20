@@ -27,6 +27,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.commentsuite.io.Geolocation;
 import mattw.youtube.datav3.YouTubeData3;
@@ -37,6 +38,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -329,12 +331,12 @@ public class CommentSuite extends Application {
         divider2.setStyle("-fx-background-color: derive(green, 80%);");
 
         WebView wv = new WebView();
-        wv.setMaxHeight(Double.MAX_VALUE);
-        VBox.setVgrow(wv, Priority.ALWAYS);
 
         WebEngine engine = wv.getEngine();
 
-        ScrollPane scroll2 = new ScrollPane(wv);
+        StackPane wvStack = new StackPane(wv);
+
+        ScrollPane scroll2 = new ScrollPane(wvStack);
         scroll2.setFitToHeight(true);
         scroll2.setFitToWidth(true);
 
@@ -488,12 +490,26 @@ public class CommentSuite extends Application {
             }
         }
 
-        MenuItem openProfile = new MenuItem("Open Profile(s)");
+        ImageView browser = new ImageView("/mattw/youtube/commentsuite/img/browser.png");
+        browser.setFitHeight(20);
+        browser.setFitWidth(20);
 
-        MenuItem copyText = new MenuItem("Copy Comment Text(s)");
+        ImageView thumb = new ImageView("/mattw/youtube/commentsuite/img/thumbnail.png");
+        thumb.setFitHeight(20);
+        thumb.setFitWidth(20);
+
+        MenuItem openBrowser = new MenuItem("Open in Browser");
+        openBrowser.setGraphic(browser);
+        MenuItem loadThumb = new MenuItem("Load Thumbnail(s)");
+        loadThumb.setGraphic(thumb);
+        MenuItem copyName = new MenuItem("Copy Name(s)");
+        MenuItem copyText = new MenuItem("Copy Text(s)");
+        MenuItem copyChannelLink = new MenuItem("Copy Channel Link(s)");
+        MenuItem copyVideoLink = new MenuItem("Copy Video Link(s)");
+        MenuItem copyCommentLink = new MenuItem("Copy Comment Link(s)");
 
         ContextMenu menu = new ContextMenu();
-        menu.getItems().addAll(openProfile, copyText);
+        menu.getItems().addAll(openBrowser, loadThumb, copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);
 
         ListView<YouTubeCommentView> commentsList = new ListView<>();
         commentsList.setCellFactory(cf -> new ListViewEmptyCellFactory(70));
@@ -503,19 +519,65 @@ public class CommentSuite extends Application {
         commentsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> System.out.println("Selection change"));
         VBox.setVgrow(commentsList, Priority.ALWAYS);
 
-        openProfile.setOnAction(ae -> {
+        openBrowser.setOnAction(ae -> {
             List<String> toOpen = new ArrayList<>();
             for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
-                if(!toOpen.contains(yc.getComment().getChannelId()))
-                    toOpen.add(yc.getComment().getChannelId());
+                if(!toOpen.contains(yc.getComment().getYouTubeLink()))
+                    toOpen.add(yc.getComment().getYouTubeLink());
             }
-            for(String channelId : toOpen) openInBrowser("https://youtube.com/channel/"+channelId);
+            for(String link : toOpen) {
+                openInBrowser(link);
+            }
+        });
+
+        loadThumb.setOnAction(ae -> {
+            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                yc.updateProfileThumb();
+            }
+            for(YouTubeCommentView yc : commentsList.getItems()) {
+                yc.checkProfileThumb();
+            }
+        });
+
+        copyName.setOnAction(ae -> {
+            List<String> toCopy = new ArrayList<>();
+            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                if(!toCopy.contains(yc.getChannel().getTitle()))
+                    toCopy.add(yc.getChannel().getTitle());
+            }
+            Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
         });
 
         copyText.setOnAction(ae -> {
             List<String> toCopy = new ArrayList<>();
             for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
                 toCopy.add(yc.getComment().getText());
+            }
+            Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
+        });
+
+        copyChannelLink.setOnAction(ae -> {
+            List<String> toCopy = new ArrayList<>();
+            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                if(!toCopy.contains(yc.getChannel().getYouTubeLink()))
+                    toCopy.add(yc.getChannel().getYouTubeLink());
+            }
+            Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
+        });
+
+        copyVideoLink.setOnAction(ae -> {
+            List<String> toCopy = new ArrayList<>();
+            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                if(!toCopy.contains("https://youtu.be/"+yc.getComment().getVideoId()))
+                    toCopy.add("https://youtu.be/"+yc.getComment().getVideoId());
+            }
+            Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
+        });
+
+        copyCommentLink.setOnAction(ae -> {
+            List<String> toCopy = new ArrayList<>();
+            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                toCopy.add(yc.getComment().getYouTubeLink());
             }
             Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
         });
@@ -540,21 +602,28 @@ public class CommentSuite extends Application {
         group.setMaxWidth(Double.MAX_VALUE);
         group.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
             group.setDisable(nv == null || nv.getId().equals(Group.NO_GROUP));
-            if(nv != null) commentsGroupId.setValue(nv.getId());
+            if(ov != null) {
+                ov.itemsUpdatedProperty.unbind();
+            }
+            if(nv != null) {
+                commentsGroupId.setValue(nv.getId());
+            }
             if(!group.isDisabled()) {
-                List<GroupItem> items = database.getGroupItems(nv);
-                System.out.println(items);
-                GroupItem allItems = new GroupItem(GroupItem.ALL_ITEMS, "All items ("+items.size()+")");
-                Platform.runLater(() -> {
-                    groupItem.getItems().clear();
-                    if(!items.isEmpty()) {
-                        if(!items.get(0).getItemId().equals(GroupItem.NO_ITEMS)) {
-                            groupItem.getItems().add(allItems);
+                nv.itemsUpdatedProperty.addListener((o1, ov1, nv1) -> {
+                    List<GroupItem> items = database.getGroupItems(nv);
+                    GroupItem allItems = new GroupItem(GroupItem.ALL_ITEMS, "All items ("+items.size()+")");
+                    Platform.runLater(() -> {
+                        groupItem.getItems().clear();
+                        if(!items.isEmpty()) {
+                            if(!items.get(0).getItemId().equals(GroupItem.NO_ITEMS)) {
+                                groupItem.getItems().add(allItems);
+                            }
+                            groupItem.getItems().addAll(items);
+                            groupItem.getSelectionModel().select(0);
                         }
-                        groupItem.getItems().addAll(items);
-                        groupItem.getSelectionModel().select(0);
-                    }
+                    });
                 });
+                nv.itemsUpdatedProperty.add(1);
             }
         });
         group.itemsProperty().addListener((o, ov, nv) -> {
@@ -670,16 +739,18 @@ public class CommentSuite extends Application {
         groupList.setId("control");
         groupList.setPrefWidth(200);
         groupList.setMaxWidth(200);
-        groupList.setStyle("-fx-background-color: transparent");
+        // groupList.setStyle("-fx-background-color: transparent");
         groupList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
-            groupList.setDisable(nv == null || nv.getId().equals(Group.NO_GROUP));
             if(nv != null) managerGroupId.setValue(nv.getId());
-            managerDisplay.getChildren().clear();
-            if(!groupList.isDisabled()) {
-                managerDisplay.getChildren().add(new Label(nv.getId()));
-            } else {
-                managerDisplay.getChildren().add(message);
-            }
+            Platform.runLater(() -> {
+                groupList.setDisable(nv == null || nv.getId().equals(Group.NO_GROUP));
+                managerDisplay.getChildren().clear();
+                if(!groupList.isDisabled()) {
+                    managerDisplay.getChildren().add(new Label(nv.getId()));
+                } else {
+                    managerDisplay.getChildren().add(message);
+                }
+            });
         });
         groupList.itemsProperty().addListener((o, ov, nv) -> {
             if(groupList.getSelectionModel().getSelectedIndex() == -1 && groupList.getItems().size() > 0) {
@@ -691,10 +762,14 @@ public class CommentSuite extends Application {
         Button create = new Button("Create Group");
         create.setId("control");
 
+        Button rename = new Button("Rename Group");
+        rename.disableProperty().bind(groupList.disableProperty());
+        rename.setId("control");
+
         HBox control = new HBox(10);
         control.setPadding(new Insets(0, 0, 10, 0));
         control.setAlignment(Pos.CENTER);
-        control.getChildren().addAll(label, groupList, create);
+        control.getChildren().addAll(label, groupList, create, rename);
 
         Label divider = new Label();
         divider.setMaxWidth(Double.MAX_VALUE);
@@ -703,7 +778,6 @@ public class CommentSuite extends Application {
         divider.setStyle("-fx-background-color: derive(firebrick, 95%);");
 
         managerDisplay.setPadding(new Insets(10));
-        // manDisplay.setStyle("-fx-background-color: #eeeeee; -fx-opacity: 1;");
         managerDisplay.setAlignment(Pos.CENTER);
         managerDisplay.getChildren().add(message);
         VBox.setVgrow(managerDisplay, Priority.ALWAYS);
@@ -715,6 +789,103 @@ public class CommentSuite extends Application {
 
         StackPane stack = new StackPane(vbox);
         stack.setPadding(new Insets(10,0,0,0));
+
+        create.setOnAction(ae -> {
+            Label title = new Label("Create Group");
+            title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+            TextField nameField = new TextField();
+            nameField.setMinWidth(250);
+            nameField.setPromptText("Group name...");
+
+            Label error = new Label("");
+            error.setManaged(false);
+
+            Button doCreate = new Button("Create");
+            doCreate.setStyle("-fx-base: derive(cornflowerblue, 70%)");
+
+            Button cancel = new Button("Cancel");
+
+            HBox hbox0 = new HBox(10);
+            hbox0.setAlignment(Pos.CENTER_RIGHT);
+            hbox0.getChildren().addAll(cancel, doCreate);
+
+            VBox vbox0 = new VBox(10);
+            vbox0.setAlignment(Pos.CENTER);
+            vbox0.setMaxWidth(0);
+            vbox0.setMaxHeight(0);
+            vbox0.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
+            vbox0.setPadding(new Insets(25));
+            vbox0.getChildren().addAll(title, nameField, error, hbox0);
+
+            StackPane overlay = new StackPane(vbox0);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+            stack.getChildren().add(overlay);
+
+            cancel.setOnAction(ae0 -> stack.getChildren().remove(overlay));
+
+            doCreate.setOnAction(ae0 -> {
+                try {
+                    Group group = database.createGroup(nameField.getText());
+                    groupList.setValue(group);
+                    cancel.fire();
+                } catch (SQLException e) {
+                    error.setText(e.getMessage());
+                    error.setManaged(true);
+                }
+            });
+        });
+
+        rename.setOnAction(ae -> {
+            Label title = new Label("Rename Group");
+            title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+            String currentName = groupList.getSelectionModel().getSelectedItem().getName();
+            Label current = new Label("Current: "+currentName);
+
+            TextField nameField = new TextField(currentName);
+            nameField.setMinWidth(250);
+            nameField.setPromptText("Group name...");
+
+            Label error = new Label("");
+            error.setManaged(false);
+
+            Button doRename = new Button("Rename");
+            doRename.setStyle("-fx-base: derive(cornflowerblue, 70%)");
+
+            Button cancel = new Button("Cancel");
+
+            HBox hbox0 = new HBox(10);
+            hbox0.setAlignment(Pos.CENTER_RIGHT);
+            hbox0.getChildren().addAll(cancel, doRename);
+
+            VBox vbox0 = new VBox(10);
+            vbox0.setAlignment(Pos.CENTER);
+            vbox0.setMaxWidth(0);
+            vbox0.setMaxHeight(0);
+            vbox0.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
+            vbox0.setPadding(new Insets(25));
+            vbox0.getChildren().addAll(title, current, nameField, error, hbox0);
+
+            StackPane overlay = new StackPane(vbox0);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+            stack.getChildren().add(overlay);
+
+            cancel.setOnAction(ae0 -> stack.getChildren().remove(overlay));
+
+            doRename.setOnAction(ae0 -> {
+                Group group = groupList.getValue();
+                try {
+                    database.renameGroup(group, nameField.getText());
+                    groupList.setValue(group);
+                    cancel.fire();
+                } catch (SQLException e) {
+                    error.setText(e.getMessage());
+                    error.setManaged(true);
+                }
+            });
+        });
+
         return stack;
     }
 
@@ -811,7 +982,6 @@ public class CommentSuite extends Application {
         );
 
         MenuItem openBrowser = new MenuItem("Open in Browser");
-
         MenuItem copyLinks = new MenuItem("Copy Link(s)");
 
         ContextMenu menu = new ContextMenu();

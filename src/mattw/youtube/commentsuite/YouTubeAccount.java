@@ -15,6 +15,9 @@ public class YouTubeAccount {
     public String thumbUrl;
     public OAuth2Tokens tokens;
 
+    /**
+     * Only used with "YouTube Account Sign-in," otherwise initialized by Gson & Config.
+     */
     public YouTubeAccount(OAuth2Tokens tokens) {
         this.tokens = tokens;
         updateData();
