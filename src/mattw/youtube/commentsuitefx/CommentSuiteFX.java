@@ -137,12 +137,14 @@ public class CommentSuiteFX extends Application {
 
 	public void start(Stage stage) throws Exception {
 		instance = this;
+		database = new DatabaseManager();
+		database.setup();
+		database.cleanUp();
 		try {
 			applyConfig();
 		} catch (Exception e) { e.printStackTrace(); }
 
-		database = new DatabaseManager();
-		database.setup();
+
 
 		layout = new StackPane();
 		setup = createSettingsPane();

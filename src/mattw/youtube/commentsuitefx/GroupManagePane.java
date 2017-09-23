@@ -53,7 +53,9 @@ public class GroupManagePane extends GridPane implements EventHandler<ActionEven
                         protected Void call() throws Exception {
                             CommentSuiteFX.setNodesDisabled(true, choice, createGroup, deleteGroup, renameGroup, refreshGroup, reloadGroup, cleanDB, resetDB);
                             try {
-                                CommentSuiteFX.getDatabase().removeGroupAndData(current);
+                                // CommentSuiteFX.getDatabase().removeGroupAndData(current);
+                                CommentSuiteFX.getDatabase().deleteGroup(current.group_id);
+                                CommentSuiteFX.getDatabase().cleanUp();
                                 Platform.runLater(() -> {
                                     try {
                                         CommentSuiteFX.reloadGroups();

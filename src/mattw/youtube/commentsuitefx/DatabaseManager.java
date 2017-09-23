@@ -119,7 +119,20 @@ public class DatabaseManager {
 	public static void clearChannelCache() {
 		channelCache.clear();
 	}
-	
+
+	public void cleanUp() throws SQLException {
+		Statement s = con.createStatement();
+		int ggs = s.executeUpdate("DELETE FROM group_gitem WHERE group_id NOT IN (SELECT DISTINCT group_id FROM groups)");
+		int gitems = s.executeUpdate("DELETE FROM gitem_list WHERE gitem_id NOT IN (SELECT DISTINCT gitem_id FROM group_gitem)");
+		int vgs = s.executeUpdate("DELETE FROM video_group WHERE gitem_id NOT IN (SELECT DISTINCT gitem_id FROM gitem_list)");
+		int videos = s.executeUpdate("DELETE FROM videos WHERE video_id NOT IN (SELECT DISTINCT video_id FROM video_group)");
+		int comments = s.executeUpdate("DELETE FROM comments WHERE video_id NOT IN (SELECT DISTINCT video_id FROM videos)");
+		int channels = s.executeUpdate("WITH clist AS (SELECT DISTINCT channel_id FROM videos UNION SELECT channel_id FROM comments) DELETE FROM channels WHERE channel_id NOT IN clist");
+		System.out.format("DELETED FROM group_gitem, gitem_list, gitem_video, videos, comments, channels (%s, %s, %s, %s, %s, %s)\r\n",
+				ggs, gitems, vgs, videos, comments, channels);
+		s.close();
+	}
+
 	/*
 	 * TODO
 	 * Removes all data related to a group and the thumbnails associated.
@@ -496,7 +509,7 @@ public class DatabaseManager {
 		ps.executeUpdate();
 	}
 	
-	private void deleteGroup(int groupId) throws SQLException {
+	public void deleteGroup(int groupId) throws SQLException {
 		PreparedStatement ps = con.prepareStatement("DELETE FROM groups WHERE group_id = ?");
 		ps.setInt(1, groupId);
 		ps.executeUpdate();

@@ -8,13 +8,13 @@ import java.security.MessageDigest;
 
 /**
  * Database entry for searched YouTube entries (Video, Channel, Playlist).
+ * getYouTubeId() from YouTubeObject represents the GroupItem ID.
  */
 public class GroupItem extends YouTubeObject {
 
     public static String NO_ITEMS = "GI000";
     public static String ALL_ITEMS = "GI001";
 
-    private String gitemId;
     private String channelTitle;
     private long published;
     private long lastChecked;
@@ -24,7 +24,6 @@ public class GroupItem extends YouTubeObject {
      */
     public GroupItem(SearchList.Item item) {
         super(item.id.getId(), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
-        this.gitemId = generateId();
         this.published = item.snippet.publishedAt.getTime();
         this.lastChecked = 0;
         if(item.id.videoId != null) typeId = 1;
@@ -36,37 +35,24 @@ public class GroupItem extends YouTubeObject {
      * Used for "All Items (#)" and "No items" display in the "Comment Search" and "Group Manager" ComboBoxes.
      */
     public GroupItem(String gitemId, String title) {
-        super(null, title, null, false);
-        this.gitemId = gitemId;
+        super(gitemId, title, null, false);
     }
 
     /**
      * Used for database init.
      */
-    public GroupItem(String gitemId, int typeId, String youtubeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
-        super(youtubeId, title, thumbUrl, true);
+    public GroupItem(String gitemId, int typeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
+        super(gitemId, title, thumbUrl, true);
         this.typeId = typeId;
-        this.gitemId = gitemId;
         this.channelTitle = channelTitle;
         this.published = published;
         this.lastChecked = lastChecked;
     }
 
-    public String getItemId() { return gitemId; }
     public String getChannelTitle() { return channelTitle; }
     public long getPublished() { return published; }
     public long getLastChecked() { return lastChecked; }
-
-    private String generateId() {
-        try {
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            md5.update(StandardCharsets.UTF_8.encode(String.valueOf(System.nanoTime())+this.channelTitle));
-            return String.format("%032x", new BigInteger(1, md5.digest()));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return String.valueOf(System.nanoTime());
-        }
-    }
+    public void setLastChecked(long timestamp) { this.lastChecked = timestamp; }
 
     public String toString() { return getTitle(); }
 }

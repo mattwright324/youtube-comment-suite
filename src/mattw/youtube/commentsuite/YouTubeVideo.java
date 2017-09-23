@@ -50,7 +50,7 @@ public class YouTubeVideo extends YouTubeObject {
     public long getLikes() { return likes; }
     public long getDislikes() { return dislikes; }
     public long getViews() { return views; }
-    public long getHttpCode() { return httpCode; }
+    public int getHttpCode() { return httpCode; }
 
     public String getString() { return getTitle(); }
 }
