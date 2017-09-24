@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 public class YouTubeChannel extends YouTubeObject {
 
-
     public YouTubeChannel(String channelId, String name, String thumbUrl, boolean fetchThumb) {
         super(channelId, name, thumbUrl, fetchThumb);
         this.typeId = 1;

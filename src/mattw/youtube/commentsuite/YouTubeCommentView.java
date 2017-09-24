@@ -23,15 +23,18 @@ public class YouTubeCommentView extends HBox {
 
     public YouTubeCommentView(YouTubeComment comment, YouTubeChannel channel) {
         super(10);
-        this.channel = channel;
         this.comment = comment;
+        this.channel = channel;
 
-        if(channel.fetchThumb()) { updateProfileThumb(); }
+        if(channel.fetchThumb() || channel.thumbCached()) { updateProfileThumb(); }
         thumb.setFitHeight(30);
         thumb.setFitWidth(30);
 
         VBox vbox0 = new VBox(5);
         vbox0.setAlignment(Pos.CENTER);
+        vbox0.setMinWidth(75);
+        vbox0.setPrefWidth(75);
+        vbox0.setMaxWidth(75);
         vbox0.getChildren().addAll(thumb, new Label(comment.isReply() ? "Reply" : "Comment"));
 
         Label author = new Label(channel.getTitle());
@@ -51,7 +54,9 @@ public class YouTubeCommentView extends HBox {
 
         Hyperlink showMore = new Hyperlink("Show more");
         Hyperlink reply = new Hyperlink("Reply");
+        reply.setManaged(false); // false
         Hyperlink allReplies = new Hyperlink("View Tree");
+        allReplies.setManaged(comment.isReply() || comment.getReplyCount() > 0);
 
         HBox hbox = new HBox(10);
         hbox.setAlignment(Pos.CENTER_LEFT);

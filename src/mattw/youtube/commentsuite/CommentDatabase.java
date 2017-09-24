@@ -118,10 +118,14 @@ public class CommentDatabase {
             PreparedStatement ps = con.prepareStatement("SELECT * FROM channels WHERE channel_id = ?");
             ps.setString(1, channelId);
             ResultSet rs = ps.executeQuery();
+            YouTubeChannel channel = null;
             if(rs.next()) {
-                YouTubeChannel channel = resultSetToChannel(rs);
+                channel = resultSetToChannel(rs);
                 channelCache.put(channelId, channel);
             }
+            ps.close();
+            rs.close();
+            return channel;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -183,8 +187,8 @@ public class CommentDatabase {
                 rs.getLong("comment_date"),
                 rs.getString("video_id"),
                 rs.getString("channel_id"),
-                rs.getInt("likes"),
-                rs.getInt("replies"),
+                rs.getInt("comment_likes"),
+                rs.getInt("reply_count"),
                 rs.getBoolean("is_reply"),
                 rs.getString("parent_id"));
     }
@@ -273,16 +277,16 @@ public class CommentDatabase {
      * Could create links to the same GroupItem to multiple Group(s).
      */
     public void insertGroupItems(Group g, List<GroupItem> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO gitem_list (gitem_id, type_id, youtube_id, title, channel_title, published, last_checked, thumb_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO gitem_list (gitem_id, type_id, title, channel_title, published, last_checked, thumb_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
         PreparedStatement ps2 = con.prepareStatement("INSERT OR IGNORE INTO group_gitem (group_id, gitem_id) VALUES (?, ?)");
         for(GroupItem gi : items) {
             ps.setString(1, gi.getYouTubeId());
             ps.setInt(2, gi.typeId);
-            ps.setString(3, gi.getYouTubeId());
-            ps.setString(4, gi.getTitle());
-            ps.setString(5, gi.getChannelTitle());
-            ps.setLong(6, gi.getPublished());
-            ps.setLong(7, gi.getLastChecked());
+            ps.setString(3, gi.getTitle());
+            ps.setString(4, gi.getChannelTitle());
+            ps.setLong(5, gi.getPublished());
+            ps.setLong(6, gi.getLastChecked());
+            ps.setString(7, gi.getThumbUrl());
             ps.addBatch();
             ps2.setString(1, g.getId());
             ps2.setString(2, gi.getYouTubeId());
@@ -323,14 +327,8 @@ public class CommentDatabase {
     }
 
     /**
-     * TODO
-     * insertChannels
-     * updateVideos
-     * updateVideoHttpCode
-     * updateChannels
-     * getVideos
+     * Inserts comments for group refreshing.
      */
-
     public void insertComments(List<YouTubeComment> items) throws SQLException {
         PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO comments (comment_id, channel_id, video_id, comment_date, comment_text, comment_likes, reply_count, is_reply, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         for(YouTubeComment ct : items) {
@@ -425,8 +423,6 @@ public class CommentDatabase {
 
     /**
      * Gets a list of videos by group.
-     * Used for group refreshing.
-     */
     public List<YouTubeVideo> getVideos(Group group) throws SQLException {
         PreparedStatement ps = con.prepareStatement("SELECT * FROM videos JOIN channels USING(channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
         ps.setString(1, group.getId());
@@ -442,6 +438,19 @@ public class CommentDatabase {
         ps.close();
         rs.close();
         return list;
+    }*/
+
+    public YouTubeVideo getVideo(String videoId) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos WHERE video_id = ? LIMIT 1");
+        ps.setString(1, videoId);
+        ResultSet rs = ps.executeQuery();
+        YouTubeVideo video = null;
+        if(rs.next()) {
+            video =  resultSetToVideo(rs);
+        }
+        rs.close();
+        ps.close();
+        return video;
     }
 
     /**
@@ -467,6 +476,35 @@ public class CommentDatabase {
     }
 
     /**
+     * Updates http code for group refreshing.
+     */
+    public void updateVideoHttpCode(String videoId, int httpCode) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("UPDATE videos SET http_code = ? WHERE video_id = ?");
+        ps.setInt(1, httpCode);
+        ps.setString(2, videoId);
+        ps.executeUpdate();
+        ps.close();
+    }
+
+    /**
+     * Returns existing threads and reply counts for group refreshing.
+     * Threads with different reply counts are rechecked.
+     */
+    public Map<String,Integer> getCommentThreadReplyCounts(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT comment_id, db_replies FROM comments JOIN (SELECT parent_id, COUNT(parent_id) AS db_replies FROM comments WHERE parent_id NOT NULL AND is_reply = 1 GROUP BY parent_id) AS cc ON cc.parent_id = comment_id JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE is_reply = ? AND group_id = ?");
+        ps.setBoolean(1, false);
+        ps.setString(2, group.getId());
+        ResultSet rs = ps.executeQuery();
+        Map<String,Integer> map = new HashMap<>();
+        while(rs.next()) {
+            map.put(rs.getString("comment_id"), rs.getInt("db_replies"));
+        }
+        ps.close();
+        rs.close();
+        return map;
+    }
+
+    /**
      * Insert channels for group refreshing.
      */
     public void insertChannels(List<YouTubeChannel> items) throws SQLException {
@@ -476,6 +514,7 @@ public class CommentDatabase {
             ps.setString(2, c.getTitle());
             ps.setString(3, c.getThumbUrl());
             ps.setBoolean(4, c.fetchThumb());
+            ps.addBatch();
         }
         ps.executeBatch();
         ps.close();
@@ -516,7 +555,7 @@ public class CommentDatabase {
      * Inserts to gitem_video for group refreshing.
      */
     public void insertGroupItemVideo(List<GroupItemVideo> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("INSERT INTO video_group (gitem_id, video_id) VALUES (?, ?)");
+        PreparedStatement ps = con.prepareStatement("INSERT INTO gitem_video (gitem_id, video_id) VALUES (?, ?)");
         for(GroupItemVideo vg : items) {
             ps.setString(1, vg.gitemId);
             ps.setString(2, vg.videoId);
@@ -541,7 +580,7 @@ public class CommentDatabase {
         return list;
     }
 
-    class GroupItemVideo {
+    static class GroupItemVideo {
         private String gitemId;
         private String videoId;
         public GroupItemVideo(String gitemId, String videoId) {
@@ -571,8 +610,8 @@ public class CommentDatabase {
         private int orderBy = 0;
         private int ctype = 0;
         private int limit = 500;
-        private String nameLike;
-        private String textLike;
+        private String nameLike = "";
+        private String textLike = "";
         private long before = Long.MAX_VALUE;
         private long after = Long.MIN_VALUE;
 
@@ -621,10 +660,8 @@ public class CommentDatabase {
             return this;
         }
 
-        public int getPageCount() {
-            return (int) ((totalResults*1.0) / limit) + 1;
-        }
-
+        public int getPage() { return page; }
+        public int getPageCount() { return (int) ((totalResults*1.0) / limit) + 1; }
         public long getTotalResults() {
             return totalResults;
         }
@@ -637,6 +674,7 @@ public class CommentDatabase {
             PreparedStatement ps = con.prepareStatement("SELECT * FROM comments LEFT JOIN channels USING (channel_id) " +
                     "WHERE comments.video_id IN (SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE "+(gitem != null ? "gitem_id = ?":"group_id = ?")+" ) " +
                     "AND channel_name LIKE ? AND comment_text LIKE ? AND comment_date > ? AND comment_date < ? "+(ctype != 0 ? "AND is_reply = ? ":"")+"ORDER BY "+order[orderBy]);
+            System.out.format("%s %s [%s] [%s] %s %s %s %s %s %s\r\n", group, gitem, nameLike, textLike, orderBy, ctype, limit, after, before, page);
             ps.setString(1, gitem != null ? gitem.getYouTubeId() : group.getId());
             ps.setString(2, "%"+nameLike+"%");
             ps.setString(3, "%"+textLike+"%");
@@ -647,6 +685,7 @@ public class CommentDatabase {
             long start = limit * (page-1);
             long end = limit * page;
             long pos = 0;
+            System.out.format("Page %s (%s, %s)\r\n", page, start, end);
             while(rs.next()) {
                 if(pos >= start && pos <= end) {
                     items.add(resultSetToComment(rs));
@@ -655,7 +694,9 @@ public class CommentDatabase {
                         channelCache.put(channelId, resultSetToChannel(rs));
                     }
                 }
+                pos++;
             }
+            System.out.format("Total results: %s\r\n", pos);
             ps.close();
             return items;
         }

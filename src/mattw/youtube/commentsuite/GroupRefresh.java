@@ -1,21 +1,46 @@
 package mattw.youtube.commentsuite;
 
+import com.google.gson.Gson;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import mattw.youtube.commentsuite.io.ElapsedTime;
+import mattw.youtube.datav3.YouTubeData3;
+import mattw.youtube.datav3.YouTubeErrorException;
+import mattw.youtube.datav3.resources.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class GroupRefresh extends Thread {
+
+    private Group group;
+    private CommentDatabase database;
+    private YouTubeData3 youtube;
     private ElapsedTime elapsedTime = new ElapsedTime();
-    private SimpleStringProperty refreshStatus = new SimpleStringProperty("Preparing...");
+    private SimpleStringProperty refreshStatus = new SimpleStringProperty("Preparing");
+    private SimpleStringProperty elapsedTimeValue = new SimpleStringProperty("");
     private SimpleBooleanProperty refreshing = new SimpleBooleanProperty(false);
-    private ExecutorService es = Executors.newCachedThreadPool();
+    private SimpleBooleanProperty completed = new SimpleBooleanProperty(false);
+    private SimpleDoubleProperty progress = new SimpleDoubleProperty(-1);
+
+    private int commentThreadCount = 20;
+    private Map<String, String> threadToVideo = new HashMap<>();
+    private Map<String, Integer> threadToReplies;
+    private Queue<String> commentThreadQueue = new ConcurrentLinkedQueue<>();
+    private int videoThreadCount = 10;
+    private Queue<String> videosQueue = new ConcurrentLinkedQueue<>();
+    private boolean threadLive = true, threadMayDie = false, videoLive = true, videoMayDie = false;
+    private double totalVideos = 0;
+    private AtomicInteger consumedVideos = new AtomicInteger(0);
 
     private Set<String> existingVideoIds = new HashSet<>();
     private Set<String> existingCommentIds = new HashSet<>();
@@ -23,11 +48,368 @@ public class GroupRefresh extends Thread {
     private List<GroupItem> existingGroupItems = new ArrayList<>();
     private List<CommentDatabase.GroupItemVideo> existingGIV = new ArrayList<>();
 
-    public void run() {
+    private List<YouTubeVideo> videoInsert = new ArrayList<>();
+    private List<YouTubeVideo> videoUpdate = new ArrayList<>();
+    private List<YouTubeChannel> channelInsert = new ArrayList<>();
+    private List<YouTubeChannel> channelUpdate = new ArrayList<>();
+    private List<CommentDatabase.GroupItemVideo> givInsert = new ArrayList<>();
 
+    public GroupRefresh(Group group, CommentDatabase db, YouTubeData3 data) {
+        this.group = group;
+        this.database = db;
+        this.youtube = data;
     }
 
-    public ElapsedTime getElapsedTime() { return elapsedTime; }
+    private boolean listHasId(List<? extends YouTubeObject> list, String id) {
+        return list.stream().anyMatch(yo -> yo.getYouTubeId().equals(id));
+    }
+
+    private void clearLists(Collection<? extends Object>... lists) {
+        for(Collection<? extends Object> list : lists) { list.clear(); }
+    }
+
+    public void run() {
+        try {
+            Platform.runLater(() -> refreshing.setValue(true));
+            elapsedTime.set();
+
+            ExecutorService es = Executors.newFixedThreadPool(1);
+            es.execute(() -> {
+                while(!completed.getValue()) {
+                    Platform.runLater(() -> elapsedTimeValue.setValue(elapsedTime.getTimeString()));
+                    try { Thread.sleep(121); } catch (Exception ignored) {}
+                }
+                System.out.println("ELAPSED TIME STOPPED");
+            });
+            es.shutdown();
+
+            existingVideoIds.addAll(database.getAllVideoIds());
+            existingCommentIds.addAll(database.getCommentIds(group));
+            existingChannelIds.addAll(database.getAllChannelIds());
+            existingGroupItems.addAll(database.getGroupItems(group));
+            existingGIV.addAll(database.getAllGroupItemVideo());
+
+            List<GroupItem> videoItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.VIDEO).collect(Collectors.toList());
+            List<GroupItem> playlistItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.PLAYLIST).collect(Collectors.toList());
+            List<GroupItem> channelItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.CHANNEL).collect(Collectors.toList());
+
+            Platform.runLater(() -> refreshStatus.setValue("Grabbing Videos"));
+            parseGroupItems(videoItems, GroupItem.VIDEO);
+            parseGroupItems(playlistItems, GroupItem.PLAYLIST);
+            parseGroupItems(channelItems, GroupItem.CHANNEL);
+            database.insertVideos(videoInsert);
+            database.updateVideos(videoUpdate);
+            database.insertGroupItemVideo(givInsert);
+            database.commit();
+            clearLists(existingVideoIds, existingGIV, videoInsert, videoUpdate, givInsert, videoItems, playlistItems, channelItems);
+
+            Platform.runLater(() -> refreshStatus.setValue("Grabbing Comments"));
+            threadToReplies = database.getCommentThreadReplyCounts(group);
+            videosQueue.addAll(database.getVideoIds(group));
+            totalVideos = videosQueue.size();
+            Platform.runLater(() -> progress.setValue(0));
+            ExecutorService ces = Executors.newCachedThreadPool();
+            for(int i=0; i<commentThreadCount; i++) {
+                // Consumes from commentThreadQueue
+                final int tid = i;
+                ces.execute(() -> {
+                    System.out.println("CommentThread #"+tid+" alive");
+                    while(!commentThreadQueue.isEmpty() || threadLive) {
+                        if(threadMayDie && threadLive) threadLive = false;
+                        try {
+                            final String threadId = commentThreadQueue.poll();
+                            Thread.sleep(20);
+                            if(threadId != null) {
+                                handleCommentThread(threadId, threadToVideo.get(threadId));
+                            }
+                        } catch (Exception ignored) {ignored.printStackTrace();}
+                    }
+                    System.out.println("CommentThread #"+tid+" died");
+                });
+            }
+            ExecutorService ves = Executors.newFixedThreadPool(videoThreadCount);
+            for(int i=0; i<videoThreadCount; i++) {
+                // Consumes from videoQueue and produces for commentThreadQueue
+                final int tid = i;
+                ves.execute(() -> {
+                    System.out.println("VideoThread #"+tid+" alive");
+                    while (!videosQueue.isEmpty() || videoLive) {
+                        if (videoMayDie && videoLive) videoLive = false;
+                        try {
+                            final String videoId = videosQueue.poll();
+                            if (videoId != null) {
+                                handleVideo(videoId);
+                                Platform.runLater(() -> progress.setValue(consumedVideos.addAndGet(1) / totalVideos));
+                            }
+                            Thread.sleep(100);
+                        } catch (Exception ignored) { ignored.printStackTrace(); }
+                    }
+                    System.out.println("VideoThread #"+tid+" died");
+                });
+            }
+
+            videoMayDie = true;
+            ves.shutdown();
+            ves.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            System.out.println("Video Threads Done");
+            threadMayDie = true;
+            ces.shutdown();
+            ces.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            System.out.println("Comment Threads Done");
+
+            Platform.runLater(() -> refreshStatus.setValue("Finishing up"));
+            database.insertChannels(channelInsert);
+            database.updateChannels(channelUpdate);
+            database.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Platform.runLater(() -> {
+            refreshStatus.setValue("Completed");
+            refreshing.setValue(false);
+            completed.setValue(true);
+        });
+    }
+
+    /**
+     * Handles GroupItems separated by the same type.
+     */
+    private void parseGroupItems(List<GroupItem> items, int type) throws IOException, YouTubeErrorException {
+        if(type == GroupItem.VIDEO) {
+            List<String> sublist;
+            for(int i=0; i<items.size(); i+=50) {
+                sublist = items.subList(i, i+50 < items.size() ? i+50 : videosQueue.size())
+                        .stream().map(gi -> gi.getYouTubeId()).collect(Collectors.toList());
+                System.out.println("GroupItem Videos: "+sublist.toString());
+                handleVideos(sublist, "");
+            }
+        } else if(type == GroupItem.PLAYLIST) {
+            for(GroupItem item : items) {
+                System.out.println("GroupItem Playlist: "+item.getTitle());
+                handlePlaylist(item.getYouTubeId(), item.getYouTubeId());
+            }
+        } else if(type == GroupItem.CHANNEL) {
+            for(GroupItem item : items) {
+                System.out.println("GroupItem Channel: "+item.getTitle());
+                ChannelsList cl = youtube.channelsList().getByChannel(ChannelsList.PART_CONTENT_DETAILS, item.getYouTubeId(), "");
+                if(cl.hasItems() && cl.items[0].hasContentDetails()) {
+                    String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
+                    handlePlaylist(uploadPlaylistId, item.getYouTubeId());
+                }
+            }
+        }
+    }
+
+    /**
+     * Grabs videos from playlists.
+     */
+    private void handlePlaylist(String playlistId, String gitemId) throws IOException, YouTubeErrorException {
+        PlaylistItemsList pil;
+        String pageToken = "";
+        List<String> videoIds = new ArrayList<>();
+        do {
+            System.out.println("Playlist: "+playlistId+", Page ["+pageToken+"]");
+            pil = youtube.playlistItemsList().get(PlaylistItemsList.PART_SNIPPET, playlistId, pageToken);
+            pageToken = pil.nextPageToken;
+            for(PlaylistItemsList.Item item : pil.items) {
+                if(item.hasSnippet()) {
+                    videoIds.add(item.snippet.resourceId.videoId);
+                }
+            }
+        } while (pil.nextPageToken != null);
+        for(int i=0; i<videoIds.size(); i+=50) {
+            handleVideos(videoIds.subList(i, i+50 < videoIds.size() ? i+50 : videoIds.size()), gitemId);
+        }
+    }
+
+    /**
+     * Grabs video information at a max of 50 at a time.
+     */
+    private void handleVideos(List<String> videoIds, String gitemId) throws IOException, YouTubeErrorException {
+        String ids = videoIds.stream().collect(Collectors.joining(","));
+        VideosList vlSnippet = youtube.videosList().getByIds(VideosList.PART_SNIPPET, ids, "");
+        VideosList vlStats = youtube.videosList().getByIds(VideosList.PART_STATISTICS, ids, "");
+        for(int i=0; i<vlSnippet.items.length; i++) {
+            YouTubeVideo video = new YouTubeVideo(vlSnippet.items[i], vlStats.items[i]);
+            checkChannel(video.getChannelId(), null);
+            if(!"".equals(gitemId)) {
+                CommentDatabase.GroupItemVideo giv = new CommentDatabase.GroupItemVideo(gitemId, video.getYouTubeId());
+                if(!existingGIV.contains(giv)) {
+                    givInsert.add(giv);
+                }
+            }
+            if(!(existingVideoIds.contains(video.getYouTubeId()) || listHasId(videoInsert, video.getYouTubeId()) || listHasId(videoUpdate, video.getYouTubeId()))) {
+                videoInsert.add(video);
+                System.out.format("INSERT %s: %s\r\n", video.getYouTubeId(), video.getTitle());
+            } else if(existingVideoIds.contains(video.getYouTubeId()) && !listHasId(videoUpdate, video.getYouTubeId())) {
+                videoUpdate.add(video);
+                System.out.format("UPDATE %s: %s\r\n", video.getYouTubeId(), video.getTitle());
+            }
+        }
+    }
+
+    /**
+     * Grabs the *comments* from the specified video.
+     * Automatically inserts comments into the database.
+     * Does not commit.
+     */
+    private void handleVideo(String videoId) throws SQLException, IOException {
+        List<YouTubeComment> comments = new ArrayList<>();
+        CommentThreadsList ctl = null;
+        String pageToken = "";
+        int fails = 0;
+        do {
+            if(comments.size() > 500) {
+                insertComments(comments);
+            }
+            try {
+                ctl = youtube.commentThreadsList().getThreadsByVideo(CommentThreadsList.PART_SNIPPET, videoId, pageToken);
+                pageToken = ctl.nextPageToken;
+                for(CommentThreadsList.Item item: ctl.items) {
+                    if(item.hasSnippet()) {
+                        String threadId = item.snippet.topLevelComment.getId();
+                        boolean contains = threadToReplies.containsKey(threadId);
+                        if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != threadToReplies.get(item.snippet.topLevelComment.getId()))) {
+                            threadToVideo.put(threadId, videoId);
+                            commentThreadQueue.offer(threadId);
+                        }
+                        if(!existingCommentIds.contains(threadId)) {
+                            YouTubeComment comment = new YouTubeComment(item);
+                            if(!"".equals(comment.getChannelId())) {
+                                checkChannel(comment.getChannelId(), item.snippet.topLevelComment);
+                                comments.add(comment);
+                            } else {
+                                System.out.println("G+ Comment: "+item.snippet.topLevelComment.snippet.authorChannelUrl);
+                            }
+                        }
+                    }
+                }
+            } catch (YouTubeErrorException yee) {
+                fails++;
+                try {
+                    switch(yee.getError().code){
+                        case 400:
+                            System.err.println("Bad Request (400): Retry #"+fails+"  http://youtu.be/"+videoId);
+                            Thread.sleep(5000);
+                            break;
+                        case 403:
+                            System.err.println("Comments Disabled (403): http://youtu.be/"+videoId);
+                            database.updateVideoHttpCode(videoId, yee.getError().code);
+                            fails = 10;
+                            break;
+                        case 404:
+                            System.err.println("Not found (404): http://youtu.be/"+videoId);
+                            database.updateVideoHttpCode(videoId, yee.getError().code);
+                            fails = 10;
+                            break;
+                        default:
+                            System.err.println("Unknown Error ("+yee.getError().code+"): http://youtu.be/"+videoId);
+                            database.updateVideoHttpCode(videoId, yee.getError().code);
+                            fails = 10;
+                            break;
+                    }
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+            }
+        } while((ctl == null || ctl.nextPageToken != null) && fails < 5);
+        if(comments.size() > 0) {
+            insertComments(comments);
+        }
+        System.out.println("COMPLETED VIDEO "+videoId);
+    }
+
+    /**
+     * Grabs the *replies* from a comment thread.
+     * Automatically inserts replies into the database.
+     * Does not commit.
+     */
+    private void handleCommentThread(String commentThreadId, String videoId) throws SQLException, IOException {
+        List<YouTubeComment> comments = new ArrayList<>();
+        CommentsList cl = null;
+        String pageToken = "";
+        int fails = 0;
+        do {
+            if(comments.size() > 500) {
+                insertComments(comments);
+            }
+            try {
+                cl = youtube.commentsList().getByParentId(CommentsList.PART_SNIPPET, commentThreadId, pageToken);
+                pageToken = cl.nextPageToken;
+                for(CommentsList.Item item : cl.items) {
+                    if(item.hasSnippet()) {
+                        if(!existingCommentIds.contains(item.getId())) {
+                            YouTubeComment reply = new YouTubeComment(item, videoId);
+                            if(!"".equals(reply.getChannelId())) {
+                                checkChannel(reply.getChannelId(), item);
+                                comments.add(reply);
+                            } else {
+                                System.out.println("G+ Comment: "+item.snippet.authorChannelUrl);
+                            }
+
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                fails++;
+                System.err.println("CommentThread ["+commentThreadId+"]: "+e.getLocalizedMessage());
+            }
+        } while((cl == null || cl.nextPageToken != null) && fails < 5);
+        if(comments.size() > 0) {
+            insertComments(comments);
+        }
+    }
+
+    /**
+     * Checks the channel of videos and comments to see if it already exists.
+     * Grabs channel data if it is a video (CommentsList.Item item is null).
+     */
+    private void checkChannel(String channelId, CommentsList.Item item) {
+        if(channelId != null) {
+            if(!existingChannelIds.contains(channelId)) {
+                YouTubeChannel channel = null;
+                if(item != null) {
+                    channel = new YouTubeChannel(item, false);
+                } else {
+                    try {
+                        ChannelsList cl = youtube.channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
+                        channel = new YouTubeChannel(cl.items[0], true); // Video authors display thumbs.
+                    } catch (Exception ignored) {
+                        ignored.printStackTrace();
+                    }
+                }
+                if(channel != null) {
+                    if(!existingChannelIds.contains(channelId)) {
+                        channelInsert.add(channel);
+                        existingChannelIds.add(channelId);
+                        System.out.println("INSERT CHANNEL "+channelId);
+                    } else if(!channelUpdate.contains(channel)) {
+                        channelUpdate.add(channel);
+                        existingChannelIds.add(channelId);
+                        System.out.println("UPDATE CHANNEL "+channelId);
+                    } else {
+                        System.out.println("IGNORE CHANNEL "+channelId);
+                    }
+                } else {
+                    System.err.println("Check Channel Null ["+channelId+"]. Video =  "+(item == null));
+                }
+            }
+        }
+    }
+
+    /**
+     * Inserts the comments into the database and clears the list.
+     */
+    private void insertComments(List<YouTubeComment> items) throws SQLException {
+        if(items.size() > 0) {
+            database.insertComments(items);
+            items.clear();
+        }
+    }
+
     public SimpleStringProperty refreshStatusProperty() { return refreshStatus; }
     public SimpleBooleanProperty refreshingProperty() { return refreshing; }
+    public SimpleBooleanProperty completedProperty() { return completed; }
+    public SimpleStringProperty elapsedTimeValueProperty() { return elapsedTimeValue; }
+    public SimpleDoubleProperty progressProperty() { return progress; }
 }

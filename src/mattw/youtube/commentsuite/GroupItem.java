@@ -12,6 +12,10 @@ import java.security.MessageDigest;
  */
 public class GroupItem extends YouTubeObject {
 
+    public static int VIDEO = 0;
+    public static int CHANNEL = 1;
+    public static int PLAYLIST = 2;
+
     public static String NO_ITEMS = "GI000";
     public static String ALL_ITEMS = "GI001";
 
@@ -26,9 +30,9 @@ public class GroupItem extends YouTubeObject {
         super(item.id.getId(), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
         this.published = item.snippet.publishedAt.getTime();
         this.lastChecked = 0;
-        if(item.id.videoId != null) typeId = 1;
-        if(item.id.channelId != null) typeId = 2;
-        if(item.id.playlistId != null) typeId = 3;
+        if(item.id.videoId != null) typeId = 0;
+        if(item.id.channelId != null) typeId = 1;
+        if(item.id.playlistId != null) typeId = 2;
     }
 
     /**

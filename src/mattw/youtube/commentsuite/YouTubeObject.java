@@ -26,11 +26,14 @@ abstract class YouTubeObject {
         this.fetchThumb = fetchThumb;
     }
 
+
+    public boolean thumbCached() { return thumbCache.containsKey(youtubeId); }
+
     /**
      * Caches thumbs when grabbed.
      */
     public Image getThumbnail() {
-        if(!thumbCache.containsKey(youtubeId)) {
+        if(!thumbCached()) {
             thumbCache.put(youtubeId, new Image(thumbUrl));
         }
         return thumbCache.get(youtubeId);
@@ -64,4 +67,8 @@ abstract class YouTubeObject {
     public boolean fetchThumb() { return fetchThumb; }
 
     public String getString() { return getYouTubeId(); }
+
+    public boolean equals(Object o) {
+        return o instanceof YouTubeObject && ((YouTubeObject) o).getYouTubeId().equals(getYouTubeId());
+    }
 }

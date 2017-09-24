@@ -4,7 +4,6 @@ import mattw.youtube.datav3.resources.VideosList;
 
 public class YouTubeVideo extends YouTubeObject {
 
-    private String title;
     private String channelId;
     private String description;
     private long publishDate, grabDate;
@@ -16,10 +15,12 @@ public class YouTubeVideo extends YouTubeObject {
         this.typeId = 0;
         this.channelId = itemSnip.snippet.channelId;
         this.description = itemSnip.snippet.description;
+        this.publishDate = itemSnip.snippet.publishedAt.getTime();
         this.views = itemStat.statistics.viewCount;
         this.likes = itemStat.statistics.likeCount;
         this.dislikes = itemStat.statistics.dislikeCount;
         this.comments = itemStat.statistics.commentCount;
+        this.grabDate = System.currentTimeMillis();
     }
 
     /**
@@ -29,7 +30,6 @@ public class YouTubeVideo extends YouTubeObject {
         super(videoId, title, thumbUrl, false);
         this.typeId = 0;
         this.channelId = channelId;
-        this.title = title;
         this.description = description;
         this.publishDate = publishDate;
         this.grabDate = grabDate;
@@ -40,10 +40,9 @@ public class YouTubeVideo extends YouTubeObject {
         this.httpCode = httpCode;
     }
 
-    public String getTitle() { return title; }
     public String getDescription() { return description; }
     public String getChannelId() { return channelId; }
-    public YouTubeChannel getChannel() { return null; } // TODO
+    public YouTubeChannel getChannel() { return CommentSuite.db().getChannel(channelId); }
     public long getPublishedDate() { return publishDate; }
     public long getLastGrabDate() { return grabDate; }
     public long getCommentCount() { return comments; }
@@ -51,6 +50,8 @@ public class YouTubeVideo extends YouTubeObject {
     public long getDislikes() { return dislikes; }
     public long getViews() { return views; }
     public int getHttpCode() { return httpCode; }
+
+    public void setGrabDate(long time) { this.grabDate = time; }
 
     public String getString() { return getTitle(); }
 }

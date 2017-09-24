@@ -12,9 +12,8 @@ public class Group {
     public static String NO_GROUP = "G000";
 
     private String groupId;
-    public SimpleStringProperty name = new SimpleStringProperty();
-    public SimpleBooleanProperty refreshing = new SimpleBooleanProperty(false);
-    public SimpleIntegerProperty itemsUpdatedProperty = new SimpleIntegerProperty(0); // Listen for change to regrab items.
+    private SimpleStringProperty name = new SimpleStringProperty();
+    private SimpleIntegerProperty itemsUpdated = new SimpleIntegerProperty(0); // Listen for change to regrab items.
 
     /**
      * Used when creating a new group.
@@ -48,9 +47,8 @@ public class Group {
     public String getName() { return name.getValue(); }
     protected void setName(String name) { this.name.setValue(name); }
     public SimpleStringProperty nameProperty() { return name; }
-
-    public SimpleBooleanProperty refreshingProperty() { return refreshing; }
-    public void setRefreshing(boolean ref) { refreshing.setValue(ref); }
+    public SimpleIntegerProperty itemsUpdatedProperty() { return itemsUpdated; }
+    public void incrementItemsUpdated() { itemsUpdated.setValue(itemsUpdated.getValue()+1); }
 
     public String toString() { return name.getValue(); }
     public int hashCode() { return groupId.hashCode(); }
