@@ -26,6 +26,11 @@
     -fx-max-height: 30;
 }
 
+#listView .list-cell {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+}
+
 #context {
 	-fx-background-color: transparent;
     -fx-background-insets: 0;

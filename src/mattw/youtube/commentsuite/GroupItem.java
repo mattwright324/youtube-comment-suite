@@ -2,10 +2,6 @@ package mattw.youtube.commentsuite;
 
 import mattw.youtube.datav3.resources.SearchList;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-
 /**
  * Database entry for searched YouTube entries (Video, Channel, Playlist).
  * getYouTubeId() from YouTubeObject represents the GroupItem ID.
@@ -29,6 +25,7 @@ public class GroupItem extends YouTubeObject {
     public GroupItem(SearchList.Item item) {
         super(item.id.getId(), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
         this.published = item.snippet.publishedAt.getTime();
+        this.channelTitle = item.snippet.channelTitle;
         this.lastChecked = 0;
         if(item.id.videoId != null) typeId = 0;
         if(item.id.channelId != null) typeId = 1;

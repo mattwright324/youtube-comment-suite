@@ -1,44 +1,516 @@
 package mattw.youtube.commentsuite;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.CacheHint;
+import javafx.scene.Cursor;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
+import javafx.scene.control.*;
+import javafx.scene.effect.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
+
 public class GroupManageView extends StackPane {
 
+    private static Image IMG_GROUP = new Image("/mattw/youtube/commentsuite/img/group.png");
+    private static Random rand = new Random();
+
     private Group group;
-    private GroupRefresh refreshThread;
+
+    private Button reload = new Button("Reload");
+    private ProgressIndicator prog = new ProgressIndicator();
+
+    private XYChart.Series<String,Number> commentSeries = new XYChart.Series<>();
+    private XYChart.Series<String,Number> videoSeries = new XYChart.Series<>();
+    private Label commentCount = new Label("...");
+    private Label totalLikes = new Label("...");
+    private Label videoCount = new Label("...");
+    private Label totalViews = new Label("...");
+    private TitledPane statsPane = new TitledPane();
+    private ListView<YouTubeObjectView> activeViewers = new ListView<>();
+    private ListView<YouTubeObjectView> popularViewers = new ListView<>();
+    private TitledPane viewerPane = new TitledPane();
+    private ListView<YouTubeObjectView> popularVideos = new ListView<>();
+    private ListView<YouTubeObjectView> dislikedVideos = new ListView<>();
+    private ListView<YouTubeObjectView> commentedVideos = new ListView<>();
+    private ListView<YouTubeObjectView> disabledVideos = new ListView<>();
+    private TitledPane videosPane = new TitledPane();
+
+    private SimpleBooleanProperty deleted = new SimpleBooleanProperty(false);
+
+    class YouTubeObjectView extends HBox {
+        public YouTubeObjectView(YouTubeObject yto, String displayStat) {
+            super(10);
+
+            ImageView thumb = new ImageView(yto.getThumbUrl()); // 57 x 32, 89 x 50
+            thumb.setFitHeight(50);
+            thumb.setFitWidth(yto instanceof YouTubeChannel ? 50 : 89);
+            thumb.setCursor(Cursor.HAND);
+            thumb.setOnMouseClicked(me -> CommentSuite.openInBrowser(yto.getYouTubeLink()));
+
+            Label title = new Label(yto.getTitle());
+            title.setMinWidth(0);
+            title.setPrefWidth(0);
+            title.setMaxWidth(Double.MAX_VALUE);
+            title.setFont(Font.font(("Tahoma"), FontWeight.SEMI_BOLD, 15));
+
+            Label stat = new Label(displayStat);
+            if(displayStat.equals("Comments Disabled")) {
+                stat.setTextFill(Color.RED);
+            }
+
+            VBox vbox = new VBox(5);
+            vbox.setAlignment(Pos.CENTER_LEFT);
+            vbox.setMaxWidth(Double.MAX_VALUE);
+            vbox.getChildren().addAll(title, stat);
+            HBox.setHgrow(vbox, Priority.ALWAYS);
+
+            setAlignment(Pos.CENTER_LEFT);
+            getChildren().addAll(thumb, vbox);
+        }
+    }
 
     public GroupManageView(Group group) {
-        setPadding(new Insets(10));
-        setStyle("-fx-border-color: red");
         this.group = group;
 
+        Color color = Color.color(rand.nextDouble(), rand.nextDouble(), rand.nextDouble());
+
+        int wh = 25;
+        ColorAdjust monochrome = new ColorAdjust();
+        monochrome.setBrightness(1.0);
+        Blend blush = new Blend(BlendMode.MULTIPLY, monochrome, new ColorInput(0, 0, wh, wh, color));
+
+        ImageView clip = new ImageView(IMG_GROUP);
+        clip.setFitHeight(wh);
+        clip.setFitWidth(wh);
+
+        ImageView view = new ImageView(IMG_GROUP);
+        view.setFitWidth(wh);
+        view.setFitHeight(wh);
+        view.setEffect(blush);
+        view.setCache(true);
+        view.setCacheHint(CacheHint.SPEED);
+        view.setClip(clip);
+
+        Font titleFont = Font.font("Tahoma", FontWeight.SEMI_BOLD, 18);
+        Font subtitleFont = Font.font("Tahoma", FontWeight.BOLD, 15);
+
         Label title = new Label();
-        title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+        title.setMinWidth(0);
+        title.setPrefWidth(0);
+        title.setMaxWidth(Double.MAX_VALUE);
+        title.setFont(titleFont);
         title.textProperty().bind(group.nameProperty());
+        HBox.setHgrow(title, Priority.ALWAYS);
+
+        Label id = new Label();
+        id.setMinWidth(0);
+        id.setPrefWidth(0);
+        id.setAlignment(Pos.CENTER_RIGHT);
+        id.setMaxWidth(Double.MAX_VALUE);
+        id.setTextFill(Color.LIGHTGRAY);
+        HBox.setHgrow(id, Priority.ALWAYS);
+
+        prog.setMaxHeight(wh);
+        prog.setMaxWidth(wh);
 
         Button refresh = new Button("Refresh");
+        refresh.setStyle("-fx-base: gold;");
+        refresh.setTooltip(new Tooltip("Starts the refresh process checking GroupItems for new videos and comments."));
         refresh.setOnAction(ae -> beginGroupRefresh());
+
+        Button delete = new Button("Delete");
+        delete.setStyle("-fx-base: salmon;");
+        delete.setTooltip(new Tooltip("Delete this group and all of its data."));
+        delete.setOnAction(ae -> {
+            setDisable(true);
+            new Thread(() -> {
+                try {
+                    CommentSuite.db().deleteGroup(group);
+                    CommentSuite.db().cleanUp();
+                    CommentSuite.db().commit();
+                    CommentSuite.db().refreshGroups();
+                    Platform.runLater(() -> {
+                        deleted.setValue(true);
+                        setVisible(false);
+                        setManaged(false);
+                    });
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        });
+
+        Button rename = new Button("Rename");
+        rename.setTooltip(new Tooltip("Rename this group."));
+
+        reload.setTooltip(new Tooltip("Reload group data."));
+        reload.setOnAction(ae -> loadAnalytics());
+
+        HBox control = new HBox(10);
+        control.setAlignment(Pos.CENTER_RIGHT);
+        control.getChildren().addAll(view, title, id, prog, rename, reload, refresh, delete);
+
+        CategoryAxis xAxis = new CategoryAxis();
+        xAxis.setLabel("Weeks");
+        NumberAxis yAxis = new NumberAxis();
+        LineChart<String,Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setMinHeight(200);
+        chart.setPrefWidth(300);
+        chart.setMaxHeight(300);
+        chart.setTitle("Comments By Week");
+        chart.setCreateSymbols(false);
+        chart.setLegendVisible(false);
+        chart.getData().add(commentSeries);
+
+        CategoryAxis xAxis2 = new CategoryAxis();
+        xAxis2.setLabel("Weeks");
+        NumberAxis yAxis2 = new NumberAxis();
+        LineChart<String,Number> chart2 = new LineChart<>(xAxis2, yAxis2);
+        chart2.setMinHeight(200);
+        chart2.setPrefWidth(300);
+        chart2.setMaxHeight(300);
+        chart2.setTitle("Videos By Week");
+        chart2.setCreateSymbols(false);
+        chart2.setLegendVisible(false);
+        chart2.getData().add(videoSeries);
+
+        Label label1 = new Label("Total Comments");
+        label1.setFont(subtitleFont);
+        Label label2 = new Label("Total Likes");
+        label2.setFont(subtitleFont);
+        totalLikes.setTextFill(Color.CORNFLOWERBLUE);
+        ColumnConstraints col1 = new ColumnConstraints();
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setHalignment(HPos.RIGHT);
+        col2.setMaxWidth(100);
+        col2.setPrefWidth(100);
+
+        GridPane grid = new GridPane();
+        grid.getColumnConstraints().addAll(col1, col2);
+        grid.setHgap(10);
+        grid.setVgap(5);
+        int row = 1;
+        grid.addRow(row++, label1, commentCount);
+        grid.addRow(row++, label2, totalLikes);
+
+        Label label3 = new Label("Total Videos");
+        label3.setFont(subtitleFont);
+        Label label4 = new Label("Total Views");
+        label4.setFont(subtitleFont);
+        ColumnConstraints col3 = new ColumnConstraints();
+        ColumnConstraints col4 = new ColumnConstraints();
+        col4.setHalignment(HPos.RIGHT);
+        col4.setMaxWidth(100);
+        col4.setPrefWidth(100);
+
+        GridPane grid2 = new GridPane();
+        grid2.getColumnConstraints().addAll(col3, col4);
+        grid2.setHgap(10);
+        grid2.setVgap(5);
+        int row2 = 1;
+        grid2.addRow(row2++, label3, videoCount);
+        grid2.addRow(row2++, label4, totalViews);
+
+        VBox stats = new VBox(10);
+        stats.setAlignment(Pos.TOP_LEFT);
+        stats.setPadding(new Insets(10));
+        stats.getChildren().addAll(chart, grid, chart2, grid2);
+
+        ScrollPane statsScroll = new ScrollPane(stats);
+        statsScroll.setFitToWidth(true);
+        statsScroll.setFitToHeight(true);
+
+        statsPane.setDisable(true);
+        statsPane.setText("General Stats");
+        statsPane.setContent(statsScroll);
+
+        int height = 300;
+        Label popularLabel2 = new Label("Most Popular Viewers");
+        popularLabel2.setFont(subtitleFont);
+        popularViewers.setStyle("-fx-border-color: green");
+        popularViewers.setMinHeight(height);
+        popularViewers.setMaxHeight(height);
+
+        Label activeLabel = new Label("Most Active Viewers");
+        activeLabel.setFont(subtitleFont);
+        activeViewers.setStyle("-fx-border-color: red");
+        activeViewers.setMinHeight(height);
+        activeViewers.setMaxHeight(height);
+
+        VBox vbox3 = new VBox(10);
+        vbox3.setAlignment(Pos.TOP_CENTER);
+        vbox3.setPadding(new Insets(0, 25, 0, 25));
+        vbox3.getChildren().addAll(popularLabel2, popularViewers, activeLabel, activeViewers);
+
+        StackPane viewerStack = new StackPane(vbox3);
+        viewerStack.setPadding(new Insets(10));
+
+        ScrollPane viewerScroll = new ScrollPane(viewerStack);
+        viewerScroll.setFitToWidth(true);
+        viewerScroll.setFitToHeight(true);
+
+        viewerPane.setDisable(true);
+        viewerPane.setText("About Viewers");
+        viewerPane.setContent(viewerScroll);
+
+        Label popularLabel = new Label("Most Popular Videos");
+        popularLabel.setFont(subtitleFont);
+        popularVideos.setStyle("-fx-border-color: green");
+        popularVideos.setMinHeight(height);
+        popularVideos.setMaxHeight(height);
+
+        Label dislikeLabel = new Label("Most Disliked Videos");
+        dislikeLabel.setFont(subtitleFont);
+        dislikedVideos.setStyle("-fx-border-color: red");
+        dislikedVideos.setMinHeight(height);
+        dislikedVideos.setMaxHeight(height);
+
+        Label comLabel = new Label("Most Commented Videos");
+        comLabel.setFont(subtitleFont);
+        commentedVideos.setStyle("-fx-border-color: orange");
+        commentedVideos.setMinHeight(height);
+        commentedVideos.setMaxHeight(height);
+
+        Label disabledLabel = new Label("Comments Disabled");
+        disabledLabel.setFont(subtitleFont);
+        disabledVideos.setStyle("-fx-border-color: firebrick");
+        disabledVideos.setMinHeight(height);
+        disabledVideos.setMaxHeight(height);
+
+        VBox vbox2 = new VBox(10);
+        vbox2.setAlignment(Pos.TOP_CENTER);
+        vbox2.setPadding(new Insets(0, 25, 0, 25));
+        vbox2.getChildren().addAll(popularLabel, popularVideos, dislikeLabel, dislikedVideos, comLabel, commentedVideos, disabledLabel, disabledVideos);
+
+        StackPane videoStack = new StackPane(vbox2);
+        videoStack.setPadding(new Insets(10));
+
+        ScrollPane videoScroll = new ScrollPane(videoStack);
+        videoScroll.setFitToWidth(true);
+        videoScroll.setFitToHeight(true);
+
+        videosPane.setDisable(true);
+        videosPane.setText("About Videos");
+        videosPane.setContent(videoScroll);
+
+        Accordion accordion = new Accordion();
+        accordion.setDisable(false);
+        accordion.setMinWidth(300);
+        accordion.getPanes().addAll(statsPane, videosPane, viewerPane);
+        accordion.setExpandedPane(statsPane);
+        HBox.setHgrow(accordion, Priority.ALWAYS);
+
+        ListView<GroupItem> groupItem = new ListView<>();
+        VBox.setVgrow(groupItem, Priority.ALWAYS);
+
+        group.itemsUpdatedProperty().addListener((o, ov, nv) -> {
+            List<GroupItem> items = CommentSuite.db().getGroupItems(group);
+            GroupItem noItems = new GroupItem(GroupItem.NO_ITEMS, "No items");
+            Platform.runLater(() -> {
+                groupItem.getItems().clear();
+                if(!items.isEmpty()) {
+                    groupItem.setDisable(false);
+                    groupItem.getItems().addAll(items);
+                    groupItem.getSelectionModel().select(0);
+                } else {
+                    groupItem.getItems().add(noItems);
+                    groupItem.setDisable(true);
+                }
+            });
+        });
+        group.incrementItemsUpdated();
+
+        Button addItem = new Button("Add Item");
+        addItem.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(addItem, Priority.ALWAYS);
+
+        Button remove = new Button("Remove");
+        remove.setMaxWidth(Double.MAX_VALUE);
+        remove.setStyle("-fx-base: derive(firebrick, 95%)");
+        HBox.setHgrow(remove, Priority.ALWAYS);
+
+        Button removeAll = new Button("Remove All");
+        removeAll.setMaxWidth(Double.MAX_VALUE);
+        removeAll.setStyle("-fx-base: derive(red, 95%)");
+        HBox.setHgrow(removeAll, Priority.ALWAYS);
+
+        HBox btns = new HBox(10);
+        btns.getChildren().addAll(addItem, remove, removeAll);
+
+        VBox vbox0 = new VBox(10);
+        vbox0.setPrefWidth(400);
+        vbox0.setMaxWidth(400);
+        vbox0.setAlignment(Pos.TOP_LEFT);
+        vbox0.getChildren().addAll(btns, groupItem);
+
+        HBox hbox = new HBox(10);
+        hbox.getChildren().addAll(vbox0, accordion);
+        VBox.setVgrow(hbox, Priority.ALWAYS);
 
         VBox vbox = new VBox(10);
         vbox.setAlignment(Pos.TOP_CENTER);
-        vbox.getChildren().addAll(title, refresh);
+        vbox.setPadding(new Insets(10));
+        vbox.getChildren().addAll(control, hbox);
 
+        rename.setOnAction(ae -> {
+            Label title1 = new Label("Rename Group");
+            title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+            String currentName = group.getName();
+            Label current = new Label("Current: "+currentName);
+
+            TextField nameField = new TextField(currentName);
+            nameField.setMinWidth(250);
+            nameField.setPromptText("Group name...");
+
+            Label error = new Label("");
+            error.setManaged(false);
+
+            Button doRename = new Button("Rename");
+            doRename.setStyle("-fx-base: derive(cornflowerblue, 70%)");
+
+            Button cancel = new Button("Cancel");
+
+            HBox hbox0 = new HBox(10);
+            hbox0.setAlignment(Pos.CENTER_RIGHT);
+            hbox0.getChildren().addAll(cancel, doRename);
+
+            VBox vbox1 = new VBox(10);
+            vbox1.setAlignment(Pos.CENTER);
+            vbox1.setMaxWidth(0);
+            vbox1.setMaxHeight(0);
+            vbox1.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
+            vbox1.setPadding(new Insets(25));
+            vbox1.getChildren().addAll(title1, current, nameField, error, hbox0);
+
+            StackPane overlay = new StackPane(vbox1);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+            getChildren().add(overlay);
+
+            cancel.setOnAction(ae0 -> getChildren().remove(overlay));
+
+            doRename.setOnAction(ae0 -> {
+                try {
+                    CommentSuite.db().renameGroup(group, nameField.getText());
+                    cancel.fire();
+                } catch (SQLException e) {
+                    error.setText(e.getMessage());
+                    error.setManaged(true);
+                }
+            });
+        });
+
+        setStyle(String.format("-fx-background-color: linear-gradient(to right, rgba(%s,%s,%s,0.2), transparent);", 255 * color.getRed(), 255 * color.getGreen(), 255 * color.getBlue()));
         getChildren().addAll(vbox);
+        // reload.fire();
+    }
+
+    private void loadAnalytics() {
+        Platform.runLater(() -> {
+            statsPane.setDisable(true);
+            videosPane.setDisable(true);
+            viewerPane.setDisable(true);
+            prog.setVisible(true);
+            prog.setManaged(true);
+            reload.setDisable(true);
+            commentSeries.getData().clear();
+            videoSeries.getData().clear();
+            commentCount.setText("...");
+            totalLikes.setText("...");
+            videoCount.setText("...");
+            totalLikes.setText("...");
+            totalViews.setText("...");
+            popularVideos.getItems().clear();
+            dislikedVideos.getItems().clear();
+            commentedVideos.getItems().clear();
+            disabledVideos.getItems().clear();
+            popularViewers.getItems().clear();
+            activeViewers.getItems().clear();
+        });
+        new Thread(() -> {
+            try { // General Stats
+                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
+                Map<Long,Long> commentHist = CommentSuite.db().getWeekByWeekCommentHistogram(group);
+                List<XYChart.Data<String,Number>> cdata = commentHist.keySet().stream()
+                        .map(time -> new XYChart.Data<String,Number>(sdf.format(time), commentHist.get(time)))
+                        .collect(Collectors.toList());
+                Platform.runLater(() -> commentSeries.getData().addAll(cdata));
+
+                long totalC = CommentSuite.db().getTotalComments(group);
+                long totalL = CommentSuite.db().getTotalLikes(group);
+                long totalVd = CommentSuite.db().getTotalVideos(group);
+                long totalVw = CommentSuite.db().getTotalViews(group);
+                Platform.runLater(() -> {
+                    commentCount.setText(String.format("%,d", totalC));
+                    totalLikes.setText("+"+String.format("%,d", totalL));
+                    videoCount.setText(String.format("%,d", totalVd));
+                    totalViews.setText(String.format("%,d", totalVw));
+                });
+
+                Map<Long,Long> videoHist = CommentSuite.db().getWeekByWeekVideoHistogram(group);
+                List<XYChart.Data<String,Number>> vdata = videoHist.keySet().stream()
+                        .map(time -> new XYChart.Data<String,Number>(sdf.format(time), videoHist.get(time)))
+                        .collect(Collectors.toList());
+                Platform.runLater(() -> videoSeries.getData().addAll(vdata));
+            } catch (SQLException ignored) {}
+            Platform.runLater(() -> statsPane.setDisable(false));
+
+            try { // About Viewers
+                List<YouTubeObjectView> mostPopular = CommentSuite.db().getMostPopularVideos(group, 10)
+                        .stream().map(v -> new YouTubeObjectView(v, String.format("%,d views", v.getViews()))).collect(Collectors.toList());
+                popularVideos.getItems().addAll(mostPopular);
+                List<YouTubeObjectView> mostDisliked = CommentSuite.db().getMostDislikedVideos(group, 10)
+                        .stream().map(v -> new YouTubeObjectView(v, String.format("%,d dislikes", v.getDislikes()))).collect(Collectors.toList());
+                dislikedVideos.getItems().addAll(mostDisliked);
+                List<YouTubeObjectView> mostCommented = CommentSuite.db().getMostCommentedVideos(group, 10)
+                        .stream().map(v -> new YouTubeObjectView(v, String.format("%,d comments", v.getCommentCount()))).collect(Collectors.toList());
+                commentedVideos.getItems().addAll(mostCommented);
+                List<YouTubeObjectView> disabled = CommentSuite.db().getDisabledVideos(group)
+                        .stream().map(v -> new YouTubeObjectView(v, "Comments Disabled")).collect(Collectors.toList());
+                disabledVideos.getItems().addAll(disabled);
+
+            } catch (SQLException ignored) {ignored.printStackTrace();}
+            Platform.runLater(() -> videosPane.setDisable(false));
+
+            try { // About Videos
+                LinkedHashMap<YouTubeChannel,Long> mostActive = CommentSuite.db().getMostActiveViewers(group, 25);
+                activeViewers.getItems().addAll(mostActive.keySet()
+                        .stream().map(channel -> new YouTubeObjectView(channel, mostActive.get(channel)+" comments")).collect(Collectors.toList()));
+
+                LinkedHashMap<YouTubeChannel,Long> mostPopular = CommentSuite.db().getMostPopularViewers(group, 25);
+                popularViewers.getItems().addAll(mostPopular.keySet()
+                        .stream().map(channel -> new YouTubeObjectView(channel, mostPopular.get(channel)+" likes")).collect(Collectors.toList()));
+            } catch (SQLException ignored) {ignored.printStackTrace();}
+            Platform.runLater(() -> {
+                prog.setVisible(false);
+                prog.setManaged(false);
+                viewerPane.setDisable(false);
+                reload.setDisable(false);
+            });
+        }).start();
     }
 
     private void beginGroupRefresh() {
-        this.refreshThread = new GroupRefresh(group, CommentSuite.db(), CommentSuite.youtube());
+        GroupRefresh refreshThread = new GroupRefresh(group, CommentSuite.db(), CommentSuite.youtube());
 
         ProgressIndicator activity = new ProgressIndicator();
         activity.setMaxWidth(25);
@@ -50,13 +522,28 @@ public class GroupManageView extends StackPane {
         title.textProperty().bind(refreshThread.refreshStatusProperty());
 
         Label subtitle = new Label();
-        subtitle.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 12));
+        subtitle.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 13));
         subtitle.textProperty().bind(refreshThread.elapsedTimeValueProperty());
 
         ProgressBar progress = new ProgressBar();
-        progress.maxWidth(Double.MAX_VALUE);
-        progress.prefWidth(Double.MAX_VALUE);
+        progress.setMaxWidth(Double.MAX_VALUE);
         progress.progressProperty().bind(refreshThread.progressProperty());
+
+        Label errorLabel = new Label();
+        errorLabel.setTooltip(new Tooltip("Most often HTTP 400 errors, commonly a result of slowed or interrupted connections."));
+        errorLabel.textProperty().bind(refreshThread.errorCountProperty().asString().concat(" errors"));
+        errorLabel.managedProperty().bind(refreshThread.errorCountProperty().isNotEqualTo(0));
+        errorLabel.visibleProperty().bind(errorLabel.managedProperty());
+        errorLabel.setStyle("-fx-text-fill: #BC3F3C");
+        errorLabel.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
+
+        Label videoLabel = new Label("0 new videos");
+        videoLabel.textProperty().bind(refreshThread.videosNewProperty().asString().concat(" new videos"));
+        videoLabel.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
+
+        Label commentLabel = new Label("0 new comments");
+        commentLabel.textProperty().bind(refreshThread.commentsNewProperty().asString().concat(" new comments"));
+        commentLabel.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
 
         HBox header = new HBox(10);
         header.getChildren().addAll(activity, title);
@@ -72,29 +559,35 @@ public class GroupManageView extends StackPane {
         vbox0.setPadding(new Insets(0, 0, 0, 35));
         vbox0.setAlignment(Pos.TOP_LEFT);
         vbox0.setFillWidth(true);
-        vbox0.getChildren().addAll(subtitle, progress, hbox1);
+        vbox0.getChildren().addAll(subtitle, progress, errorLabel, videoLabel, commentLabel, hbox1);
 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(25));
-        vbox.setMaxWidth(300);
+        vbox.setMaxWidth(350);
         vbox.setMaxHeight(0);
         vbox.setAlignment(Pos.CENTER);
         vbox.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
         vbox.getChildren().addAll(header, vbox0);
 
         StackPane overlay = new StackPane(vbox);
-        overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4); -fx-border-color: green");
+        overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
         getChildren().addAll(overlay);
 
         finish.setOnAction(ae -> {
             finish.disableProperty().unbind();
             title.textProperty().unbind();
             progress.progressProperty().unbind();
+            errorLabel.textProperty().unbind();
+            errorLabel.managedProperty().unbind();
+            errorLabel.visibleProperty().unbind();
+            videoLabel.textProperty().unbind();
+            commentLabel.textProperty().unbind();
             subtitle.textProperty().unbind();
             activity.visibleProperty().unbind();
+            reload.fire();
             Platform.runLater(() -> getChildren().remove(overlay));
         });
 
-        this.refreshThread.start();
+        refreshThread.start();
     }
 }

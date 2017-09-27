@@ -2,9 +2,12 @@ package mattw.youtube.commentsuite;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -32,7 +35,6 @@ import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.commentsuite.io.Geolocation;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.CommentThreadsList;
 import mattw.youtube.datav3.resources.SearchList;
 
 import java.awt.*;
@@ -57,10 +59,8 @@ public class CommentSuite extends Application {
     private static CommentDatabase database;
 
     static {
-        data.setRequestHeader("Referer", "https://github.com/mattwright324/youtube-data-list");
         try {
             database = new CommentDatabase("commentsuite.sqlite3");
-            database.cleanUp();
             database.refreshGroups();
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,6 +85,8 @@ public class CommentSuite extends Application {
     private StackPane manageGroups = buildManageGroupsPane();
 
     private CommentDatabase.CommentQuery query;
+    private ObservableList<YouTubeCommentView> originalComments = FXCollections.observableArrayList();
+    private ObservableList<YouTubeCommentView> treeComments = FXCollections.observableArrayList();
     private SimpleStringProperty commentsGroupId = new SimpleStringProperty(Group.NO_GROUP);
     private SimpleStringProperty selectedVideoId = new SimpleStringProperty("");
     private YouTubeVideo selectedVideo = null;
@@ -152,7 +154,7 @@ public class CommentSuite extends Application {
         HBox bgroup = new HBox();
         bgroup.getChildren().addAll(toggleComments, toggleManage, toggleSearch);
 
-        toggleSearch.fire();
+        toggleManage.fire();
 
         ComboBox<String> quickAccount =  new ComboBox<>();
         quickAccount.setStyle("-fx-background-color: transparent;");
@@ -261,6 +263,7 @@ public class CommentSuite extends Application {
         Button signIn = new Button("Add Account");
 
         ListView<Node> accountList = new ListView<>();
+        accountList.setId("listView");
         accountList.setMinHeight(150);
         accountList.setMaxHeight(150);
         VBox.setVgrow(accountList, Priority.ALWAYS);
@@ -270,19 +273,12 @@ public class CommentSuite extends Application {
 
         Button vacuum = new Button("Clean");
         vacuum.setTooltip(new Tooltip("Performs a 'VACUUM' command to reduce database size."));
-        vacuum.setOnAction(ae -> {
-
-        });
 
         Button reset = new Button("Reset");
         reset.setStyle("-fx-base: firebrick;");
         reset.setTooltip(new Tooltip("Completely wipes the database and starts over."));
-        reset.setOnAction(ae -> {
-
-        });
-
         HBox hbox2 = new HBox(10);
-        hbox2.getChildren().addAll(vacuum, reset);
+        hbox2.getChildren().addAll(new Label("Database"), vacuum, reset);
 
         Label label3 = new Label("About");
         label3.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
@@ -367,20 +363,16 @@ public class CommentSuite extends Application {
         vboxWeb.getChildren().addAll(title2, divider2, scroll2, ebox);
         vbox.disableProperty().bind(vboxWeb.managedProperty());
 
-        exit.setOnAction(ae -> {
-            Platform.runLater(() -> {
-                vboxWeb.setVisible(false);
-                vboxWeb.setManaged(false);
-            });
-        });
+        exit.setOnAction(ae -> Platform.runLater(() -> {
+            vboxWeb.setVisible(false);
+            vboxWeb.setManaged(false);
+        }));
 
-        signIn.setOnAction(ae -> {
-            Platform.runLater(() -> {
-                vboxWeb.setVisible(true);
-                vboxWeb.setManaged(true);
-                try { engine.load(oauth2.getAuthURL()); } catch (Exception ignored) {}
-            });
-        });
+        signIn.setOnAction(ae -> Platform.runLater(() -> {
+            vboxWeb.setVisible(true);
+            vboxWeb.setManaged(true);
+            try { engine.load(oauth2.getAuthURL()); } catch (Exception ignored) {}
+        }));
 
         save.setOnAction(ae -> {
             // TODO
@@ -396,6 +388,50 @@ public class CommentSuite extends Application {
         StackPane stack = new StackPane(hbox3);
         stack.setAlignment(Pos.CENTER_RIGHT);
         stack.setStyle("-fx-background-color: rgba(127,127,127,0.4)");
+
+        vacuum.setOnAction(ae -> new Thread(() -> {
+            Label label = new Label("Performing VACUUM");
+
+            ProgressIndicator prog = new ProgressIndicator();
+            prog.setMaxWidth(25);
+            prog.setMaxHeight(25);
+
+            VBox vbox0 = new VBox(10);
+            vbox0.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
+            vbox0.setPadding(new Insets(25));
+            vbox0.getChildren().addAll(label, prog);
+
+            StackPane overlay = new StackPane(vbox0);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+
+            Platform.runLater(() -> stack.getChildren().add(overlay));
+            try { database.vacuum(); } catch (SQLException ignored) {}
+            Platform.runLater(() -> stack.getChildren().remove(overlay));
+        }).start());
+
+        reset.setOnAction(ae -> new Thread(() -> {
+            Label label = new Label("Resetting Database");
+
+            ProgressIndicator prog = new ProgressIndicator();
+            prog.setMaxWidth(25);
+            prog.setMaxHeight(25);
+
+            VBox vbox0 = new VBox(10);
+            vbox0.setAlignment(Pos.CENTER);
+            vbox0.setMaxHeight(0);
+            vbox0.setMaxWidth(0);
+            vbox0.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
+            vbox0.setPadding(new Insets(25));
+            vbox0.getChildren().addAll(label, prog);
+
+            StackPane overlay = new StackPane(vbox0);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+
+            Platform.runLater(() -> stack.getChildren().add(overlay));
+            try { database.reset(); } catch (SQLException ignored) { ignored.printStackTrace(); }
+            Platform.runLater(() -> stack.getChildren().remove(overlay));
+        }).start());
+
         return stack;
     }
 
@@ -521,6 +557,8 @@ public class CommentSuite extends Application {
         menu.getItems().addAll(openBrowser, loadThumb, copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);
 
         ListView<YouTubeCommentView> commentsList = new ListView<>();
+        commentsList.setItems(originalComments);
+        commentsList.setId("listView");
         commentsList.setCellFactory(cf -> new ListViewEmptyCellFactory(70));
         commentsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         commentsList.setContextMenu(menu);
@@ -529,7 +567,7 @@ public class CommentSuite extends Application {
         });
         VBox.setVgrow(commentsList, Priority.ALWAYS);
 
-        selectedVideoId.addListener((o, ov, nv) -> {
+        selectedVideoId.addListener((o, ov, nv) -> new Thread(() -> {
             try {
                 this.selectedVideo = database.getVideo(nv);
                 if(selectedVideo != null) {
@@ -538,12 +576,13 @@ public class CommentSuite extends Application {
                     Image vat = selectedVideo.getChannel().getThumbnail();
                     Platform.runLater(() -> {
                         videoThumb.setImage(vt);
-                        videoAuthor.setText(selectedVideo.getTitle());
+                        videoTitle.setText(selectedVideo.getTitle());
+                        videoAuthor.setText(selectedVideo.getChannel().getTitle());
                         videoAuthorThumb.setImage(vat);
                         String desc = selectedVideo.getDescription();
                         try { desc = URLDecoder.decode(desc, "UTF-8"); } catch (Exception ignored) {}
                         videoDesc.setText("Published "+sdf.format(selectedVideo.getPublishedDate())+"  "+desc);
-                        views.setText(String.valueOf(selectedVideo.getViews()));
+                        views.setText(selectedVideo.getViews()+" views");
                         likes.setText("+"+selectedVideo.getLikes());
                         dislikes.setText("-"+selectedVideo.getDislikes());
                     });
@@ -551,7 +590,7 @@ public class CommentSuite extends Application {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
+        }).start());
 
         openBrowser.setOnAction(ae -> {
             List<String> toOpen = new ArrayList<>();
@@ -585,7 +624,7 @@ public class CommentSuite extends Application {
         copyText.setOnAction(ae -> {
             List<String> toCopy = new ArrayList<>();
             for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
-                toCopy.add(yc.getComment().getText());
+                toCopy.add(yc.getParsedText());
             }
             Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
         });
@@ -616,9 +655,44 @@ public class CommentSuite extends Application {
             Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
         });
 
+        Button backToResults = new Button("Back to Results");
+        backToResults.setVisible(false);
+        backToResults.setManaged(false);
+        backToResults.setStyle("-fx-base: forestgreen");
+        backToResults.setOnAction(ae -> Platform.runLater(() -> {
+            backToResults.setVisible(false);
+            backToResults.setManaged(false);
+            treeComments.clear();
+            commentsList.setItems(originalComments);
+        }));
+
+        SimpleIntegerProperty queryUpdate = new SimpleIntegerProperty(0);
+        SimpleIntegerProperty pageNum = new SimpleIntegerProperty(1);
+        SimpleIntegerProperty lastPageNum = new SimpleIntegerProperty(1);
+
+        Button firstPage = new Button("<<");
+        firstPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.isEqualTo(1)));
+
+        Button prevPage = new Button("<");
+        prevPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.isEqualTo(1)));
+
+        Button nextPage = new Button(">");
+        nextPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.greaterThanOrEqualTo(lastPageNum)));
+
+        Button lastPage = new Button(">>");
+        lastPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.greaterThanOrEqualTo(lastPageNum)));
+
+        Label results = new Label("Page 0 of 0. Showing 0 of 0.");
+        queryUpdate.addListener((o, ov, nv) -> Platform.runLater(() -> results.setText(String.format("Page %s of %s. Showing %s of %s.", nv, query.getPageCount(), commentsList.getItems().size(), query.getTotalResults()))));
+
+        HBox hbox0 = new HBox();
+        hbox0.setAlignment(Pos.CENTER);
+        hbox0.getChildren().addAll(firstPage, prevPage, backToResults, nextPage, lastPage);
+
         VBox commentsBox = new VBox(10);
+        commentsBox.setAlignment(Pos.TOP_CENTER);
         commentsBox.setPadding(new Insets(10));
-        commentsBox.getChildren().addAll(commentsList);
+        commentsBox.getChildren().addAll(commentsList, hbox0, results);
         HBox.setHgrow(commentsBox, Priority.ALWAYS);
 
         Label label1 = new Label("Select Group");
@@ -742,33 +816,124 @@ public class CommentSuite extends Application {
         hbox.setAlignment(Pos.CENTER);
         hbox.getChildren().addAll(contextBox, contextToggle, commentsBox, searchBox);
 
-        search.setOnAction(ae -> {
-            new Thread(() -> {
-                searchBox.setDisable(true);
-                try {
-                    query = database.commentQuery()
-                            .limit(500)
-                            .ctype(type.getSelectionModel().getSelectedIndex())
-                            .after(getDatePickerDate(dateFrom, false).getTime())
-                            .before(getDatePickerDate(dateTo, true).getTime())
-                            .orderBy(orderBy.getSelectionModel().getSelectedIndex())
-                            .textLike(textLike.getText())
-                            .nameLike(nameLike.getText());
-                    List<YouTubeCommentView> commentViews = query.get(1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
-                            .stream().map(comment -> {
-                                YouTubeChannel channel = CommentSuite.db().getChannel(comment.getChannelId());
-                                return new YouTubeCommentView(comment, channel);
-                            }).collect(Collectors.toList());
-                    Platform.runLater(() -> {
-                        commentsList.getItems().clear();
-                        commentsList.getItems().addAll(commentViews);
-                    });
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                searchBox.setDisable(false);
-            }).start();
-        });
+        firstPage.setOnAction(ae -> new Thread(() -> {
+            searchBox.setDisable(true);
+            try {
+                List<YouTubeCommentView> commentViews = query.get(1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
+                        .stream().map(comment -> {
+                            YouTubeChannel channel = CommentSuite.db().getChannel(comment.getChannelId());
+                            return new YouTubeCommentView(comment, channel);
+                        }).collect(Collectors.toList());
+                Platform.runLater(() -> {
+                    treeComments.clear();
+                    originalComments.clear();
+                    originalComments.addAll(commentViews);
+                    commentsList.setItems(originalComments);
+                    lastPageNum.setValue(query.getPageCount());
+                    pageNum.setValue(query.getPage());
+                    queryUpdate.setValue(queryUpdate.getValue()+1);
+                });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }).start());
+
+        nextPage.setOnAction(ae -> new Thread(() -> {
+            searchBox.setDisable(true);
+            try {
+                List<YouTubeCommentView> commentViews = query.get(query.getPage()+1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
+                        .stream().map(comment -> {
+                            YouTubeChannel channel = CommentSuite.db().getChannel(comment.getChannelId());
+                            return new YouTubeCommentView(comment, channel);
+                        }).collect(Collectors.toList());
+                Platform.runLater(() -> {
+                    treeComments.clear();
+                    originalComments.clear();
+                    originalComments.addAll(commentViews);
+                    commentsList.setItems(originalComments);
+                    lastPageNum.setValue(query.getPageCount());
+                    pageNum.setValue(query.getPage());
+                    queryUpdate.setValue(queryUpdate.getValue()+1);
+                });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }).start());
+
+        prevPage.setOnAction(ae -> new Thread(() -> {
+            searchBox.setDisable(true);
+            try {
+                List<YouTubeCommentView> commentViews = query.get(query.getPage()-1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
+                        .stream().map(comment -> {
+                            YouTubeChannel channel = CommentSuite.db().getChannel(comment.getChannelId());
+                            return new YouTubeCommentView(comment, channel);
+                        }).collect(Collectors.toList());
+                Platform.runLater(() -> {
+                    treeComments.clear();
+                    originalComments.clear();
+                    originalComments.addAll(commentViews);
+                    commentsList.setItems(originalComments);
+                    lastPageNum.setValue(query.getPageCount());
+                    pageNum.setValue(query.getPage());
+                    queryUpdate.setValue(queryUpdate.getValue()+1);
+                });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }).start());
+
+        lastPage.setOnAction(ae -> new Thread(() -> {
+            searchBox.setDisable(true);
+            try {
+                List<YouTubeCommentView> commentViews = query.get(query.getPageCount(), group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
+                        .stream().map(comment -> {
+                            YouTubeChannel channel = CommentSuite.db().getChannel(comment.getChannelId());
+                            return new YouTubeCommentView(comment, channel);
+                        }).collect(Collectors.toList());
+                Platform.runLater(() -> {
+                    treeComments.clear();
+                    originalComments.clear();
+                    originalComments.addAll(commentViews);
+                    commentsList.setItems(originalComments);
+                    lastPageNum.setValue(query.getPageCount());
+                    pageNum.setValue(query.getPage());
+                    queryUpdate.setValue(queryUpdate.getValue()+1);
+                });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }).start());
+
+        search.setOnAction(ae -> new Thread(() -> {
+            searchBox.setDisable(true);
+            try {
+                query = database.commentQuery()
+                        .limit(500)
+                        .ctype(type.getSelectionModel().getSelectedIndex())
+                        .after(getDatePickerDate(dateFrom, false).getTime())
+                        .before(getDatePickerDate(dateTo, true).getTime())
+                        .orderBy(orderBy.getSelectionModel().getSelectedIndex())
+                        .textLike(textLike.getText())
+                        .nameLike(nameLike.getText());
+                List<YouTubeCommentView> commentViews = query.get(1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
+                        .stream().map(comment -> {
+                            YouTubeChannel channel = CommentSuite.db().getChannel(comment.getChannelId());
+                            return new YouTubeCommentView(comment, channel);
+                        }).collect(Collectors.toList());
+                Platform.runLater(() -> {
+                    treeComments.clear();
+                    originalComments.clear();
+                    originalComments.addAll(commentViews);
+                    commentsList.setItems(originalComments);
+                    lastPageNum.setValue(query.getPageCount());
+                    pageNum.setValue(query.getPage());
+                    queryUpdate.setValue(queryUpdate.getValue()+1);
+                });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            searchBox.setDisable(false);
+        }).start());
 
         StackPane stack = new StackPane(hbox);
         stack.setPadding(new Insets(0));
@@ -808,7 +973,6 @@ public class CommentSuite extends Application {
         groupList.setId("control");
         groupList.setPrefWidth(200);
         groupList.setMaxWidth(200);
-        // groupList.setStyle("-fx-background-color: transparent");
         groupList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
             if(ov != null) {
                 ov.nameProperty().unbind();
@@ -816,8 +980,6 @@ public class CommentSuite extends Application {
             if(nv != null) {
                 managerGroupId.setValue(nv.getId());
                 nv.nameProperty().addListener((o1, ov1, nv1) -> {
-                    // TODO Better way of updating list when name changed?
-                    // groupList.setItems(null);
                     groupList.setItems(database.globalGroupList);
                     groupList.setValue(nv);
                 });
@@ -845,14 +1007,10 @@ public class CommentSuite extends Application {
         Button create = new Button("Create Group");
         create.setId("control");
 
-        Button rename = new Button("Rename Group");
-        rename.disableProperty().bind(groupList.disableProperty());
-        rename.setId("control");
-
         HBox control = new HBox(10);
         control.setPadding(new Insets(0, 0, 10, 0));
         control.setAlignment(Pos.CENTER);
-        control.getChildren().addAll(label, groupList, create, rename);
+        control.getChildren().addAll(label, groupList, create);
 
         Label divider = new Label();
         divider.setMaxWidth(Double.MAX_VALUE);
@@ -909,57 +1067,6 @@ public class CommentSuite extends Application {
             doCreate.setOnAction(ae0 -> {
                 try {
                     Group group = database.createGroup(nameField.getText());
-                    groupList.setValue(group);
-                    cancel.fire();
-                } catch (SQLException e) {
-                    error.setText(e.getMessage());
-                    error.setManaged(true);
-                }
-            });
-        });
-
-        rename.setOnAction(ae -> {
-            Label title = new Label("Rename Group");
-            title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
-
-            String currentName = groupList.getSelectionModel().getSelectedItem().getName();
-            Label current = new Label("Current: "+currentName);
-
-            TextField nameField = new TextField(currentName);
-            nameField.setMinWidth(250);
-            nameField.setPromptText("Group name...");
-
-            Label error = new Label("");
-            error.setManaged(false);
-
-            Button doRename = new Button("Rename");
-            doRename.setStyle("-fx-base: derive(cornflowerblue, 70%)");
-
-            Button cancel = new Button("Cancel");
-
-            HBox hbox0 = new HBox(10);
-            hbox0.setAlignment(Pos.CENTER_RIGHT);
-            hbox0.getChildren().addAll(cancel, doRename);
-
-            VBox vbox0 = new VBox(10);
-            vbox0.setAlignment(Pos.CENTER);
-            vbox0.setMaxWidth(0);
-            vbox0.setMaxHeight(0);
-            vbox0.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
-            vbox0.setPadding(new Insets(25));
-            vbox0.getChildren().addAll(title, current, nameField, error, hbox0);
-
-            StackPane overlay = new StackPane(vbox0);
-            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
-            stack.getChildren().add(overlay);
-
-            cancel.setOnAction(ae0 -> stack.getChildren().remove(overlay));
-
-            doRename.setOnAction(ae0 -> {
-                Group group = groupList.getValue();
-                try {
-                    database.renameGroup(group, nameField.getText());
-                    groupList.setValue(null);
                     groupList.setValue(group);
                     cancel.fire();
                 } catch (SQLException e) {

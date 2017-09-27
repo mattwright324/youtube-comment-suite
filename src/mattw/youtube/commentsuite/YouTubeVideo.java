@@ -53,5 +53,5 @@ public class YouTubeVideo extends YouTubeObject {
 
     public void setGrabDate(long time) { this.grabDate = time; }
 
-    public String getString() { return getTitle(); }
+    public String toString() { return getTitle(); }
 }

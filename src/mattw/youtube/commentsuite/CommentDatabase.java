@@ -1,18 +1,17 @@
 package mattw.youtube.commentsuite;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CommentDatabase {
 
     private final Connection con;
 
+    private final Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
     private final Group noGroup = new Group(Group.NO_GROUP, "No groups");
     private final GroupItem noItems = new GroupItem(GroupItem.NO_ITEMS, "No items");
 
@@ -40,7 +39,6 @@ public class CommentDatabase {
                 + "thumb_url STRING,"
                 + "FOREIGN KEY(type_id) REFERENCES gitem_type(type_id));");
         s.addBatch("CREATE TABLE IF NOT EXISTS groups (group_id STRING PRIMARY KEY, group_name STRING UNIQUE);");
-        s.addBatch("INSERT OR IGNORE INTO groups VALUES ('28da132f5f5b48d881264d892aba790a', 'Default');");
         s.addBatch("CREATE TABLE IF NOT EXISTS group_gitem ("
                 + "group_id STRING,"
                 + "gitem_id STRING,"
@@ -92,6 +90,34 @@ public class CommentDatabase {
     }
 
     /**
+     * Completely resets the database - deletes all data.
+     */
+    public void reset() throws SQLException {
+        Statement s = con.createStatement();
+        for(String table : "gitem_type,gitem_list,groups,group_gitem,gitem_video,videos,comments,channels".split(","))
+            s.executeUpdate("DROP TABLE IF EXISTS "+table);
+        s.close();
+        commit();
+        vacuum();
+        channelCache.clear();
+        YouTubeObject.clearThumbCache();
+        create();
+        commit();
+        refreshGroups();
+    }
+
+    /**
+     * VACUUMs the database, shrinking file size if possible.
+     */
+    public void vacuum() throws SQLException {
+        con.setAutoCommit(true);
+        Statement s = con.createStatement();
+        s.executeUpdate("VACUUM");
+        s.close();
+        con.setAutoCommit(false);
+    }
+
+    /**
      * Cleans up unlinked data in all tables.
      * To be ran after deleting a Group or GroupItem.
      */
@@ -140,20 +166,24 @@ public class CommentDatabase {
             groups.add(resultSetToGroup(rs));
         }
         rs.close();
-        s.close();
         for(int i = 0; i< globalGroupList.size(); i++) {
             if(!groups.contains(globalGroupList.get(i))) {
-                globalGroupList.remove(i);
+                final int j = i;
+                Platform.runLater(() -> globalGroupList.remove(j));
             }
         }
         for(Group g : groups) {
             if(!globalGroupList.contains(g)) {
-                globalGroupList.add(g);
+                Platform.runLater(() -> globalGroupList.add(g));
             }
         }
-        if(globalGroupList.isEmpty()) {
-            globalGroupList.add(noGroup);
+        if(groups.isEmpty()) {
+            System.out.println("INSERTING Default Group");
+            s.executeUpdate("INSERT INTO groups (group_id, group_name) VALUES ('28da132f5f5b48d881264d892aba790a', 'Default');");
+            commit();
+            Platform.runLater(() -> globalGroupList.add(defaultGroup));
         }
+        s.close();
     }
 
     private Group resultSetToGroup(ResultSet rs) throws SQLException {
@@ -421,24 +451,6 @@ public class CommentDatabase {
         return list;
     }
 
-    /**
-     * Gets a list of videos by group.
-    public List<YouTubeVideo> getVideos(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos JOIN channels USING(channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
-        ps.setString(1, group.getId());
-        ResultSet rs = ps.executeQuery();
-        List<YouTubeVideo> list = new ArrayList<>();
-        while(rs.next()) {
-            list.add(resultSetToVideo(rs));
-            String channelId = rs.getString("channel_id");
-            if(!channelCache.containsKey(channelId)) {
-                channelCache.put(channelId, resultSetToChannel(rs));
-            }
-        }
-        ps.close();
-        rs.close();
-        return list;
-    }*/
 
     public YouTubeVideo getVideo(String videoId) throws SQLException {
         PreparedStatement ps = con.prepareStatement("SELECT * FROM videos WHERE video_id = ? LIMIT 1");
@@ -605,8 +617,6 @@ public class CommentDatabase {
         private long totalResults = 0;
         private int page = 1;
 
-        private Group group = null;
-        private GroupItem gitem = null;
         private int orderBy = 0;
         private int ctype = 0;
         private int limit = 500;
@@ -668,8 +678,6 @@ public class CommentDatabase {
 
         public List<YouTubeComment> get(int page, Group group, GroupItem gitem) throws SQLException {
             this.page = Math.abs(page);
-            this.group = group;
-            this.gitem = gitem;
             List<YouTubeComment> items = new ArrayList<>();
             PreparedStatement ps = con.prepareStatement("SELECT * FROM comments LEFT JOIN channels USING (channel_id) " +
                     "WHERE comments.video_id IN (SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE "+(gitem != null ? "gitem_id = ?":"group_id = ?")+" ) " +
@@ -687,7 +695,7 @@ public class CommentDatabase {
             long pos = 0;
             System.out.format("Page %s (%s, %s)\r\n", page, start, end);
             while(rs.next()) {
-                if(pos >= start && pos <= end) {
+                if(pos >= start && pos < end) {
                     items.add(resultSetToComment(rs));
                     String channelId = rs.getString("channel_id");
                     if(!channelCache.containsKey(channelId)) {
@@ -696,9 +704,183 @@ public class CommentDatabase {
                 }
                 pos++;
             }
-            System.out.format("Total results: %s\r\n", pos);
+            totalResults = pos;
             ps.close();
             return items;
         }
+    }
+
+    /******** Stats and Info Methods **********/
+
+    public Map<Long,Long> getWeekByWeekCommentHistogram(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT CAST(comment_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY week ORDER BY week");
+        ps.setString(1, group.getId());
+        ResultSet rs = ps.executeQuery();
+        Map<Long,Long> data = new LinkedHashMap<>();
+        while(rs.next()) {
+            data.put(rs.getLong("week"), rs.getLong("count"));
+        }
+        ps.close();
+        rs.close();
+        return data;
+    }
+
+    public long getTotalComments(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        ps.setString(1, group.getId());
+        ResultSet rs = ps.executeQuery();
+        long totalComments = 0;
+        if(rs.next()) {
+            totalComments = rs.getLong("count");
+        }
+        ps.close();
+        rs.close();
+        return totalComments;
+    }
+
+    public long getTotalLikes(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT SUM(comment_likes) AS total_likes FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        ps.setString(1, group.getId());
+        ResultSet rs = ps.executeQuery();
+        long totalLikes = 0;
+        if(rs.next()) {
+            totalLikes = rs.getLong("total_likes");
+        }
+        ps.close();
+        rs.close();
+        return totalLikes;
+    }
+
+    public long getTotalVideos(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT COUNT(video_id) AS count FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        ps.setString(1, group.getId());
+        ResultSet rs = ps.executeQuery();
+        long totalVideos = 0;
+        if(rs.next()) {
+            totalVideos = rs.getLong("count");
+        }
+        ps.close();
+        rs.close();
+        return totalVideos;
+    }
+
+    public long getTotalViews(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT SUM(total_views) AS total_views FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        ps.setString(1, group.getId());
+        ResultSet rs = ps.executeQuery();
+        long totalViews = 0;
+        if(rs.next()) {
+            totalViews = rs.getLong("total_views");
+        }
+        ps.close();
+        rs.close();
+        return totalViews;
+    }
+
+    public Map<Long,Long> getWeekByWeekVideoHistogram(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT CAST(publish_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY week ORDER BY week");
+        ps.setString(1, group.getId());
+        ResultSet rs = ps.executeQuery();
+        Map<Long,Long> data = new LinkedHashMap<>();
+        while(rs.next()) {
+            data.put(rs.getLong("week"), rs.getLong("count"));
+        }
+        ps.close();
+        rs.close();
+        return data;
+    }
+
+
+    public LinkedHashMap<YouTubeChannel,Long> getMostActiveViewers(Group group, int limit) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT *, count(channel_id) AS count, MAX(comment_date) AS last_comment_on FROM channels JOIN comments USING (channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY channel_id ORDER BY count DESC LIMIT ?");
+        ps.setString(1, group.getId());
+        ps.setInt(2, limit);
+        ResultSet rs = ps.executeQuery();
+        LinkedHashMap<YouTubeChannel,Long> map = new LinkedHashMap<>();
+        String channelId;
+        while(rs.next()) {
+            channelId = rs.getString("channel_id");
+            if(!channelCache.containsKey(channelId)) {
+                channelCache.put(channelId, resultSetToChannel(rs));
+            }
+            map.put(resultSetToChannel(rs), rs.getLong("count"));
+        }
+        ps.close();
+        rs.close();
+        return map;
+    }
+
+    public LinkedHashMap<YouTubeChannel,Long> getMostPopularViewers(Group group, int limit) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT *, SUM(comment_likes) AS total_likes, MAX(comment_date) AS last_comment_on FROM channels JOIN comments USING (channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY channel_id ORDER BY total_likes DESC LIMIT ?");
+        ps.setString(1, group.getId());
+        ps.setInt(2, limit);
+        ResultSet rs = ps.executeQuery();
+        LinkedHashMap<YouTubeChannel,Long> map = new LinkedHashMap<>();
+        String channelId;
+        while(rs.next()) {
+            channelId = rs.getString("channel_id");
+            if(!channelCache.containsKey(channelId)) {
+                channelCache.put(channelId, resultSetToChannel(rs));
+            }
+            map.put(resultSetToChannel(rs), rs.getLong("total_likes"));
+        }
+        ps.close();
+        rs.close();
+        return map;
+    }
+
+    public List<YouTubeVideo> getMostPopularVideos(Group group, int limit) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_views DESC LIMIT ?");
+        ps.setString(1, group.getId());
+        ps.setInt(2, limit);
+        ResultSet rs = ps.executeQuery();
+        List<YouTubeVideo> list = new ArrayList<>();
+        while(rs.next()) {
+            list.add(resultSetToVideo(rs));
+        }
+        rs.close();
+        ps.close();
+        return list;
+    }
+
+    public List<YouTubeVideo> getMostDislikedVideos(Group group, int limit) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_dislikes DESC LIMIT ?");
+        ps.setString(1, group.getId());
+        ps.setInt(2, limit);
+        ResultSet rs = ps.executeQuery();
+        List<YouTubeVideo> list = new ArrayList<>();
+        while(rs.next()) {
+            list.add(resultSetToVideo(rs));
+        }
+        rs.close();
+        ps.close();
+        return list;
+    }
+
+    public List<YouTubeVideo> getMostCommentedVideos(Group group, int limit) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_comments DESC LIMIT ?");
+        ps.setString(1, group.getId());
+        ps.setInt(2, limit);
+        ResultSet rs = ps.executeQuery();
+        List<YouTubeVideo> list = new ArrayList<>();
+        while(rs.next()) {
+            list.add(resultSetToVideo(rs));
+        }
+        rs.close();
+        ps.close();
+        return list;
+    }
+
+    public List<YouTubeVideo> getDisabledVideos(Group group) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) AND http_code = 403 ORDER BY publish_date DESC");
+        ps.setString(1, group.getId());
+        ResultSet rs = ps.executeQuery();
+        List<YouTubeVideo> list = new ArrayList<>();
+        while(rs.next()) {
+            list.add(resultSetToVideo(rs));
+        }
+        rs.close();
+        ps.close();
+        return list;
     }
 }

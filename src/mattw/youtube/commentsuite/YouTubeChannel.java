@@ -2,7 +2,7 @@ package mattw.youtube.commentsuite;
 
 import mattw.youtube.datav3.resources.ChannelsList;
 import mattw.youtube.datav3.resources.CommentsList;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 public class YouTubeChannel extends YouTubeObject {
 
@@ -21,5 +21,5 @@ public class YouTubeChannel extends YouTubeObject {
         this.typeId = 1;
     }
 
-    public String getString() { return getTitle(); }
+    public String toString() { return getTitle(); }
 }

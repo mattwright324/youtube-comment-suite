@@ -1,16 +1,14 @@
 package mattw.youtube.commentsuite;
 
-import com.google.gson.Gson;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import mattw.youtube.commentsuite.io.ElapsedTime;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.YouTubeErrorException;
 import mattw.youtube.datav3.resources.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -18,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class GroupRefresh extends Thread {
@@ -26,17 +25,22 @@ public class GroupRefresh extends Thread {
     private CommentDatabase database;
     private YouTubeData3 youtube;
     private ElapsedTime elapsedTime = new ElapsedTime();
+
     private SimpleStringProperty refreshStatus = new SimpleStringProperty("Preparing");
     private SimpleStringProperty elapsedTimeValue = new SimpleStringProperty("");
     private SimpleBooleanProperty refreshing = new SimpleBooleanProperty(false);
     private SimpleBooleanProperty completed = new SimpleBooleanProperty(false);
     private SimpleDoubleProperty progress = new SimpleDoubleProperty(-1);
+    private AtomicLong commentInsertCount = new AtomicLong(0);
+    private SimpleIntegerProperty commentsNew = new SimpleIntegerProperty(0);
+    private long videoInsertCount = 0;
+    private SimpleIntegerProperty videosNew = new SimpleIntegerProperty(0);
+    private AtomicLong errorCounter = new AtomicLong(0);
+    private SimpleIntegerProperty errorCount = new SimpleIntegerProperty(0);
 
-    private int commentThreadCount = 20;
     private Map<String, String> threadToVideo = new HashMap<>();
     private Map<String, Integer> threadToReplies;
     private Queue<String> commentThreadQueue = new ConcurrentLinkedQueue<>();
-    private int videoThreadCount = 10;
     private Queue<String> videosQueue = new ConcurrentLinkedQueue<>();
     private boolean threadLive = true, threadMayDie = false, videoLive = true, videoMayDie = false;
     private double totalVideos = 0;
@@ -64,8 +68,8 @@ public class GroupRefresh extends Thread {
         return list.stream().anyMatch(yo -> yo.getYouTubeId().equals(id));
     }
 
-    private void clearLists(Collection<? extends Object>... lists) {
-        for(Collection<? extends Object> list : lists) { list.clear(); }
+    private void clearLists(Collection... lists) {
+        for(Collection list : lists) { list.clear(); }
     }
 
     public void run() {
@@ -76,7 +80,19 @@ public class GroupRefresh extends Thread {
             ExecutorService es = Executors.newFixedThreadPool(1);
             es.execute(() -> {
                 while(!completed.getValue()) {
-                    Platform.runLater(() -> elapsedTimeValue.setValue(elapsedTime.getTimeString()));
+                    Platform.runLater(() -> {
+                        elapsedTimeValue.setValue(elapsedTime.getTimeString());
+                        if(errorCounter.get() > 0) {
+                            errorCount.setValue(errorCounter.get());
+                        }
+                        long count = videoInsert.size();
+                        if(count > videoInsertCount) {
+                            videosNew.setValue(videoInsertCount = count);
+                        }
+                        if(progress.getValue() != -1) {
+                            commentsNew.setValue(commentInsertCount.get());
+                        }
+                    });
                     try { Thread.sleep(121); } catch (Exception ignored) {}
                 }
                 System.out.println("ELAPSED TIME STOPPED");
@@ -84,7 +100,6 @@ public class GroupRefresh extends Thread {
             es.shutdown();
 
             existingVideoIds.addAll(database.getAllVideoIds());
-            existingCommentIds.addAll(database.getCommentIds(group));
             existingChannelIds.addAll(database.getAllChannelIds());
             existingGroupItems.addAll(database.getGroupItems(group));
             existingGIV.addAll(database.getAllGroupItemVideo());
@@ -92,6 +107,8 @@ public class GroupRefresh extends Thread {
             List<GroupItem> videoItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.VIDEO).collect(Collectors.toList());
             List<GroupItem> playlistItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.PLAYLIST).collect(Collectors.toList());
             List<GroupItem> channelItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.CHANNEL).collect(Collectors.toList());
+
+            System.out.println(String.format("VideoItems %s, PlaylistItems %s, ChannelItems %s", videoItems.size(), playlistItems.size(), channelItems.size()));
 
             Platform.runLater(() -> refreshStatus.setValue("Grabbing Videos"));
             parseGroupItems(videoItems, GroupItem.VIDEO);
@@ -101,19 +118,23 @@ public class GroupRefresh extends Thread {
             database.updateVideos(videoUpdate);
             database.insertGroupItemVideo(givInsert);
             database.commit();
+            videoInsertCount = videoInsert.size();
             clearLists(existingVideoIds, existingGIV, videoInsert, videoUpdate, givInsert, videoItems, playlistItems, channelItems);
 
-            Platform.runLater(() -> refreshStatus.setValue("Grabbing Comments"));
+            Platform.runLater(() -> {
+                refreshStatus.setValue("Grabbing Comments");
+                progress.setValue(0);
+            });
+            existingCommentIds.addAll(database.getCommentIds(group));
             threadToReplies = database.getCommentThreadReplyCounts(group);
             videosQueue.addAll(database.getVideoIds(group));
             totalVideos = videosQueue.size();
-            Platform.runLater(() -> progress.setValue(0));
+            System.out.println("VIDEO QUEUE "+videosQueue.size());
             ExecutorService ces = Executors.newCachedThreadPool();
-            for(int i=0; i<commentThreadCount; i++) {
+            int commentThreadCount = 20;
+            for(int i = 0; i< commentThreadCount; i++) {
                 // Consumes from commentThreadQueue
-                final int tid = i;
                 ces.execute(() -> {
-                    System.out.println("CommentThread #"+tid+" alive");
                     while(!commentThreadQueue.isEmpty() || threadLive) {
                         if(threadMayDie && threadLive) threadLive = false;
                         try {
@@ -124,15 +145,13 @@ public class GroupRefresh extends Thread {
                             }
                         } catch (Exception ignored) {ignored.printStackTrace();}
                     }
-                    System.out.println("CommentThread #"+tid+" died");
                 });
             }
+            int videoThreadCount = 10;
             ExecutorService ves = Executors.newFixedThreadPool(videoThreadCount);
-            for(int i=0; i<videoThreadCount; i++) {
+            for(int i = 0; i< videoThreadCount; i++) {
                 // Consumes from videoQueue and produces for commentThreadQueue
-                final int tid = i;
                 ves.execute(() -> {
-                    System.out.println("VideoThread #"+tid+" alive");
                     while (!videosQueue.isEmpty() || videoLive) {
                         if (videoMayDie && videoLive) videoLive = false;
                         try {
@@ -144,7 +163,6 @@ public class GroupRefresh extends Thread {
                             Thread.sleep(100);
                         } catch (Exception ignored) { ignored.printStackTrace(); }
                     }
-                    System.out.println("VideoThread #"+tid+" died");
                 });
             }
 
@@ -162,6 +180,7 @@ public class GroupRefresh extends Thread {
             database.updateChannels(channelUpdate);
             database.commit();
         } catch (Exception e) {
+            errorCounter.addAndGet(1);
             e.printStackTrace();
         }
         Platform.runLater(() -> {
@@ -178,8 +197,8 @@ public class GroupRefresh extends Thread {
         if(type == GroupItem.VIDEO) {
             List<String> sublist;
             for(int i=0; i<items.size(); i+=50) {
-                sublist = items.subList(i, i+50 < items.size() ? i+50 : videosQueue.size())
-                        .stream().map(gi -> gi.getYouTubeId()).collect(Collectors.toList());
+                sublist = items.subList(i, i+50 < items.size() ? i+50 : items.size())
+                        .stream().map(YouTubeObject::getYouTubeId).collect(Collectors.toList());
                 System.out.println("GroupItem Videos: "+sublist.toString());
                 handleVideos(sublist, "");
             }
@@ -232,12 +251,8 @@ public class GroupRefresh extends Thread {
         for(int i=0; i<vlSnippet.items.length; i++) {
             YouTubeVideo video = new YouTubeVideo(vlSnippet.items[i], vlStats.items[i]);
             checkChannel(video.getChannelId(), null);
-            if(!"".equals(gitemId)) {
-                CommentDatabase.GroupItemVideo giv = new CommentDatabase.GroupItemVideo(gitemId, video.getYouTubeId());
-                if(!existingGIV.contains(giv)) {
-                    givInsert.add(giv);
-                }
-            }
+            CommentDatabase.GroupItemVideo giv = new CommentDatabase.GroupItemVideo(gitemId.equals("") ? video.getYouTubeId() : gitemId, video.getYouTubeId());
+            if(!existingGIV.contains(giv)) { givInsert.add(giv); }
             if(!(existingVideoIds.contains(video.getYouTubeId()) || listHasId(videoInsert, video.getYouTubeId()) || listHasId(videoUpdate, video.getYouTubeId()))) {
                 videoInsert.add(video);
                 System.out.format("INSERT %s: %s\r\n", video.getYouTubeId(), video.getTitle());
@@ -258,13 +273,17 @@ public class GroupRefresh extends Thread {
         CommentThreadsList ctl = null;
         String pageToken = "";
         int fails = 0;
+        int page = 0;
         do {
             if(comments.size() > 500) {
                 insertComments(comments);
             }
             try {
-                ctl = youtube.commentThreadsList().getThreadsByVideo(CommentThreadsList.PART_SNIPPET, videoId, pageToken);
+                ctl = youtube.commentThreadsList()
+                        .order(CommentThreadsList.ORDER_TIME)
+                        .getThreadsByVideo(CommentThreadsList.PART_SNIPPET, videoId, URLEncoder.encode(pageToken, "UTF-8"));
                 pageToken = ctl.nextPageToken;
+                page++;
                 for(CommentThreadsList.Item item: ctl.items) {
                     if(item.hasSnippet()) {
                         String threadId = item.snippet.topLevelComment.getId();
@@ -289,7 +308,8 @@ public class GroupRefresh extends Thread {
                 try {
                     switch(yee.getError().code){
                         case 400:
-                            System.err.println("Bad Request (400): Retry #"+fails+"  http://youtu.be/"+videoId);
+                            System.err.println(String.format("BAD_REQ_HTTP_400 #%s: PAGE[%s] HTTPS[%s] URL[%s]", fails, page, youtube.getUseHttps(), yee.getRequestUrl()));
+                            errorCounter.addAndGet(1);
                             Thread.sleep(5000);
                             break;
                         case 403:
@@ -299,20 +319,30 @@ public class GroupRefresh extends Thread {
                             break;
                         case 404:
                             System.err.println("Not found (404): http://youtu.be/"+videoId);
+                            errorCounter.addAndGet(1);
                             database.updateVideoHttpCode(videoId, yee.getError().code);
                             fails = 10;
                             break;
                         default:
                             System.err.println("Unknown Error ("+yee.getError().code+"): http://youtu.be/"+videoId);
+                            errorCounter.addAndGet(1);
                             database.updateVideoHttpCode(videoId, yee.getError().code);
                             fails = 10;
                             break;
                     }
                 } catch (Exception e1) {
+                    errorCounter.addAndGet(1);
                     e1.printStackTrace();
                 }
+            } catch (Exception e) {
+                errorCounter.addAndGet(1);
+                fails++;
             }
         } while((ctl == null || ctl.nextPageToken != null) && fails < 5);
+        if(fails == 5) {
+            errorCounter.addAndGet(1);
+            database.updateVideoHttpCode(videoId, 400);
+        }
         if(comments.size() > 0) {
             insertComments(comments);
         }
@@ -352,6 +382,7 @@ public class GroupRefresh extends Thread {
                 }
             } catch (Exception e) {
                 fails++;
+                errorCounter.addAndGet(1);
                 System.err.println("CommentThread ["+commentThreadId+"]: "+e.getLocalizedMessage());
             }
         } while((cl == null || cl.nextPageToken != null) && fails < 5);
@@ -375,6 +406,7 @@ public class GroupRefresh extends Thread {
                         ChannelsList cl = youtube.channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
                         channel = new YouTubeChannel(cl.items[0], true); // Video authors display thumbs.
                     } catch (Exception ignored) {
+                        errorCounter.addAndGet(1);
                         ignored.printStackTrace();
                     }
                 }
@@ -382,11 +414,9 @@ public class GroupRefresh extends Thread {
                     if(!existingChannelIds.contains(channelId)) {
                         channelInsert.add(channel);
                         existingChannelIds.add(channelId);
-                        System.out.println("INSERT CHANNEL "+channelId);
                     } else if(!channelUpdate.contains(channel)) {
                         channelUpdate.add(channel);
                         existingChannelIds.add(channelId);
-                        System.out.println("UPDATE CHANNEL "+channelId);
                     } else {
                         System.out.println("IGNORE CHANNEL "+channelId);
                     }
@@ -403,6 +433,7 @@ public class GroupRefresh extends Thread {
     private void insertComments(List<YouTubeComment> items) throws SQLException {
         if(items.size() > 0) {
             database.insertComments(items);
+            commentInsertCount.addAndGet(items.size());
             items.clear();
         }
     }
@@ -412,4 +443,7 @@ public class GroupRefresh extends Thread {
     public SimpleBooleanProperty completedProperty() { return completed; }
     public SimpleStringProperty elapsedTimeValueProperty() { return elapsedTimeValue; }
     public SimpleDoubleProperty progressProperty() { return progress; }
+    public SimpleIntegerProperty commentsNewProperty() { return commentsNew; }
+    public SimpleIntegerProperty videosNewProperty() { return videosNew; }
+    public SimpleIntegerProperty errorCountProperty() { return errorCount; }
 }

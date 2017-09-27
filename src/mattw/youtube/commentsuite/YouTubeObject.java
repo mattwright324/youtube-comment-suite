@@ -1,7 +1,6 @@
 package mattw.youtube.commentsuite;
 
 import javafx.scene.image.Image;
-import mattw.youtube.commentsuitefx.CommentType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +65,7 @@ abstract class YouTubeObject {
     public String getThumbUrl() { return thumbUrl; }
     public boolean fetchThumb() { return fetchThumb; }
 
-    public String getString() { return getYouTubeId(); }
+    public String toString() { return getYouTubeId(); }
 
     public boolean equals(Object o) {
         return o instanceof YouTubeObject && ((YouTubeObject) o).getYouTubeId().equals(getYouTubeId());
