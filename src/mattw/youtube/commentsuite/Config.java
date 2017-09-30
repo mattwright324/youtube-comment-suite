@@ -1,7 +1,6 @@
 package mattw.youtube.commentsuite;
 
 import com.google.gson.Gson;
-import javafx.beans.property.SimpleIntegerProperty;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -32,11 +31,12 @@ public class Config {
 
     public void load() {
         try (FileReader fr = new FileReader(file); BufferedReader br = new BufferedReader(fr)) {
-            String line, text = "";
+            String line;
+            StringBuilder text = new StringBuilder();
             while ((line = br.readLine()) != null) {
-                text += line;
+                text.append(line);
             }
-            this.data = gson.fromJson(text, Data.class);
+            this.data = gson.fromJson(text.toString(), Data.class);
         } catch (Exception e) {
             e.printStackTrace();
             this.data = new Data();

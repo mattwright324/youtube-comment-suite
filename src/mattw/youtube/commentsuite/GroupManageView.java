@@ -19,13 +19,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import mattw.youtube.datav3.resources.ChannelsList;
+import mattw.youtube.datav3.resources.PlaylistsList;
+import mattw.youtube.datav3.resources.SearchList;
+import mattw.youtube.datav3.resources.VideosList;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class GroupManageView extends StackPane {
@@ -144,24 +146,6 @@ public class GroupManageView extends StackPane {
         Button delete = new Button("Delete");
         delete.setStyle("-fx-base: salmon;");
         delete.setTooltip(new Tooltip("Delete this group and all of its data."));
-        delete.setOnAction(ae -> {
-            setDisable(true);
-            new Thread(() -> {
-                try {
-                    CommentSuite.db().deleteGroup(group);
-                    CommentSuite.db().cleanUp();
-                    CommentSuite.db().commit();
-                    CommentSuite.db().refreshGroups();
-                    Platform.runLater(() -> {
-                        deleted.setValue(true);
-                        setVisible(false);
-                        setManaged(false);
-                    });
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-        });
 
         Button rename = new Button("Rename");
         rename.setTooltip(new Tooltip("Rename this group."));
@@ -324,24 +308,6 @@ public class GroupManageView extends StackPane {
         accordion.setExpandedPane(statsPane);
         HBox.setHgrow(accordion, Priority.ALWAYS);
 
-        ListView<GroupItem> groupItem = new ListView<>();
-        VBox.setVgrow(groupItem, Priority.ALWAYS);
-
-        group.itemsUpdatedProperty().addListener((o, ov, nv) -> {
-            Platform.runLater(() -> {
-                groupItem.getItems().clear();
-                if(!group.getGroupItems().isEmpty()) {
-                    groupItem.setDisable(false);
-                    groupItem.getItems().addAll(group.getGroupItems());
-                    groupItem.getSelectionModel().select(0);
-                } else {
-                    groupItem.getItems().add(GroupItem.noItems);
-                    groupItem.setDisable(true);
-                }
-            });
-        });
-        group.incrementItemsUpdated();
-
         Button addItem = new Button("Add Item");
         addItem.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(addItem, Priority.ALWAYS);
@@ -355,6 +321,25 @@ public class GroupManageView extends StackPane {
         removeAll.setMaxWidth(Double.MAX_VALUE);
         removeAll.setStyle("-fx-base: derive(red, 95%)");
         HBox.setHgrow(removeAll, Priority.ALWAYS);
+
+        ListView<GroupItem> groupItem = new ListView<>();
+        VBox.setVgrow(groupItem, Priority.ALWAYS);
+        group.itemsUpdatedProperty().addListener((o, ov, nv) -> Platform.runLater(() -> {
+            groupItem.getItems().clear();
+            if(!group.getGroupItems().isEmpty()) {
+                groupItem.setDisable(false);
+                groupItem.getItems().addAll(group.getGroupItems());
+                groupItem.getSelectionModel().select(0);
+                remove.setDisable(false);
+                removeAll.setDisable(false);
+            } else {
+                groupItem.getItems().add(GroupItem.noItems);
+                groupItem.setDisable(true);
+                remove.setDisable(true);
+                removeAll.setDisable(true);
+            }
+        }));
+        group.incrementItemsUpdated();
 
         HBox btns = new HBox(10);
         btns.getChildren().addAll(addItem, remove, removeAll);
@@ -388,14 +373,14 @@ public class GroupManageView extends StackPane {
             Label error = new Label("");
             error.setManaged(false);
 
-            Button doRename = new Button("Rename");
-            doRename.setStyle("-fx-base: derive(cornflowerblue, 70%)");
+            Button doAction = new Button("Rename");
+            doAction.setStyle("-fx-base: derive(cornflowerblue, 70%)");
 
             Button cancel = new Button("Cancel");
 
             HBox hbox0 = new HBox(10);
             hbox0.setAlignment(Pos.CENTER_RIGHT);
-            hbox0.getChildren().addAll(cancel, doRename);
+            hbox0.getChildren().addAll(cancel, doAction);
 
             VBox vbox1 = new VBox(10);
             vbox1.setAlignment(Pos.CENTER);
@@ -411,7 +396,7 @@ public class GroupManageView extends StackPane {
 
             cancel.setOnAction(ae0 -> getChildren().remove(overlay));
 
-            doRename.setOnAction(ae0 -> {
+            doAction.setOnAction(ae0 -> {
                 try {
                     CommentSuite.db().renameGroup(group, nameField.getText());
                     cancel.fire();
@@ -419,6 +404,287 @@ public class GroupManageView extends StackPane {
                     error.setText(e.getMessage());
                     error.setManaged(true);
                 }
+            });
+        });
+
+        delete.setOnAction(ae -> {
+            Label title1 = new Label("Delete Group");
+            title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+            Label subtitle = new Label("This will delete the group and all of its data.");
+            subtitle.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
+            subtitle.setTextFill(Color.RED);
+
+            Label error = new Label("");
+            error.setManaged(false);
+
+            Button doAction = new Button("Yes, delete.");
+            doAction.setStyle("-fx-base: firebrick");
+
+            Button cancel = new Button("No, dont.");
+
+            HBox hbox0 = new HBox(10);
+            hbox0.setAlignment(Pos.CENTER_RIGHT);
+            hbox0.getChildren().addAll(cancel, doAction);
+
+            VBox vbox1 = new VBox(10);
+            vbox1.setAlignment(Pos.CENTER);
+            vbox1.setMaxWidth(400);
+            vbox1.setMaxHeight(0);
+            vbox1.setId("overlayMenu");
+            vbox1.setPadding(new Insets(25));
+            vbox1.getChildren().addAll(title1, subtitle, error, hbox0);
+
+            StackPane overlay = new StackPane(vbox1);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+            getChildren().add(overlay);
+
+            cancel.setOnAction(ae0 -> getChildren().remove(overlay));
+
+            doAction.setOnAction(ae0 -> {
+                setDisable(true);
+                new Thread(() -> {
+                    try {
+                        CommentSuite.db().deleteGroup(group);
+                        CommentSuite.db().cleanUp();
+                        CommentSuite.db().commit();
+                        CommentSuite.db().refreshGroups();
+                        Platform.runLater(() -> {
+                            deleted.setValue(true);
+                            setVisible(false);
+                            setManaged(false);
+                        });
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        error.setText(e.getLocalizedMessage());
+                        error.setManaged(true);
+                    }
+                }).start();
+            });
+        });
+
+        addItem.setOnAction(ae -> {
+            Label title1 = new Label("Add GroupItem");
+            title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+            TextField linkField = new TextField();
+            linkField.setPromptText("http://youtu.be/dQw4w9WgXcQ");
+
+            TextArea help = new TextArea("Directly add videos, playlists, and channels.\r\n" +
+                    "Example links:\r\n" +
+                    "1. https://youtu.be/dQw4w9WgXcQ\r\n" +
+                    "2. https://www.youtube.com/watch?v=dQw4w9WgXcQ\r\n" +
+                    "3. https://www.youtube.com/channel/UC38IQsAvIsxxjztdMZQtwHA\r\n" +
+                    "4. https://www.youtube.com/user/RickAstleyVEVO\r\n" +
+                    "5. https://www.youtube.com/playlist?list=PL2MI040U_GXocoLMj6w0tvzxHax_CdWNR");
+            help.setEditable(false);
+            help.setMinHeight(175);
+            help.setPrefHeight(175);
+            help.setStyle("-fx-background-color: transparent;");
+
+            Label error = new Label("");
+            error.setTextFill(Color.RED);
+            error.setManaged(false);
+
+            Button doAction = new Button("Add");
+            doAction.setStyle("-fx-base: cornflowerblue");
+
+            Button cancel = new Button("Cancel");
+
+            HBox hbox0 = new HBox(10);
+            hbox0.setAlignment(Pos.CENTER_RIGHT);
+            hbox0.getChildren().addAll(cancel, doAction);
+
+            VBox vbox1 = new VBox(10);
+            vbox1.setAlignment(Pos.CENTER);
+            vbox1.setMaxWidth(500);
+            vbox1.setMaxHeight(0);
+            vbox1.setId("overlayMenu");
+            vbox1.setPadding(new Insets(25));
+            vbox1.getChildren().addAll(title1, linkField, error, help, hbox0);
+
+            StackPane overlay = new StackPane(vbox1);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+            getChildren().add(overlay);
+
+            cancel.setOnAction(ae0 -> Platform.runLater(() -> getChildren().remove(overlay)));
+
+            doAction.setOnAction(ae0 -> {
+                setDisable(true);
+                new Thread(() -> {
+                    boolean success = false;
+                    try {
+                        String link = linkField.getText();
+                        String youtubeId;
+                        GroupItem gitem = null;
+                        if(link.matches("http[s]://(youtu\\.be/|www\\.youtube.com/watch\\?v=)[\\w_\\-]{11}")) {
+                            youtubeId = link.substring(link.length()-11, link.length());
+                            VideosList vl = CommentSuite.youtube().videosList().getByIds(SearchList.PART_SNIPPET, youtubeId, "");
+                            if(vl.items != null) {
+                                VideosList.Item item = vl.items[0];
+                                gitem = new GroupItem(youtubeId, GroupItem.VIDEO, item.snippet.title, item.snippet.channelTitle,
+                                        item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                                System.out.println("Video GroupItem - "+gitem);
+                            }
+                        } else if(link.matches("http[s]://www\\.youtube\\.com/(channel|user)/[\\w_-]+")) {
+                            youtubeId = link.substring(link.lastIndexOf("/")+1, link.length());
+                            ChannelsList cl;
+                            ChannelsList.Item item;
+                            if(link.contains("channel")) {
+                                cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, youtubeId, "");
+                            } else {
+                                cl = CommentSuite.youtube().channelsList().getByUsername(ChannelsList.PART_SNIPPET, youtubeId, "");
+                            }
+                            if(cl.hasItems()) {
+                                item = cl.items[0];
+                                gitem = new GroupItem(youtubeId, GroupItem.CHANNEL, item.snippet.title, item.snippet.title,
+                                        item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                                System.out.println("Channel GroupItem - "+gitem);
+                            }
+                        } else if(link.matches("http[s]://www\\.youtube\\.com/playlist\\?list=[\\w_-]+")) {
+                            youtubeId = link.substring(link.lastIndexOf("=")+1, link.length());
+                            PlaylistsList pl = CommentSuite.youtube().playlistsList().getByPlaylist(PlaylistsList.PART_SNIPPET, youtubeId, "");
+                            if(pl.hasItems()) {
+                                PlaylistsList.Item item = pl.items[0];
+                                gitem = new GroupItem(youtubeId, GroupItem.PLAYLIST, item.snippet.title, item.snippet.channelTitle,
+                                        item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                                System.out.println("Playlist GroupItem - "+gitem);
+                            }
+                        } else {
+                            throw new IOException("Could not parse, check formats below.");
+                        }
+                        if(gitem != null) {
+                            List<GroupItem> list = new ArrayList<>();
+                            list.add(gitem);
+                            CommentSuite.db().insertGroupItems(group, list);
+                            CommentSuite.db().commit();
+                            group.reloadGroupItems();
+                            success = true;
+                        } else {
+                            throw new IOException("Could not find link.");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> {
+                            error.setText(e.getLocalizedMessage());
+                            error.setManaged(true);
+                            error.setVisible(true);
+                        });
+                    }
+                    setDisable(false);
+                    if(success) {
+                        cancel.fire();
+                    }
+                }).start();
+            });
+        });
+
+        remove.setOnAction(ae -> {
+            List<GroupItem> selected = groupItem.getSelectionModel().getSelectedItems();
+
+            Label title1 = new Label("Delete Group");
+            title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+            Label subtitle = new Label(selected.size()+" item(s) selected");
+            subtitle.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 13));
+
+            Label error = new Label("");
+            error.setTextFill(Color.RED);
+            error.setManaged(false);
+
+            Button doAction = new Button("Yes, remove.");
+            doAction.setStyle("-fx-base: firebrick");
+
+            Button cancel = new Button("No, dont.");
+
+            HBox hbox0 = new HBox(10);
+            hbox0.setAlignment(Pos.CENTER_RIGHT);
+            hbox0.getChildren().addAll(cancel, doAction);
+
+            VBox vbox1 = new VBox(10);
+            vbox1.setAlignment(Pos.CENTER);
+            vbox1.setMaxWidth(300);
+            vbox1.setMaxHeight(0);
+            vbox1.setId("overlayMenu");
+            vbox1.setPadding(new Insets(25));
+            vbox1.getChildren().addAll(title1, subtitle, error, hbox0);
+
+            StackPane overlay = new StackPane(vbox1);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+            getChildren().add(overlay);
+
+            cancel.setOnAction(ae0 -> Platform.runLater(() -> getChildren().remove(overlay)));
+
+            doAction.setOnAction(ae0 -> {
+                setDisable(true);
+                new Thread(() -> {
+                    boolean success = false;
+                    try {
+                        CommentSuite.db().deleteGroupItemLinks(group, selected);
+                        CommentSuite.db().cleanUp();
+                        CommentSuite.db().commit();
+                        group.reloadGroupItems();
+                        success = true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    setDisable(false);
+                    if(success) { cancel.fire(); }
+                }).start();
+            });
+        });
+
+        removeAll.setOnAction(ae -> {
+            List<GroupItem> items = groupItem.getItems();
+
+            Label title1 = new Label("Remove All Items");
+            title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+            Label subtitle = new Label(items.size()+" items total");
+
+            Label error = new Label("");
+            error.setTextFill(Color.RED);
+            error.setManaged(false);
+
+            Button doAction = new Button("Yes, remove.");
+            doAction.setStyle("-fx-base: firebrick");
+
+            Button cancel = new Button("No, dont.");
+
+            HBox hbox0 = new HBox(10);
+            hbox0.setAlignment(Pos.CENTER_RIGHT);
+            hbox0.getChildren().addAll(cancel, doAction);
+
+            VBox vbox1 = new VBox(10);
+            vbox1.setAlignment(Pos.CENTER);
+            vbox1.setMaxWidth(300);
+            vbox1.setMaxHeight(0);
+            vbox1.setId("overlayMenu");
+            vbox1.setPadding(new Insets(25));
+            vbox1.getChildren().addAll(title1, subtitle, error, hbox0);
+
+            StackPane overlay = new StackPane(vbox1);
+            overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+            getChildren().add(overlay);
+
+            cancel.setOnAction(ae0 -> Platform.runLater(() -> getChildren().remove(overlay)));
+
+            doAction.setOnAction(ae0 -> {
+                setDisable(true);
+                new Thread(() -> {
+                    boolean success = false;
+                    try {
+                        CommentSuite.db().deleteGroupItemLinks(group, items);
+                        CommentSuite.db().cleanUp();
+                        CommentSuite.db().commit();
+                        group.reloadGroupItems();
+                        success = true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    setDisable(false);
+                    if(success) { cancel.fire(); }
+                }).start();
             });
         });
 
@@ -524,28 +790,33 @@ public class GroupManageView extends StackPane {
             try { // About Viewers
                 List<YouTubeObjectView> mostPopular = CommentSuite.db().getMostPopularVideos(group, 10)
                         .stream().map(v -> new YouTubeObjectView(v, String.format("%,d views", v.getViews()))).collect(Collectors.toList());
-                popularVideos.getItems().addAll(mostPopular);
                 List<YouTubeObjectView> mostDisliked = CommentSuite.db().getMostDislikedVideos(group, 10)
                         .stream().map(v -> new YouTubeObjectView(v, String.format("%,d dislikes", v.getDislikes()))).collect(Collectors.toList());
-                dislikedVideos.getItems().addAll(mostDisliked);
                 List<YouTubeObjectView> mostCommented = CommentSuite.db().getMostCommentedVideos(group, 10)
                         .stream().map(v -> new YouTubeObjectView(v, String.format("%,d comments", v.getCommentCount()))).collect(Collectors.toList());
-                commentedVideos.getItems().addAll(mostCommented);
                 List<YouTubeObjectView> disabled = CommentSuite.db().getDisabledVideos(group)
                         .stream().map(v -> new YouTubeObjectView(v, "Comments Disabled")).collect(Collectors.toList());
-                disabledVideos.getItems().addAll(disabled);
 
+                Platform.runLater(() -> {
+                    popularVideos.getItems().addAll(mostPopular);
+                    dislikedVideos.getItems().addAll(mostDisliked);
+                    commentedVideos.getItems().addAll(mostCommented);
+                    disabledVideos.getItems().addAll(disabled);
+                });
             } catch (SQLException ignored) {ignored.printStackTrace();}
             Platform.runLater(() -> videosPane.setDisable(false));
 
             try { // About Videos
                 LinkedHashMap<YouTubeChannel,Long> mostActive = CommentSuite.db().getMostActiveViewers(group, 25);
-                activeViewers.getItems().addAll(mostActive.keySet()
-                        .stream().map(channel -> new YouTubeObjectView(channel, mostActive.get(channel)+" comments")).collect(Collectors.toList()));
-
+                List<YouTubeObjectView> ma = mostActive.keySet()
+                        .stream().map(channel -> new YouTubeObjectView(channel, mostActive.get(channel)+" comments")).collect(Collectors.toList());
                 LinkedHashMap<YouTubeChannel,Long> mostPopular = CommentSuite.db().getMostPopularViewers(group, 25);
-                popularViewers.getItems().addAll(mostPopular.keySet()
-                        .stream().map(channel -> new YouTubeObjectView(channel, mostPopular.get(channel)+" likes")).collect(Collectors.toList()));
+                List<YouTubeObjectView> mp = mostPopular.keySet()
+                        .stream().map(channel -> new YouTubeObjectView(channel, mostPopular.get(channel)+" likes")).collect(Collectors.toList());
+                Platform.runLater(() -> {
+                    activeViewers.getItems().addAll(ma);
+                    popularViewers.getItems().addAll(mp);
+                });
             } catch (SQLException ignored) {ignored.printStackTrace();}
             Platform.runLater(() -> {
                 prog.setVisible(false);

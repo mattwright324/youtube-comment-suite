@@ -262,13 +262,7 @@ public class CommentSuite extends Application {
         accountList.setMaxHeight(150);
         accountList.getItems().addListener((ListChangeListener<YouTubeAccountView>) c -> {
             while(c.next()) {
-                if (c.wasPermutated()) {
-                    for (int i = c.getFrom(); i < c.getTo(); ++i) {
-                        System.out.println("Permute? "+i);
-                    }
-                } else if (c.wasUpdated()) {
-                    System.out.println("Updated? ");
-                } else {
+                if(c.wasAdded() || c.wasRemoved()) {
                     for (YouTubeAccountView removed : c.getRemoved()) {
                         removed.signedOutProperty().unbind();
                     }
@@ -372,7 +366,7 @@ public class CommentSuite extends Application {
                         OAuth2Tokens tokens = oauth2.getAccessTokens(code);
                         oauth2.setTokens(tokens);
                         YouTubeAccount account = new YouTubeAccount(tokens);
-                        if(!config.getAccounts().stream().anyMatch(acc -> acc.getChannelId().equals(account.channelId))) {
+                        if(config.getAccounts().stream().noneMatch(acc -> acc.getChannelId().equals(account.channelId))) {
                             config.getAccounts().add(account);
                             config.save();
                             Platform.runLater(() -> {

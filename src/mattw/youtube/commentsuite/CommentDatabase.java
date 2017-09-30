@@ -42,6 +42,7 @@ public class CommentDatabase {
         s.addBatch("CREATE TABLE IF NOT EXISTS group_gitem ("
                 + "group_id STRING,"
                 + "gitem_id STRING,"
+                + "PRIMARY KEY(group_id, gitem_id)"
                 + "FOREIGN KEY(group_id) REFERENCES groups(group_id),"
                 + "FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id));");
         s.addBatch("CREATE TABLE IF NOT EXISTS gitem_video ("
@@ -311,7 +312,7 @@ public class CommentDatabase {
      * Attempts rename of existing group.
      * Commits.
      */
-    public Group renameGroup(Group g, String newName) throws SQLException {
+    public void renameGroup(Group g, String newName) throws SQLException {
         PreparedStatement ps = con.prepareStatement("UPDATE groups SET group_name = ? WHERE group_id = ?");
         ps.setString(1, newName);
         ps.setString(2, g.getId());
@@ -319,7 +320,6 @@ public class CommentDatabase {
         ps.close();
         commit();
         g.setName(newName);
-        return g;
     }
 
     /**
@@ -374,10 +374,11 @@ public class CommentDatabase {
      * Deletes GroupItem(s).
      * Recommended to run cleanUp() afterwards.
      */
-    public void deleteGroupItems(List<GroupItem> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("DELETE FROM gitem_list WHERE gitem_id = ?");
+    public void deleteGroupItemLinks(Group group, List<GroupItem> items) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("DELETE FROM group_gitem WHERE gitem_id = ? AND group_id = ?");
         for(GroupItem gi : items) {
             ps.setString(1, gi.getYouTubeId());
+            ps.setString(2, group.getId());
             ps.addBatch();
         }
         ps.executeBatch();

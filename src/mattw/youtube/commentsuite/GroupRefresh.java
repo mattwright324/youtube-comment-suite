@@ -273,7 +273,7 @@ public class GroupRefresh extends Thread {
      * Automatically inserts comments into the database.
      * Does not commit.
      */
-    private void handleVideo(String videoId) throws SQLException, IOException {
+    private void handleVideo(String videoId) throws SQLException {
         List<YouTubeComment> comments = new ArrayList<>();
         CommentThreadsList ctl = null;
         String pageToken = "";
@@ -359,7 +359,7 @@ public class GroupRefresh extends Thread {
      * Automatically inserts replies into the database.
      * Does not commit.
      */
-    private void handleCommentThread(String commentThreadId, String videoId) throws SQLException, IOException {
+    private void handleCommentThread(String commentThreadId, String videoId) throws SQLException {
         List<YouTubeComment> comments = new ArrayList<>();
         CommentsList cl = null;
         String pageToken = "";
@@ -426,7 +426,7 @@ public class GroupRefresh extends Thread {
                         System.out.println("IGNORE CHANNEL "+channelId);
                     }
                 } else {
-                    System.err.println("Check Channel Null ["+channelId+"]. Video =  "+(item == null));
+                    System.err.println("Check Channel Null ["+channelId+"]");
                 }
             }
         }
