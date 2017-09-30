@@ -45,6 +45,8 @@ public class GroupRefresh extends Thread {
     private boolean threadLive = true, threadMayDie = false, videoLive = true, videoMayDie = false;
     private double totalVideos = 0;
     private AtomicInteger consumedVideos = new AtomicInteger(0);
+    private AtomicInteger totalThreads = new AtomicInteger(0);
+    private AtomicInteger consumedThreads = new AtomicInteger(0);
 
     private Set<String> existingVideoIds = new HashSet<>();
     private Set<String> existingCommentIds = new HashSet<>();
@@ -142,6 +144,7 @@ public class GroupRefresh extends Thread {
                             Thread.sleep(20);
                             if(threadId != null) {
                                 handleCommentThread(threadId, threadToVideo.get(threadId));
+                                Platform.runLater(() -> progress.setValue((consumedThreads.addAndGet(1)+consumedVideos.get()) / (totalVideos+totalThreads.get())));
                             }
                         } catch (Exception ignored) {ignored.printStackTrace();}
                     }
@@ -158,7 +161,7 @@ public class GroupRefresh extends Thread {
                             final String videoId = videosQueue.poll();
                             if (videoId != null) {
                                 handleVideo(videoId);
-                                Platform.runLater(() -> progress.setValue(consumedVideos.addAndGet(1) / totalVideos));
+                                Platform.runLater(() -> progress.setValue((consumedThreads.get()+consumedVideos.addAndGet(1)) / (totalVideos+totalThreads.get())));
                             }
                             Thread.sleep(100);
                         } catch (Exception ignored) { ignored.printStackTrace(); }
@@ -296,6 +299,7 @@ public class GroupRefresh extends Thread {
                         if((!contains && item.snippet.totalReplyCount > 0) || (contains && item.snippet.totalReplyCount != threadToReplies.get(item.snippet.topLevelComment.getId()))) {
                             threadToVideo.put(threadId, videoId);
                             commentThreadQueue.offer(threadId);
+                            totalThreads.addAndGet(1);
                         }
                         if(!existingCommentIds.contains(threadId)) {
                             YouTubeComment comment = new YouTubeComment(item);

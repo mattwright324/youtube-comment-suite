@@ -8,8 +8,6 @@ import mattw.youtube.datav3.resources.SearchList;
  */
 public class GroupItem extends YouTubeObject {
 
-    public static final GroupItem noItems = new GroupItem(GroupItem.NO_ITEMS, "No items");
-
     public static int VIDEO = 0;
     public static int CHANNEL = 1;
     public static int PLAYLIST = 2;

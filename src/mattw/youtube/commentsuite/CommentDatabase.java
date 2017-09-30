@@ -578,6 +578,23 @@ public class CommentDatabase {
     }
 
     /**
+     * Checks if exists and caches it if it does.
+     */
+    public boolean channelExists(String channelId) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM channels WHERE channel_id = ? LIMIT 1");
+        ps.setString(1, channelId);
+        ResultSet rs = ps.executeQuery();
+        boolean exists = false;
+        if(rs.next()) {
+            channelCache.put(channelId, resultSetToChannel(rs));
+            exists = true;
+        }
+        rs.close();
+        ps.close();
+        return exists;
+    }
+
+    /**
      * Returns all channel ids for group refreshing.
      */
     public List<String> getAllChannelIds() throws SQLException {

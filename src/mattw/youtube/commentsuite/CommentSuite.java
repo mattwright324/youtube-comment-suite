@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 
 public class CommentSuite extends Application {
 
+    private static final String RELEASE = "v1.3.0";
     private static final OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
     private static final YouTubeData3 data = new YouTubeData3("AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ");
     private static final Config config = new Config("commentsuite.json");
@@ -296,6 +297,8 @@ public class CommentSuite extends Application {
         Label label3 = new Label("About");
         label3.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
+        Label release = new Label("This release version: "+RELEASE);
+
         Label about = new Label("MIT License. Copyright (c) 2017 Matthew Wright.");
 
         ImageView gitImg = new ImageView("/mattw/youtube/commentsuite/img/github.png");
@@ -310,7 +313,7 @@ public class CommentSuite extends Application {
         VBox vbox2 = new VBox(10);
         vbox2.setPadding(new Insets(10));
         vbox2.setAlignment(Pos.TOP_LEFT);
-        vbox2.getChildren().addAll(label1, prefixReplies, label2, signIn, accountList, label4, hbox2, label3, about, git);
+        vbox2.getChildren().addAll(label1, prefixReplies, label2, signIn, accountList, label4, hbox2, label3, about, release, git);
 
         ScrollPane scroll = new ScrollPane(vbox2);
         scroll.setStyle("-fx-border-color: transparent; -fx-background-color: transparent;");
@@ -729,7 +732,7 @@ public class CommentSuite extends Application {
         lastPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.greaterThanOrEqualTo(lastPageNum)));
 
         Label results = new Label("Page 0 of 0. Showing 0 of 0.");
-        queryUpdate.addListener((o, ov, nv) -> Platform.runLater(() -> results.setText(String.format("Page %s of %s. Showing %s of %s.", nv, query.getPageCount(), commentsList.getItems().size(), query.getTotalResults()))));
+        queryUpdate.addListener((o, ov, nv) -> Platform.runLater(() -> results.setText(String.format("Page %s of %s. Showing %s of %s.", query.getPage(), query.getPageCount(), commentsList.getItems().size(), query.getTotalResults()))));
 
         HBox hbox0 = new HBox();
         hbox0.setAlignment(Pos.CENTER);
@@ -838,11 +841,13 @@ public class CommentSuite extends Application {
         setDatePickerTime(dateTo, System.currentTimeMillis());
         grid.addRow(row++, new Label("Date to"), dateTo);
 
-        Button search = new Button("Find Comments");
+        Button search = new Button("Search");
         search.setId("control");
+        search.setPrefWidth(130);
 
         Button clear = new Button("Clear Results");
         clear.setId("control");
+        clear.setPrefWidth(130);
         clear.setOnAction(ae -> Platform.runLater(() -> commentsList.getItems().clear()));
 
         HBox hbox2 = new HBox(10);
@@ -856,6 +861,11 @@ public class CommentSuite extends Application {
         searchBox.setMaxWidth(320);
         searchBox.setPrefWidth(320);
         searchBox.getChildren().addAll(label1, group, groupItem, label2, grid, hbox2);
+        searchBox.setOnKeyPressed(ke -> {
+            if(ke.getCode().equals(KeyCode.ENTER)) {
+                search.fire();
+            }
+        });
 
         HBox hbox = new HBox();
         hbox.setFillHeight(true);

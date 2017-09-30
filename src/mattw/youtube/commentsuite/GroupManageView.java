@@ -19,6 +19,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import mattw.youtube.datav3.YouTubeErrorException;
 import mattw.youtube.datav3.resources.ChannelsList;
 import mattw.youtube.datav3.resources.PlaylistsList;
 import mattw.youtube.datav3.resources.SearchList;
@@ -90,6 +91,49 @@ public class GroupManageView extends StackPane {
             setAlignment(Pos.CENTER_LEFT);
             getChildren().addAll(thumb, vbox);
         }
+    }
+
+    class GroupItemView extends HBox {
+        private GroupItem item;
+        public GroupItemView(GroupItem item) {
+            super(10);
+            this.item = item;
+
+            ImageView thumb = new ImageView(item.getThumbUrl());
+            thumb.setFitWidth(30);
+            thumb.setFitHeight(30);
+
+            Label title = new Label(item.getTitle());
+            title.setMinWidth(0);
+            title.setPrefWidth(0);
+            title.setMaxWidth(Double.MAX_VALUE);
+            title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
+
+            Label subtitle = new Label(item.getChannelTitle());
+            subtitle.setMinWidth(0);
+            subtitle.setPrefWidth(0);
+            subtitle.setMaxWidth(Double.MAX_VALUE);
+            subtitle.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 12));
+            HBox.setHgrow(subtitle, Priority.ALWAYS);
+
+            Label type = new Label(item.getTypeName());
+            type.setFont(Font.font("Tahoma", FontWeight.BOLD, 12));
+
+            HBox hbox = new HBox(5);
+            hbox.setAlignment(Pos.CENTER_LEFT);
+            hbox.getChildren().addAll(subtitle, type);
+
+            VBox vbox = new VBox(5);
+            vbox.setFillWidth(true);
+            vbox.setAlignment(Pos.CENTER_LEFT);
+            vbox.getChildren().addAll(title, hbox);
+            HBox.setHgrow(vbox, Priority.ALWAYS);
+
+            setAlignment(Pos.CENTER_LEFT);
+            getChildren().addAll(thumb, vbox);
+            setPadding(new Insets(5));
+        }
+        public GroupItem getItem() { return item; }
     }
 
     public SimpleBooleanProperty deletedProperty() { return deleted; }
@@ -310,10 +354,12 @@ public class GroupManageView extends StackPane {
 
         Button addItem = new Button("Add Item");
         addItem.setMaxWidth(Double.MAX_VALUE);
+        addItem.setTooltip(new Tooltip("Add videos, playlists, and channels."));
         HBox.setHgrow(addItem, Priority.ALWAYS);
 
         Button remove = new Button("Remove");
         remove.setMaxWidth(Double.MAX_VALUE);
+        remove.setTooltip(new Tooltip("Remove "));
         remove.setStyle("-fx-base: derive(firebrick, 95%)");
         HBox.setHgrow(remove, Priority.ALWAYS);
 
@@ -322,18 +368,18 @@ public class GroupManageView extends StackPane {
         removeAll.setStyle("-fx-base: derive(red, 95%)");
         HBox.setHgrow(removeAll, Priority.ALWAYS);
 
-        ListView<GroupItem> groupItem = new ListView<>();
+        ListView<GroupItemView> groupItem = new ListView<>();
+        groupItem.setId("listView");
         VBox.setVgrow(groupItem, Priority.ALWAYS);
         group.itemsUpdatedProperty().addListener((o, ov, nv) -> Platform.runLater(() -> {
             groupItem.getItems().clear();
             if(!group.getGroupItems().isEmpty()) {
                 groupItem.setDisable(false);
-                groupItem.getItems().addAll(group.getGroupItems());
+                groupItem.getItems().addAll(group.getGroupItems().stream().map(GroupItemView::new).collect(Collectors.toList()));
                 groupItem.getSelectionModel().select(0);
                 remove.setDisable(false);
                 removeAll.setDisable(false);
             } else {
-                groupItem.getItems().add(GroupItem.noItems);
                 groupItem.setDisable(true);
                 remove.setDisable(true);
                 removeAll.setDisable(true);
@@ -524,6 +570,7 @@ public class GroupManageView extends StackPane {
                                 VideosList.Item item = vl.items[0];
                                 gitem = new GroupItem(youtubeId, GroupItem.VIDEO, item.snippet.title, item.snippet.channelTitle,
                                         item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                                checkChannel(item.snippet.channelId);
                                 System.out.println("Video GroupItem - "+gitem);
                             }
                         } else if(link.matches("http[s]://www\\.youtube\\.com/(channel|user)/[\\w_-]+")) {
@@ -537,8 +584,9 @@ public class GroupManageView extends StackPane {
                             }
                             if(cl.hasItems()) {
                                 item = cl.items[0];
-                                gitem = new GroupItem(youtubeId, GroupItem.CHANNEL, item.snippet.title, item.snippet.title,
+                                gitem = new GroupItem(item.getId(), GroupItem.CHANNEL, item.snippet.title, item.snippet.title,
                                         item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                                checkChannel(item.getId());
                                 System.out.println("Channel GroupItem - "+gitem);
                             }
                         } else if(link.matches("http[s]://www\\.youtube\\.com/playlist\\?list=[\\w_-]+")) {
@@ -548,6 +596,7 @@ public class GroupManageView extends StackPane {
                                 PlaylistsList.Item item = pl.items[0];
                                 gitem = new GroupItem(youtubeId, GroupItem.PLAYLIST, item.snippet.title, item.snippet.channelTitle,
                                         item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                                checkChannel(item.snippet.channelId);
                                 System.out.println("Playlist GroupItem - "+gitem);
                             }
                         } else {
@@ -580,9 +629,10 @@ public class GroupManageView extends StackPane {
         });
 
         remove.setOnAction(ae -> {
-            List<GroupItem> selected = groupItem.getSelectionModel().getSelectedItems();
+            List<GroupItem> selected = groupItem.getSelectionModel().getSelectedItems()
+                    .stream().map(giv -> giv.getItem()).collect(Collectors.toList());
 
-            Label title1 = new Label("Delete Group");
+            Label title1 = new Label("Remove Selected");
             title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
 
             Label subtitle = new Label(selected.size()+" item(s) selected");
@@ -635,7 +685,8 @@ public class GroupManageView extends StackPane {
         });
 
         removeAll.setOnAction(ae -> {
-            List<GroupItem> items = groupItem.getItems();
+            List<GroupItem> items = groupItem.getItems()
+                    .stream().map(giv -> giv.getItem()).collect(Collectors.toList());
 
             Label title1 = new Label("Remove All Items");
             title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
@@ -699,6 +750,19 @@ public class GroupManageView extends StackPane {
                 try { Thread.sleep(200); } catch (Exception e) { break; }
             }
         }).start();
+    }
+
+    private void checkChannel(String channelId) throws SQLException, IOException, YouTubeErrorException {
+        if(!CommentSuite.db().channelExists(channelId)) {
+            ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
+            if(cl.hasItems()) {
+                YouTubeChannel channel = new YouTubeChannel(cl.items[0], true);
+                List<YouTubeChannel> list = new ArrayList<>();
+                list.add(channel);
+                CommentSuite.db().insertChannels(list);
+                CommentSuite.db().commit();
+            }
+        }
     }
 
     private void updateLastChecked() {
