@@ -25,12 +25,16 @@ public class YouTubeCommentView extends HBox {
 
     private String parsedText;
 
-    public YouTubeCommentView(YouTubeComment comment, YouTubeChannel channel) {
+    public YouTubeCommentView(YouTubeComment comment, boolean tree) {
         super(10);
         this.comment = comment;
-        this.channel = channel;
+        this.channel = CommentSuite.db().getChannel(comment.getChannelId());
 
-        if(channel.fetchThumb() || channel.thumbCached()) { updateProfileThumb(); }
+        boolean signedIn = CommentSuite.config().isSignedIn(channel.getYouTubeId());
+
+        if(channel.fetchThumb() || channel.thumbCached() || signedIn) {
+            updateProfileThumb();
+        }
         thumb.setFitHeight(30);
         thumb.setFitWidth(30);
 
@@ -43,6 +47,10 @@ public class YouTubeCommentView extends HBox {
 
         Hyperlink author = new Hyperlink(channel.getTitle());
         author.setOnAction(ae -> CommentSuite.openInBrowser(channel.getYouTubeLink()));
+        if(signedIn) {
+            author.setStyle("-fx-font-weight: bold");
+            author.setTextFill(Color.GREEN);
+        }
 
         parsedText = Jsoup.parse(comment.getText().replace("<br />", "\r\n")).text();
 
@@ -57,10 +65,15 @@ public class YouTubeCommentView extends HBox {
         date.setTextFill(Color.LIGHTGRAY);
 
         Hyperlink showMore = new Hyperlink("Show more");
+        showMore.setOnAction(ae -> CommentSuite.instance().showMore(this));
+
         Hyperlink reply = new Hyperlink("Reply");
-        reply.setManaged(false); // false
-        Hyperlink allReplies = new Hyperlink("View Tree"+(comment.getReplyCount() > 0 ? " ("+comment.getReplyCount()+")":""));
-        allReplies.setManaged(comment.isReply() || comment.getReplyCount() > 0);
+        reply.setManaged(!CommentSuite.config().getAccounts().isEmpty());
+        reply.setOnAction(ae -> CommentSuite.instance().reply(this));
+
+        Hyperlink viewTree = new Hyperlink("View Tree"+(comment.getReplyCount() > 0 ? " ("+comment.getReplyCount()+")":""));
+        viewTree.setManaged(tree && (comment.isReply() || comment.getReplyCount() > 0));
+        viewTree.setOnAction(ae -> CommentSuite.instance().viewTree(this));
 
         Label likes = new Label("+"+comment.getLikes());
         likes.setTextFill(Color.CORNFLOWERBLUE);
@@ -69,7 +82,7 @@ public class YouTubeCommentView extends HBox {
         hbox.setAlignment(Pos.CENTER_LEFT);
         hbox.getChildren().add(date);
         if(comment.getLikes() > 0) hbox.getChildren().add(likes);
-        hbox.getChildren().addAll(reply, allReplies, showMore);
+        hbox.getChildren().addAll(reply, viewTree, showMore);
 
         VBox vbox1 = new VBox(5);
         vbox1.setMinWidth(0);

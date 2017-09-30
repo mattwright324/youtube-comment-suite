@@ -6,6 +6,8 @@ import javafx.beans.property.SimpleStringProperty;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Group {
     public static String NO_GROUP = "G000";
@@ -13,6 +15,8 @@ public class Group {
     private String groupId;
     private SimpleStringProperty name = new SimpleStringProperty();
     private SimpleIntegerProperty itemsUpdated = new SimpleIntegerProperty(0); // Listen for change to regrab items.
+
+    private List<GroupItem> groupItems = new ArrayList<>();
 
     /**
      * Used when creating a new group.
@@ -48,6 +52,14 @@ public class Group {
     public SimpleStringProperty nameProperty() { return name; }
     public SimpleIntegerProperty itemsUpdatedProperty() { return itemsUpdated; }
     public void incrementItemsUpdated() { itemsUpdated.setValue(itemsUpdated.getValue()+1); }
+
+    public void reloadGroupItems() {
+        groupItems.clear();
+        groupItems.addAll(CommentSuite.db().getGroupItems(this));
+        incrementItemsUpdated();
+    }
+
+    public List<GroupItem> getGroupItems() { return groupItems; }
 
     public String toString() { return name.getValue(); }
     public int hashCode() { return groupId.hashCode(); }

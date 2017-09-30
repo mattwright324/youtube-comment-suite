@@ -38,7 +38,7 @@ public class OAuth2Handler {
                 URLEncoder.encode("https://www.googleapis.com/auth/youtube.force-ssl", "UTF-8"));
     }
 
-    public void getAccessTokens(String code) throws IOException {
+    public OAuth2Tokens getAccessTokens(String code) throws IOException {
         Document doc = Jsoup.connect("https://accounts.google.com/o/oauth2/token")
                 .ignoreContentType(true)
                 .data("code", code)
@@ -47,7 +47,7 @@ public class OAuth2Handler {
                 .data("redirect_uri", redirectUri)
                 .data("grant_type", "authorization_code")
                 .post();
-        setTokens(gson.fromJson(doc.text(), OAuth2Tokens.class));
+        return gson.fromJson(doc.text(), OAuth2Tokens.class);
     }
 
     public void refreshTokens() throws IOException {
@@ -64,14 +64,13 @@ public class OAuth2Handler {
     }
 
     class MakeReply {
-        MakeReply(String parentId, String textOriginal) {
-            snippet = new Snippet();
-            snippet.parentId = parentId;
-            snippet.textOriginal = textOriginal;
-        }
-        public final Snippet snippet;
         class Snippet {
             String parentId, textOriginal;
+        }
+        Snippet snippet = new Snippet();
+        MakeReply(String parentId, String textOriginal) {
+            snippet.parentId = parentId;
+            snippet.textOriginal = textOriginal;
         }
     }
 
@@ -80,6 +79,7 @@ public class OAuth2Handler {
      */
     public CommentsList.Item postReply(String parentId, String textOriginal) throws IOException, YouTubeErrorException {
         String payload = gson.toJson(new MakeReply(parentId, textOriginal));
+        int tries = 0;
         do {
             HttpsURLConnection conn = (HttpsURLConnection) new URL("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token="+tokens.access_token).openConnection();
             conn.setDoInput(true);
@@ -88,17 +88,22 @@ public class OAuth2Handler {
             conn.connect();
             OutputStream os = conn.getOutputStream();
             os.write(payload.getBytes("UTF-8"));
-            String response = new String(toByteArray(conn.getInputStream()), "UTF-8");
             if(conn.getResponseCode() < HttpsURLConnection.HTTP_BAD_REQUEST) {
+                String response = new String(toByteArray(conn.getInputStream()), "UTF-8");
                 return gson.fromJson(response, CommentsList.Item.class);
             } else if(conn.getResponseCode() == 401) {
                 System.out.println("Refreshing tokens and trying again.");
+                refreshTokens();
             } else {
+                String response = new String(toByteArray(conn.getErrorStream()), "UTF-8");
+                System.out.println(response);
                 throw gson.fromJson(response, YouTubeErrorException.class);
             }
             os.close();
             conn.disconnect();
-        } while(true);
+            tries++;
+        } while(tries < 10);
+        throw new IOException("Could not reply and failed to refresh tokens.");
     }
 
     private byte[] toByteArray(InputStream is) throws IOException {

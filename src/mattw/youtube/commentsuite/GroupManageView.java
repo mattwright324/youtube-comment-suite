@@ -34,6 +34,8 @@ public class GroupManageView extends StackPane {
     private static Random rand = new Random();
 
     private Group group;
+    private Label lblChecked = new Label("Last refreshed: [...].");
+    private long lastChecked = Long.MAX_VALUE;
 
     private Button reload = new Button("Reload");
     private ProgressIndicator prog = new ProgressIndicator();
@@ -88,8 +90,11 @@ public class GroupManageView extends StackPane {
         }
     }
 
+    public SimpleBooleanProperty deletedProperty() { return deleted; }
+
     public GroupManageView(Group group) {
         this.group = group;
+        this.lastChecked = CommentSuite.db().getLastChecked(group);
 
         Color color = Color.color(rand.nextDouble(), rand.nextDouble(), rand.nextDouble());
 
@@ -121,13 +126,12 @@ public class GroupManageView extends StackPane {
         title.textProperty().bind(group.nameProperty());
         HBox.setHgrow(title, Priority.ALWAYS);
 
-        Label id = new Label();
-        id.setMinWidth(0);
-        id.setPrefWidth(0);
-        id.setAlignment(Pos.CENTER_RIGHT);
-        id.setMaxWidth(Double.MAX_VALUE);
-        id.setTextFill(Color.LIGHTGRAY);
-        HBox.setHgrow(id, Priority.ALWAYS);
+        lblChecked.setMinWidth(0);
+        lblChecked.setPrefWidth(0);
+        lblChecked.setAlignment(Pos.CENTER_RIGHT);
+        lblChecked.setMaxWidth(Double.MAX_VALUE);
+        lblChecked.setTextFill(Color.LIGHTGRAY);
+        HBox.setHgrow(lblChecked, Priority.ALWAYS);
 
         prog.setMaxHeight(wh);
         prog.setMaxWidth(wh);
@@ -167,7 +171,7 @@ public class GroupManageView extends StackPane {
 
         HBox control = new HBox(10);
         control.setAlignment(Pos.CENTER_RIGHT);
-        control.getChildren().addAll(view, title, id, prog, rename, reload, refresh, delete);
+        control.getChildren().addAll(view, title, lblChecked, prog, rename, reload, refresh, delete);
 
         CategoryAxis xAxis = new CategoryAxis();
         xAxis.setLabel("Weeks");
@@ -248,13 +252,14 @@ public class GroupManageView extends StackPane {
         popularLabel2.setFont(subtitleFont);
         popularViewers.setStyle("-fx-border-color: green");
         popularViewers.setMinHeight(height);
-        popularViewers.setMaxHeight(height);
+        VBox.setVgrow(popularViewers, Priority.ALWAYS);
 
         Label activeLabel = new Label("Most Active Viewers");
         activeLabel.setFont(subtitleFont);
         activeViewers.setStyle("-fx-border-color: red");
         activeViewers.setMinHeight(height);
         activeViewers.setMaxHeight(height);
+        VBox.setVgrow(activeViewers, Priority.ALWAYS);
 
         VBox vbox3 = new VBox(10);
         vbox3.setAlignment(Pos.TOP_CENTER);
@@ -323,16 +328,14 @@ public class GroupManageView extends StackPane {
         VBox.setVgrow(groupItem, Priority.ALWAYS);
 
         group.itemsUpdatedProperty().addListener((o, ov, nv) -> {
-            List<GroupItem> items = CommentSuite.db().getGroupItems(group);
-            GroupItem noItems = new GroupItem(GroupItem.NO_ITEMS, "No items");
             Platform.runLater(() -> {
                 groupItem.getItems().clear();
-                if(!items.isEmpty()) {
+                if(!group.getGroupItems().isEmpty()) {
                     groupItem.setDisable(false);
-                    groupItem.getItems().addAll(items);
+                    groupItem.getItems().addAll(group.getGroupItems());
                     groupItem.getSelectionModel().select(0);
                 } else {
-                    groupItem.getItems().add(noItems);
+                    groupItem.getItems().add(GroupItem.noItems);
                     groupItem.setDisable(true);
                 }
             });
@@ -398,7 +401,7 @@ public class GroupManageView extends StackPane {
             vbox1.setAlignment(Pos.CENTER);
             vbox1.setMaxWidth(0);
             vbox1.setMaxHeight(0);
-            vbox1.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
+            vbox1.setId("overlayMenu");
             vbox1.setPadding(new Insets(25));
             vbox1.getChildren().addAll(title1, current, nameField, error, hbox0);
 
@@ -421,7 +424,51 @@ public class GroupManageView extends StackPane {
 
         setStyle(String.format("-fx-background-color: linear-gradient(to right, rgba(%s,%s,%s,0.2), transparent);", 255 * color.getRed(), 255 * color.getGreen(), 255 * color.getBlue()));
         getChildren().addAll(vbox);
-        // reload.fire();
+        reload.fire();
+
+        new Thread(() -> {
+            updateLastChecked();
+            while(true) {
+                if(timeSince() >= 0) updateLastChecked();
+                try { Thread.sleep(200); } catch (Exception e) { break; }
+            }
+        }).start();
+    }
+
+    private void updateLastChecked() {
+        Platform.runLater(() -> lblChecked.setText("Last refreshed: "+sinceLastChecked()));
+    }
+
+    private long timeSince() {
+        return System.currentTimeMillis() - lastChecked;
+    }
+
+    private String sinceLastChecked() {
+        long time = timeSince();
+        if(time > 0) {
+            long m, h, d, w, y;
+
+            time /= 1000;
+            time /= 60;
+            m = time % 60; time /= 60;
+            h = time;
+            d = h / 24;
+            w = d / 7;
+            y = d / 360;
+
+            if(y > 0) {
+                return y+" years ago";
+            } else if(w > 0) {
+                return w+" weeks ago";
+            } else if(d > 0) {
+                return d+" days ago";
+            } else if(h > 0 || m > 0) {
+                return (h > 0 ? h+" hrs ":"")+(m > 0 ? m+" mins ":"")+"ago";
+            } else {
+                return "just now";
+            }
+        }
+        return "never";
     }
 
     private void loadAnalytics() {
@@ -511,6 +558,7 @@ public class GroupManageView extends StackPane {
 
     private void beginGroupRefresh() {
         GroupRefresh refreshThread = new GroupRefresh(group, CommentSuite.db(), CommentSuite.youtube());
+        lastChecked = System.currentTimeMillis();
 
         ProgressIndicator activity = new ProgressIndicator();
         activity.setMaxWidth(25);
@@ -566,7 +614,7 @@ public class GroupManageView extends StackPane {
         vbox.setMaxWidth(350);
         vbox.setMaxHeight(0);
         vbox.setAlignment(Pos.CENTER);
-        vbox.setStyle("-fx-background-color: #eee; -fx-opacity: 1;");
+        vbox.setId("overlayMenu");
         vbox.getChildren().addAll(header, vbox0);
 
         StackPane overlay = new StackPane(vbox);
@@ -574,6 +622,7 @@ public class GroupManageView extends StackPane {
         getChildren().addAll(overlay);
 
         finish.setOnAction(ae -> {
+            lastChecked = CommentSuite.db().getLastChecked(group);
             finish.disableProperty().unbind();
             title.textProperty().unbind();
             progress.progressProperty().unbind();

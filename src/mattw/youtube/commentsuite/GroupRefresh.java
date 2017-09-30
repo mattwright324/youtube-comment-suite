@@ -193,9 +193,12 @@ public class GroupRefresh extends Thread {
     /**
      * Handles GroupItems separated by the same type.
      */
-    private void parseGroupItems(List<GroupItem> items, int type) throws IOException, YouTubeErrorException {
+    private void parseGroupItems(List<GroupItem> items, int type) throws SQLException, IOException, YouTubeErrorException {
         if(type == GroupItem.VIDEO) {
             List<String> sublist;
+            for(GroupItem item : items) {
+                database.updateGroupItemLastChecked(item);
+            }
             for(int i=0; i<items.size(); i+=50) {
                 sublist = items.subList(i, i+50 < items.size() ? i+50 : items.size())
                         .stream().map(YouTubeObject::getYouTubeId).collect(Collectors.toList());
@@ -204,11 +207,13 @@ public class GroupRefresh extends Thread {
             }
         } else if(type == GroupItem.PLAYLIST) {
             for(GroupItem item : items) {
+                database.updateGroupItemLastChecked(item);
                 System.out.println("GroupItem Playlist: "+item.getTitle());
                 handlePlaylist(item.getYouTubeId(), item.getYouTubeId());
             }
         } else if(type == GroupItem.CHANNEL) {
             for(GroupItem item : items) {
+                database.updateGroupItemLastChecked(item);
                 System.out.println("GroupItem Channel: "+item.getTitle());
                 ChannelsList cl = youtube.channelsList().getByChannel(ChannelsList.PART_CONTENT_DETAILS, item.getYouTubeId(), "");
                 if(cl.hasItems() && cl.items[0].hasContentDetails()) {

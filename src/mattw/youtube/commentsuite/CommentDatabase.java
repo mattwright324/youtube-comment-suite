@@ -3,6 +3,7 @@ package mattw.youtube.commentsuite;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import mattw.youtube.datav3.resources.ChannelsList;
 
 import java.sql.*;
 import java.util.*;
@@ -13,7 +14,6 @@ public class CommentDatabase {
 
     private final Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
     private final Group noGroup = new Group(Group.NO_GROUP, "No groups");
-    private final GroupItem noItems = new GroupItem(GroupItem.NO_ITEMS, "No items");
 
     public final ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
     public final Map<String,YouTubeChannel> channelCache = new HashMap<>();
@@ -135,6 +135,7 @@ public class CommentDatabase {
 
     /**
      * Attempts to get cached channel or from database to cache it.
+     * Grabs from youtube is both fail.
      */
     public YouTubeChannel getChannel(String channelId) {
         if(channelCache.containsKey(channelId)) {
@@ -151,19 +152,50 @@ public class CommentDatabase {
             }
             ps.close();
             rs.close();
-            return channel;
+            if(channel != null) {
+                return channel;
+            } else {
+                try {
+                    ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
+                    if(cl.hasItems()) {
+                        List<YouTubeChannel> list = new ArrayList<>();
+                        channel = new YouTubeChannel(cl.items[0], false);
+                        list.add(channel);
+                        insertChannels(list);
+                        commit();
+                        return channel;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
 
+    /**
+     * Checks if the channel is cached and caches it if not.
+     */
+    private void checkChannel(ResultSet rs) throws SQLException {
+        String channelId = rs.getString("channel_id");
+        if(!channelCache.containsKey(channelId)) {
+            channelCache.put(channelId, resultSetToChannel(rs));
+        }
+    }
+
+    /**
+     * Refreshes the globalGroupList.
+     */
     public void refreshGroups() throws SQLException {
         Statement s = con.createStatement();
         ResultSet rs = s.executeQuery("SELECT * FROM groups");
         List<Group> groups = new ArrayList<>();
         while(rs.next()) {
-            groups.add(resultSetToGroup(rs));
+            Group group = resultSetToGroup(rs);
+            group.reloadGroupItems();
+            groups.add(group);
         }
         rs.close();
         for(int i = 0; i< globalGroupList.size(); i++) {
@@ -256,7 +288,6 @@ public class CommentDatabase {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        if(items.isEmpty()) { items.add(noItems); }
         return items;
     }
 
@@ -331,14 +362,11 @@ public class CommentDatabase {
     /**
      * Updates gitem_list with set lastChecked values.
      */
-    public void updateGroupItemsLastChecked(List<GroupItem> items) throws SQLException {
+    public void updateGroupItemLastChecked(GroupItem item) throws SQLException {
         PreparedStatement ps = con.prepareStatement("UPDATE gitem_list SET last_checked = ? WHERE gitem_id = ?");
-        for(GroupItem gi : items) {
-            ps.setLong(1, gi.getLastChecked());
-            ps.setString(2, gi.getYouTubeId());
-            ps.addBatch();
-        }
-        ps.executeBatch();
+        ps.setLong(1, System.currentTimeMillis());
+        ps.setString(2, item.getYouTubeId());
+        ps.executeUpdate();
         ps.close();
     }
 
@@ -696,11 +724,8 @@ public class CommentDatabase {
             System.out.format("Page %s (%s, %s)\r\n", page, start, end);
             while(rs.next()) {
                 if(pos >= start && pos < end) {
+                    checkChannel(rs);
                     items.add(resultSetToComment(rs));
-                    String channelId = rs.getString("channel_id");
-                    if(!channelCache.containsKey(channelId)) {
-                        channelCache.put(channelId, resultSetToChannel(rs));
-                    }
                 }
                 pos++;
             }
@@ -710,7 +735,40 @@ public class CommentDatabase {
         }
     }
 
+    /**
+     * Returns all of the comments associated with a comment parentId.
+     */
+    public List<YouTubeComment> getCommentTree(String parentId) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM comments JOIN channels USING (channel_id) WHERE comment_id = ? OR parent_id = ? ORDER BY is_reply ASC, comment_date ASC");
+        ps.setString(1, parentId);
+        ps.setString(2, parentId);
+        ResultSet rs = ps.executeQuery();
+        List<YouTubeComment> tree = new ArrayList<>();
+        while(rs.next()) {
+            checkChannel(rs);
+            tree.add(resultSetToComment(rs));
+        }
+        rs.close();
+        ps.close();
+        return tree;
+    }
+
     /******** Stats and Info Methods **********/
+
+    public long getLastChecked(Group group) {
+        long checked = Long.MAX_VALUE;
+        try {
+            PreparedStatement ps = con.prepareStatement("SELECT MAX(last_checked) AS checked FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+            ps.setString(1, group.getId());
+            ResultSet rs = ps.executeQuery();
+            if(rs.next()) {
+                checked = rs.getLong("checked");
+            }
+            ps.close();
+            rs.close();
+        } catch (SQLException ignored) {}
+        return checked;
+    }
 
     public Map<Long,Long> getWeekByWeekCommentHistogram(Group group) throws SQLException {
         PreparedStatement ps = con.prepareStatement("SELECT CAST(comment_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY week ORDER BY week");
@@ -797,12 +855,8 @@ public class CommentDatabase {
         ps.setInt(2, limit);
         ResultSet rs = ps.executeQuery();
         LinkedHashMap<YouTubeChannel,Long> map = new LinkedHashMap<>();
-        String channelId;
         while(rs.next()) {
-            channelId = rs.getString("channel_id");
-            if(!channelCache.containsKey(channelId)) {
-                channelCache.put(channelId, resultSetToChannel(rs));
-            }
+            checkChannel(rs);
             map.put(resultSetToChannel(rs), rs.getLong("count"));
         }
         ps.close();
@@ -816,12 +870,8 @@ public class CommentDatabase {
         ps.setInt(2, limit);
         ResultSet rs = ps.executeQuery();
         LinkedHashMap<YouTubeChannel,Long> map = new LinkedHashMap<>();
-        String channelId;
         while(rs.next()) {
-            channelId = rs.getString("channel_id");
-            if(!channelCache.containsKey(channelId)) {
-                channelCache.put(channelId, resultSetToChannel(rs));
-            }
+            checkChannel(rs);
             map.put(resultSetToChannel(rs), rs.getLong("total_likes"));
         }
         ps.close();

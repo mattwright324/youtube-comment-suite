@@ -6,7 +6,8 @@ import mattw.youtube.datav3.resources.ChannelsList;
 import java.io.IOException;
 
 /**
- *
+ * Combination of YouTubeChannel and OAuth2Tokens as sign-in.
+ * Data stored in Config 'commentsuite.json'
  */
 public class YouTubeAccount {
 
@@ -28,9 +29,11 @@ public class YouTubeAccount {
         try {
             ChannelsList cl = CommentSuite.youtube().channelsList().getMine(ChannelsList.PART_SNIPPET, "");
             ChannelsList.Item cli = cl.items[0];
-            this.username = cli.snippet.title;
             this.channelId = cli.getId();
-            this.thumbUrl = cli.snippet.thumbnails.medium.url.toString();
+            if(cli.hasSnippet()) {
+                this.username = cli.snippet.title;
+                this.thumbUrl = cli.snippet.thumbnails.medium.url.toString();
+            }
         } catch (IOException | YouTubeErrorException e) {
             e.printStackTrace();
         }
@@ -40,6 +43,12 @@ public class YouTubeAccount {
     public String getChannelId() { return channelId; }
     public String getThumbUrl() { return thumbUrl; }
 
+    public String toString() { return username; }
+
     public OAuth2Tokens getTokens() { return tokens; }
     public void setTokens(OAuth2Tokens tokens) { this.tokens = tokens; }
+
+    public boolean equals(Object o) {
+        return o != null && o instanceof YouTubeAccount && ((YouTubeAccount) o).getChannelId() != null && ((YouTubeAccount) o).getChannelId().equals(channelId);
+    }
 }

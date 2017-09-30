@@ -68,6 +68,6 @@ abstract class YouTubeObject {
     public String toString() { return getYouTubeId(); }
 
     public boolean equals(Object o) {
-        return o instanceof YouTubeObject && ((YouTubeObject) o).getYouTubeId().equals(getYouTubeId());
+        return o != null && o instanceof YouTubeObject && ((YouTubeObject) o).getYouTubeId() != null && ((YouTubeObject) o).getYouTubeId().equals(youtubeId);
     }
 }
