@@ -280,14 +280,14 @@ public class GroupManageView extends StackPane {
         int height = 300;
         Label popularLabel2 = new Label("Most Popular Viewers");
         popularLabel2.setFont(subtitleFont);
-        popularViewers.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
+        popularViewers.setCellFactory(cf -> new ListViewEmptyCellFactory<>(58));
         popularViewers.setStyle("-fx-border-color: green");
         popularViewers.setMinHeight(height);
         VBox.setVgrow(popularViewers, Priority.ALWAYS);
 
         Label activeLabel = new Label("Most Active Viewers");
         activeLabel.setFont(subtitleFont);
-        activeViewers.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
+        activeViewers.setCellFactory(cf -> new ListViewEmptyCellFactory<>(58));
         activeViewers.setStyle("-fx-border-color: red");
         activeViewers.setMinHeight(height);
         activeViewers.setMaxHeight(height);
@@ -311,28 +311,28 @@ public class GroupManageView extends StackPane {
 
         Label popularLabel = new Label("Most Popular Videos");
         popularLabel.setFont(subtitleFont);
-        popularVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(49, true));
+        popularVideos.setCellFactory(cf -> new ListViewEmptyCellFactory<>(49));
         popularVideos.setStyle("-fx-border-color: green");
         popularVideos.setMinHeight(height);
         popularVideos.setMaxHeight(height);
 
         Label dislikeLabel = new Label("Most Disliked Videos");
         dislikeLabel.setFont(subtitleFont);
-        dislikedVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
+        dislikedVideos.setCellFactory(cf -> new ListViewEmptyCellFactory<>(58));
         dislikedVideos.setStyle("-fx-border-color: red");
         dislikedVideos.setMinHeight(height);
         dislikedVideos.setMaxHeight(height);
 
         Label comLabel = new Label("Most Commented Videos");
         comLabel.setFont(subtitleFont);
-        commentedVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
+        commentedVideos.setCellFactory(cf -> new ListViewEmptyCellFactory<>(58));
         commentedVideos.setStyle("-fx-border-color: orange");
         commentedVideos.setMinHeight(height);
         commentedVideos.setMaxHeight(height);
 
         Label disabledLabel = new Label("Comments Disabled");
         disabledLabel.setFont(subtitleFont);
-        disabledVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
+        disabledVideos.setCellFactory(cf -> new ListViewEmptyCellFactory<>(58));
         disabledVideos.setStyle("-fx-border-color: firebrick");
         disabledVideos.setMinHeight(height);
         disabledVideos.setMaxHeight(height);
@@ -378,7 +378,7 @@ public class GroupManageView extends StackPane {
 
         ListView<GroupItemView> groupItem = new ListView<>();
         groupItem.setId("listView");
-        groupItem.setCellFactory(cf -> new ListViewEmptyCellFactory(49));
+        groupItem.setCellFactory(cf -> new ListViewEmptyCellFactory<>(49));
         VBox.setVgrow(groupItem, Priority.ALWAYS);
         group.itemsUpdatedProperty().addListener((o, ov, nv) -> Platform.runLater(() -> {
             groupItem.getItems().clear();
@@ -639,7 +639,7 @@ public class GroupManageView extends StackPane {
 
         remove.setOnAction(ae -> {
             List<GroupItem> selected = groupItem.getSelectionModel().getSelectedItems()
-                    .stream().map(giv -> giv.getItem()).collect(Collectors.toList());
+                    .stream().map(GroupItemView::getItem).collect(Collectors.toList());
 
             Label title1 = new Label("Remove Selected");
             title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
@@ -695,7 +695,7 @@ public class GroupManageView extends StackPane {
 
         removeAll.setOnAction(ae -> {
             List<GroupItem> items = groupItem.getItems()
-                    .stream().map(giv -> giv.getItem()).collect(Collectors.toList());
+                    .stream().map(GroupItemView::getItem).collect(Collectors.toList());
 
             Label title1 = new Label("Remove All Items");
             title1.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));

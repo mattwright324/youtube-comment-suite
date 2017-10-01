@@ -88,7 +88,6 @@ public class CommentSuite extends Application {
 
     private CommentDatabase.CommentQuery query;
     private ObservableList<YouTubeCommentView> originalComments = FXCollections.observableArrayList();
-    private double originalScroll = 0;
     private ObservableList<YouTubeCommentView> treeComments = FXCollections.observableArrayList();
     private ListView<YouTubeCommentView> commentsList = new ListView<>();
     private YouTubeCommentView actionComment = null;
@@ -265,7 +264,7 @@ public class CommentSuite extends Application {
         accountList.setId("listView");
         accountList.setMinHeight(150);
         accountList.setMaxHeight(150);
-        accountList.setCellFactory(cf -> new ListViewEmptyCellFactory(40));
+        accountList.setCellFactory(cf -> new ListViewEmptyCellFactory<>(40));
         accountList.getItems().addListener((ListChangeListener<YouTubeAccountView>) c -> {
             while(c.next()) {
                 if(c.wasAdded() || c.wasRemoved()) {
@@ -597,7 +596,7 @@ public class CommentSuite extends Application {
 
         commentsList.setItems(originalComments);
         commentsList.setId("listView");
-        commentsList.setCellFactory(cf -> new ListViewEmptyCellFactory(96));
+        commentsList.setCellFactory(cf -> new ListViewEmptyCellFactory<>(96));
         commentsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         commentsList.setContextMenu(menu);
         commentsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
@@ -1374,7 +1373,7 @@ public class CommentSuite extends Application {
 
         ListView<SearchListView> youtubeList = new ListView<>();
         youtubeList.setContextMenu(menu);
-        youtubeList.setCellFactory(cf -> new ListViewEmptyCellFactory(143));
+        youtubeList.setCellFactory(cf -> new ListViewEmptyCellFactory<>(143));
         youtubeList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         VBox.setVgrow(youtubeList, Priority.ALWAYS);
 
