@@ -99,7 +99,18 @@ public class GroupManageView extends StackPane {
             super(10);
             this.item = item;
 
-            ImageView thumb = new ImageView(item.getThumbUrl());
+            Image image = new Image(item.getThumbUrl());
+            if(image.isError()) {
+                if(item.getTypeName().equals("Video")) {
+                    image = new Image("/mattw/youtube/commentsuite/img/video.png");
+                } else if(item.getTypeName().equals("Channel")) {
+                    image = new Image("/mattw/youtube/commentsuite/img/channel.png");
+                } else if(item.getTypeName().equals("Playlist")) {
+                    image = new Image("/mattw/youtube/commentsuite/img/playlist.png");
+                }
+            }
+
+            ImageView thumb = new ImageView(image);
             thumb.setFitWidth(30);
             thumb.setFitHeight(30);
 

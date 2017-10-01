@@ -38,6 +38,7 @@ import mattw.youtube.datav3.resources.CommentsList;
 import mattw.youtube.datav3.resources.SearchList;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.sql.SQLException;
@@ -58,7 +59,6 @@ public class CommentSuite extends Application {
     private static CommentSuite instance;
     private final OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
 
-
     static {
         config.load();
         try {
@@ -73,6 +73,7 @@ public class CommentSuite extends Application {
     public static final Image IMG_SEARCH = new Image("/mattw/youtube/commentsuite/img/search.png");
     public static final Image IMG_YOUTUBE = new Image("/mattw/youtube/commentsuite/img/youtube.png");
     public static final Image IMG_BLANK_PROFILE = new Image("/mattw/youtube/commentsuite/img/blankProfile.png");
+    public static final Image IMG_VID_PLACEHOLDER = new Image("/mattw/youtube/commentsuite/img/videoPlaceholder.png");
 
     private StackPane main = new StackPane();
     private StackPane display = new StackPane();
@@ -255,6 +256,9 @@ public class CommentSuite extends Application {
         CheckBox loadStats = new CheckBox("Auto-load stats while managing a group.");
         loadStats.setSelected(config.autoLoadStats());
 
+        CheckBox downloadThumbs = new CheckBox("Download thumbnails for archiving.");
+        downloadThumbs.setSelected(config.downloadThumbs());
+
         Label label2 = new Label("YouTube Accounts");
         label2.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
@@ -317,7 +321,7 @@ public class CommentSuite extends Application {
         VBox vbox2 = new VBox(10);
         vbox2.setPadding(new Insets(10));
         vbox2.setAlignment(Pos.TOP_LEFT);
-        vbox2.getChildren().addAll(label1, prefixReplies, loadStats, label2, signIn, accountList, label4, hbox2, label3, about, release, git);
+        vbox2.getChildren().addAll(label1, prefixReplies, loadStats, downloadThumbs, label2, signIn, accountList, label4, hbox2, label3, about, release, git);
 
         ScrollPane scroll = new ScrollPane(vbox2);
         scroll.setStyle("-fx-border-color: transparent; -fx-background-color: transparent;");
@@ -430,6 +434,7 @@ public class CommentSuite extends Application {
         save.setOnAction(ae -> {
             config.setPrefixReplies(prefixReplies.isSelected());
             config.setAutoLoadStats(loadStats.isSelected());
+            config.setDownloadThumbs(downloadThumbs.isSelected());
             config.save();
             close.fire();
         });
@@ -446,6 +451,7 @@ public class CommentSuite extends Application {
 
         vacuum.setOnAction(ae -> new Thread(() -> {
             Label label = new Label("Performing VACUUM");
+            label.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
             ProgressIndicator prog = new ProgressIndicator();
             prog.setMaxWidth(25);
@@ -453,6 +459,8 @@ public class CommentSuite extends Application {
 
             VBox vbox0 = new VBox(10);
             vbox0.setId("overlayMenu");
+            vbox0.setMaxHeight(100);
+            vbox0.setMaxWidth(200);
             vbox0.setPadding(new Insets(25));
             vbox0.getChildren().addAll(label, prog);
 
@@ -466,6 +474,7 @@ public class CommentSuite extends Application {
 
         reset.setOnAction(ae -> new Thread(() -> {
             Label label = new Label("Resetting Database");
+            label.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
             ProgressIndicator prog = new ProgressIndicator();
             prog.setMaxWidth(25);
@@ -473,8 +482,8 @@ public class CommentSuite extends Application {
 
             VBox vbox0 = new VBox(10);
             vbox0.setAlignment(Pos.CENTER);
-            vbox0.setMaxHeight(0);
-            vbox0.setMaxWidth(0);
+            vbox0.setMaxHeight(100);
+            vbox0.setMaxWidth(200);
             vbox0.setId("overlayMenu");
             vbox0.setPadding(new Insets(25));
             vbox0.getChildren().addAll(label, prog);
@@ -483,15 +492,30 @@ public class CommentSuite extends Application {
             overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
 
             Platform.runLater(() -> stack.getChildren().add(overlay));
-            try { database.reset(); } catch (SQLException ignored) { ignored.printStackTrace(); }
+            try {
+                File thumbs = YouTubeObject.thumbFolder;
+                if(thumbs.exists()) {
+                    for(File f : thumbs.listFiles()) {
+                        f.delete();
+                    }
+                    thumbs.delete();
+                }
+                database.reset();
+                for(Group group : database.globalGroupList) {
+                    group.reloadGroupItems();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             Platform.runLater(() -> stack.getChildren().remove(overlay));
+            System.out.println("Database Reset");
         }).start());
 
         return stack;
     }
 
     public StackPane buildSearchCommentsPane() {
-        ImageView videoThumb = new ImageView("/mattw/youtube/commentsuite/img/videoPlaceholder.png");
+        ImageView videoThumb = new ImageView(IMG_VID_PLACEHOLDER);
         videoThumb.setFitWidth(300);
         videoThumb.setFitHeight(168);
         videoThumb.setCursor(Cursor.HAND);
@@ -592,7 +616,7 @@ public class CommentSuite extends Application {
         MenuItem copyCommentLink = new MenuItem("Copy Comment Link(s)");
 
         ContextMenu menu = new ContextMenu();
-        menu.getItems().addAll(openBrowser, loadThumb, copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);
+        menu.getItems().addAll(openBrowser, copyName, copyText, copyChannelLink, copyVideoLink, copyCommentLink);
 
         commentsList.setItems(originalComments);
         commentsList.setId("listView");
@@ -600,7 +624,10 @@ public class CommentSuite extends Application {
         commentsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         commentsList.setContextMenu(menu);
         commentsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
-            if(nv != null) { Platform.runLater(() -> selectedVideoId.setValue(nv.getComment().getVideoId())); }
+            if(nv != null) {
+                loadThumb.fire();
+                Platform.runLater(() -> selectedVideoId.setValue(nv.getComment().getVideoId()));
+            }
         });
         VBox.setVgrow(commentsList, Priority.ALWAYS);
 
@@ -644,10 +671,10 @@ public class CommentSuite extends Application {
             loadThumb.setDisable(true);
             new Thread(() -> {
                 for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
-                    yc.updateProfileThumb();
+                    if(yc != null) yc.updateProfileThumb();
                 }
                 for(YouTubeCommentView yc : commentsList.getItems()) {
-                    yc.checkProfileThumb();
+                    if(yc != null) yc.checkProfileThumb();
                 }
                 loadThumb.setDisable(false);
             }).start();
@@ -1198,7 +1225,7 @@ public class CommentSuite extends Application {
             groupList.getSelectionModel().select(0);
         }
 
-        Button create = new Button("Create Group");
+        Button create = new Button("Create New Group");
         create.setId("control");
 
         HBox control = new HBox(10);

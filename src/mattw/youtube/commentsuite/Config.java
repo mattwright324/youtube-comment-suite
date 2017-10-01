@@ -47,6 +47,7 @@ public class Config {
         public Data() {}
         public boolean auto_load_stats = true;
         public boolean prefix_replies = true;
+        public boolean download_thumbs = false;
         public List<YouTubeAccount> accounts = new ArrayList<>();
     }
 
@@ -56,6 +57,9 @@ public class Config {
 
     public void setAutoLoadStats(boolean load) { data.auto_load_stats = load; }
     public boolean autoLoadStats() { return data.auto_load_stats; }
+
+    public void setDownloadThumbs(boolean download) { data.download_thumbs = download; }
+    public boolean downloadThumbs() { return data.download_thumbs; }
 
     public List<YouTubeAccount> getAccounts() { return data.accounts; }
 }

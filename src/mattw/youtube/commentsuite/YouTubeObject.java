@@ -2,6 +2,9 @@ package mattw.youtube.commentsuite;
 
 import javafx.scene.image.Image;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +13,7 @@ import java.util.Map;
  */
 abstract class YouTubeObject {
 
+    protected static File thumbFolder = new File("thumbs/");
     protected static Map<String,Image> thumbCache = new HashMap<>();
 
     protected int typeId = -1;
@@ -23,6 +27,9 @@ abstract class YouTubeObject {
         this.title = title;
         this.thumbUrl = thumbUrl;
         this.fetchThumb = fetchThumb;
+        if(CommentSuite.config().downloadThumbs() && fetchThumb) {
+            getThumbnail();
+        }
     }
 
 
@@ -32,8 +39,26 @@ abstract class YouTubeObject {
      * Caches thumbs when grabbed.
      */
     public Image getThumbnail() {
+        File thumbFile = new File(thumbFolder, youtubeId+".jpg");
+        if(CommentSuite.config().downloadThumbs()) {
+            try {
+                if(!thumbFile.exists()) {
+                    thumbFolder.mkdirs();
+                    thumbFile.createNewFile();
+                    ImageIO.write(ImageIO.read(new URL(thumbUrl)), "jpg", thumbFile);
+                }
+            } catch (Exception ignored) {}
+        }
         if(!thumbCached()) {
-            thumbCache.put(youtubeId, new Image(thumbUrl));
+            Image image = new Image(thumbFile.exists() ? "file:///"+thumbFile.getAbsolutePath() : thumbUrl);
+            if(image.isError()) {
+                if(typeId == 0)
+                    return CommentSuite.IMG_VID_PLACEHOLDER;
+                else
+                    return CommentSuite.IMG_BLANK_PROFILE;
+
+            }
+            thumbCache.put(youtubeId, image);
         }
         return thumbCache.get(youtubeId);
     }

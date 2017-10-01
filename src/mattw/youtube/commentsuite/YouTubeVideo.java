@@ -11,7 +11,7 @@ public class YouTubeVideo extends YouTubeObject {
     private int httpCode;
 
     public YouTubeVideo(VideosList.Item itemSnip, VideosList.Item itemStat) {
-        super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.medium.url.toString(), false);
+        super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.medium.url.toString(), true);
         this.typeId = 0;
         this.channelId = itemSnip.snippet.channelId;
         this.description = itemSnip.snippet.description;
