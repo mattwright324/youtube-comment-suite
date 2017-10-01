@@ -45,6 +45,7 @@ public class Config {
 
     protected class Data {
         public Data() {}
+        public boolean auto_load_stats = true;
         public boolean prefix_replies = true;
         public List<YouTubeAccount> accounts = new ArrayList<>();
     }
@@ -52,5 +53,9 @@ public class Config {
     public boolean isSignedIn(String channelId) { return getAccounts().stream().anyMatch(acc -> acc.channelId.equals(channelId)); }
     public void setPrefixReplies(boolean prefix) { data.prefix_replies = prefix; }
     public boolean prefixReplies() { return data.prefix_replies; }
+
+    public void setAutoLoadStats(boolean load) { data.auto_load_stats = load; }
+    public boolean autoLoadStats() { return data.auto_load_stats; }
+
     public List<YouTubeAccount> getAccounts() { return data.accounts; }
 }

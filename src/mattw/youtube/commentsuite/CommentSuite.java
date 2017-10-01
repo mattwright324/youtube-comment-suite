@@ -249,8 +249,11 @@ public class CommentSuite extends Application {
         Label label1 = new Label("General");
         label1.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
-        CheckBox prefixReplies = new CheckBox("Use prefix +{name} when replying to comments.");
+        CheckBox prefixReplies = new CheckBox("(Search Comments) Prefix +{name} when replying to comments.");
         prefixReplies.setSelected(config.prefixReplies());
+
+        CheckBox loadStats = new CheckBox("(Manage Groups) Auto-load stats while managing a group.");
+        loadStats.setSelected(config.autoLoadStats());
 
         Label label2 = new Label("YouTube Accounts");
         label2.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
@@ -261,6 +264,7 @@ public class CommentSuite extends Application {
         accountList.setId("listView");
         accountList.setMinHeight(150);
         accountList.setMaxHeight(150);
+        accountList.setCellFactory(cf -> new ListViewEmptyCellFactory(40));
         accountList.getItems().addListener((ListChangeListener<YouTubeAccountView>) c -> {
             while(c.next()) {
                 if(c.wasAdded() || c.wasRemoved()) {
@@ -313,7 +317,7 @@ public class CommentSuite extends Application {
         VBox vbox2 = new VBox(10);
         vbox2.setPadding(new Insets(10));
         vbox2.setAlignment(Pos.TOP_LEFT);
-        vbox2.getChildren().addAll(label1, prefixReplies, label2, signIn, accountList, label4, hbox2, label3, about, release, git);
+        vbox2.getChildren().addAll(label1, prefixReplies, loadStats, label2, signIn, accountList, label4, hbox2, label3, about, release, git);
 
         ScrollPane scroll = new ScrollPane(vbox2);
         scroll.setStyle("-fx-border-color: transparent; -fx-background-color: transparent;");
@@ -425,6 +429,7 @@ public class CommentSuite extends Application {
 
         save.setOnAction(ae -> {
             config.setPrefixReplies(prefixReplies.isSelected());
+            config.setAutoLoadStats(loadStats.isSelected());
             config.save();
             close.fire();
         });
@@ -568,23 +573,6 @@ public class CommentSuite extends Application {
             contextBox.setVisible(disable);
         });
 
-        class ListViewEmptyCellFactory extends ListCell<YouTubeCommentView> {
-            private double height = 25;
-            public ListViewEmptyCellFactory(double height) {
-                this.height = height;
-            }
-            protected void updateItem(YouTubeCommentView item, boolean empty) {
-                super.updateItem(item, empty);
-                if(empty) {
-                    setPrefHeight(height);
-                    setGraphic(null);
-                } else {
-                    setPrefHeight(Region.USE_COMPUTED_SIZE);
-                    setGraphic(item);
-                }
-            }
-        }
-
         ImageView browser = new ImageView("/mattw/youtube/commentsuite/img/browser.png");
         browser.setFitHeight(20);
         browser.setFitWidth(20);
@@ -608,7 +596,7 @@ public class CommentSuite extends Application {
 
         commentsList.setItems(originalComments);
         commentsList.setId("listView");
-        commentsList.setCellFactory(cf -> new ListViewEmptyCellFactory(70));
+        commentsList.setCellFactory(cf -> new ListViewEmptyCellFactory(96));
         commentsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         commentsList.setContextMenu(menu);
         commentsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
@@ -653,12 +641,16 @@ public class CommentSuite extends Application {
         });
 
         loadThumb.setOnAction(ae -> {
-            for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
-                yc.updateProfileThumb();
-            }
-            for(YouTubeCommentView yc : commentsList.getItems()) {
-                yc.checkProfileThumb();
-            }
+            loadThumb.setDisable(true);
+            new Thread(() -> {
+                for(YouTubeCommentView yc : commentsList.getSelectionModel().getSelectedItems()) {
+                    yc.updateProfileThumb();
+                }
+                for(YouTubeCommentView yc : commentsList.getItems()) {
+                    yc.checkProfileThumb();
+                }
+                loadThumb.setDisable(false);
+            }).start();
         });
 
         copyName.setOnAction(ae -> {
@@ -889,6 +881,7 @@ public class CommentSuite extends Application {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            searchBox.setDisable(false);
         }).start());
 
         nextPage.setOnAction(ae -> new Thread(() -> {
@@ -908,6 +901,7 @@ public class CommentSuite extends Application {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            searchBox.setDisable(false);
         }).start());
 
         prevPage.setOnAction(ae -> new Thread(() -> {
@@ -927,6 +921,7 @@ public class CommentSuite extends Application {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            searchBox.setDisable(false);
         }).start());
 
         lastPage.setOnAction(ae -> new Thread(() -> {
@@ -946,6 +941,7 @@ public class CommentSuite extends Application {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            searchBox.setDisable(false);
         }).start());
 
         search.setOnAction(ae -> new Thread(() -> {
@@ -1367,6 +1363,7 @@ public class CommentSuite extends Application {
 
         ListView<SearchListView> youtubeList = new ListView<>();
         youtubeList.setContextMenu(menu);
+        youtubeList.setCellFactory(cf -> new ListViewEmptyCellFactory(143));
         youtubeList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         VBox.setVgrow(youtubeList, Priority.ALWAYS);
 

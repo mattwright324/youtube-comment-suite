@@ -179,6 +179,8 @@ public class GroupManageView extends StackPane {
         lblChecked.setTextFill(Color.LIGHTGRAY);
         HBox.setHgrow(lblChecked, Priority.ALWAYS);
 
+        prog.setVisible(false);
+        prog.setManaged(false);
         prog.setMaxHeight(wh);
         prog.setMaxWidth(wh);
 
@@ -278,12 +280,14 @@ public class GroupManageView extends StackPane {
         int height = 300;
         Label popularLabel2 = new Label("Most Popular Viewers");
         popularLabel2.setFont(subtitleFont);
+        popularViewers.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
         popularViewers.setStyle("-fx-border-color: green");
         popularViewers.setMinHeight(height);
         VBox.setVgrow(popularViewers, Priority.ALWAYS);
 
         Label activeLabel = new Label("Most Active Viewers");
         activeLabel.setFont(subtitleFont);
+        activeViewers.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
         activeViewers.setStyle("-fx-border-color: red");
         activeViewers.setMinHeight(height);
         activeViewers.setMaxHeight(height);
@@ -307,24 +311,28 @@ public class GroupManageView extends StackPane {
 
         Label popularLabel = new Label("Most Popular Videos");
         popularLabel.setFont(subtitleFont);
+        popularVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(49, true));
         popularVideos.setStyle("-fx-border-color: green");
         popularVideos.setMinHeight(height);
         popularVideos.setMaxHeight(height);
 
         Label dislikeLabel = new Label("Most Disliked Videos");
         dislikeLabel.setFont(subtitleFont);
+        dislikedVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
         dislikedVideos.setStyle("-fx-border-color: red");
         dislikedVideos.setMinHeight(height);
         dislikedVideos.setMaxHeight(height);
 
         Label comLabel = new Label("Most Commented Videos");
         comLabel.setFont(subtitleFont);
+        commentedVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
         commentedVideos.setStyle("-fx-border-color: orange");
         commentedVideos.setMinHeight(height);
         commentedVideos.setMaxHeight(height);
 
         Label disabledLabel = new Label("Comments Disabled");
         disabledLabel.setFont(subtitleFont);
+        disabledVideos.setCellFactory(cf -> new ListViewEmptyCellFactory(58));
         disabledVideos.setStyle("-fx-border-color: firebrick");
         disabledVideos.setMinHeight(height);
         disabledVideos.setMaxHeight(height);
@@ -370,6 +378,7 @@ public class GroupManageView extends StackPane {
 
         ListView<GroupItemView> groupItem = new ListView<>();
         groupItem.setId("listView");
+        groupItem.setCellFactory(cf -> new ListViewEmptyCellFactory(49));
         VBox.setVgrow(groupItem, Priority.ALWAYS);
         group.itemsUpdatedProperty().addListener((o, ov, nv) -> Platform.runLater(() -> {
             groupItem.getItems().clear();
@@ -741,7 +750,10 @@ public class GroupManageView extends StackPane {
 
         setStyle(String.format("-fx-background-color: linear-gradient(to right, rgba(%s,%s,%s,0.2), transparent);", 255 * color.getRed(), 255 * color.getGreen(), 255 * color.getBlue()));
         getChildren().addAll(vbox);
-        reload.fire();
+
+        if(CommentSuite.config().autoLoadStats()) {
+            reload.fire();
+        }
 
         new Thread(() -> {
             updateLastChecked();
