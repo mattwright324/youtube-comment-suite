@@ -803,7 +803,7 @@ public class CommentSuite extends Application {
                         }
                     });
                 });
-                nv.incrementItemsUpdated();
+                nv.reloadGroupItems();
             }
         });
         group.setItems(database.globalGroupList);

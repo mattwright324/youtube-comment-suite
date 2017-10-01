@@ -405,7 +405,7 @@ public class GroupManageView extends StackPane {
                 removeAll.setDisable(true);
             }
         }));
-        group.incrementItemsUpdated();
+        group.reloadGroupItems();
 
         HBox btns = new HBox(10);
         btns.getChildren().addAll(addItem, remove, removeAll);
