@@ -885,10 +885,10 @@ public class GroupManageView extends StackPane {
             try { // About Videos
                 LinkedHashMap<YouTubeChannel,Long> mostActive = CommentSuite.db().getMostActiveViewers(group, 25);
                 List<YouTubeObjectView> ma = mostActive.keySet()
-                        .stream().map(channel -> new YouTubeObjectView(channel, mostActive.get(channel)+" comments")).collect(Collectors.toList());
+                        .stream().map(channel -> new YouTubeObjectView(channel, String.format("%,d comments", mostActive.get(channel)))).collect(Collectors.toList());
                 LinkedHashMap<YouTubeChannel,Long> mostPopular = CommentSuite.db().getMostPopularViewers(group, 25);
                 List<YouTubeObjectView> mp = mostPopular.keySet()
-                        .stream().map(channel -> new YouTubeObjectView(channel, mostPopular.get(channel)+" likes")).collect(Collectors.toList());
+                        .stream().map(channel -> new YouTubeObjectView(channel, String.format("%,d likes", mostPopular.get(channel)))).collect(Collectors.toList());
                 Platform.runLater(() -> {
                     activeViewers.getItems().addAll(ma);
                     popularViewers.getItems().addAll(mp);

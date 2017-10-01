@@ -1,5 +1,6 @@
 package mattw.youtube.commentsuite;
 
+import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import mattw.youtube.commentsuite.io.ElapsedTime;
@@ -307,7 +308,7 @@ public class GroupRefresh extends Thread {
                                 checkChannel(comment.getChannelId(), item.snippet.topLevelComment);
                                 comments.add(comment);
                             } else {
-                                System.out.println("G+ Comment: "+item.snippet.topLevelComment.snippet.authorChannelUrl);
+                                System.out.println("G+ Comment: "+new Gson().toJson(item));
                             }
                         }
                     }

@@ -52,11 +52,12 @@ import java.util.stream.Collectors;
 public class CommentSuite extends Application {
 
     private static final String RELEASE = "v1.3.0";
-    private static final OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
     private static final YouTubeData3 data = new YouTubeData3("AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ");
     private static final Config config = new Config("commentsuite.json");
     private static CommentDatabase database;
     private static CommentSuite instance;
+    private final OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
+
 
     static {
         config.load();
@@ -87,6 +88,7 @@ public class CommentSuite extends Application {
 
     private CommentDatabase.CommentQuery query;
     private ObservableList<YouTubeCommentView> originalComments = FXCollections.observableArrayList();
+    private double originalScroll = 0;
     private ObservableList<YouTubeCommentView> treeComments = FXCollections.observableArrayList();
     private ListView<YouTubeCommentView> commentsList = new ListView<>();
     private YouTubeCommentView actionComment = null;
@@ -97,7 +99,6 @@ public class CommentSuite extends Application {
     private StackPane searchComments = buildSearchCommentsPane();
     private StackPane settings = buildSettingsPane();
 
-    public static OAuth2Handler oauth2() { return oauth2; }
     public static Config config() { return config; }
     public static YouTubeData3 youtube() { return data; }
     public static CommentDatabase db() { return database; }
@@ -249,10 +250,10 @@ public class CommentSuite extends Application {
         Label label1 = new Label("General");
         label1.setFont(Font.font("Tahoma", FontWeight.BOLD, 14));
 
-        CheckBox prefixReplies = new CheckBox("(Search Comments) Prefix +{name} when replying to comments.");
+        CheckBox prefixReplies = new CheckBox("Prefix +{name} when replying to comments.");
         prefixReplies.setSelected(config.prefixReplies());
 
-        CheckBox loadStats = new CheckBox("(Manage Groups) Auto-load stats while managing a group.");
+        CheckBox loadStats = new CheckBox("Auto-load stats while managing a group.");
         loadStats.setSelected(config.autoLoadStats());
 
         Label label2 = new Label("YouTube Accounts");
@@ -521,9 +522,9 @@ public class CommentSuite extends Application {
         videoAuthor.setId("context");
         videoAuthor.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 14));
 
-        Label views = new Label("8675309 views");
+        Label views = new Label("8,675,309 views");
 
-        Label likes = new Label("+8675");
+        Label likes = new Label("+8,675");
         likes.setTextFill(Color.GREEN);
 
         Label dislikes = new Label("-309");
@@ -619,9 +620,9 @@ public class CommentSuite extends Application {
                         String desc = selectedVideo.getDescription();
                         try { desc = URLDecoder.decode(desc, "UTF-8"); } catch (Exception ignored) {}
                         videoDesc.setText("Published "+sdf.format(selectedVideo.getPublishedDate())+"  "+desc);
-                        views.setText(selectedVideo.getViews()+" views");
-                        likes.setText("+"+selectedVideo.getLikes());
-                        dislikes.setText("-"+selectedVideo.getDislikes());
+                        views.setText(String.format("%,d views", selectedVideo.getViews()));
+                        likes.setText(String.format("+%,d", selectedVideo.getLikes()));
+                        dislikes.setText(String.format("-%,d", selectedVideo.getDislikes()));
                     });
                 }
             } catch (Exception e) {
@@ -703,6 +704,7 @@ public class CommentSuite extends Application {
         backToResults.setOnAction(ae -> Platform.runLater(() -> {
             treeComments.clear();
             commentsList.setItems(originalComments);
+            commentsList.scrollTo(actionComment);
             backToResults.setVisible(false);
             backToResults.setManaged(false);
         }));
@@ -976,6 +978,9 @@ public class CommentSuite extends Application {
         stack.setPadding(new Insets(0));
 
         showMore.setOnAction(ae -> {
+            commentsList.getSelectionModel().select(actionComment);
+            loadThumb.fire();
+
             ImageView profile = new ImageView(actionComment.getChannel().getThumbUrl());
             profile.setFitHeight(32);
             profile.setFitWidth(32);
@@ -1015,6 +1020,9 @@ public class CommentSuite extends Application {
         });
 
         reply.setOnAction(ae -> {
+            commentsList.getSelectionModel().select(actionComment);
+            loadThumb.fire();
+
             ImageView profile = new ImageView(actionComment.getChannel().getThumbUrl());
             profile.setFitHeight(32);
             profile.setFitWidth(32);
@@ -1084,7 +1092,8 @@ public class CommentSuite extends Application {
                     list.add(replyMade);
                     database.insertComments(list);
                     database.commit();
-                    treeComments.add(new YouTubeCommentView(replyMade, false));
+                    commentsList.getItems().add(new YouTubeCommentView(replyMade, commentsList.getItems().equals(treeComments)));
+                    commentsList.scrollTo(actionComment);
                     close.fire();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -1093,6 +1102,8 @@ public class CommentSuite extends Application {
         });
 
         viewTree.setOnAction(ae -> {
+            actionComment.updateProfileThumb();
+            loadThumb.fire();
             try {
                 String parentId = actionComment.getComment().isReply() ? actionComment.getComment().getParentId() : actionComment.getComment().getYouTubeId();
                 treeComments.addAll(database.getCommentTree(parentId)
