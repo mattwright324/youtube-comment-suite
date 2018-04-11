@@ -1,4 +1,4 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commentsuite.db;
 
 import mattw.youtube.datav3.resources.SearchList;
 

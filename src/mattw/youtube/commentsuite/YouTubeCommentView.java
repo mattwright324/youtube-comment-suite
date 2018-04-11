@@ -9,6 +9,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import mattw.youtube.commentsuite.db.YouTubeChannel;
+import mattw.youtube.commentsuite.db.YouTubeComment;
+import mattw.youtube.commentsuite.db.YouTubeObject;
 import org.jsoup.Jsoup;
 
 import java.text.SimpleDateFormat;
@@ -110,11 +113,15 @@ public class YouTubeCommentView extends HBox {
      */
     public void updateProfileThumb() { thumb.setImage(channel.getThumbnail()); }
 
+    public boolean isThumbLoaded() {
+        return YouTubeObject.thumbCache.containsKey(channel.getYouTubeId());
+    }
+
     /**
      * Checks if the thumbnail has been cached before loading.
      */
     public void checkProfileThumb() {
-        if(YouTubeObject.thumbCache.containsKey(channel.getYouTubeId())) {
+        if(isThumbLoaded()) {
             updateProfileThumb();
         }
     }

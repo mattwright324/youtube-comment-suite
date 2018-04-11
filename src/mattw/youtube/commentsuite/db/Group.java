@@ -1,7 +1,8 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commentsuite.db;
 
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import mattw.youtube.commentsuite.CommentSuite;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;

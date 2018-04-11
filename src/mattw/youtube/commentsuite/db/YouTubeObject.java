@@ -1,6 +1,7 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commentsuite.db;
 
 import javafx.scene.image.Image;
+import mattw.youtube.commentsuite.CommentSuite;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -11,10 +12,10 @@ import java.util.Map;
 /**
  * Similarities between GroupItem, YouTubeChannel, YouTubeComment, and YouTubeVideo.
  */
-abstract class YouTubeObject {
+public abstract class YouTubeObject {
 
-    protected static File thumbFolder = new File("thumbs/");
-    protected static Map<String,Image> thumbCache = new HashMap<>();
+    public static File thumbFolder = new File("thumbs/");
+    public static Map<String,Image> thumbCache = new HashMap<>();
 
     protected int typeId = -1;
     private String youtubeId;
@@ -85,6 +86,7 @@ abstract class YouTubeObject {
 
     public static void clearThumbCache() { thumbCache.clear(); }
 
+    public int getTypeId() { return typeId; }
     public String getYouTubeId() { return youtubeId; }
     public String getTitle() { return title; }
     public String getThumbUrl() { return thumbUrl; }

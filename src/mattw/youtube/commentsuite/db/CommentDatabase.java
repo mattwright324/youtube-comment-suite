@@ -1,8 +1,9 @@
-package mattw.youtube.commentsuite;
+package mattw.youtube.commentsuite.db;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import mattw.youtube.commentsuite.CommentSuite;
 import mattw.youtube.datav3.resources.ChannelsList;
 
 import java.sql.*;
@@ -638,7 +639,7 @@ public class CommentDatabase {
         return list;
     }
 
-    static class GroupItemVideo {
+    public static class GroupItemVideo {
         private String gitemId;
         private String videoId;
         public GroupItemVideo(String gitemId, String videoId) {
@@ -659,7 +660,7 @@ public class CommentDatabase {
     /**
      * Query for a comment list based on the constraints.
      */
-    class CommentQuery {
+    public class CommentQuery {
         private long totalResults = 0;
         private int page = 1;
 

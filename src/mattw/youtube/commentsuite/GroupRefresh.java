@@ -3,6 +3,7 @@ package mattw.youtube.commentsuite;
 import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import mattw.youtube.commentsuite.db.*;
 import mattw.youtube.commentsuite.io.ElapsedTime;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.YouTubeErrorException;
@@ -107,9 +108,9 @@ public class GroupRefresh extends Thread {
             existingGroupItems.addAll(database.getGroupItems(group));
             existingGIV.addAll(database.getAllGroupItemVideo());
 
-            List<GroupItem> videoItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.VIDEO).collect(Collectors.toList());
-            List<GroupItem> playlistItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.PLAYLIST).collect(Collectors.toList());
-            List<GroupItem> channelItems = existingGroupItems.stream().filter(gi -> gi.typeId == GroupItem.CHANNEL).collect(Collectors.toList());
+            List<GroupItem> videoItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == GroupItem.VIDEO).collect(Collectors.toList());
+            List<GroupItem> playlistItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == GroupItem.PLAYLIST).collect(Collectors.toList());
+            List<GroupItem> channelItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == GroupItem.CHANNEL).collect(Collectors.toList());
 
             System.out.println(String.format("VideoItems %s, PlaylistItems %s, ChannelItems %s", videoItems.size(), playlistItems.size(), channelItems.size()));
 

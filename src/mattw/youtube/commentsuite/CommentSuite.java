@@ -30,6 +30,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import mattw.youtube.commentsuite.db.*;
 import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.commentsuite.io.Geolocation;
 import mattw.youtube.datav3.YouTubeData3;
@@ -52,7 +53,7 @@ import java.util.stream.Collectors;
 
 public class CommentSuite extends Application {
 
-    private static final String RELEASE = "v1.3.0";
+    private static final String RELEASE = "v1.3.0-a";
     private static final YouTubeData3 data = new YouTubeData3("AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ");
     private static final Config config = new Config("commentsuite.json");
     private static CommentDatabase database;
@@ -307,7 +308,7 @@ public class CommentSuite extends Application {
 
         Label release = new Label("This release version: "+RELEASE);
 
-        Label about = new Label("MIT License. Copyright (c) 2017 Matthew Wright.");
+        Label about = new Label("MIT License. Copyright (c) 2018 Matthew Wright.");
 
         ImageView gitImg = new ImageView("/mattw/youtube/commentsuite/img/github.png");
         gitImg.setFitWidth(20);
@@ -511,6 +512,22 @@ public class CommentSuite extends Application {
             System.out.println("Database Reset");
         }).start());
 
+        return stack;
+    }
+
+    public StackPane buildVideoSelectPane() {
+        TextField field = new TextField();
+        field.setPromptText("Keywords");
+
+        ListView<YouTubeVideoView> videos = new ListView<>();
+
+        VBox vbox = new VBox(5);
+        vbox.setPadding(new Insets(25));
+        vbox.setId("overlayMenu");
+
+        StackPane stack = new StackPane(vbox);
+        stack.setPadding(new Insets(0));
+        stack.setStyle("-fx-background-color: rgba(127,127,127,0.4)");
         return stack;
     }
 
@@ -739,17 +756,37 @@ public class CommentSuite extends Application {
         SimpleIntegerProperty pageNum = new SimpleIntegerProperty(1);
         SimpleIntegerProperty lastPageNum = new SimpleIntegerProperty(1);
 
-        Button firstPage = new Button("<<");
+        Button firstPage = new Button();
         firstPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.isEqualTo(1)));
+        firstPage.setTooltip(new Tooltip("First Page"));
+        ImageView fpView = new ImageView(new Image("/mattw/youtube/commentsuite/img/angle-double-left.png"));
+        fpView.setFitHeight(22);
+        fpView.setFitWidth(22);
+        firstPage.setGraphic(fpView);
 
-        Button prevPage = new Button("<");
+        Button prevPage = new Button();
         prevPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.isEqualTo(1)));
+        prevPage.setTooltip(new Tooltip("Previous Page"));
+        ImageView ppView = new ImageView(new Image("/mattw/youtube/commentsuite/img/angle-left.png"));
+        ppView.setFitHeight(22);
+        ppView.setFitWidth(22);
+        prevPage.setGraphic(ppView);
 
-        Button nextPage = new Button(">");
+        Button nextPage = new Button();
         nextPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.greaterThanOrEqualTo(lastPageNum)));
+        nextPage.setTooltip(new Tooltip("Next Page"));
+        ImageView npView = new ImageView(new Image("/mattw/youtube/commentsuite/img/angle-right.png"));
+        npView.setFitHeight(22);
+        npView.setFitWidth(22);
+        nextPage.setGraphic(npView);
 
-        Button lastPage = new Button(">>");
+        Button lastPage = new Button();
         lastPage.disableProperty().bind(backToResults.managedProperty().or(pageNum.greaterThanOrEqualTo(lastPageNum)));
+        lastPage.setTooltip(new Tooltip("Last Page"));
+        ImageView lpView = new ImageView(new Image("/mattw/youtube/commentsuite/img/angle-double-right.png"));
+        lpView.setFitHeight(22);
+        lpView.setFitWidth(22);
+        lastPage.setGraphic(lpView);
 
         Label results = new Label("Page 0 of 0. Showing 0 of 0.");
         queryUpdate.addListener((o, ov, nv) -> Platform.runLater(() -> results.setText(String.format("Page %s of %s. Showing %s of %s.", query.getPage(), query.getPageCount(), commentsList.getItems().size(), query.getTotalResults()))));
@@ -816,6 +853,11 @@ public class CommentSuite extends Application {
             group.getSelectionModel().select(0);
         }
 
+        Hyperlink videoSelect = new Hyperlink("Selected Videos");
+        videoSelect.setOnAction(ae -> {
+
+        });
+
         Label label2 = new Label("Restrict Results");
         label2.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 16));
 
@@ -880,7 +922,7 @@ public class CommentSuite extends Application {
         searchBox.setMinWidth(320);
         searchBox.setMaxWidth(320);
         searchBox.setPrefWidth(320);
-        searchBox.getChildren().addAll(label1, group, groupItem, label2, grid, hbox2);
+        searchBox.getChildren().addAll(label1, group, groupItem, videoSelect, label2, grid, hbox2);
         searchBox.setOnKeyPressed(ke -> {
             if(ke.getCode().equals(KeyCode.ENTER)) {
                 search.fire();
@@ -894,6 +936,7 @@ public class CommentSuite extends Application {
 
         firstPage.setOnAction(ae -> new Thread(() -> {
             searchBox.setDisable(true);
+            hbox0.setDisable(true);
             try {
                 List<YouTubeCommentView> commentViews = query.get(1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
                         .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
@@ -910,10 +953,12 @@ public class CommentSuite extends Application {
                 e.printStackTrace();
             }
             searchBox.setDisable(false);
+            hbox0.setDisable(false);
         }).start());
 
         nextPage.setOnAction(ae -> new Thread(() -> {
             searchBox.setDisable(true);
+            hbox0.setDisable(true);
             try {
                 List<YouTubeCommentView> commentViews = query.get(query.getPage()+1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
                         .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
@@ -930,10 +975,12 @@ public class CommentSuite extends Application {
                 e.printStackTrace();
             }
             searchBox.setDisable(false);
+            hbox0.setDisable(false);
         }).start());
 
         prevPage.setOnAction(ae -> new Thread(() -> {
             searchBox.setDisable(true);
+            hbox0.setDisable(true);
             try {
                 List<YouTubeCommentView> commentViews = query.get(query.getPage()-1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
                         .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
@@ -950,10 +997,12 @@ public class CommentSuite extends Application {
                 e.printStackTrace();
             }
             searchBox.setDisable(false);
+            hbox0.setDisable(false);
         }).start());
 
         lastPage.setOnAction(ae -> new Thread(() -> {
             searchBox.setDisable(true);
+            hbox0.setDisable(true);
             try {
                 List<YouTubeCommentView> commentViews = query.get(query.getPageCount(), group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
                         .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
@@ -970,10 +1019,12 @@ public class CommentSuite extends Application {
                 e.printStackTrace();
             }
             searchBox.setDisable(false);
+            hbox0.setDisable(false);
         }).start());
 
         search.setOnAction(ae -> new Thread(() -> {
             searchBox.setDisable(true);
+            hbox0.setDisable(true);
             try {
                 query = database.commentQuery()
                         .limit(500)
@@ -998,6 +1049,7 @@ public class CommentSuite extends Application {
                 e.printStackTrace();
             }
             searchBox.setDisable(false);
+            hbox0.setDisable(false);
         }).start());
 
         StackPane stack = new StackPane(hbox);
