@@ -2,6 +2,7 @@ package mattw.youtube.commentsuite.db;
 
 import javafx.scene.image.Image;
 import mattw.youtube.commentsuite.CommentSuite;
+import mattw.youtube.commentsuite.SearchCommentsPane;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -54,9 +55,9 @@ public abstract class YouTubeObject {
             Image image = new Image(thumbFile.exists() ? "file:///"+thumbFile.getAbsolutePath() : thumbUrl);
             if(image.isError()) {
                 if(typeId == 0)
-                    return CommentSuite.IMG_VID_PLACEHOLDER;
+                    return SearchCommentsPane.IMG_VID_PLACEHOLDER;
                 else
-                    return CommentSuite.IMG_BLANK_PROFILE;
+                    return SearchCommentsPane.IMG_BLANK_PROFILE;
 
             }
             thumbCache.put(youtubeId, image);

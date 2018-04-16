@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat;
  */
 public class YouTubeCommentView extends HBox {
 
-    private ImageView thumb = new ImageView(CommentSuite.IMG_BLANK_PROFILE);
+    private ImageView thumb = new ImageView(SearchCommentsPane.IMG_BLANK_PROFILE);
 
     private YouTubeComment comment;
     private YouTubeChannel channel;
@@ -68,15 +68,15 @@ public class YouTubeCommentView extends HBox {
         date.setTextFill(Color.LIGHTGRAY);
 
         Hyperlink showMore = new Hyperlink("Show more");
-        showMore.setOnAction(ae -> CommentSuite.instance().showMore(this));
+        showMore.setOnAction(ae -> CommentSuite.instance().searchComments.showMore(this));
 
         Hyperlink reply = new Hyperlink("Reply");
         reply.setManaged(!CommentSuite.config().getAccounts().isEmpty());
-        reply.setOnAction(ae -> CommentSuite.instance().reply(this));
+        reply.setOnAction(ae -> CommentSuite.instance().searchComments.reply(this));
 
         Hyperlink viewTree = new Hyperlink("View Tree"+(comment.getReplyCount() > 0 ? " ("+comment.getReplyCount()+")":""));
         viewTree.setManaged(tree && (comment.isReply() || comment.getReplyCount() > 0));
-        viewTree.setOnAction(ae -> CommentSuite.instance().viewTree(this));
+        viewTree.setOnAction(ae -> CommentSuite.instance().searchComments.viewTree(this));
 
         Label likes = new Label("+"+comment.getLikes());
         likes.setTextFill(Color.CORNFLOWERBLUE);

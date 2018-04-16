@@ -26,7 +26,7 @@ public class YouTubeAccountView extends HBox {
 
         Image image = new Image(account.thumbUrl);
         if(image.isError()) {
-            image = CommentSuite.IMG_BLANK_PROFILE;
+            image = SearchCommentsPane.IMG_BLANK_PROFILE;
         }
 
         ImageView thumb = new ImageView(image);

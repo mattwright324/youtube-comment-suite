@@ -766,11 +766,10 @@ public class GroupManageView extends StackPane {
         setStyle(String.format("-fx-background-color: linear-gradient(to right, rgba(%s,%s,%s,0.2), transparent);", 255 * color.getRed(), 255 * color.getGreen(), 255 * color.getBlue()));
         getChildren().addAll(vbox);
 
-        if(CommentSuite.config().autoLoadStats()) {
-            reload.fire();
-        }
-
         new Thread(() -> {
+            if(CommentSuite.config().autoLoadStats()) {
+                reload.fire();
+            }
             updateLastChecked();
             while(true) {
                 if(timeSince() >= 0) updateLastChecked();
@@ -922,13 +921,28 @@ public class GroupManageView extends StackPane {
         GroupRefresh refreshThread = new GroupRefresh(group, CommentSuite.db(), CommentSuite.youtube());
         lastChecked = System.currentTimeMillis();
 
+        ImageView finished = new ImageView(new Image("/mattw/youtube/commentsuite/img/check-circle.png"));
+        finished.setFitWidth(25);
+        finished.setFitHeight(25);
+        finished.managedProperty().bind(refreshThread.refreshingProperty().not());
+        finished.visibleProperty().bind(refreshThread.refreshingProperty().not());
+
         ProgressIndicator activity = new ProgressIndicator();
         activity.setMaxWidth(25);
+        activity.setPrefWidth(25);
+        activity.setMinWidth(25);
         activity.setMaxHeight(25);
+        activity.setPrefHeight(25);
+        activity.setMinHeight(25);
+        activity.managedProperty().bind(refreshThread.refreshingProperty());
         activity.visibleProperty().bind(refreshThread.refreshingProperty());
 
+        VBox vbox2 = new VBox();
+        vbox2.setMaxWidth(25);
+        vbox2.getChildren().addAll(finished, activity);
+
         Label title = new Label();
-        title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 16));
+        title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
         title.textProperty().bind(refreshThread.refreshStatusProperty());
 
         Label subtitle = new Label();
@@ -956,7 +970,7 @@ public class GroupManageView extends StackPane {
         commentLabel.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
 
         HBox header = new HBox(10);
-        header.getChildren().addAll(activity, title);
+        header.getChildren().addAll(vbox2, title);
 
         Button finish = new Button("Finish");
         finish.disableProperty().bind(refreshThread.completedProperty().not());
@@ -994,7 +1008,10 @@ public class GroupManageView extends StackPane {
             videoLabel.textProperty().unbind();
             commentLabel.textProperty().unbind();
             subtitle.textProperty().unbind();
+            activity.managedProperty().unbind();
             activity.visibleProperty().unbind();
+            finished.managedProperty().unbind();
+            finished.visibleProperty().unbind();
             reload.fire();
             Platform.runLater(() -> getChildren().remove(overlay));
         });
