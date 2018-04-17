@@ -12,6 +12,7 @@ import javafx.scene.paint.Color;
 import mattw.youtube.commentsuite.db.YouTubeChannel;
 import mattw.youtube.commentsuite.db.YouTubeComment;
 import mattw.youtube.commentsuite.db.YouTubeObject;
+import mattw.youtube.commentsuite.io.Browser;
 import org.jsoup.Jsoup;
 
 import java.text.SimpleDateFormat;
@@ -49,7 +50,7 @@ public class YouTubeCommentView extends HBox {
         vbox0.getChildren().addAll(thumb, new Label(comment.isReply() ? "Reply" : "Comment"));
 
         Hyperlink author = new Hyperlink(channel.getTitle());
-        author.setOnAction(ae -> CommentSuite.openInBrowser(channel.getYouTubeLink()));
+        author.setOnAction(ae -> Browser.open(channel.getYouTubeLink()));
         if(signedIn) {
             author.setStyle("-fx-font-weight: bold");
             author.setTextFill(Color.GREEN);

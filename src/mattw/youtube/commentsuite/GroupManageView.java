@@ -23,6 +23,7 @@ import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.commentsuite.db.GroupItem;
 import mattw.youtube.commentsuite.db.YouTubeChannel;
 import mattw.youtube.commentsuite.db.YouTubeObject;
+import mattw.youtube.commentsuite.io.Browser;
 import mattw.youtube.datav3.YouTubeErrorException;
 import mattw.youtube.datav3.resources.ChannelsList;
 import mattw.youtube.datav3.resources.PlaylistsList;
@@ -73,7 +74,7 @@ public class GroupManageView extends StackPane {
             thumb.setFitHeight(50);
             thumb.setFitWidth(yto instanceof YouTubeChannel ? 50 : 89);
             thumb.setCursor(Cursor.HAND);
-            thumb.setOnMouseClicked(me -> CommentSuite.openInBrowser(yto.getYouTubeLink()));
+            thumb.setOnMouseClicked(me -> Browser.open(yto.getYouTubeLink()));
 
             Label title = new Label(yto.getTitle());
             title.setMinWidth(0);

@@ -19,6 +19,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import mattw.youtube.commentsuite.db.*;
+import mattw.youtube.commentsuite.io.Browser;
 import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.datav3.resources.CommentsList;
 
@@ -56,7 +57,7 @@ public class SearchCommentsPane extends StackPane {
         videoThumb.setCursor(Cursor.HAND);
         videoThumb.setOnMouseClicked(me -> {
             if(selectedVideo != null) {
-                CommentSuite.openInBrowser(selectedVideo.getYouTubeLink());
+                Browser.open(selectedVideo.getYouTubeLink());
             }
         });
 
@@ -71,7 +72,7 @@ public class SearchCommentsPane extends StackPane {
         videoAuthorThumb.setCursor(Cursor.HAND);
         videoAuthorThumb.setOnMouseClicked(me -> {
             if(selectedVideo != null) {
-                CommentSuite.openInBrowser(selectedVideo.getChannel().getYouTubeLink());
+                Browser.open(selectedVideo.getChannel().getYouTubeLink());
             }
         });
 
@@ -198,7 +199,7 @@ public class SearchCommentsPane extends StackPane {
                     toOpen.add(yc.getComment().getYouTubeLink());
             }
             for(String link : toOpen) {
-                CommentSuite.openInBrowser(link);
+                Browser.open(link);
             }
         });
 

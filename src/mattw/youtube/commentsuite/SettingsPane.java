@@ -17,6 +17,7 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.commentsuite.db.YouTubeObject;
+import mattw.youtube.commentsuite.io.Browser;
 
 import java.io.File;
 import java.net.CookieHandler;
@@ -132,7 +133,7 @@ public class SettingsPane extends StackPane {
         Hyperlink git = new Hyperlink("mattwright324/youtube-comment-suite");
         git.setMaxHeight(20);
         git.setGraphic(gitImg);
-        git.setOnAction(ae -> CommentSuite.openInBrowser("https://github.com/mattwright324/youtube-comment-suite"));
+        git.setOnAction(ae -> Browser.open("https://github.com/mattwright324/youtube-comment-suite"));
 
         VBox vbox2 = new VBox(10);
         vbox2.setPadding(new Insets(10));

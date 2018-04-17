@@ -195,20 +195,4 @@ public class CommentSuite extends Application {
         });
         stage.show();
     }
-
-    public static void openInBrowser(String link) {
-        link = link.replace(" ", "%20");
-        try {
-            URL url = new URL(link);
-            if (Desktop.isDesktopSupported()) {
-                Desktop desktop = Desktop.getDesktop();
-                desktop.browse(url.toURI());
-            } else {
-                Runtime runtime = Runtime.getRuntime();
-                runtime.exec("xdg-open "+url.getPath());
-            }
-        } catch (Throwable e2) {
-            e2.printStackTrace();
-        }
-    }
 }

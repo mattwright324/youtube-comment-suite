@@ -16,6 +16,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.commentsuite.db.GroupItem;
+import mattw.youtube.commentsuite.io.Browser;
 import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.commentsuite.io.Geolocation;
 import mattw.youtube.datav3.YouTubeData3;
@@ -142,7 +143,7 @@ public class SearchYouTubePane extends StackPane {
         openBrowser.setOnAction(ae -> {
             List<SearchListView> items = youtubeList.getSelectionModel().getSelectedItems();
             for(SearchListView item : items) {
-                CommentSuite.openInBrowser(item.getYouTubeLink());
+                Browser.open(item.getYouTubeLink());
             }
         });
 
