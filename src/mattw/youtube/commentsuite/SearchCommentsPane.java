@@ -15,7 +15,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import mattw.youtube.commentsuite.db.*;
@@ -23,6 +22,7 @@ import mattw.youtube.commentsuite.io.Browser;
 import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.datav3.resources.CommentsList;
 
+import javax.xml.stream.events.Comment;
 import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SearchCommentsPane extends StackPane {
@@ -77,22 +78,32 @@ public class SearchCommentsPane extends StackPane {
         });
 
         TextField videoAuthor = new TextField("mattwright324");
+        videoAuthor.setMinWidth(0);
+        videoAuthor.setMaxWidth(Double.MAX_VALUE);
         videoAuthor.setEditable(false);
         videoAuthor.setId("context");
-        videoAuthor.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 14));
+        videoAuthor.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
 
-        Label views = new Label("8,675,309 views");
+        Label views = new Label("8.7M views");
 
-        Label likes = new Label("+8,675");
-        likes.setTextFill(Color.GREEN);
+        ImageView ivLikes = new ImageView(new Image("/mattw/youtube/commentsuite/img/thumbs-up.png"));
+        ivLikes.setFitHeight(20);
+        ivLikes.setFitWidth(20);
 
-        Label dislikes = new Label("-309");
-        dislikes.setTextFill(Color.RED);
+        Label likes = new Label("8.6K");
+
+        ImageView ivDislikes = new ImageView(new Image("/mattw/youtube/commentsuite/img/thumbs-down.png"));
+        ivDislikes.setFitHeight(20);
+        ivDislikes.setFitWidth(20);
+
+        Label dislikes = new Label("309");
 
         HBox likeBox = new HBox(5);
-        likeBox.getChildren().addAll(likes, dislikes);
+        likeBox.getChildren().addAll(ivLikes, likes, ivDislikes, dislikes);
 
         VBox stats = new VBox();
+        stats.setMinWidth(120);
+        stats.setPrefWidth(120);
         stats.setAlignment(Pos.TOP_CENTER);
         stats.getChildren().addAll(views, likeBox);
 
@@ -182,9 +193,9 @@ public class SearchCommentsPane extends StackPane {
                         String desc = selectedVideo.getDescription();
                         try { desc = URLDecoder.decode(desc, "UTF-8"); } catch (Exception ignored) {}
                         videoDesc.setText("Published "+sdf.format(selectedVideo.getPublishedDate())+"  "+desc);
-                        views.setText(String.format("%,d views", selectedVideo.getViews()));
-                        likes.setText(String.format("+%,d", selectedVideo.getLikes()));
-                        dislikes.setText(String.format("-%,d", selectedVideo.getDislikes()));
+                        views.setText(String.format("%s views", formatNumber(selectedVideo.getViews(),1)));
+                        likes.setText(formatNumber(selectedVideo.getLikes(),1));
+                        dislikes.setText(formatNumber(selectedVideo.getDislikes(),1));
                     });
                 }
             } catch (Exception e) {
@@ -453,122 +464,51 @@ public class SearchCommentsPane extends StackPane {
         hbox.setAlignment(Pos.CENTER);
         hbox.getChildren().addAll(contextBox, contextToggle, commentsBox, searchBox);
 
-        firstPage.setOnAction(ae -> new Thread(() -> {
-            searchBox.setDisable(true);
-            hbox0.setDisable(true);
-            try {
-                List<YouTubeCommentView> commentViews = query.get(1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
-                        .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
-                Platform.runLater(() -> {
-                    treeComments.clear();
-                    originalComments.clear();
-                    originalComments.addAll(commentViews);
-                    commentsList.setItems(originalComments);
-                    lastPageNum.setValue(query.getPageCount());
-                    pageNum.setValue(query.getPage());
-                    queryUpdate.setValue(queryUpdate.getValue()+1);
-                });
-            } catch (SQLException e) {
-                e.printStackTrace();
+        class RunQuery {
+            RunQuery(int toPage) {
+                new Thread(() -> {
+                    searchBox.setDisable(true);
+                    hbox0.setDisable(true);
+                    try {
+                        Group g = group.getValue();
+                        GroupItem gi = groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue();
+                        List<YouTubeVideo> videos = null;
+                        List<YouTubeCommentView> commentViews = query.get(toPage, g, gi, videos)
+                                .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
+                        Platform.runLater(() -> {
+                            treeComments.clear();
+                            originalComments.clear();
+                            originalComments.addAll(commentViews);
+                            commentsList.setItems(originalComments);
+                            lastPageNum.setValue(query.getPageCount());
+                            pageNum.setValue(query.getPage());
+                            queryUpdate.setValue(queryUpdate.getValue()+1);
+                        });
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    searchBox.setDisable(false);
+                    hbox0.setDisable(false);
+                }).start();
             }
-            searchBox.setDisable(false);
-            hbox0.setDisable(false);
-        }).start());
+        }
 
-        nextPage.setOnAction(ae -> new Thread(() -> {
-            searchBox.setDisable(true);
-            hbox0.setDisable(true);
-            try {
-                List<YouTubeCommentView> commentViews = query.get(query.getPage()+1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
-                        .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
-                Platform.runLater(() -> {
-                    treeComments.clear();
-                    originalComments.clear();
-                    originalComments.addAll(commentViews);
-                    commentsList.setItems(originalComments);
-                    lastPageNum.setValue(query.getPageCount());
-                    pageNum.setValue(query.getPage());
-                    queryUpdate.setValue(queryUpdate.getValue()+1);
-                });
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            searchBox.setDisable(false);
-            hbox0.setDisable(false);
-        }).start());
-
-        prevPage.setOnAction(ae -> new Thread(() -> {
-            searchBox.setDisable(true);
-            hbox0.setDisable(true);
-            try {
-                List<YouTubeCommentView> commentViews = query.get(query.getPage()-1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
-                        .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
-                Platform.runLater(() -> {
-                    treeComments.clear();
-                    originalComments.clear();
-                    originalComments.addAll(commentViews);
-                    commentsList.setItems(originalComments);
-                    lastPageNum.setValue(query.getPageCount());
-                    pageNum.setValue(query.getPage());
-                    queryUpdate.setValue(queryUpdate.getValue()+1);
-                });
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            searchBox.setDisable(false);
-            hbox0.setDisable(false);
-        }).start());
-
-        lastPage.setOnAction(ae -> new Thread(() -> {
-            searchBox.setDisable(true);
-            hbox0.setDisable(true);
-            try {
-                List<YouTubeCommentView> commentViews = query.get(query.getPageCount(), group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
-                        .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
-                Platform.runLater(() -> {
-                    treeComments.clear();
-                    originalComments.clear();
-                    originalComments.addAll(commentViews);
-                    commentsList.setItems(originalComments);
-                    lastPageNum.setValue(query.getPageCount());
-                    pageNum.setValue(query.getPage());
-                    queryUpdate.setValue(queryUpdate.getValue()+1);
-                });
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            searchBox.setDisable(false);
-            hbox0.setDisable(false);
-        }).start());
-
+        firstPage.setOnAction(ae -> new RunQuery(1));
+        nextPage.setOnAction(ae -> new RunQuery(query.getPage()+1));
+        prevPage.setOnAction(ae -> new RunQuery(query.getPage()-1));
+        lastPage.setOnAction(ae -> new RunQuery(query.getPageCount()));
         search.setOnAction(ae -> new Thread(() -> {
             searchBox.setDisable(true);
             hbox0.setDisable(true);
-            try {
-                query = CommentSuite.db().commentQuery()
-                        .limit(500)
-                        .ctype(type.getSelectionModel().getSelectedIndex())
-                        .after(getDatePickerDate(dateFrom, false).getTime())
-                        .before(getDatePickerDate(dateTo, true).getTime())
-                        .orderBy(orderBy.getSelectionModel().getSelectedIndex())
-                        .textLike(textLike.getText())
-                        .nameLike(nameLike.getText());
-                List<YouTubeCommentView> commentViews = query.get(1, group.getValue(), groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue())
-                        .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
-                Platform.runLater(() -> {
-                    treeComments.clear();
-                    originalComments.clear();
-                    originalComments.addAll(commentViews);
-                    commentsList.setItems(originalComments);
-                    lastPageNum.setValue(query.getPageCount());
-                    pageNum.setValue(query.getPage());
-                    queryUpdate.setValue(queryUpdate.getValue()+1);
-                });
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            searchBox.setDisable(false);
-            hbox0.setDisable(false);
+            query = CommentSuite.db().commentQuery()
+                    .limit(500)
+                    .ctype(type.getSelectionModel().getSelectedIndex())
+                    .after(getDatePickerDate(dateFrom, false).getTime())
+                    .before(getDatePickerDate(dateTo, true).getTime())
+                    .orderBy(orderBy.getSelectionModel().getSelectedIndex())
+                    .textLike(textLike.getText())
+                    .nameLike(nameLike.getText());
+            new RunQuery(1);
         }).start());
 
         getChildren().add(hbox);
@@ -712,6 +652,23 @@ public class SearchCommentsPane extends StackPane {
                 });
             } catch (Exception ignored) {}
         });
+    }
+
+    public void runQuery(int page) {
+
+    }
+
+    private String formatNumber(double number, int precision) {
+        if(number < 1000) {
+            return Integer.toString((int) number);
+        }
+        char[] c = new char[]{'\0','K','M','B','T'};
+        int level = 0;
+        while(number > 1000) {
+            level++;
+            number /= 1000.0;
+        }
+        return String.format("%."+precision+"f%s", number, c[level]);
     }
 
     protected void showMore(YouTubeCommentView ycv) {

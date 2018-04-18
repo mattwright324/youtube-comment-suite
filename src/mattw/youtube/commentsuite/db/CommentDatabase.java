@@ -8,6 +8,7 @@ import mattw.youtube.datav3.resources.ChannelsList;
 
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CommentDatabase {
 
@@ -723,10 +724,48 @@ public class CommentDatabase {
             return totalResults;
         }
 
-        public List<YouTubeComment> get(int page, Group group, GroupItem gitem) throws SQLException {
+        public List<YouTubeComment> get(int page, Group group, GroupItem gitem, List<YouTubeVideo> videos) throws SQLException {
             this.page = Math.abs(page);
             List<YouTubeComment> items = new ArrayList<>();
-            PreparedStatement ps = con.prepareStatement("SELECT * FROM comments LEFT JOIN channels USING (channel_id) " +
+            String query = "SELECT * FROM comments LEFT JOIN channels USING (channel_id) WHERE comments.video_id IN ";
+            Map<String,Object> map = new HashMap<>();
+            if(gitem != null) {
+                query += "(SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE gitem_id = :gitem ) ";
+                map.put("gitem", gitem.getYouTubeId());
+            } else if(videos != null) {
+                List<String> vl = new ArrayList();
+                for(int i=0; i<videos.size(); i++) {
+                    vl.add(":v"+i);
+                    map.put("v"+i,videos.get(i).getYouTubeId());
+                }
+                query += "WHERE comments.video_id IN ("+vl.stream().collect(Collectors.joining(","))+") ";
+            } else {
+                query += "(SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = :group ) ";
+                map.put("group", group.getId());
+            }
+            query += "AND channel_name LIKE :cname AND comment_text LIKE :ctext AND comment_date > :dateafter AND comment_date < :datebefore "+(ctype != 0 ? "AND is_reply = :isreply ":"")+"ORDER BY :order";
+            map.put("cname", "%"+nameLike+"%");
+            map.put("ctext", "%"+textLike+"%");
+            map.put("dateafter", new Long(after));
+            map.put("datebefore", new Long(before));
+            if(ctype != 0) map.put("isreply", new Boolean(ctype==2));
+            System.out.println(query);
+            NamedParameterStatement nps = new NamedParameterStatement(con, query);
+            for(String key : map.keySet()) {
+                Object value = map.get(key);
+                if(value instanceof Integer) {
+                    nps.setInt(key, ((Integer) value));
+                } else if(value instanceof Long) {
+                    nps.setLong(key, ((Long) value));
+                } else if(value instanceof String) {
+                    nps.setString(key, ((String) value));
+                } else if(value instanceof Boolean) {
+                    nps.setInt(key, ((Boolean) value) ? 1 : 0);
+                } else {
+                    nps.setObject(key, value);
+                }
+            }
+            /*PreparedStatement ps = con.prepareStatement("SELECT * FROM comments LEFT JOIN channels USING (channel_id) " +
                     "WHERE comments.video_id IN (SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE "+(gitem != null ? "gitem_id = ?":"group_id = ?")+" ) " +
                     "AND channel_name LIKE ? AND comment_text LIKE ? AND comment_date > ? AND comment_date < ? "+(ctype != 0 ? "AND is_reply = ? ":"")+"ORDER BY "+order[orderBy]);
             System.out.format("%s %s [%s] [%s] %s %s %s %s %s %s\r\n", group, gitem, nameLike, textLike, orderBy, ctype, limit, after, before, page);
@@ -735,8 +774,8 @@ public class CommentDatabase {
             ps.setString(3, "%"+textLike+"%");
             ps.setLong(4, after);
             ps.setLong(5, before);
-            if(ctype != 0) ps.setBoolean(6, ctype == 2);
-            ResultSet rs = ps.executeQuery();
+            if(ctype != 0) ps.setBoolean(6, ctype == 2);*/
+            ResultSet rs = nps.executeQuery();
             long start = limit * (page-1);
             long end = limit * page;
             long pos = 0;
@@ -749,7 +788,7 @@ public class CommentDatabase {
                 pos++;
             }
             totalResults = pos;
-            ps.close();
+            nps.close();
             return items;
         }
     }

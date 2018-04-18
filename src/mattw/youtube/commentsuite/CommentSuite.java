@@ -79,7 +79,7 @@ public class CommentSuite extends Application {
     private SearchYouTubePane searchYouTube = new SearchYouTubePane(data);
     private ManageGroupsPane manageGroups = new ManageGroupsPane();
     protected SearchCommentsPane searchComments = new SearchCommentsPane(oauth2);
-    protected SettingsPane settings = new SettingsPane(main, oauth2);
+    private SettingsPane settings = new SettingsPane(main, oauth2);
 
     public static Config config() { return config; }
     public static YouTubeData3 youtube() { return data; }

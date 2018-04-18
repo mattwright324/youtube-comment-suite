@@ -145,5 +145,4 @@ public class ManageGroupsPane extends StackPane {
             });
         });
     }
-
 }

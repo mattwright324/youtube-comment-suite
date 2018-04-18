@@ -2,6 +2,8 @@ package mattw.youtube.commentsuite;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -927,6 +929,13 @@ public class GroupManageView extends StackPane {
         finished.setFitHeight(25);
         finished.managedProperty().bind(refreshThread.refreshingProperty().not());
         finished.visibleProperty().bind(refreshThread.refreshingProperty().not());
+        refreshThread.failedProperty().addListener(new ChangeListener<Boolean>() {
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                if(newValue) {
+                    finished.setImage(new Image("/mattw/youtube/commentsuite/img/times-circle.png"));
+                }
+            }
+        });
 
         ProgressIndicator activity = new ProgressIndicator();
         activity.setMaxWidth(25);

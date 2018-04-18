@@ -32,6 +32,7 @@ public class GroupRefresh extends Thread {
     private SimpleStringProperty elapsedTimeValue = new SimpleStringProperty("");
     private SimpleBooleanProperty refreshing = new SimpleBooleanProperty(false);
     private SimpleBooleanProperty completed = new SimpleBooleanProperty(false);
+    private SimpleBooleanProperty failed = new SimpleBooleanProperty(false);
     private SimpleDoubleProperty progress = new SimpleDoubleProperty(-1);
     private AtomicLong commentInsertCount = new AtomicLong(0);
     private SimpleIntegerProperty commentsNew = new SimpleIntegerProperty(0);
@@ -184,15 +185,21 @@ public class GroupRefresh extends Thread {
             database.insertChannels(channelInsert);
             database.updateChannels(channelUpdate);
             database.commit();
+            Platform.runLater(() -> {
+                refreshStatus.setValue("Completed");
+                refreshing.setValue(false);
+                completed.setValue(true);
+            });
         } catch (Exception e) {
+            Platform.runLater(() -> {
+                failed.setValue(true);
+                refreshStatus.setValue(e.getLocalizedMessage());
+                refreshing.setValue(false);
+                completed.setValue(true);
+            });
             errorCounter.addAndGet(1);
             e.printStackTrace();
         }
-        Platform.runLater(() -> {
-            refreshStatus.setValue("Completed");
-            refreshing.setValue(false);
-            completed.setValue(true);
-        });
     }
 
     /**
@@ -452,6 +459,7 @@ public class GroupRefresh extends Thread {
     public SimpleStringProperty refreshStatusProperty() { return refreshStatus; }
     public SimpleBooleanProperty refreshingProperty() { return refreshing; }
     public SimpleBooleanProperty completedProperty() { return completed; }
+    public SimpleBooleanProperty failedProperty() { return failed; }
     public SimpleStringProperty elapsedTimeValueProperty() { return elapsedTimeValue; }
     public SimpleDoubleProperty progressProperty() { return progress; }
     public SimpleIntegerProperty commentsNewProperty() { return commentsNew; }
