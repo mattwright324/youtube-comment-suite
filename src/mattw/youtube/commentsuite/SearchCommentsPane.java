@@ -9,12 +9,18 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.CacheHint;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
+import javafx.scene.effect.Blend;
+import javafx.scene.effect.BlendMode;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.ColorInput;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import mattw.youtube.commentsuite.db.*;
@@ -22,7 +28,6 @@ import mattw.youtube.commentsuite.io.Browser;
 import mattw.youtube.commentsuite.io.Clipboards;
 import mattw.youtube.datav3.resources.CommentsList;
 
-import javax.xml.stream.events.Comment;
 import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -30,7 +35,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SearchCommentsPane extends StackPane {
@@ -38,8 +42,17 @@ public class SearchCommentsPane extends StackPane {
     public static final Image IMG_BLANK_PROFILE = new Image("/mattw/youtube/commentsuite/img/blankProfile.png");
     public static final Image IMG_VID_PLACEHOLDER = new Image("/mattw/youtube/commentsuite/img/videoPlaceholder.png");
 
+    private ComboBox<Group> group;
+    private ComboBox<GroupItem> groupItem;
     private ChangeListener<Number> cl;
     private CommentDatabase.CommentQuery query;
+    private Hyperlink select = new Hyperlink();
+    private StackPane videoSelect = buildVideoSelectPane();
+    private TextField videoKeyword;
+    private ComboBox<String> videoOrder;
+    private String[] vOrderBy = new String[]{"publish_date DESC","video_title ASC","total_views DESC"};
+    private YouTubeVideo filterVideo = null;
+    private ListView<YouTubeVideoView> videoBox;
     private ObservableList<YouTubeCommentView> originalComments = FXCollections.observableArrayList();
     private ObservableList<YouTubeCommentView> treeComments = FXCollections.observableArrayList();
     private ListView<YouTubeCommentView> commentsList = new ListView<>();
@@ -48,6 +61,132 @@ public class SearchCommentsPane extends StackPane {
     private SimpleStringProperty commentsGroupId = new SimpleStringProperty(Group.NO_GROUP);
     private SimpleStringProperty selectedVideoId = new SimpleStringProperty("");
     private YouTubeVideo selectedVideo = null;
+
+    private class UpdateVideoSelect {
+        UpdateVideoSelect(GroupItem nv) {
+            new Thread(() -> {
+                List<YouTubeVideoView> videos = new ArrayList<>();
+                if(nv.getYouTubeId().equals(GroupItem.ALL_ITEMS)) {
+                    System.out.println("Update videos list; Group: "+videos.size());
+                    try {
+                        videos.addAll(CommentSuite.db().getVideos(group.getValue(),videoKeyword.getText(),vOrderBy[videoOrder.getSelectionModel().getSelectedIndex()],200)
+                                .stream().map(v -> new YouTubeVideoView(v)).collect(Collectors.toList()));
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                } else if(!nv.getYouTubeId().equals(GroupItem.NO_ITEMS)) {
+                    System.out.println("Update videos list; Gitem: "+videos.size());
+                    try {
+                        videos.addAll(CommentSuite.db().getVideos(groupItem.getValue(),videoKeyword.getText(),vOrderBy[videoOrder.getSelectionModel().getSelectedIndex()],200)
+                                .stream().map(v -> new YouTubeVideoView(v)).collect(Collectors.toList()));
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Platform.runLater(() -> {
+                    videoBox.getItems().clear();
+                    videoBox.getItems().addAll(videos);
+                });
+            }).start();
+        }
+    }
+
+    private StackPane buildVideoSelectPane() {
+        Button search = new Button("Search");
+        search.setOnAction(ae -> new UpdateVideoSelect(groupItem.getValue()));
+
+        Label title = new Label("Select a Video");
+        title.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
+
+        videoKeyword = new TextField();
+        videoKeyword.setPromptText("Keywords...");
+        HBox.setHgrow(videoKeyword, Priority.ALWAYS);
+
+        videoOrder = new ComboBox<>();
+        videoOrder.getItems().addAll("By Date", "By Title", "By Views");
+        videoOrder.getSelectionModel().select(0);
+
+        HBox hbox0 = new HBox(10);
+        hbox0.getChildren().addAll(search, videoKeyword, videoOrder);
+        hbox0.setOnKeyReleased(ke -> {
+            if(ke.getCode().equals(KeyCode.ENTER)) {
+                search.fire();
+            }
+        });
+
+        Label selected = new Label("Selected: (All Videos)");
+        select.textProperty().bind(selected.textProperty());
+        selected.setMinWidth(0);
+        selected.setMaxWidth(Double.MAX_VALUE);
+        selected.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 14));
+        HBox.setHgrow(selected, Priority.ALWAYS);
+
+        int wh = 25;
+        ColorAdjust monochrome = new ColorAdjust();
+        monochrome.setBrightness(1.0);
+        Blend blush = new Blend(BlendMode.MULTIPLY, monochrome, new ColorInput(0, 0, wh, wh, Color.CORNFLOWERBLUE));
+
+        ImageView clip = new ImageView(new Image("/mattw/youtube/commentsuite/img/close.png"));
+        clip.setFitHeight(wh);
+        clip.setFitWidth(wh);
+
+        ImageView iv = new ImageView(new Image("/mattw/youtube/commentsuite/img/close.png"));
+        iv.setFitHeight(wh);
+        iv.setFitWidth(wh);
+        iv.setEffect(blush);
+        iv.setCache(true);
+        iv.setCacheHint(CacheHint.SPEED);
+        iv.setClip(clip);
+
+        Hyperlink deselect = new Hyperlink();
+        deselect.setGraphic(iv);
+        deselect.setTooltip(new Tooltip("Deselect this video."));
+        deselect.setDisable(true);
+        deselect.setOnAction(ae -> {
+            Platform.runLater(() -> {
+                filterVideo = null;
+                videoBox.getSelectionModel().clearSelection();
+                deselect.setDisable(true);
+                selected.setText("Selected: (All Videos)");
+            });
+        });
+
+        HBox hbox2 = new HBox(5);
+        hbox2.setPadding(new Insets(0,0,0,10));
+        hbox2.setAlignment(Pos.CENTER_LEFT);
+        hbox2.setStyle("-fx-background-color: lightgray; -fx-background-radius: 5px;");
+        hbox2.getChildren().addAll(selected, deselect);
+
+        videoBox = new ListView<>();
+        videoBox.getSelectionModel().selectedIndexProperty().addListener((o, ov, nv) -> {
+            if(nv.intValue() != -1) {
+                Platform.runLater(() -> {
+                    filterVideo = videoBox.getSelectionModel().getSelectedItem().getVideo();
+                    selected.setText("Selected: ("+filterVideo.getTitle()+")");
+                    deselect.setDisable(false);
+                });
+            }
+        });
+        VBox.setVgrow(videoBox, Priority.ALWAYS);
+
+        Button close = new Button("Save & Close");
+        close.setOnAction(ae -> Platform.runLater(() -> getChildren().remove(videoSelect)));
+
+        HBox hbox1 = new HBox(close);
+        hbox1.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox vbox = new VBox(10);
+        vbox.setMinWidth(450);
+        vbox.setPadding(new Insets(25));
+        vbox.setId("overlayMenu");
+        vbox.setAlignment(Pos.TOP_CENTER);
+        vbox.getChildren().addAll(title, hbox0, hbox2, videoBox, hbox1);
+
+        StackPane overlay = new StackPane(vbox);
+        overlay.setStyle("-fx-background-color: rgba(127,127,127,0.4);");
+        overlay.setPadding(new Insets(25));
+        return overlay;
+    }
 
     public SearchCommentsPane(OAuth2Handler oauth2) {
         Config config = CommentSuite.config();
@@ -334,13 +473,12 @@ public class SearchCommentsPane extends StackPane {
         Label label1 = new Label("Select Group");
         label1.setFont(Font.font("Tahoma", FontWeight.MEDIUM, 16));
 
-        ComboBox<GroupItem> groupItem = new ComboBox<>();
+        groupItem = new ComboBox<>();
         groupItem.setId("control");
         groupItem.setDisable(true);
         groupItem.setMaxWidth(Double.MAX_VALUE);
-        groupItem.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> groupItem.setDisable(nv == null || nv.getYouTubeId().equals(GroupItem.NO_ITEMS)));
 
-        ComboBox<Group> group = new ComboBox<>();
+        group = new ComboBox<>();
         group.setId("control");
         group.setMaxWidth(Double.MAX_VALUE);
         group.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
@@ -360,6 +498,7 @@ public class SearchCommentsPane extends StackPane {
                 nv.itemsUpdatedProperty().addListener(cl = (o1, ov1, nv1) -> {
                     GroupItem allItems = new GroupItem(GroupItem.ALL_ITEMS, "All items ("+nv.getGroupItems().size()+")");
                     Platform.runLater(() -> {
+                        videoSelect = buildVideoSelectPane();
                         groupItem.getItems().clear();
                         if(!nv.getGroupItems().isEmpty()) {
                             if(!nv.getGroupItems().get(0).getYouTubeId().equals(GroupItem.NO_ITEMS)) {
@@ -373,6 +512,10 @@ public class SearchCommentsPane extends StackPane {
                 nv.reloadGroupItems();
             }
         });
+        groupItem.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            groupItem.setDisable(nv == null || nv.getYouTubeId().equals(GroupItem.NO_ITEMS));
+            videoSelect = buildVideoSelectPane();
+        });
         group.setItems(CommentSuite.db().globalGroupList);
         group.getItems().addListener((ListChangeListener<Group>) c -> {
             if(group.getSelectionModel().getSelectedIndex() == -1 && group.getItems() != null && group.getItems().size() > 0) {
@@ -383,9 +526,11 @@ public class SearchCommentsPane extends StackPane {
             group.getSelectionModel().select(0);
         }
 
-        Hyperlink videoSelect = new Hyperlink("Selected Videos");
-        videoSelect.setOnAction(ae -> {
-
+        select.setOnAction(ae -> {
+            if(!getChildren().contains(videoSelect)) {
+                new UpdateVideoSelect(groupItem.getValue());
+                Platform.runLater(() -> getChildren().add(videoSelect));
+            }
         });
 
         Label label2 = new Label("Restrict Results");
@@ -452,7 +597,7 @@ public class SearchCommentsPane extends StackPane {
         searchBox.setMinWidth(320);
         searchBox.setMaxWidth(320);
         searchBox.setPrefWidth(320);
-        searchBox.getChildren().addAll(label1, group, groupItem, videoSelect, label2, grid, hbox2);
+        searchBox.getChildren().addAll(label1, group, groupItem, select, label2, grid, hbox2);
         searchBox.setOnKeyPressed(ke -> {
             if(ke.getCode().equals(KeyCode.ENTER)) {
                 search.fire();
@@ -472,7 +617,8 @@ public class SearchCommentsPane extends StackPane {
                     try {
                         Group g = group.getValue();
                         GroupItem gi = groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue();
-                        List<YouTubeVideo> videos = null;
+                        List<YouTubeVideo> videos = new ArrayList<>();
+                        videos.add(filterVideo);
                         List<YouTubeCommentView> commentViews = query.get(toPage, g, gi, videos)
                                 .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
                         Platform.runLater(() -> {

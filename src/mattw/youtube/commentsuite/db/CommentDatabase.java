@@ -496,6 +496,38 @@ public class CommentDatabase {
         return video;
     }
 
+    public List<YouTubeVideo> getVideos(GroupItem gitem, String keyword, String order, int limit) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video WHERE gitem_id = ?) " +
+                "AND video_title LIKE ? ORDER BY "+order+" LIMIT ?");
+        ps.setString(1, gitem.getYouTubeId());
+        ps.setString(2, "%"+keyword+"%");
+        ps.setInt(3,limit);
+        ResultSet rs = ps.executeQuery();
+        List<YouTubeVideo> videos = new ArrayList<>();
+        while(rs.next()) {
+            videos.add(resultSetToVideo(rs));
+        }
+        rs.close();
+        ps.close();
+        return videos;
+    }
+
+    public List<YouTubeVideo> getVideos(Group group, String keyword, String order, int limit) throws SQLException {
+        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video LEFT JOIN group_gitem USING (gitem_id) WHERE group_id = ?) " +
+                "AND video_title LIKE ? ORDER BY "+order+" LIMIT ?");
+        ps.setString(1, group.getId());
+        ps.setString(2, "%"+keyword+"%");
+        ps.setInt(3,limit);
+        ResultSet rs = ps.executeQuery();
+        List<YouTubeVideo> videos = new ArrayList<>();
+        while(rs.next()) {
+            videos.add(resultSetToVideo(rs));
+        }
+        rs.close();
+        ps.close();
+        return videos;
+    }
+
     /**
      * Updates video data for group refreshing.
      */
@@ -738,12 +770,12 @@ public class CommentDatabase {
                     vl.add(":v"+i);
                     map.put("v"+i,videos.get(i).getYouTubeId());
                 }
-                query += "WHERE comments.video_id IN ("+vl.stream().collect(Collectors.joining(","))+") ";
+                query += "("+vl.stream().collect(Collectors.joining(","))+") ";
             } else {
                 query += "(SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = :group ) ";
                 map.put("group", group.getId());
             }
-            query += "AND channel_name LIKE :cname AND comment_text LIKE :ctext AND comment_date > :dateafter AND comment_date < :datebefore "+(ctype != 0 ? "AND is_reply = :isreply ":"")+"ORDER BY :order";
+            query += "AND channel_name LIKE :cname AND comment_text LIKE :ctext AND comment_date > :dateafter AND comment_date < :datebefore "+(ctype != 0 ? "AND is_reply = :isreply ":"")+"ORDER BY "+order[orderBy];
             map.put("cname", "%"+nameLike+"%");
             map.put("ctext", "%"+textLike+"%");
             map.put("dateafter", new Long(after));
@@ -765,16 +797,6 @@ public class CommentDatabase {
                     nps.setObject(key, value);
                 }
             }
-            /*PreparedStatement ps = con.prepareStatement("SELECT * FROM comments LEFT JOIN channels USING (channel_id) " +
-                    "WHERE comments.video_id IN (SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE "+(gitem != null ? "gitem_id = ?":"group_id = ?")+" ) " +
-                    "AND channel_name LIKE ? AND comment_text LIKE ? AND comment_date > ? AND comment_date < ? "+(ctype != 0 ? "AND is_reply = ? ":"")+"ORDER BY "+order[orderBy]);
-            System.out.format("%s %s [%s] [%s] %s %s %s %s %s %s\r\n", group, gitem, nameLike, textLike, orderBy, ctype, limit, after, before, page);
-            ps.setString(1, gitem != null ? gitem.getYouTubeId() : group.getId());
-            ps.setString(2, "%"+nameLike+"%");
-            ps.setString(3, "%"+textLike+"%");
-            ps.setLong(4, after);
-            ps.setLong(5, before);
-            if(ctype != 0) ps.setBoolean(6, ctype == 2);*/
             ResultSet rs = nps.executeQuery();
             long start = limit * (page-1);
             long end = limit * page;

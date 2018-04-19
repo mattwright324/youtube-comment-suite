@@ -28,7 +28,6 @@ public class NamedParameterStatement {
             SQLException {
         indexMap=new HashMap();
         String parsedQuery = parse(query, indexMap);
-        System.out.println(parsedQuery);
         statement=connection.prepareStatement(parsedQuery);
     }
 
