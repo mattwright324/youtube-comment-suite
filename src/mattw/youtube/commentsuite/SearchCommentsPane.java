@@ -617,8 +617,11 @@ public class SearchCommentsPane extends StackPane {
                     try {
                         Group g = group.getValue();
                         GroupItem gi = groupItem.getValue().getYouTubeId().equals(GroupItem.ALL_ITEMS) ? null : groupItem.getValue();
-                        List<YouTubeVideo> videos = new ArrayList<>();
-                        videos.add(filterVideo);
+                        List<YouTubeVideo> videos = null;
+                        if(filterVideo != null) {
+                            videos = new ArrayList<>();
+                            videos.add(filterVideo);
+                        }
                         List<YouTubeCommentView> commentViews = query.get(toPage, g, gi, videos)
                                 .stream().map(c -> new YouTubeCommentView(c, true)).collect(Collectors.toList());
                         Platform.runLater(() -> {
