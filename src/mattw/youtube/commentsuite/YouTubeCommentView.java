@@ -4,11 +4,15 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import mattw.youtube.commentsuite.db.YouTubeChannel;
 import mattw.youtube.commentsuite.db.YouTubeComment;
 import mattw.youtube.commentsuite.db.YouTubeObject;
@@ -16,11 +20,15 @@ import mattw.youtube.commentsuite.io.Browser;
 import org.jsoup.Jsoup;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Display for comments in the database for the "Search Comments" ListView.
  */
 public class YouTubeCommentView extends HBox {
+
+    private static Map<Character,Image> letterAvatars = new HashMap<>();
 
     private ImageView thumb = new ImageView(SearchCommentsPane.IMG_BLANK_PROFILE);
 
@@ -31,25 +39,48 @@ public class YouTubeCommentView extends HBox {
 
     public YouTubeCommentView(YouTubeComment comment, boolean tree) {
         super(10);
+        setMinHeight(100);
+        setPrefHeight(100);
+        setMaxHeight(100);
         this.comment = comment;
         this.channel = CommentSuite.db().getChannel(comment.getChannelId());
 
         boolean signedIn = CommentSuite.config().isSignedIn(channel.getYouTubeId());
 
+        char letter = this.channel.getTitle().charAt(0);
+        Image letterAvatar;
+        if(letterAvatars.containsKey(letter)) {
+            letterAvatar = letterAvatars.get(letter);
+        } else {
+            letterAvatar = new LetterAvatar(letter);
+            letterAvatars.put(letter, letterAvatar);
+        }
+        thumb.setImage(letterAvatar);
+
         if(channel.fetchThumb() || channel.thumbCached() || signedIn) {
             updateProfileThumb();
         }
-        thumb.setFitHeight(30);
-        thumb.setFitWidth(30);
+        thumb.setFitHeight(32);
+        thumb.setFitWidth(32);
+
+        ImageView type = new ImageView();
+        type.setFitHeight(24);
+        type.setFitWidth(24);
+        if(comment.isReply()) {
+            type.setImage(new Image("/mattw/youtube/commentsuite/img/reply.png"));
+            Tooltip.install(type, new Tooltip("This comment is a reply."));
+        }
 
         VBox vbox0 = new VBox(5);
         vbox0.setAlignment(Pos.CENTER);
         vbox0.setMinWidth(75);
         vbox0.setPrefWidth(75);
         vbox0.setMaxWidth(75);
-        vbox0.getChildren().addAll(thumb, new Label(comment.isReply() ? "Reply" : "Comment"));
+        vbox0.getChildren().addAll(thumb, type/*, new Label(comment.isReply() ? "Reply" : "Comment")*/);
 
         Hyperlink author = new Hyperlink(channel.getTitle());
+        author.setPadding(new Insets(0));
+        author.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 15));
         author.setOnAction(ae -> Browser.open(channel.getYouTubeLink()));
         if(signedIn) {
             author.setStyle("-fx-font-weight: bold");

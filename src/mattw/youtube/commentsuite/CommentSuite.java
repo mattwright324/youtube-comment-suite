@@ -100,7 +100,7 @@ public class CommentSuite extends Application {
             while(c.next()) {
                 for(final Toggle addedToggle : c.getAddedSubList()) {
                     ((ToggleButton) addedToggle).addEventFilter(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
-                        if (addedToggle.equals(tg.getSelectedToggle()))
+                        if(addedToggle.equals(tg.getSelectedToggle()))
                             mouseEvent.consume();
                     });
                 }
