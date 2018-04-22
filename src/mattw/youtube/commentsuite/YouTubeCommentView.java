@@ -28,8 +28,6 @@ import java.util.Map;
  */
 public class YouTubeCommentView extends HBox {
 
-    private static Map<Character,Image> letterAvatars = new HashMap<>();
-
     private ImageView thumb = new ImageView(SearchCommentsPane.IMG_BLANK_PROFILE);
 
     private YouTubeComment comment;
@@ -47,16 +45,7 @@ public class YouTubeCommentView extends HBox {
 
         boolean signedIn = CommentSuite.config().isSignedIn(channel.getYouTubeId());
 
-        char letter = this.channel.getTitle().charAt(0);
-        Image letterAvatar;
-        if(letterAvatars.containsKey(letter)) {
-            letterAvatar = letterAvatars.get(letter);
-        } else {
-            letterAvatar = new LetterAvatar(letter);
-            letterAvatars.put(letter, letterAvatar);
-        }
-        thumb.setImage(letterAvatar);
-
+        thumb.setImage(channel.getDefaultThumb());
         if(channel.fetchThumb() || channel.thumbCached() || signedIn) {
             updateProfileThumb();
         }
@@ -106,7 +95,7 @@ public class YouTubeCommentView extends HBox {
         reply.setManaged(!CommentSuite.config().getAccounts().isEmpty());
         reply.setOnAction(ae -> CommentSuite.instance().searchComments.reply(this));
 
-        Hyperlink viewTree = new Hyperlink("View Tree"+(comment.getReplyCount() > 0 ? " ("+comment.getReplyCount()+")":""));
+        Hyperlink viewTree = new Hyperlink("View Thread"+(comment.getReplyCount() > 0 ? " ("+comment.getReplyCount()+")":""));
         viewTree.setManaged(tree && (comment.isReply() || comment.getReplyCount() > 0));
         viewTree.setOnAction(ae -> CommentSuite.instance().searchComments.viewTree(this));
 

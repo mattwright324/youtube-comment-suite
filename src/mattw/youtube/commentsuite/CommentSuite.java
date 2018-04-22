@@ -51,10 +51,12 @@ public class CommentSuite extends Application {
     public static CommentDatabase db() { return database; }
     public static CommentSuite instance() { return instance; }
 
-    public static void main(String[] args) { launch(args); }
+    public static void main(String[] args) {
+        System.setProperty("sun.net.http.allowRestrictedHeaders", "true"); // Fix JavaFX WebView not authenticating correctly.
+        launch(args);
+    }
 
     public void start(Stage stage) {
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
         instance = this;
 
         ImageView img = new ImageView("/mattw/youtube/commentsuite/img/icon.png");

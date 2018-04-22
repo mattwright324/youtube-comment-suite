@@ -206,7 +206,7 @@ public class SearchCommentsPane extends StackPane {
         videoTitle.setId("context");
         videoTitle.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 18));
 
-        ImageView videoAuthorThumb = new ImageView(IMG_BLANK_PROFILE);
+        ImageView videoAuthorThumb = new ImageView(new LetterAvatar('m'));
         videoAuthorThumb.setFitHeight(30);
         videoAuthorThumb.setFitWidth(30);
         videoAuthorThumb.setCursor(Cursor.HAND);
