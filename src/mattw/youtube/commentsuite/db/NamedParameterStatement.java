@@ -42,7 +42,7 @@ public class NamedParameterStatement {
      * @param paramMap map to hold parameter-index mappings
      * @return the parsed query
      */
-    static final String parse(String query, Map paramMap) {
+    static String parse(String query, Map paramMap) {
         // I was originally using regular expressions, but they didn't work well
         // for ignoring
         // parameter-like strings inside quotes.
@@ -91,14 +91,14 @@ public class NamedParameterStatement {
         }
 
         // replace the lists of Integer objects with arrays of ints
-        for(Iterator itr = paramMap.entrySet().iterator(); itr.hasNext();) {
-            Map.Entry entry=(Map.Entry)itr.next();
-            List list=(List)entry.getValue();
-            int[] indexes=new int[list.size()];
-            int i=0;
-            for(Iterator itr2=list.iterator(); itr2.hasNext();) {
-                Integer x=(Integer)itr2.next();
-                indexes[i++]=x.intValue();
+        for (Object o : paramMap.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
+            List list = (List) entry.getValue();
+            int[] indexes = new int[list.size()];
+            int i = 0;
+            for (Iterator itr2 = list.iterator(); itr2.hasNext(); ) {
+                Integer x = (Integer) itr2.next();
+                indexes[i++] = x.intValue();
             }
             entry.setValue(indexes);
         }

@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -14,7 +15,7 @@ public class LetterAvatar extends WritableImage {
 
     static int BG_SQUARE = 2;
 
-    private static int scale = 32;
+    private int scale = 32;
     private char letter;
     private Color background;
     private int bgStyle;
@@ -28,6 +29,10 @@ public class LetterAvatar extends WritableImage {
     }
 
     public LetterAvatar(char letter, Color bg, int bgStyle) {
+        this(letter, bg, bgStyle, 32);
+    }
+
+    public LetterAvatar(char letter, Color bg, int bgStyle, int scale) {
         super(scale, scale);
         this.letter = letter;
         this.background = bg;
@@ -36,11 +41,15 @@ public class LetterAvatar extends WritableImage {
     }
 
     /**
-     * The default width and height of the drawn image.
-     * @param scale
+     * Returns a new image rescaled to a new width and height.
+     * @param scale width and height of new image
      */
-    public void setScale(int scale) {
-        this.scale = scale;
+    public Image rescaleTo(int scale) {
+        return new LetterAvatar(letter, background, bgStyle, scale);
+    }
+
+    public int getScale() {
+        return this.scale;
     }
 
     public void setLetter(char letter) {

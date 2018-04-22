@@ -45,7 +45,7 @@ public class GroupManageView extends StackPane {
 
     private Group group;
     private Label lblChecked = new Label("Last refreshed: [...].");
-    private long lastChecked = Long.MAX_VALUE;
+    private long lastChecked;
 
     private Button reload = new Button("Reload");
     private ProgressIndicator prog = new ProgressIndicator();
@@ -108,12 +108,16 @@ public class GroupManageView extends StackPane {
 
             Image image = new Image(item.getThumbUrl());
             if(image.isError()) {
-                if(item.getTypeName().equals("Video")) {
-                    image = new Image("/mattw/youtube/commentsuite/img/video.png");
-                } else if(item.getTypeName().equals("Channel")) {
-                    image = new Image("/mattw/youtube/commentsuite/img/channel.png");
-                } else if(item.getTypeName().equals("Playlist")) {
-                    image = new Image("/mattw/youtube/commentsuite/img/playlist.png");
+                switch (item.getTypeName()) {
+                    case "Video":
+                        image = new Image("/mattw/youtube/commentsuite/img/video.png");
+                        break;
+                    case "Channel":
+                        image = new Image("/mattw/youtube/commentsuite/img/channel.png");
+                        break;
+                    case "Playlist":
+                        image = new Image("/mattw/youtube/commentsuite/img/playlist.png");
+                        break;
                 }
             }
 
@@ -896,7 +900,7 @@ public class GroupManageView extends StackPane {
                     commentedVideos.getItems().addAll(mostCommented);
                     disabledVideos.getItems().addAll(disabled);
                 });
-            } catch (SQLException ignored) {ignored.printStackTrace();}
+            } catch (SQLException ignored) {}
             Platform.runLater(() -> videosPane.setDisable(false));
 
             try { // About Videos
@@ -910,7 +914,7 @@ public class GroupManageView extends StackPane {
                     activeViewers.getItems().addAll(ma);
                     popularViewers.getItems().addAll(mp);
                 });
-            } catch (SQLException ignored) {ignored.printStackTrace();}
+            } catch (SQLException ignored) {}
             Platform.runLater(() -> {
                 prog.setVisible(false);
                 prog.setManaged(false);

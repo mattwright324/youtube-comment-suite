@@ -765,7 +765,7 @@ public class CommentDatabase {
                 query += "(SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE gitem_id = :gitem ) ";
                 map.put("gitem", gitem.getYouTubeId());
             } else if(videos != null) {
-                List<String> vl = new ArrayList();
+                List<String> vl = new ArrayList<>();
                 for(int i=0; i<videos.size(); i++) {
                     vl.add(":v"+i);
                     map.put("v"+i,videos.get(i).getYouTubeId());
@@ -780,7 +780,7 @@ public class CommentDatabase {
             map.put("ctext", "%"+textLike+"%");
             map.put("dateafter", new Long(after));
             map.put("datebefore", new Long(before));
-            if(ctype != 0) map.put("isreply", new Boolean(ctype==2));
+            if(ctype != 0) map.put("isreply", Boolean.valueOf(ctype == 2));
             System.out.println(query);
             NamedParameterStatement nps = new NamedParameterStatement(con, query);
             for(String key : map.keySet()) {

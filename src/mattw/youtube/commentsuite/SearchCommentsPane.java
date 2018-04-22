@@ -803,10 +803,6 @@ public class SearchCommentsPane extends StackPane {
         });
     }
 
-    public void runQuery(int page) {
-
-    }
-
     private String formatNumber(double number, int precision) {
         if(number < 1000) {
             return Integer.toString((int) number);

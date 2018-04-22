@@ -149,7 +149,7 @@ public class GroupRefresh extends Thread {
                                 handleCommentThread(threadId, threadToVideo.get(threadId));
                                 Platform.runLater(() -> progress.setValue((consumedThreads.addAndGet(1)+consumedVideos.get()) / (totalVideos+totalThreads.get())));
                             }
-                        } catch (Exception ignored) {ignored.printStackTrace();}
+                        } catch (Exception ignored) {}
                     }
                 });
             }
@@ -167,7 +167,7 @@ public class GroupRefresh extends Thread {
                                 Platform.runLater(() -> progress.setValue((consumedThreads.get()+consumedVideos.addAndGet(1)) / (totalVideos+totalThreads.get())));
                             }
                             Thread.sleep(100);
-                        } catch (Exception ignored) { ignored.printStackTrace(); }
+                        } catch (Exception ignored) {}
                     }
                 });
             }
@@ -425,7 +425,6 @@ public class GroupRefresh extends Thread {
                         channel = new YouTubeChannel(cl.items[0], true); // Video authors display thumbs.
                     } catch (Exception ignored) {
                         errorCounter.addAndGet(1);
-                        ignored.printStackTrace();
                     }
                 }
                 if(channel != null) {

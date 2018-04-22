@@ -2,7 +2,7 @@ package mattw.youtube.commentsuite.db;
 
 import mattw.youtube.datav3.resources.ChannelsList;
 import mattw.youtube.datav3.resources.CommentsList;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 public class YouTubeChannel extends YouTubeObject {
 

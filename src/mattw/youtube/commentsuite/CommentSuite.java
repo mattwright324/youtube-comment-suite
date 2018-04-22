@@ -2,54 +2,19 @@ package mattw.youtube.commentsuite;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import mattw.youtube.commentsuite.db.*;
-import mattw.youtube.commentsuite.io.Clipboards;
-import mattw.youtube.commentsuite.io.Geolocation;
 import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.CommentsList;
-import mattw.youtube.datav3.resources.SearchList;
-
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.net.*;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.*;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class CommentSuite extends Application {
 
@@ -89,6 +54,7 @@ public class CommentSuite extends Application {
     public static void main(String[] args) { launch(args); }
 
     public void start(Stage stage) {
+        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
         instance = this;
 
         ImageView img = new ImageView("/mattw/youtube/commentsuite/img/icon.png");

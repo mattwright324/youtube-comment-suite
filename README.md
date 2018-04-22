@@ -39,8 +39,7 @@ Of course, the larger the channel and more interactive the fans, the longer this
 Provide the desired constraints (date, name, text, type) and click **Search** to find those comments. 
 Clicking on a comment will load the video context to the left of the comment list. Comments may only be replied to while signed into YouTube with at least one account.
 
-Signing into YouTube may be done by clicking the settings button to the top right. Click **Add Account** and go through the sign-in process. 
-**NOTICE:** The *Tap Yes* authentication does not work due to issues with the JavaFX WebView. Instead select another method such as the SMS code which will work.
+Signing into YouTube may be done by clicking the settings button to the top right. Click **Add Account** and go through the sign-in process.
 
 ### Settings
 

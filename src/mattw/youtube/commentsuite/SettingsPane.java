@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 public class SettingsPane extends StackPane {
 
-    private static final String RELEASE = "v1.3.0-a";
+    private static final String RELEASE = "v1.3.1";
 
     public SettingsPane(StackPane parent, OAuth2Handler oauth2) {
         Config config = CommentSuite.config();
@@ -46,9 +46,7 @@ public class SettingsPane extends StackPane {
         close.setGraphic(closeImg);
         close.setCursor(Cursor.HAND);
         close.setOnAction(ae -> {
-            if(parent.getChildren().contains(this)) {
-                parent.getChildren().remove(this);
-            }
+            parent.getChildren().remove(this);
         });
 
         HBox control = new HBox(10);
@@ -312,8 +310,11 @@ public class SettingsPane extends StackPane {
             try {
                 File thumbs = YouTubeObject.thumbFolder;
                 if(thumbs.exists()) {
-                    for(File f : thumbs.listFiles()) {
-                        f.delete();
+                    File[] files = thumbs.listFiles();
+                    if(files != null) {
+                        for(File f : files) {
+                            f.delete();
+                        }
                     }
                     thumbs.delete();
                 }
