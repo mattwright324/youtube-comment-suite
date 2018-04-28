@@ -1,5 +1,9 @@
 # YouTube Comment Suite
 
+![Github All Releases](https://img.shields.io/github/downloads/mattwright324/youtube-comment-suite/total.svg)
+![GitHub release](https://img.shields.io/github/release/mattwright324/youtube-comment-suite.svg)
+![Github Releases](https://img.shields.io/github/downloads/mattwright324/youtube-comment-suite/latest/total.svg)
+
 Aggregate YouTube comments from numerous videos, playlists, and channels for archiving, general search, and showing activity. 
 Achieve the functionality of the *Community > Comments* tool that is provided to YouTube creators and more.
 
