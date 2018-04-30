@@ -25,7 +25,7 @@ Achieve the functionality of the *Community > Comments* tool that is provided to
 * View video context when selecting a comment.
 
 ## Getting Started
-[![GitHub Releases](https://img.shields.io/badge/downloads-releases-brightgreen.svg?maxAge=60&style=flat-square)](https://github.com/mattwright324/youtube-geofind/releases)
+[![GitHub Releases](https://img.shields.io/badge/downloads-releases-brightgreen.svg?maxAge=60&style=flat-square)](https://github.com/mattwright324/youtube-comment-suite/releases)
 
 ### Windows
 Extract the latest release zip file and run `youtube-comment-suite.jar`. 
