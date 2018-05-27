@@ -33,7 +33,7 @@ Extract the latest release zip file and run `youtube-comment-suite.jar`.
 ### Linux / Ubuntu
 Extract the latest release zip file into its own folder. Before you can run the jar file, the version of Java installed may cause issue. Run `java -version` in the command line.
 
-* If no Java is installed you can either run `sudo apt-get install default-jre` or `sudo apt-get install openjfx` which includes all of the packages under default-jre.
+* If no Java is currently installed you can install OpenJDK and JavaFX by running `sudo apt-get install default-jre openjfx`.
 * If your version of Java is `OpenJDK` you will have to install JavaFX which is not included. Use the command `sudo apt-get install openjfx`. 
 * If your version of Java is `OracleJDK`, JavaFX is included and you are good to go!
 
