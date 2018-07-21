@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="mattw.youtube.commentsuite.fxml.MainController"
+           alignment="TOP_CENTER"
+           prefWidth="1000.0" prefHeight="550.0">
+    <fx:define>
+        <fx:include fx:id="searchComments" source="SearchComments.fxml" />
+        <fx:include fx:id="manageGroups" source="ManageGroups.fxml" />
+        <fx:include fx:id="searchYoutube" source="SearchYouTube.fxml" />
+        <ImageView fx:id="settingsView" fitHeight="25" fitWidth="25" />
+    </fx:define>
+    <VBox alignment="TOP_CENTER">
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <padding>
+                <Insets left="10" right="10" top="0" bottom="0"></Insets>
+            </padding>
+            <ImageView fx:id="headerIcon" fitHeight="25" fitWidth="25" />
+            <HBox>
+                <fx:define>
+                    <ToggleGroup fx:id="headerToggleGroup" />
+                </fx:define>
+                <children>
+                    <ToggleButton text="Search Comments" fx:id="btnSearchComments" styleClass="headerBtn" toggleGroup="$headerToggleGroup" />
+                    <ToggleButton text="Manage Groups" fx:id="btnManageGroups" styleClass="headerBtn" toggleGroup="$headerToggleGroup" />
+                    <ToggleButton text="Search Youtube" fx:id="btnSearchYoutube" styleClass="headerBtn" toggleGroup="$headerToggleGroup" />
+                </children>
+            </HBox>
+            <Button fx:id="btnSettings" styleClass="settingsBtn" graphic="$settingsView"></Button>
+        </HBox>
+        <StackPane fx:id="content"></StackPane>
+    </VBox>
+</StackPane>
