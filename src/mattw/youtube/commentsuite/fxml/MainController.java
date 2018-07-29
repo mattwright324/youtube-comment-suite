@@ -13,6 +13,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -24,10 +26,11 @@ import java.util.ResourceBundle;
  */
 public class MainController implements Initializable {
 
+    private static Logger logger = LogManager.getLogger(MainController.class.getSimpleName());
+
     public final Image IMG_MANAGE = new Image("/mattw/youtube/commentsuite/img/manage.png");
     public final Image IMG_SEARCH = new Image("/mattw/youtube/commentsuite/img/search.png");
     public final Image IMG_YOUTUBE = new Image("/mattw/youtube/commentsuite/img/youtube.png");
-
     public final Image IMG_SETTINGS = new Image("/mattw/youtube/commentsuite/img/settings.png");
 
     @FXML ImageView headerIcon;
@@ -38,14 +41,17 @@ public class MainController implements Initializable {
     @FXML StackPane content;
 
     @FXML Button btnSettings;
-    @FXML ImageView settingsView;
+    @FXML ImageView settingsIcon;
 
     @FXML Pane searchComments;
     @FXML Pane manageGroups;
     @FXML Pane searchYoutube;
+    @FXML Pane settings;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        logger.debug("Initialize MainController");
+
         headerToggleGroup.getToggles().addListener((ListChangeListener<Toggle>) c -> {
             while(c.next()) {
                 for(final Toggle addedToggle : c.getAddedSubList()) {
@@ -57,7 +63,12 @@ public class MainController implements Initializable {
             }
         });
 
-        settingsView.setImage(IMG_SETTINGS);
+        settingsIcon.setImage(IMG_SETTINGS);
+        btnSettings.setOnAction(ae -> Platform.runLater(() -> {
+            logger.debug("Open Settings");
+            settings.setManaged(true);
+            settings.setVisible(true);
+        }));
 
         btnSearchComments.setOnAction(ae -> Platform.runLater(() -> {
             headerIcon.setImage(IMG_SEARCH);

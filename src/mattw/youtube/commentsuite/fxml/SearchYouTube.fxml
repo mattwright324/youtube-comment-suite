@@ -6,9 +6,98 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.image.ImageView?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
-           style="-fx-border-color:blue;"
+           alignment="TOP_CENTER"
            fx:controller="mattw.youtube.commentsuite.fxml.SearchYouTubeController">
-    <Label text="Search YouTube"  />
+    <padding><Insets topRightBottomLeft="10" /></padding>
+    <fx:define>
+        <ImageView fx:id="geoIcon" fitHeight="18" fitWidth="18" />
+        <ImageView fx:id="searchIcon" fitHeight="18" fitWidth="18" />
+    </fx:define>
+    <VBox fillWidth="true" maxHeight="Infinity" alignment="TOP_CENTER" spacing="10">
+        <HBox fx:id="form" alignment="CENTER_LEFT" spacing="10">
+            <ComboBox fx:id="searchType" value="Normal" styleClass="control">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="Normal" />
+                        <String fx:value="Location" />
+                    </FXCollections>
+                </items>
+            </ComboBox>
+            <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                <TextField fx:id="searchText" promptText="Search" styleClass="control" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+                <Button fx:id="submit" styleClass="btn, btnLight, control" graphic="$searchIcon" />
+            </HBox>
+            <HBox fx:id="locationBox" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" visible="false" managed="false">
+                <TextField fx:id="searchLocation" promptText="40.7058253,-74.1180864" styleClass="control" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+                <Button fx:id="geolocate" styleClass="btn, btnLight, control" graphic="$geoIcon" />
+            </HBox>
+            <ComboBox fx:id="searchRadius" value="5m" styleClass="control">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="1m" />
+                        <String fx:value="2m" />
+                        <String fx:value="5m" />
+                        <String fx:value="10m" />
+                        <String fx:value="20m" />
+                        <String fx:value="25m" />
+                        <String fx:value="50m" />
+                        <String fx:value="75m" />
+                        <String fx:value="100m" />
+                        <String fx:value="200m" />
+                        <String fx:value="250m" />
+                        <String fx:value="500m" />
+                        <String fx:value="750m" />
+                        <String fx:value="1000m" />
+                    </FXCollections>
+                </items>
+            </ComboBox>
+            <ComboBox fx:id="searchOrder" value="Relevance" styleClass="control">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="Relevance" />
+                        <String fx:value="Date" />
+                        <String fx:value="Title" />
+                        <String fx:value="Rating" />
+                        <String fx:value="Views" />
+                    </FXCollections>
+                </items>
+            </ComboBox>
+            <ComboBox fx:id="resultType" value="All types" styleClass="control">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="All types" />
+                        <String fx:value="Video" />
+                        <String fx:value="Playlist" />
+                        <String fx:value="Channel" />
+                    </FXCollections>
+                </items>
+            </ComboBox>
+        </HBox>
+        <ListView fx:id="resultsList" maxHeight="Infinity" VBox.vgrow="ALWAYS">
+            <contextMenu>
+                <ContextMenu>
+                    <items>
+                        <MenuItem fx:id="menuCopyId" text="Copy Item Id(s)" />
+                        <MenuItem fx:id="menuOpenBrowser" text="Open Item(s) in Browser" />
+                        <MenuItem fx:id="menuAddToGroup" text="Add Item(s) to Group" />
+                        <SeparatorMenuItem />
+                        <MenuItem fx:id="menuDeselectAll" text="Deselect All" />
+                    </items>
+                </ContextMenu>
+            </contextMenu>
+        </ListView>
+        <HBox fx:id="bottom" spacing="10" alignment="CENTER">
+            <fx:include source="FlexLabel.fxml" HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnAddToGroup" styleClass="btn, btnPrimary" disable="true" text="Add to Group (0)" />
+            <Button fx:id="btnClear" minWidth="100" styleClass="btn, btnSecondary" text="Clear" />
+            <Button fx:id="btnNextPage" styleClass="btn, btnLight" disable="true" text="Next Page >" />
+            <fx:include fx:id="searchInfo" source="FlexLabel.fxml" HBox.hgrow="ALWAYS"
+                        styleClass="textMutedLight" text="Showing 0 out of 0" />
+        </HBox>
+    </VBox>
 </StackPane>

@@ -1,9 +1,7 @@
 package mattw.youtube.commentsuite.db;
 
 import javafx.scene.image.Image;
-import mattw.youtube.commentsuite.CommentSuite;
 import mattw.youtube.commentsuite.LetterAvatar;
-import mattw.youtube.commentsuite.SearchCommentsPane;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -31,9 +29,9 @@ public abstract class YouTubeObject {
         this.title = title;
         this.thumbUrl = thumbUrl;
         this.fetchThumb = fetchThumb;
-        if(CommentSuite.config().downloadThumbs() && fetchThumb) {
+        /*if(CommentSuite.config().downloadThumbs() && fetchThumb) {
             getThumbnail();
-        }
+        }*/
     }
 
 
@@ -44,7 +42,7 @@ public abstract class YouTubeObject {
      */
     public Image getThumbnail() {
         File thumbFile = new File(thumbFolder, youtubeId+".jpg");
-        if(CommentSuite.config().downloadThumbs()) {
+        /*if(CommentSuite.config().downloadThumbs()) {
             try {
                 if(!thumbFile.exists()) {
                     thumbFolder.mkdirs();
@@ -63,7 +61,7 @@ public abstract class YouTubeObject {
 
             }
             thumbCache.put(youtubeId, image);
-        }
+        }*/
         return thumbCache.get(youtubeId);
     }
 

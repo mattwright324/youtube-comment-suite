@@ -25,8 +25,8 @@ public class YouTubeAccount {
     }
 
     public void updateData() {
-        CommentSuite.youtube().setProfileAccessToken(tokens.access_token);
-        try {
+        //CommentSuite.youtube().setProfileAccessToken(tokens.access_token);
+        /*try {
             ChannelsList cl = CommentSuite.youtube().channelsList().getMine(ChannelsList.PART_SNIPPET, "");
             ChannelsList.Item cli = cl.items[0];
             this.channelId = cli.getId();
@@ -36,7 +36,7 @@ public class YouTubeAccount {
             }
         } catch (IOException | YouTubeErrorException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public String getUsername() { return username; }

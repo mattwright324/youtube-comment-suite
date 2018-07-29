@@ -2,7 +2,6 @@ package mattw.youtube.commentsuite.db;
 
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
-import mattw.youtube.commentsuite.CommentSuite;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -56,7 +55,7 @@ public class Group {
 
     public void reloadGroupItems() {
         groupItems.clear();
-        groupItems.addAll(CommentSuite.db().getGroupItems(this));
+        // groupItems.addAll(CommentSuite.db().getGroupItems(this));
         incrementItemsUpdated();
     }
 

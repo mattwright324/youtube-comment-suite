@@ -6,13 +6,15 @@ import java.net.URL;
 /**
  * Opens URLs on the system.
  */
-public class Browser {
+public class BrowserUtil {
 
-    public static void open(URL url) {
+    public BrowserUtil() {}
+
+    public void open(URL url) {
         open(url.toString());
     }
 
-    public static void open(String link) {
+    public void open(String link) {
         link = link.replace(" ", "%20");
         try {
             URL url = new URL(link);

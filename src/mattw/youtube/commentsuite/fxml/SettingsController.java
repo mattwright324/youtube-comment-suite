@@ -1,0 +1,154 @@
+package mattw.youtube.commentsuite.fxml;
+
+import javafx.application.Platform;
+import javafx.concurrent.Worker;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import mattw.youtube.commentsuite.*;
+import mattw.youtube.commentsuite.io.BrowserUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.UnsupportedEncodingException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.URL;
+import java.util.ResourceBundle;
+
+public class SettingsController implements Initializable {
+
+    private static Logger logger = LogManager.getLogger(SettingsController.class.getSimpleName());
+
+    public final Image IMG_CLOSE = new Image("/mattw/youtube/commentsuite/img/close.png");
+    public final Image IMG_GITHUB = new Image("/mattw/youtube/commentsuite/img/github.png");
+
+    private BrowserUtil browserUtil = new BrowserUtil();
+    private ConfigFile<ConfigData> config;
+    private OAuth2Handler oauth2;
+
+    @FXML Pane settingsPane;
+
+    @FXML VBox vboxSignIn;
+    @FXML Button btnExitSignIn;
+
+    @FXML WebView webView;
+    @FXML ProgressIndicator webViewLoading;
+    WebEngine webEngine;
+
+    @FXML VBox vboxSettings;
+    @FXML Button btnClose;
+    @FXML ImageView closeIcon;
+    @FXML CheckBox prefixReply;
+    @FXML CheckBox autoLoadStats;
+    @FXML CheckBox downloadThumbs;
+    @FXML CheckBox customKey;
+    @FXML TextField youtubeApiKey;
+    @FXML Button btnAddAccount;
+    @FXML ListView accountList;
+
+    @FXML ProgressIndicator cleanProgress;
+    @FXML Button btnClean;
+    @FXML ProgressIndicator resetProgress;
+    @FXML Button btnReset;
+    @FXML ProgressIndicator removeProgress;
+    @FXML Button btnRemoveThumbs;
+
+    @FXML Hyperlink github;
+    @FXML ImageView githubIcon;
+    @FXML Button btnSave;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        logger.debug("Initialize SettingsController");
+
+        oauth2 = FXMLSuite.getOauth2();
+        config = FXMLSuite.getConfig();
+
+        ConfigData cdata = config.getDataObject();
+        autoLoadStats.setSelected(cdata.getAutoLoadStats());
+        prefixReply.setSelected(cdata.getPrefixReplies());
+        downloadThumbs.setSelected(cdata.getArchiveThumbs());
+        customKey.setSelected(cdata.usingCustomApiKey());
+        youtubeApiKey.setText(cdata.getYoutubeApiKey());
+
+        CookieManager cm = new CookieManager();
+        CookieHandler.setDefault(cm);
+        webEngine = webView.getEngine();
+        webEngine.setJavaScriptEnabled(true);
+        webEngine.titleProperty().addListener((o, ov, nv) -> {
+            if(nv != null) {
+                logger.debug(String.format("YouTubeSignIn [loading-page=%s]", nv));
+                if(nv.contains("code=")) {
+                    String code = nv.substring(nv.indexOf("code=")+5);
+                    logger.debug(String.format("YouTubeSignIn [returned-code=%s]", code));
+                    try {
+                        OAuth2Tokens tokens = oauth2.getAccessTokens(code);
+                        oauth2.setTokens(tokens);
+
+                        YouTubeAccount account = new YouTubeAccount(tokens);
+                        // TODO: Check if config contains account, if not add.
+                        btnExitSignIn.fire();
+                    } catch (Exception e) {
+                        logger.error(e);
+                    }
+                } else if(nv.contains("error=")) {
+                    logger.debug(String.format("YouTubeSignIn Failed [%s]", nv));
+                }
+            }
+        });
+        webViewLoading.visibleProperty().bind(webEngine.getLoadWorker().stateProperty().isEqualTo(Worker.State.SUCCEEDED).not());
+
+        btnSave.setOnAction(ae -> Platform.runLater(() -> {
+            btnClose.fire();
+        }));
+
+        closeIcon.setImage(IMG_CLOSE);
+        btnClose.setOnAction(ae -> Platform.runLater(() -> {
+            logger.debug("Saving Settings");
+            ConfigData data = config.getDataObject();
+            data.setAutoLoadStats(autoLoadStats.isSelected());
+            data.setPrefixReplies(prefixReply.isSelected());
+            data.setArchiveThumbs(downloadThumbs.isSelected());
+            data.setCustomApiKey(customKey.isSelected());
+            data.setYoutubeApiKey(youtubeApiKey.getText());
+            // TODO: Set account data.
+            // data.getAccounts().addAll()
+            config.setDataObject(data);
+            config.save();
+
+            logger.debug("Closing Settings");
+            settingsPane.setManaged(false);
+            settingsPane.setVisible(false);
+        }));
+
+        youtubeApiKey.disableProperty().bind(customKey.selectedProperty().not());
+
+        githubIcon.setImage(IMG_GITHUB);
+
+        btnAddAccount.setOnAction(ae -> Platform.runLater(() ->  {
+            vboxSignIn.setManaged(true);
+            vboxSignIn.setVisible(true);
+            vboxSettings.setDisable(true);
+            try {
+                webView.getEngine().load(oauth2.getAuthURL());
+            } catch (UnsupportedEncodingException e) {
+                logger.error(e);
+            }
+        }));
+
+        btnExitSignIn.setOnAction(ae -> Platform.runLater(() -> {
+            vboxSignIn.setManaged(false);
+            vboxSignIn.setVisible(false);
+            vboxSettings.setDisable(false);
+        }));
+
+        github.setOnAction(ae -> browserUtil.open("https://github.com/mattwright324/youtube-comment-suite"));
+    }
+}

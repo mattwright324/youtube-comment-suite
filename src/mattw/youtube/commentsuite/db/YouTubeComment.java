@@ -1,6 +1,5 @@
 package mattw.youtube.commentsuite.db;
 
-import mattw.youtube.commentsuite.CommentSuite;
 import mattw.youtube.datav3.resources.CommentThreadsList;
 import mattw.youtube.datav3.resources.CommentsList;
 
@@ -71,7 +70,7 @@ public class YouTubeComment extends YouTubeObject {
     public Date getDate() { return date; }
     public String getVideoId() { return videoId; }
     public String getChannelId() { return channelId; }
-    public YouTubeChannel getChannel() { return CommentSuite.db().getChannel(channelId); }
+    // public YouTubeChannel getChannel() { return CommentSuite.db().getChannel(channelId); }
     public int getLikes() { return likes; }
     public int getReplyCount() { return replies; }
     public boolean isReply() { return isReply; }

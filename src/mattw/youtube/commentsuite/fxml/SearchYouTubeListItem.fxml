@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+<fx:root type="HBox"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         spacing="10"
+         fillHeight="true">
+    <padding>
+        <Insets topRightBottomLeft="5" />
+    </padding>
+    <VBox maxWidth="160" minWidth="160" spacing="6" alignment="CENTER">
+        <ImageView fitHeight="80" fx:id="thumbnail" />
+        <Label fx:id="type" styleClass="textMuted" />
+    </VBox>
+    <VBox HBox.hgrow="ALWAYS" fillWidth="true">
+        <fx:include source="FlexLabel.fxml" fx:id="title" styleClass="font18" />
+        <fx:include source="FlexLabel.fxml" fx:id="author" styleClass="font16" />
+        <fx:include source="FlexLabel.fxml" fx:id="description" styleClass="font14" />
+        <fx:include source="FlexLabel.fxml" fx:id="number" styleClass="font14, textMuted" />
+    </VBox>
+</fx:root>

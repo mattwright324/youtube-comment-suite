@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.ImageView?>
+<fx:root type="StackPane" xmlns="http://javafx.com/javafx"
+         alignment="TOP_CENTER"
+         xmlns:fx="http://javafx.com/fxml">
+    <fx:define>
+        <ImageView fx:id="editIcon" fitHeight="25" fitWidth="25" />
+    </fx:define>
+    <!-- Content -->
+    <VBox alignment="TOP_CENTER">
+        <padding><Insets topRightBottomLeft="10" /></padding>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <HBox alignment="CENTER_LEFT">
+                <TextField fx:id="title" id="title" editable="false" minWidth="0" styleClass="font18, clearTextField" />
+                <Hyperlink fx:id="rename" graphic="$editIcon" />
+            </HBox>
+            <fx:include source="FlexLabel.fxml" HBox.hgrow="ALWAYS" />
+            <HBox styleClass="btnGroup, control">
+                <Button styleClass="control, btn, btnPrimary" text="Refresh" />
+                <Label styleClass="control" text="Never refreshed." />
+            </HBox>
+            <Button styleClass="btn, btnLight, control" text="Reload" />
+            <Button styleClass="btn, btnDanger, control" text="Delete" />
+        </HBox>
+    </VBox>
+
+    <!-- Overlay: Rename -->
+    <StackPane managed="false">
+
+    </StackPane>
+
+    <!-- Overlay: Refresh -->
+    <StackPane managed="false">
+
+    </StackPane>
+
+    <!-- Overlay: Delete -->
+    <StackPane managed="false">
+
+    </StackPane>
+
+    <!-- Overlay: Add Item -->
+    <StackPane managed="false">
+
+    </StackPane>
+
+    <!-- Overlay: Remove Item -->
+    <StackPane managed="false">
+
+    </StackPane>
+
+    <!-- Overlay: Remove All Item(s) -->
+    <StackPane managed="false">
+
+    </StackPane>
+</fx:root>

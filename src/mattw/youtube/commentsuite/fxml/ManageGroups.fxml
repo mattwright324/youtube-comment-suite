@@ -6,9 +6,32 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane xmlns="http://javafx.com/javafx"
-           xmlns:fx="http://javafx.com/fxml"
-           style="-fx-border-color:red;"
-           fx:controller="mattw.youtube.commentsuite.fxml.ManageGroupsController">
-    <Label text="Manage Groups"  />
-</StackPane>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      alignment="TOP_CENTER"
+      fx:controller="mattw.youtube.commentsuite.fxml.ManageGroupsController">
+    <fx:define>
+        <ImageView fx:id="plusIcon" fitWidth="20" fitHeight="20" />
+    </fx:define>
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <padding>
+            <Insets topRightBottomLeft="10" />
+        </padding>
+        <Label styleClass="bold, font16" text="Group:" />
+        <HBox>
+            <ComboBox fx:id="comboGroupSelect" styleClass="manageGroupSelect, control" prefWidth="300">
+                <tooltip><Tooltip wrapText="true" maxWidth="300" text="Select a group to manage." /></tooltip>
+            </ComboBox>
+            <Button fx:id="btnCreateGroup" styleClass="btn, btnLight, control" graphic="$plusIcon">
+                <tooltip><Tooltip wrapText="true" maxWidth="300" text="Create a new group." /></tooltip>
+            </Button>
+        </HBox>
+        <Label minWidth="0" prefWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS"
+               style="-fx-text-fill: lightgray"
+               text="Groups can hold many channels, playlists, and videos at once."/>
+    </HBox>
+    <Label styleClass="horizontalDividerRed" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+    <StackPane VBox.vgrow="ALWAYS" fx:id="content" />
+</VBox>

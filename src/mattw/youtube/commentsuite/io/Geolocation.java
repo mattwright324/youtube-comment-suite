@@ -8,28 +8,35 @@ import org.jsoup.nodes.Document;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import javax.annotation.PostConstruct;
+
 public class Geolocation {
 
-    public static Gson gson = new Gson();
-    public static String useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";
+    private Gson gson = new Gson();
+    private String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";
 
-    public static String externalAddress() throws IOException {
+    @PostConstruct
+    public void init() {
+        System.out.println("geolocation init");
+    }
+
+    public String externalAddress() throws IOException {
         return Jsoup.connect("http://checkip.amazonaws.com").get().text();
     }
 
-    public static Location getMyLocation() throws JsonSyntaxException, IOException {
+    public Location getMyLocation() throws JsonSyntaxException, IOException {
         return getLocation(externalAddress());
     }
 
-    public static Location getLocation(String ipv4) throws JsonSyntaxException, IOException {
+    public Location getLocation(String ipv4) throws JsonSyntaxException, IOException {
         Document result = Jsoup.connect("http://api.eurekapi.com/iplocation/v1.8/locateip?key=SAKF9WKS23364926J8NZ&ip="+ipv4+"&format=JSON")
-                .userAgent(useragent)
+                .userAgent(userAgent)
                 .ignoreContentType(true)
                 .get();
         return gson.fromJson(result.text(), Location.class);
     }
 
-    public static class Location {
+    public class Location {
         public Status query_status;
         public String ip_address;
         public Data geolocation_data;

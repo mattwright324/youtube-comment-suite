@@ -1,6 +1,6 @@
-
-.idea
-out
+.idea/
+out/
+log/
 src/META-INF
 youtube-comment-suite.iml
 commentsuite.json

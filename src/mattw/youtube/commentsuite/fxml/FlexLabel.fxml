@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+
+<!--
+  Label to make space between nodes in an HBox.
+  <fx:include source="FlexLabel.fxml" HBox.hgrow="ALWAYS" />
+-->
+<Label xmlns="http://javafx.com/javafx"
+         minWidth="0" prefWidth="0"
+         maxWidth="Infinity"/>

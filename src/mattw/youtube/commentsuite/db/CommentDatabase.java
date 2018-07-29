@@ -3,14 +3,16 @@ package mattw.youtube.commentsuite.db;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import mattw.youtube.commentsuite.CommentSuite;
-import mattw.youtube.datav3.resources.ChannelsList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class CommentDatabase {
+
+    private static Logger logger = LogManager.getLogger(CommentDatabase.class.getName());
 
     private final Connection con;
 
@@ -21,13 +23,19 @@ public class CommentDatabase {
     public final Map<String,YouTubeChannel> channelCache = new HashMap<>();
 
     public CommentDatabase(String dbfile) throws SQLException, ClassNotFoundException {
+        logger.debug(String.format("Initialize Database [file=%s]", dbfile));
         Class.forName("org.sqlite.JDBC");
         con = DriverManager.getConnection("jdbc:sqlite:"+dbfile);
         con.setAutoCommit(false);
         create();
     }
 
+    public Connection getConnection() {
+        return con;
+    }
+
     public void create() throws SQLException {
+        logger.debug(String.format("Creating tables if not exists."));
         Statement s = con.createStatement();
         s.addBatch("CREATE TABLE IF NOT EXISTS gitem_type (type_id INTEGER PRIMARY KEY, nameProperty STRING);");
         s.addBatch("INSERT OR IGNORE INTO gitem_type VALUES (0, 'video'),(1, 'channel'),(2, 'playlist');");
@@ -89,6 +97,7 @@ public class CommentDatabase {
     }
 
     public void commit() throws SQLException {
+        logger.debug(String.format("Committing."));
         con.commit();
     }
 
@@ -159,7 +168,7 @@ public class CommentDatabase {
                 return channel;
             } else {
                 try {
-                    ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
+                    /*ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
                     if(cl.hasItems()) {
                         List<YouTubeChannel> list = new ArrayList<>();
                         channel = new YouTubeChannel(cl.items[0], false);
@@ -167,7 +176,7 @@ public class CommentDatabase {
                         insertChannels(list);
                         commit();
                         return channel;
-                    }
+                    }*/
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -192,6 +201,7 @@ public class CommentDatabase {
      * Refreshes the globalGroupList.
      */
     public void refreshGroups() throws SQLException {
+        logger.debug(String.format("Grabbing groups and refreshing global group list."));
         Statement s = con.createStatement();
         ResultSet rs = s.executeQuery("SELECT * FROM groups");
         List<Group> groups = new ArrayList<>();

@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -10,6 +7,7 @@
 <?import javafx.geometry.Insets?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
+           fx:id="root"
            fx:controller="mattw.youtube.commentsuite.fxml.MainController"
            alignment="TOP_CENTER"
            prefWidth="1000.0" prefHeight="550.0">
@@ -17,26 +15,26 @@
         <fx:include fx:id="searchComments" source="SearchComments.fxml" />
         <fx:include fx:id="manageGroups" source="ManageGroups.fxml" />
         <fx:include fx:id="searchYoutube" source="SearchYouTube.fxml" />
-        <ImageView fx:id="settingsView" fitHeight="25" fitWidth="25" />
+        <ImageView fx:id="settingsIcon" fitHeight="25" fitWidth="25" />
+        <ToggleGroup fx:id="headerToggleGroup" />
     </fx:define>
     <VBox alignment="TOP_CENTER">
         <HBox spacing="10" alignment="CENTER_LEFT">
             <padding>
-                <Insets left="10" right="10" top="0" bottom="0"></Insets>
+                <Insets left="10" right="10" />
             </padding>
             <ImageView fx:id="headerIcon" fitHeight="25" fitWidth="25" />
-            <HBox>
-                <fx:define>
-                    <ToggleGroup fx:id="headerToggleGroup" />
-                </fx:define>
+            <HBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
                 <children>
-                    <ToggleButton text="Search Comments" fx:id="btnSearchComments" styleClass="headerBtn" toggleGroup="$headerToggleGroup" />
-                    <ToggleButton text="Manage Groups" fx:id="btnManageGroups" styleClass="headerBtn" toggleGroup="$headerToggleGroup" />
-                    <ToggleButton text="Search Youtube" fx:id="btnSearchYoutube" styleClass="headerBtn" toggleGroup="$headerToggleGroup" />
+                    <ToggleButton text="Search Comments" fx:id="btnSearchComments" styleClass="headerBtn, bold" toggleGroup="$headerToggleGroup" />
+                    <ToggleButton text="Manage Groups" fx:id="btnManageGroups" styleClass="headerBtn, bold" toggleGroup="$headerToggleGroup" />
+                    <ToggleButton text="Search Youtube" fx:id="btnSearchYoutube" styleClass="headerBtn, bold" toggleGroup="$headerToggleGroup" />
                 </children>
             </HBox>
-            <Button fx:id="btnSettings" styleClass="settingsBtn" graphic="$settingsView"></Button>
+            <Button fx:id="btnSettings" styleClass="settingsBtn" graphic="$settingsIcon" />
         </HBox>
-        <StackPane fx:id="content"></StackPane>
+        <Label styleClass="horizontalDividerRed" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+        <StackPane VBox.vgrow="ALWAYS" fx:id="content" />
     </VBox>
+    <fx:include fx:id="settings" source="Settings.fxml" />
 </StackPane>
