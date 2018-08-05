@@ -10,6 +10,10 @@
     -fx-background-color: derive(firebrick, 80%);
     -fx-border-width: 0 0 0 0;
 }
+.horizontalDividerBlue {
+    -fx-background-color: derive(#007bff, 80%);
+    -fx-border-width: 0 0 0 0;
+}
 .bold {
     -fx-font-weight: 700;
 }
@@ -21,6 +25,7 @@
 .btnPrimary { -fx-base: #007bff; -fx-text-fill: #fff; }
 .btnSecondary { -fx-base: #6c757d; -fx-text-fill: #fff; }
 .btnSuccess { -fx-base: #28a745; -fx-text-fill: #fff; }
+.btnDangerLight { -fx-base: derive(#dc3545, 40%); -fx-text-fill: #fff; }
 .btnDanger { -fx-base: #dc3545; -fx-text-fill: #fff; }
 .btnWarning { -fx-base: #ffc107; -fx-text-fill: #212529; }
 .btnInfo { -fx-base: #17a2b8; -fx-text-fill: #fff; }
@@ -46,6 +51,35 @@
     -fx-background-insets: 0;
     -fx-padding: 1 3 1 3;
 }
+.noRadiusRight {
+    -fx-border-radius: 4 0 0 4;
+    -fx-background-radius: 4 0 0 4;
+}
+.noRadiusLeft {
+    -fx-border-radius: 0 4 4 0;
+    -fx-background-radius: 0 4 4 0;
+}
+.alertBase {
+    -fx-padding: 4;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+.alertWarning {
+    -fx-text-fill: #856404;
+    -fx-background-color: #fff3cd;
+    -fx-border-color: #ffeeba;
+}
+.alertSuccess {
+    -fx-text-fill: #155724;
+    -fx-background-color: #d4edda;
+    -fx-border-color: #c3e6cb;
+}
+.alertDanger {
+    -fx-text-fill: #721c24;
+    -fx-background-color: #f8d7da;
+    -fx-border-color: #f5c6cb;
+}
+.border4 {-fx-border-radius: 4; -fx-background-radius: 4;}
 
 /* Main.fxml */
 .headerBtn {
@@ -85,19 +119,14 @@
 }
 
 /* ManageGroupManager.fxml */
-#title {
+#groupTitle {
     -fx-border-width: 0 0 4 0;
     -fx-border-style: dashed;
-    -fx-border-color: transparent transparent lightgray transparent;
-}
-.btnGroup Button {
-    -fx-border-radius: 4 0 0 4;
-    -fx-background-radius: 4 0 0 4;
+    -fx-border-color: transparent transparent darkgray transparent;
 }
 .btnGroup Label {
     -fx-padding: 0 8 0 8;
-    -fx-border-radius: 0 4 4 0;
-    -fx-background-radius: 0 4 4 0;
-    -fx-background-color: lightgrey;
-    -fx-text-fill: gray;
+    -fx-background-color: derive(lightgrey, 70%);
+    -fx-text-fill: derive(lightgrey, -20%);
+    -fx-border-color: lightgray;
 }

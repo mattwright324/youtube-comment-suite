@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import mattw.youtube.commentsuite.*;
+import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.io.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,7 @@ public class SettingsController implements Initializable {
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;
     private OAuth2Handler oauth2;
+    private CommentDatabase database;
 
     @FXML Pane settingsPane;
 
@@ -70,6 +72,7 @@ public class SettingsController implements Initializable {
 
         oauth2 = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
+        database = FXMLSuite.getDatabase();
 
         ConfigData cdata = config.getDataObject();
         autoLoadStats.setSelected(cdata.getAutoLoadStats());
@@ -148,6 +151,44 @@ public class SettingsController implements Initializable {
             vboxSignIn.setVisible(false);
             vboxSettings.setDisable(false);
         }));
+
+        btnClean.setOnAction(ae -> new Thread(() -> {
+            Platform.runLater(() -> {
+                btnClean.setDisable(true);
+                btnReset.setDisable(true);
+                cleanProgress.setVisible(true);
+            });
+            try {
+                logger.warn("Starting DB Clean");
+                database.cleanUp();
+            } catch (Exception e) {
+                logger.error(e);
+            }
+            Platform.runLater(() -> {
+                btnClean.setDisable(false);
+                btnReset.setDisable(false);
+                cleanProgress.setVisible(false);
+            });
+        }).start());
+
+        btnReset.setOnAction(ae -> new Thread(() -> {
+            Platform.runLater(() -> {
+                btnClean.setDisable(true);
+                btnReset.setDisable(true);
+                resetProgress.setVisible(true);
+            });
+            try {
+                logger.warn("Starting DB Reset");
+                database.reset();
+            } catch (Exception e) {
+                logger.error(e);
+            }
+            Platform.runLater(() -> {
+                btnClean.setDisable(false);
+                btnReset.setDisable(false);
+                resetProgress.setVisible(false);
+            });
+        }).start());
 
         github.setOnAction(ae -> browserUtil.open("https://github.com/mattwright324/youtube-comment-suite"));
     }

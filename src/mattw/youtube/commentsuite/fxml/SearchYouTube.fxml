@@ -29,12 +29,12 @@
                 </items>
             </ComboBox>
             <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
-                <TextField fx:id="searchText" promptText="Search" styleClass="control" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
-                <Button fx:id="submit" styleClass="btn, btnLight, control" graphic="$searchIcon" />
+                <TextField fx:id="searchText" promptText="Search" styleClass="control, noRadiusRight" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+                <Button fx:id="submit" styleClass="btn, btnLight, control, noRadiusLeft" graphic="$searchIcon" />
             </HBox>
             <HBox fx:id="locationBox" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" visible="false" managed="false">
-                <TextField fx:id="searchLocation" promptText="40.7058253,-74.1180864" styleClass="control" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
-                <Button fx:id="geolocate" styleClass="btn, btnLight, control" graphic="$geoIcon" />
+                <TextField fx:id="searchLocation" promptText="40.7058253,-74.1180864" styleClass="control, noRadiusRight" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+                <Button fx:id="geolocate" styleClass="btn, btnLight, control, noRadiusLeft" graphic="$geoIcon" />
             </HBox>
             <ComboBox fx:id="searchRadius" value="5m" styleClass="control">
                 <items>
@@ -92,11 +92,11 @@
             </contextMenu>
         </ListView>
         <HBox fx:id="bottom" spacing="10" alignment="CENTER">
-            <fx:include source="FlexLabel.fxml" HBox.hgrow="ALWAYS" />
+            <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" />
             <Button fx:id="btnAddToGroup" styleClass="btn, btnPrimary" disable="true" text="Add to Group (0)" />
             <Button fx:id="btnClear" minWidth="100" styleClass="btn, btnSecondary" text="Clear" />
             <Button fx:id="btnNextPage" styleClass="btn, btnLight" disable="true" text="Next Page >" />
-            <fx:include fx:id="searchInfo" source="FlexLabel.fxml" HBox.hgrow="ALWAYS"
+            <fx:include fx:id="searchInfo" source="HFlexLabel.fxml" HBox.hgrow="ALWAYS"
                         styleClass="textMutedLight" text="Showing 0 out of 0" />
         </HBox>
     </VBox>

@@ -20,9 +20,9 @@
         <Label fx:id="type" styleClass="textMuted" />
     </VBox>
     <VBox HBox.hgrow="ALWAYS" fillWidth="true">
-        <fx:include source="FlexLabel.fxml" fx:id="title" styleClass="font18" />
-        <fx:include source="FlexLabel.fxml" fx:id="author" styleClass="font16" />
-        <fx:include source="FlexLabel.fxml" fx:id="description" styleClass="font14" />
-        <fx:include source="FlexLabel.fxml" fx:id="number" styleClass="font14, textMuted" />
+        <fx:include source="HFlexLabel.fxml" fx:id="title" styleClass="font18" />
+        <fx:include source="HFlexLabel.fxml" fx:id="author" styleClass="font16" />
+        <fx:include source="HFlexLabel.fxml" fx:id="description" styleClass="font14" />
+        <fx:include source="HFlexLabel.fxml" fx:id="number" styleClass="font14, textMuted" />
     </VBox>
 </fx:root>

@@ -4,7 +4,7 @@
 
 <!--
   Label to make space between nodes in an HBox.
-  <fx:include source="FlexLabel.fxml" HBox.hgrow="ALWAYS" />
+  <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" />
 -->
 <Label xmlns="http://javafx.com/javafx"
          minWidth="0" prefWidth="0"

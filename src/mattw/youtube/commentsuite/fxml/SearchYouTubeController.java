@@ -197,7 +197,7 @@ public class SearchYouTubeController implements Initializable {
 
             logger.debug(String.format("Search [videos=%s]", searchList.items.length));
             for(SearchList.Item item : searchList.items) {
-                logger.debug(String.format("Video [id=%s,author=%s,title=%s]", item.id.getId(), item.snippet.channelTitle, item.snippet.title));
+                logger.debug(String.format("Video [id=%s,author=%s,groupTitle=%s]", item.id.getId(), item.snippet.channelTitle, item.snippet.title));
                 SearchYouTubeListItemView view = new SearchYouTubeListItemView(item, number++);
                 Platform.runLater(() -> {
                     resultsList.getItems().add(view);

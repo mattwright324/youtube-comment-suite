@@ -45,12 +45,10 @@ public class FXMLSuite extends Application {
             stage.setScene(scene);
             stage.getIcons().add(new Image("/mattw/youtube/commentsuite/img/icon.png"));
             stage.setOnCloseRequest(we -> {
-                logger.debug("Closing - Saving Config file.");
-                config.save();
-
-                logger.debug("Closing - Committing and closing DB connection.");
                 try {
                     database.commit();
+
+                    logger.debug("Closing - Closing DB Connection");
                     database.getConnection().close();
                 } catch (SQLException e) {
                     logger.error(e);
@@ -62,6 +60,8 @@ public class FXMLSuite extends Application {
             stage.show();
         } catch (IOException | SQLException | ClassNotFoundException e) {
             logger.error(e);
+            Platform.exit();
+            System.exit(0);
         }
     }
 

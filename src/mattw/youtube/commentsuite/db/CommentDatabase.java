@@ -1,18 +1,22 @@
 package mattw.youtube.commentsuite.db;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.*;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class CommentDatabase {
 
-    private static Logger logger = LogManager.getLogger(CommentDatabase.class.getName());
+    private static Logger logger = LogManager.getLogger(CommentDatabase.class.getSimpleName());
 
     private final Connection con;
 
@@ -20,129 +24,94 @@ public class CommentDatabase {
     private final Group noGroup = new Group(Group.NO_GROUP, "No groups");
 
     public final ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
-    public final Map<String,YouTubeChannel> channelCache = new HashMap<>();
 
-    public CommentDatabase(String dbfile) throws SQLException, ClassNotFoundException {
+    private Cache<String,YouTubeChannel> channelCache = CacheBuilder.newBuilder()
+            .expireAfterAccess(15, TimeUnit.MINUTES)
+            .build();
+
+    private String CREATE_DB = "ddl_create_db.sql";
+    private String RESET_DB = "ddl_reset_db.sql";
+    private String CLEAN_DB = "dml_clean_db.sql";
+    private String VACUUM_DB = "dml_vacuum_db.sql";
+    private String GET_CHANNEL_BY_ID = "dql_get_channel_by_id.sql";
+    private String GROUP_CREATE = "dml_create_group.sql";
+    private String GROUP_RENAME = "dml_rename_group.sql";
+    private String GET_ALL_GROUPS = "dql_get_all_groups.sql";
+    private String[] scripts = {CREATE_DB, RESET_DB, CLEAN_DB, VACUUM_DB, GROUP_CREATE,
+            GET_CHANNEL_BY_ID, GROUP_RENAME, GET_ALL_GROUPS};
+    private Map<String,String> sql_files = new HashMap<>();
+
+    public CommentDatabase(String dbfile) throws SQLException, ClassNotFoundException, IOException {
         logger.debug(String.format("Initialize Database [file=%s]", dbfile));
         Class.forName("org.sqlite.JDBC");
         con = DriverManager.getConnection("jdbc:sqlite:"+dbfile);
         con.setAutoCommit(false);
-        create();
+
+        logger.debug("Loading SQL Files");
+        String basePath = "/mattw/youtube/commentsuite/db/sql/";
+        for(String key : scripts) {
+            try {
+                String line;
+                StringBuilder sb = new StringBuilder();
+                try(InputStreamReader isr = new InputStreamReader(getClass().getResource(basePath+key).openStream());
+                    BufferedReader br = new BufferedReader(isr)) {
+                    while((line = br.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    sql_files.put(key, sb.toString());
+                }
+            } catch (IOException e) {
+                logger.error(String.format("Failed to load resource sql file [fileKey=%s]", key));
+                throw e;
+            }
+        }
+
+        this.create();
     }
 
     public Connection getConnection() {
         return con;
     }
 
-    public void create() throws SQLException {
-        logger.debug(String.format("Creating tables if not exists."));
-        Statement s = con.createStatement();
-        s.addBatch("CREATE TABLE IF NOT EXISTS gitem_type (type_id INTEGER PRIMARY KEY, nameProperty STRING);");
-        s.addBatch("INSERT OR IGNORE INTO gitem_type VALUES (0, 'video'),(1, 'channel'),(2, 'playlist');");
-        s.addBatch("CREATE TABLE IF NOT EXISTS gitem_list ("
-                + "gitem_id STRING PRIMARY KEY," // gitem_id is now previous field youtube_id
-                + "type_id INTEGER,"
-                + "title STRING,"
-                + "channel_title STRING,"
-                + "published DATE,"
-                + "last_checked DATE,"
-                + "thumb_url STRING,"
-                + "FOREIGN KEY(type_id) REFERENCES gitem_type(type_id));");
-        s.addBatch("CREATE TABLE IF NOT EXISTS groups (group_id STRING PRIMARY KEY, group_name STRING UNIQUE);");
-        s.addBatch("CREATE TABLE IF NOT EXISTS group_gitem ("
-                + "group_id STRING,"
-                + "gitem_id STRING,"
-                + "PRIMARY KEY(group_id, gitem_id)"
-                + "FOREIGN KEY(group_id) REFERENCES groups(group_id),"
-                + "FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id));");
-        s.addBatch("CREATE TABLE IF NOT EXISTS gitem_video ("
-                + "gitem_id STRING,"
-                + "video_id STRING,"
-                + "FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id),"
-                + "FOREIGN KEY(video_id) REFERENCES videos(video_id));");
-        s.addBatch("CREATE TABLE IF NOT EXISTS videos ("
-                + "video_id STRING PRIMARY KEY,"
-                + "channel_id STRING,"
-                + "grab_date INTEGER,"
-                + "publish_date INTEGER,"
-                + "video_title STRING,"
-                + "total_comments INTEGER,"
-                + "total_views INTEGER,"
-                + "total_likes INTGEGER,"
-                + "total_dislikes INTEGER,"
-                + "video_desc STRING,"
-                + "thumb_url STRING,"
-                + "http_code int,"
-                + "FOREIGN KEY(channel_id) REFERENCES channels(channel_id))");
-        s.addBatch("CREATE TABLE IF NOT EXISTS comments ("
-                + "comment_id STRING PRIMARY KEY,"
-                + "channel_id STRING,"
-                + "video_id STRING,"
-                + "comment_date INTEGER,"
-                + "comment_likes INTEGER,"
-                + "reply_count INTEGER,"
-                + "is_reply BOOLEAN,"
-                + "parent_id STRING,"
-                + "comment_text TEXT,"
-                + "FOREIGN KEY(channel_id) REFERENCES channels(channel_id),"
-                + "FOREIGN KEY(video_id) REFERENCES videos(video_id))");
-        s.addBatch("CREATE TABLE IF NOT EXISTS channels ("
-                + "channel_id STRING PRIMARY KEY,"
-                + "channel_name STRING,"
-                + "channel_profile_url STRING,"
-                + "download_profile BOOLEAN)");
-        s.executeBatch();
-        s.close();
-        commit();
-    }
-
     public void commit() throws SQLException {
-        logger.debug(String.format("Committing."));
+        logger.debug("Committing.");
         con.commit();
     }
 
-    /**
-     * Completely resets the database - deletes all data.
-     */
-    public void reset() throws SQLException {
-        Statement s = con.createStatement();
-        for(String table : "gitem_type,gitem_list,groups,group_gitem,gitem_video,videos,comments,channels".split(","))
-            s.executeUpdate("DROP TABLE IF EXISTS "+table);
-        s.close();
-        commit();
-        vacuum();
-        channelCache.clear();
-        YouTubeObject.clearThumbCache();
-        create();
-        commit();
-        refreshGroups();
+    public void create() throws SQLException {
+        logger.debug("Creating tables if not exists.");
+        Statement statement = con.createStatement();
+        statement.executeUpdate(sql_files.get(CREATE_DB));
+        statement.close();
+        this.commit();
     }
 
-    /**
-     * VACUUMs the database, shrinking file size if possible.
-     */
+    public void reset() throws SQLException {
+        logger.warn("Dropping all database contents. This cannot be undone.");
+        Statement statement = con.createStatement();
+        statement.executeUpdate(sql_files.get(RESET_DB));
+        statement.close();
+        this.commit();
+        this.vacuum();
+        this.create();
+    }
+
     public void vacuum() throws SQLException {
+        logger.warn("Vacuuming database. This may take a long time.");
         con.setAutoCommit(true);
         Statement s = con.createStatement();
-        s.executeUpdate("VACUUM");
+        s.execute(sql_files.get(VACUUM_DB));
         s.close();
         con.setAutoCommit(false);
     }
 
-    /**
-     * Cleans up unlinked data in all tables.
-     * To be ran after deleting a Group or GroupItem.
-     */
     public void cleanUp() throws SQLException {
+        logger.warn("Cleaning database of unlinked content.");
         Statement s = con.createStatement();
-        int ggs = s.executeUpdate("DELETE FROM group_gitem WHERE group_id NOT IN (SELECT DISTINCT group_id FROM groups)");
-        int gitems = s.executeUpdate("DELETE FROM gitem_list WHERE gitem_id NOT IN (SELECT DISTINCT gitem_id FROM group_gitem)");
-        int vgs = s.executeUpdate("DELETE FROM gitem_video WHERE gitem_id NOT IN (SELECT DISTINCT gitem_id FROM gitem_list)");
-        int videos = s.executeUpdate("DELETE FROM videos WHERE video_id NOT IN (SELECT DISTINCT video_id FROM gitem_video)");
-        int comments = s.executeUpdate("DELETE FROM comments WHERE video_id NOT IN (SELECT DISTINCT video_id FROM videos)");
-        int channels = s.executeUpdate("WITH clist AS (SELECT DISTINCT channel_id FROM videos UNION SELECT channel_id FROM comments) DELETE FROM channels WHERE channel_id NOT IN clist");
-        System.out.format("DELETED FROM group_gitem, gitem_list, gitem_video, videos, comments, channels (%s, %s, %s, %s, %s, %s)\r\n", ggs, gitems, vgs, videos, comments, channels);
+        s.executeUpdate(sql_files.get(CLEAN_DB));
         s.close();
+        commit();
+        vacuum();
     }
 
     /**
@@ -150,23 +119,22 @@ public class CommentDatabase {
      * Grabs from youtube is both fail.
      */
     public YouTubeChannel getChannel(String channelId) {
-        if(channelCache.containsKey(channelId)) {
-            return channelCache.get(channelId);
+        YouTubeChannel channel = channelCache.getIfPresent(channelId);
+        if(channel != null) {
+            return channel;
         }
-        try {
-            PreparedStatement ps = con.prepareStatement("SELECT * FROM channels WHERE channel_id = ?");
+        try (PreparedStatement ps = con.prepareStatement(sql_files.get(GET_CHANNEL_BY_ID))) {
             ps.setString(1, channelId);
             ResultSet rs = ps.executeQuery();
-            YouTubeChannel channel = null;
             if(rs.next()) {
                 channel = resultSetToChannel(rs);
                 channelCache.put(channelId, channel);
             }
-            ps.close();
             rs.close();
             if(channel != null) {
                 return channel;
             } else {
+                // TODO: Move this out of CommentDatabase.
                 try {
                     /*ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
                     if(cl.hasItems()) {
@@ -191,19 +159,16 @@ public class CommentDatabase {
      * Checks if the channel is cached and caches it if not.
      */
     private void checkChannel(ResultSet rs) throws SQLException {
-        String channelId = rs.getString("channel_id");
-        if(!channelCache.containsKey(channelId)) {
-            channelCache.put(channelId, resultSetToChannel(rs));
-        }
+        channelCache.put(rs.getString("channel_id"), resultSetToChannel(rs));
     }
 
     /**
      * Refreshes the globalGroupList.
      */
     public void refreshGroups() throws SQLException {
-        logger.debug(String.format("Grabbing groups and refreshing global group list."));
+        logger.debug("Grabbing groups and refreshing global group list.");
         Statement s = con.createStatement();
-        ResultSet rs = s.executeQuery("SELECT * FROM groups");
+        ResultSet rs = s.executeQuery(sql_files.get(GET_ALL_GROUPS));
         List<Group> groups = new ArrayList<>();
         while(rs.next()) {
             Group group = resultSetToGroup(rs);
@@ -310,13 +275,17 @@ public class CommentDatabase {
      */
     public Group createGroup(String name) throws SQLException {
         Group group = new Group(name);
-        PreparedStatement ps = con.prepareStatement("INSERT INTO groups (group_id, group_name) VALUES (?, ?)");
+        logger.debug(String.format("Created Group [id=%s,name=%s]", group.getId(), name));
+
+        PreparedStatement ps = con.prepareStatement(sql_files.get(GROUP_CREATE));
         ps.setString(1, group.getId());
         ps.setString(2, group.getName());
         ps.executeUpdate();
         ps.close();
-        commit();
-        refreshGroups();
+
+        this.commit();
+        this.refreshGroups();
+
         return group;
     }
 
@@ -325,13 +294,17 @@ public class CommentDatabase {
      * Commits.
      */
     public void renameGroup(Group g, String newName) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("UPDATE groups SET group_name = ? WHERE group_id = ?");
-        ps.setString(1, newName);
-        ps.setString(2, g.getId());
-        ps.executeUpdate();
-        ps.close();
-        commit();
-        g.setName(newName);
+        if(!g.getName().equals(newName)) {
+            logger.debug(String.format("Renaming Group [id=%s,name=%s,newName=%s]", g.getId(), g.getName(), newName));
+            PreparedStatement ps = con.prepareStatement(sql_files.get(GROUP_RENAME));
+            ps.setString(1, newName);
+            ps.setString(2, g.getId());
+            ps.executeUpdate();
+            ps.close();
+
+            this.commit();
+            g.setName(newName);
+        }
     }
 
     /**

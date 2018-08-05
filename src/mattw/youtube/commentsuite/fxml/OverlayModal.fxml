@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<fx:root type="StackPane"
+         alignment="TOP_CENTER"
+         styleClass="overlay"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml">
+    <VBox alignment="CENTER">
+        <fx:include source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
+        <VBox fx:id="modalContainer" styleClass="overlayMenu, border4" maxWidth="420">
+            <HBox alignment="CENTER_RIGHT">
+                <padding>
+                    <Insets right="10" left="10" />
+                </padding>
+                <Label fx:id="title" styleClass="bold" maxHeight="35" minHeight="35" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+            </HBox>
+            <Label styleClass="horizontalDividerBlue" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+            <VBox spacing="10">
+                <padding>
+                    <Insets topRightBottomLeft="10" />
+                </padding>
+                <StackPane fx:id="content" />
+            </VBox>
+        </VBox>
+        <fx:include source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
+    </VBox>
+</fx:root>

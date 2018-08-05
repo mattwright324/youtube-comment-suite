@@ -6,9 +6,7 @@ import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.SelectionModel;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -37,6 +35,8 @@ public class ManageGroupsController implements Initializable {
 
     private CommentDatabase database;
 
+    @FXML OverlayModal<ManageGroupsCreateGroupModal> overlayModal;
+
     @FXML ImageView plusIcon;
     @FXML ComboBox<Group> comboGroupSelect;
     @FXML Button btnCreateGroup;
@@ -44,6 +44,10 @@ public class ManageGroupsController implements Initializable {
 
     public void initialize(URL location, ResourceBundle resources) {
         database = FXMLSuite.getDatabase();
+
+        /**
+         * Logic for main pane.
+         */
 
         plusIcon.setImage(plus);
 
@@ -82,5 +86,53 @@ public class ManageGroupsController implements Initializable {
                 }
             }
         });
+
+        /**
+         * Logic for Create Group popup.
+         */
+
+        ManageGroupsCreateGroupModal modal = new ManageGroupsCreateGroupModal();
+        overlayModal.setContent(modal);
+
+        btnCreateGroup.setOnAction(ae -> Platform.runLater(() -> {
+            modal.getErrorMsg().setManaged(false);
+            modal.getNameField().setText("");
+            overlayModal.setVisible(true);
+        }));
+
+        modal.getBtnClose().setOnAction(ae -> Platform.runLater(() -> {
+            overlayModal.setVisible(false);
+        }));
+
+        modal.getBtnCreate().setOnAction(ae -> new Thread(() -> {
+            logger.debug("Attempting to create group");
+            Platform.runLater(() -> overlayModal.setDisable(true));
+            String name = modal.getNameField().getText();
+            if(!name.equals("")) {
+                try {
+                    Group g = database.createGroup(name);
+                    logger.debug(String.format("Created new group [id=%s,name=%s]", g.getId(), g.getName()));
+                    Platform.runLater(() -> {
+                        overlayModal.setDisable(false);
+                        modal.getErrorMsg().setManaged(false);
+                        overlayModal.setVisible(false);
+                    });
+                } catch (SQLException e) {
+                    logger.error(e);
+                    Platform.runLater(() -> {
+                        overlayModal.setDisable(false);
+                        modal.getErrorMsg().setManaged(true);
+                        modal.getErrorMsg().setText("Name already exists, try another!");
+                    });
+                }
+            } else {
+                Platform.runLater(() -> {
+                    overlayModal.setDisable(true);
+                    modal.getErrorMsg().setManaged(true);
+                    modal.getErrorMsg().setText("Name must not be empty.");
+                });
+            }
+        }).start());
+
     }
 }

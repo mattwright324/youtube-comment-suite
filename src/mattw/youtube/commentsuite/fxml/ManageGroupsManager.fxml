@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.ImageView?>
+<?import mattw.youtube.commentsuite.fxml.OverlayModal?>
 <fx:root type="StackPane" xmlns="http://javafx.com/javafx"
          alignment="TOP_CENTER"
          xmlns:fx="http://javafx.com/fxml">
@@ -15,50 +14,99 @@
         <ImageView fx:id="editIcon" fitHeight="25" fitWidth="25" />
     </fx:define>
     <!-- Content -->
-    <VBox alignment="TOP_CENTER">
+    <VBox spacing="10" alignment="TOP_CENTER">
         <padding><Insets topRightBottomLeft="10" /></padding>
         <HBox spacing="10" alignment="CENTER_LEFT">
             <HBox alignment="CENTER_LEFT">
-                <TextField fx:id="title" id="title" editable="false" minWidth="0" styleClass="font18, clearTextField" />
+                <TextField fx:id="groupTitle" editable="false" minWidth="0" styleClass="font18, clearTextField" />
                 <Hyperlink fx:id="rename" graphic="$editIcon" />
             </HBox>
-            <fx:include source="FlexLabel.fxml" HBox.hgrow="ALWAYS" />
+            <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" />
             <HBox styleClass="btnGroup, control">
-                <Button styleClass="control, btn, btnPrimary" text="Refresh" />
-                <Label styleClass="control" text="Never refreshed." />
+                <Button fx:id="btnRefresh" styleClass="control, btn, btnPrimary, noRadiusRight" text="Refresh" />
+                <Label fx:id="refreshStatus" styleClass="control, noRadiusLeft" text="Never refreshed." />
             </HBox>
-            <Button styleClass="btn, btnLight, control" text="Reload" />
-            <Button styleClass="btn, btnDanger, control" text="Delete" />
+            <Button fx:id="btnReload" styleClass="btn, btnLight, control" text="Reload Stats" />
+            <Button fx:id="btnDelete" styleClass="btn, btnDanger, control" text="Delete Group" />
+        </HBox>
+        <HBox VBox.vgrow="ALWAYS" spacing="10" alignment="TOP_CENTER">
+            <VBox spacing="10" maxWidth="400" prefWidth="400" HBox.hgrow="ALWAYS">
+                <HBox spacing="10">
+                    <Button HBox.hgrow="ALWAYS" styleClass="btnSecondary" maxWidth="Infinity"
+                            text="Add Item" />
+                    <Button HBox.hgrow="ALWAYS" styleClass="btnDangerLight"  maxWidth="Infinity"
+                            disable="true" text="Remove (0)" />
+                    <Button HBox.hgrow="ALWAYS" styleClass="btnDanger"  maxWidth="Infinity"
+                            disable="true" text="Remove All (0)" />
+                </HBox>
+                <ListView VBox.vgrow="ALWAYS" />
+            </VBox>
+            <Accordion HBox.hgrow="ALWAYS">
+                <panes>
+                    <TitledPane text="General Stats">
+                        <content>
+                            <VBox></VBox>
+                        </content>
+                    </TitledPane>
+                    <TitledPane text="About Videos" disable="true">
+                        <content>
+                            <VBox></VBox>
+                        </content>
+                    </TitledPane>
+                    <TitledPane text="About Viewers" disable="true">
+                        <content>
+                            <VBox></VBox>
+                        </content>
+                    </TitledPane>
+                    <TitledPane text="Video Query">
+                        <content>
+                            <Label text="Search and sort the videos in this group." />
+                            <!-- <fx:include source="ManageGroupsManagerVideoQuery.fxml" -->
+                        </content>
+                    </TitledPane>
+                    <TitledPane text="Viewer Query">
+                        <content>
+                            <Label text="Search and sort the commenting viewers in this group. " />
+                            <!-- <fx:include source="ManageGroupsManagerViewerQuery.fxml" -->
+                        </content>
+                    </TitledPane>
+                </panes>
+            </Accordion>
         </HBox>
     </VBox>
 
-    <!-- Overlay: Rename -->
-    <StackPane managed="false">
-
-    </StackPane>
-
     <!-- Overlay: Refresh -->
-    <StackPane managed="false">
-
-    </StackPane>
+    <OverlayModal visible="false" fx:id="refreshModal">
+        <title>
+            <String fx:value="Refresh this group" />
+        </title>
+    </OverlayModal>
 
     <!-- Overlay: Delete -->
-    <StackPane managed="false">
-
-    </StackPane>
+    <OverlayModal visible="false" fx:id="deleteModal">
+        <title>
+            <String fx:value="Delete this group" />
+        </title>
+    </OverlayModal>
 
     <!-- Overlay: Add Item -->
-    <StackPane managed="false">
-
-    </StackPane>
+    <OverlayModal visible="false" fx:id="addItemModal">
+        <title>
+            <String fx:value="Add new item" />
+        </title>
+    </OverlayModal>
 
     <!-- Overlay: Remove Item -->
-    <StackPane managed="false">
-
-    </StackPane>
+    <OverlayModal visible="false" fx:id="removeItemModal">
+        <title>
+            <String fx:value="Remove selected group items" />
+        </title>
+    </OverlayModal>
 
     <!-- Overlay: Remove All Item(s) -->
-    <StackPane managed="false">
-
-    </StackPane>
+    <OverlayModal visible="false" fx:id="removeAllModal">
+        <title>
+            <String fx:value="Remove all group items" />
+        </title>
+    </OverlayModal>
 </fx:root>

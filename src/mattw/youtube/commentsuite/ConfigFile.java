@@ -11,6 +11,7 @@ import java.io.*;
  *
  * Can take any object as long as it has fields that Gson is configured to read.
  *
+ * @author mattwright324
  * @param <T>
  */
 public class ConfigFile<T extends Object> {
@@ -71,13 +72,5 @@ public class ConfigFile<T extends Object> {
 
     public void setDataObject(T dataObject) {
         this.dataObject = dataObject;
-    }
-
-    /**
-     * Set custom Gson object to read/write json data file.
-     * @param gson
-     */
-    public void setGson(Gson gson) {
-        this.gson = gson;
     }
 }

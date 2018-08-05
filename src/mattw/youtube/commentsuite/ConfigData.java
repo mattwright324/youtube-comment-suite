@@ -18,7 +18,7 @@ public class ConfigData  {
 
     public String getDefaultApiKey() { return defaultApiKey; }
 
-    public String getYoutubeApiKey() { return youtubeApiKey; }
+    public String getYoutubeApiKey() { return customApiKey ? youtubeApiKey : defaultApiKey; }
     public void setYoutubeApiKey(String apiKey) { this.youtubeApiKey = apiKey; }
 
     public List<YouTubeAccount> getAccounts() { return accounts; }
