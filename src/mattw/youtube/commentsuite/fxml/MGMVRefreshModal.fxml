@@ -10,12 +10,13 @@
          spacing="10">
     <VBox spacing="10" HBox.hgrow="ALWAYS">
         <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"
+                    alignment="CENTER"
                     text="Warning: this could take a while!" />
         <VBox fx:id="statusPane" spacing="10">
             <HBox alignment="CENTER_LEFT" spacing="10">
                 <ImageView fx:id="endStatus" managed="false" visible="false" fitHeight="24" fitWidth="24" />
                 <ProgressIndicator fx:id="statusIndicator" maxWidth="24" maxHeight="24"/>
-                <Label styleClass="font18" text="Step 1. Grabbing Videos" />
+                <Label fx:id="statusStep" styleClass="font18" />
             </HBox>
 
             <ProgressBar fx:id="progressBar" progress="0.0" maxWidth="Infinity" />

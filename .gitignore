@@ -6,3 +6,4 @@ youtube-comment-suite.iml
 commentsuite.json
 commentsuite.sqlite3
 *.bak
+thumbs/

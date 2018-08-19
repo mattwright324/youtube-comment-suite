@@ -8,6 +8,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import mattw.youtube.commentsuite.ImageCache;
+import mattw.youtube.commentsuite.YouTubeSearchItem;
+import mattw.youtube.commentsuite.db.YouTubeObject;
 import mattw.youtube.datav3.resources.SearchList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +23,7 @@ import java.io.IOException;
  *
  * @author mattwright324
  */
-public class SearchYouTubeListItemView extends HBox implements ImageCache {
+public class SearchYouTubeListItemView extends HBox {
 
     private static Logger logger = LogManager.getLogger(SearchYouTubeListItemView.class.getName());
     private static Image loading = new Image("/mattw/youtube/commentsuite/img/loading.png");
@@ -73,22 +75,13 @@ public class SearchYouTubeListItemView extends HBox implements ImageCache {
             title.setText(data.snippet.title);
             author.setText(data.snippet.channelTitle);
             description.setText(data.snippet.description);
-            Image cachedThumb = thumbCache.getIfPresent(objectId);
-            if(cachedThumb != null) {
-                Platform.runLater(() -> {
-                    thumbnail.setFitWidth(thumbnail.getFitHeight() * cachedThumb.getWidth() / cachedThumb.getHeight());
-                    thumbnail.setImage(cachedThumb);
-                });
-            } else {
-                new Thread(() -> {
-                    Image thumb = new Image(data.snippet.thumbnails.medium.url.toString());
-                    thumbCache.put(objectId, thumb);
-                    Platform.runLater(() -> {
-                        thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
-                        thumbnail.setImage(thumb);
-                    });
-                }).start();
-            }
+
+            new Thread(() -> {
+                YouTubeSearchItem obj = new YouTubeSearchItem(data);
+                Image thumb = ImageCache.findOrGetImage(obj);
+                thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
+                thumbnail.setImage(thumb);
+            }).start();
         } else {
             title.setText("SearchList.Item Error");
             author.setText(data.etag);

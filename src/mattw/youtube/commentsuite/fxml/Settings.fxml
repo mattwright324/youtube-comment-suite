@@ -55,8 +55,8 @@
                     <Label text="General" styleClass="sectionTitle, bold" maxWidth="Infinity" />
                     <CheckBox fx:id="prefixReply" text="Prefix +{name} when replying to comments." selected="true" />
                     <CheckBox fx:id="autoLoadStats" text="Auto-load group details in group manager." selected="true" />
-                    <CheckBox fx:id="downloadThumbs" text="Download thumbnails for archiving." selected="false" />
-                    <CheckBox fx:id="customKey" text="Custom YouTube API key" selected="false" />
+                    <CheckBox fx:id="downloadThumbs" text="Download images when loaded (Offline/Archival)." selected="false" />
+                    <CheckBox fx:id="customKey" text="Custom YouTube API key:" selected="false" />
                     <TextField fx:id="youtubeApiKey" disable="true" text="AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ" />
                     <Label />
 
@@ -84,7 +84,7 @@
                         <ProgressIndicator fx:id="resetProgress" visible="false" maxWidth="25" maxHeight="25" />
                         <Button fx:id="btnReset" prefWidth="100" text="Reset" styleClass="btn, btnDanger" />
                     </HBox>
-                    <HBox alignment="CENTER_LEFT" spacing="10" disable="true">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
                         <Label text="Remove Thumbfiles"/>
                         <Label styleClass="question" text="?">
                             <tooltip><Tooltip wrapText="true" prefWidth="300" text="This will remove all downloaded thumb files. NOTE: Only relevant when the 'download thumbnails' option has been enabled."/></tooltip>

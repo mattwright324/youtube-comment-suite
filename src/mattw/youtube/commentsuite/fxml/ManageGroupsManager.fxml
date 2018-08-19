@@ -32,14 +32,14 @@
         <HBox VBox.vgrow="ALWAYS" spacing="10" alignment="TOP_CENTER">
             <VBox spacing="10" maxWidth="400" prefWidth="400" HBox.hgrow="ALWAYS">
                 <HBox spacing="10">
-                    <Button HBox.hgrow="ALWAYS" styleClass="btnSecondary" maxWidth="Infinity"
+                    <Button fx:id="btnAddItem" HBox.hgrow="ALWAYS" styleClass="btnSecondary" maxWidth="Infinity"
                             text="Add Item" />
-                    <Button HBox.hgrow="ALWAYS" styleClass="btnDangerLight"  maxWidth="Infinity"
+                    <Button fx:id="btnRemoveItems" HBox.hgrow="ALWAYS" styleClass="btnDangerLight"  maxWidth="Infinity"
                             disable="true" text="Remove (0)" />
-                    <Button HBox.hgrow="ALWAYS" styleClass="btnDanger"  maxWidth="Infinity"
+                    <Button fx:id="btnRemoveAll" HBox.hgrow="ALWAYS" styleClass="btnDanger"  maxWidth="Infinity"
                             disable="true" text="Remove All (0)" />
                 </HBox>
-                <ListView VBox.vgrow="ALWAYS" />
+                <ListView fx:id="groupItemList" VBox.vgrow="ALWAYS" />
             </VBox>
             <Accordion HBox.hgrow="ALWAYS">
                 <panes>

@@ -27,9 +27,9 @@ public class GroupItem extends YouTubeObject {
         this.published = item.snippet.publishedAt.getTime();
         this.channelTitle = item.snippet.channelTitle;
         this.lastChecked = 0;
-        if(item.id.videoId != null) typeId = 0;
-        if(item.id.channelId != null) typeId = 1;
-        if(item.id.playlistId != null) typeId = 2;
+        if(item.id.videoId != null) setTypeId(YType.VIDEO);
+        if(item.id.channelId != null) setTypeId(YType.CHANNEL);
+        if(item.id.playlistId != null) setTypeId(YType.PLAYLIST);
     }
 
     /**
@@ -44,7 +44,7 @@ public class GroupItem extends YouTubeObject {
      */
     public GroupItem(String gitemId, int typeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
         super(gitemId, title, thumbUrl, true);
-        this.typeId = typeId;
+        setTypeId(YType.values()[typeId+1]);
         this.channelTitle = channelTitle;
         this.published = published;
         this.lastChecked = lastChecked;

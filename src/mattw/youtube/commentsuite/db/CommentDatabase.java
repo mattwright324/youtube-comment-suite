@@ -7,123 +7,92 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.sqlite.SQLiteConnection;
 
-import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * @author mattwright324
+ */
 public class CommentDatabase {
 
     private static Logger logger = LogManager.getLogger(CommentDatabase.class.getSimpleName());
 
-    private final Connection con;
+    private final SQLiteConnection sqlite;
 
     private final Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
-    private final Group noGroup = new Group(Group.NO_GROUP, "No groups");
 
     public final ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
 
     private Cache<String,YouTubeChannel> channelCache = CacheBuilder.newBuilder()
-            .expireAfterAccess(15, TimeUnit.MINUTES)
+            .expireAfterAccess(5, TimeUnit.MINUTES)
             .build();
 
-    private String CREATE_DB = "ddl_create_db.sql";
-    private String RESET_DB = "ddl_reset_db.sql";
-    private String CLEAN_DB = "dml_clean_db.sql";
-    private String VACUUM_DB = "dml_vacuum_db.sql";
-    private String GET_CHANNEL_BY_ID = "dql_get_channel_by_id.sql";
-    private String GROUP_CREATE = "dml_create_group.sql";
-    private String GROUP_RENAME = "dml_rename_group.sql";
-    private String GET_ALL_GROUPS = "dql_get_all_groups.sql";
-    private String[] scripts = {CREATE_DB, RESET_DB, CLEAN_DB, VACUUM_DB, GROUP_CREATE,
-            GET_CHANNEL_BY_ID, GROUP_RENAME, GET_ALL_GROUPS};
-    private Map<String,String> sql_files = new HashMap<>();
-
-    public CommentDatabase(String dbfile) throws SQLException, ClassNotFoundException, IOException {
+    public CommentDatabase(String dbfile) throws SQLException {
         logger.debug(String.format("Initialize Database [file=%s]", dbfile));
-        Class.forName("org.sqlite.JDBC");
-        con = DriverManager.getConnection("jdbc:sqlite:"+dbfile);
-        con.setAutoCommit(false);
-
-        logger.debug("Loading SQL Files");
-        String basePath = "/mattw/youtube/commentsuite/db/sql/";
-        for(String key : scripts) {
-            try {
-                String line;
-                StringBuilder sb = new StringBuilder();
-                try(InputStreamReader isr = new InputStreamReader(getClass().getResource(basePath+key).openStream());
-                    BufferedReader br = new BufferedReader(isr)) {
-                    while((line = br.readLine()) != null) {
-                        sb.append(line);
-                    }
-                    sql_files.put(key, sb.toString());
-                }
-            } catch (IOException e) {
-                logger.error(String.format("Failed to load resource sql file [fileKey=%s]", key));
-                throw e;
-            }
-        }
-
+        sqlite = new SQLiteConnection("./", dbfile);
+        sqlite.setAutoCommit(false);
         this.create();
     }
 
     public Connection getConnection() {
-        return con;
+        return sqlite;
     }
 
     public void commit() throws SQLException {
         logger.debug("Committing.");
-        con.commit();
+        sqlite.commit();
     }
 
-    public void create() throws SQLException {
+    private void create() throws SQLException {
         logger.debug("Creating tables if not exists.");
-        Statement statement = con.createStatement();
-        statement.executeUpdate(sql_files.get(CREATE_DB));
+        Statement statement = sqlite.createStatement();
+        statement.executeUpdate(SQLLoader.CREATE_DB.toString());
         statement.close();
         this.commit();
     }
 
     public void reset() throws SQLException {
         logger.warn("Dropping all database contents. This cannot be undone.");
-        Statement statement = con.createStatement();
-        statement.executeUpdate(sql_files.get(RESET_DB));
+        Statement statement = sqlite.createStatement();
+        statement.executeUpdate(SQLLoader.RESET_DB.toString());
         statement.close();
         this.commit();
         this.vacuum();
         this.create();
     }
 
-    public void vacuum() throws SQLException {
+    private void vacuum() throws SQLException {
         logger.warn("Vacuuming database. This may take a long time.");
-        con.setAutoCommit(true);
-        Statement s = con.createStatement();
-        s.execute(sql_files.get(VACUUM_DB));
+        sqlite.setAutoCommit(true);
+        Statement s = sqlite.createStatement();
+        s.execute(SQLLoader.VACUUM_DB.toString());
         s.close();
-        con.setAutoCommit(false);
+        sqlite.setAutoCommit(false);
     }
 
     public void cleanUp() throws SQLException {
         logger.warn("Cleaning database of unlinked content.");
-        Statement s = con.createStatement();
-        s.executeUpdate(sql_files.get(CLEAN_DB));
+        Statement s = sqlite.createStatement();
+        s.executeUpdate(SQLLoader.CLEAN_DB.toString());
         s.close();
         commit();
         vacuum();
     }
 
-    /**
+    /*/**
      * Attempts to get cached channel or from database to cache it.
      * Grabs from youtube is both fail.
      */
-    public YouTubeChannel getChannel(String channelId) {
+    /*public YouTubeChannel getChannel(String channelId) {
         YouTubeChannel channel = channelCache.getIfPresent(channelId);
         if(channel != null) {
             return channel;
         }
-        try (PreparedStatement ps = con.prepareStatement(sql_files.get(GET_CHANNEL_BY_ID))) {
+        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_CHANNEL_BY_ID.toString())) {
             ps.setString(1, channelId);
             ResultSet rs = ps.executeQuery();
             if(rs.next()) {
@@ -136,7 +105,7 @@ public class CommentDatabase {
             } else {
                 // TODO: Move this out of CommentDatabase.
                 try {
-                    /*ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
+                    ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
                     if(cl.hasItems()) {
                         List<YouTubeChannel> list = new ArrayList<>();
                         channel = new YouTubeChannel(cl.items[0], false);
@@ -144,7 +113,7 @@ public class CommentDatabase {
                         insertChannels(list);
                         commit();
                         return channel;
-                    }*/
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -153,7 +122,7 @@ public class CommentDatabase {
             e.printStackTrace();
         }
         return null;
-    }
+    }*/
 
     /**
      * Checks if the channel is cached and caches it if not.
@@ -167,8 +136,8 @@ public class CommentDatabase {
      */
     public void refreshGroups() throws SQLException {
         logger.debug("Grabbing groups and refreshing global group list.");
-        Statement s = con.createStatement();
-        ResultSet rs = s.executeQuery(sql_files.get(GET_ALL_GROUPS));
+        Statement s = sqlite.createStatement();
+        ResultSet rs = s.executeQuery(SQLLoader.GET_ALL_GROUPS.toString());
         List<Group> groups = new ArrayList<>();
         while(rs.next()) {
             Group group = resultSetToGroup(rs);
@@ -189,7 +158,7 @@ public class CommentDatabase {
         }
         if(groups.isEmpty()) {
             System.out.println("INSERTING Default Group");
-            s.executeUpdate("INSERT INTO groups (group_id, group_name) VALUES ('28da132f5f5b48d881264d892aba790a', 'Default');");
+            s.executeUpdate(SQLLoader.GROUP_CREATE_DEFAULT.toString());
             commit();
             Platform.runLater(() -> globalGroupList.add(defaultGroup));
         }
@@ -255,7 +224,7 @@ public class CommentDatabase {
     public List<GroupItem> getGroupItems(Group g) {
         List<GroupItem> items = new ArrayList<>();
         try {
-            PreparedStatement ps = con.prepareStatement("SELECT * FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+            PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
             ps.setString(1, g.getId());
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
@@ -277,7 +246,7 @@ public class CommentDatabase {
         Group group = new Group(name);
         logger.debug(String.format("Created Group [id=%s,name=%s]", group.getId(), name));
 
-        PreparedStatement ps = con.prepareStatement(sql_files.get(GROUP_CREATE));
+        PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GROUP_CREATE.toString());
         ps.setString(1, group.getId());
         ps.setString(2, group.getName());
         ps.executeUpdate();
@@ -296,7 +265,7 @@ public class CommentDatabase {
     public void renameGroup(Group g, String newName) throws SQLException {
         if(!g.getName().equals(newName)) {
             logger.debug(String.format("Renaming Group [id=%s,name=%s,newName=%s]", g.getId(), g.getName(), newName));
-            PreparedStatement ps = con.prepareStatement(sql_files.get(GROUP_RENAME));
+            PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GROUP_RENAME.toString());
             ps.setString(1, newName);
             ps.setString(2, g.getId());
             ps.executeUpdate();
@@ -312,7 +281,7 @@ public class CommentDatabase {
      * Recommended to run cleanUp() afterwards.
      */
     public void deleteGroup(Group g) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("DELETE FROM groups WHERE group_id = ?");
+        PreparedStatement ps = sqlite.prepareStatement("DELETE FROM groups WHERE group_id = ?");
         ps.setString(1, g.getId());
         ps.executeUpdate();
         ps.close();
@@ -323,11 +292,11 @@ public class CommentDatabase {
      * Could create links to the same GroupItem to multiple Group(s).
      */
     public void insertGroupItems(Group g, List<GroupItem> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO gitem_list (gitem_id, type_id, title, channel_title, published, last_checked, thumb_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        PreparedStatement ps2 = con.prepareStatement("INSERT OR IGNORE INTO group_gitem (group_id, gitem_id) VALUES (?, ?)");
+        PreparedStatement ps = sqlite.prepareStatement("INSERT OR IGNORE INTO gitem_list (gitem_id, type_id, title, channel_title, published, last_checked, thumb_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        PreparedStatement ps2 = sqlite.prepareStatement("INSERT OR IGNORE INTO group_gitem (group_id, gitem_id) VALUES (?, ?)");
         for(GroupItem gi : items) {
-            ps.setString(1, gi.getYouTubeId());
-            ps.setInt(2, gi.typeId);
+            ps.setString(1, gi.getYoutubeId());
+            ps.setInt(2, gi.getTypeId().id());
             ps.setString(3, gi.getTitle());
             ps.setString(4, gi.getChannelTitle());
             ps.setLong(5, gi.getPublished());
@@ -335,7 +304,7 @@ public class CommentDatabase {
             ps.setString(7, gi.getThumbUrl());
             ps.addBatch();
             ps2.setString(1, g.getId());
-            ps2.setString(2, gi.getYouTubeId());
+            ps2.setString(2, gi.getYoutubeId());
             ps2.addBatch();
         }
         ps.executeBatch();
@@ -348,9 +317,9 @@ public class CommentDatabase {
      * Updates gitem_list with set lastChecked values.
      */
     public void updateGroupItemLastChecked(GroupItem item) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("UPDATE gitem_list SET last_checked = ? WHERE gitem_id = ?");
+        PreparedStatement ps = sqlite.prepareStatement("UPDATE gitem_list SET last_checked = ? WHERE gitem_id = ?");
         ps.setLong(1, System.currentTimeMillis());
-        ps.setString(2, item.getYouTubeId());
+        ps.setString(2, item.getYoutubeId());
         ps.executeUpdate();
         ps.close();
     }
@@ -360,9 +329,9 @@ public class CommentDatabase {
      * Recommended to run cleanUp() afterwards.
      */
     public void deleteGroupItemLinks(Group group, List<GroupItem> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("DELETE FROM group_gitem WHERE gitem_id = ? AND group_id = ?");
+        PreparedStatement ps = sqlite.prepareStatement("DELETE FROM group_gitem WHERE gitem_id = ? AND group_id = ?");
         for(GroupItem gi : items) {
-            ps.setString(1, gi.getYouTubeId());
+            ps.setString(1, gi.getYoutubeId());
             ps.setString(2, group.getId());
             ps.addBatch();
         }
@@ -374,9 +343,9 @@ public class CommentDatabase {
      * Inserts comments for group refreshing.
      */
     public void insertComments(List<YouTubeComment> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO comments (comment_id, channel_id, video_id, comment_date, comment_text, comment_likes, reply_count, is_reply, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        PreparedStatement ps = sqlite.prepareStatement("INSERT OR IGNORE INTO comments (comment_id, channel_id, video_id, comment_date, comment_text, comment_likes, reply_count, is_reply, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         for(YouTubeComment ct : items) {
-            ps.setString(1, ct.getYouTubeId());
+            ps.setString(1, ct.getYoutubeId());
             ps.setString(2, ct.getChannelId());
             ps.setString(3, ct.getVideoId());
             ps.setLong(4, ct.getDate().getTime());
@@ -396,7 +365,7 @@ public class CommentDatabase {
      * Used for group refresh.
      */
     public List<String> getCommentIds(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT comment_id FROM comments JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT comment_id FROM comments JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         List<String> list = new ArrayList<>();
@@ -412,9 +381,9 @@ public class CommentDatabase {
      * Insert videos for group refreshing.
      */
     public void insertVideos(List<YouTubeVideo> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("INSERT INTO videos (video_id, channel_id, grab_date, publish_date, video_title, total_comments, total_views, total_likes, total_dislikes, video_desc, thumb_url, http_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+        PreparedStatement ps = sqlite.prepareStatement("INSERT INTO videos (video_id, channel_id, grab_date, publish_date, video_title, total_comments, total_views, total_likes, total_dislikes, video_desc, thumb_url, http_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
         for(YouTubeVideo video : items) {
-            ps.setString(1, video.getYouTubeId());
+            ps.setString(1, video.getYoutubeId());
             ps.setString(2, video.getChannelId());
             ps.setLong(3, video.getLastGrabDate());
             ps.setLong(4, video.getPublishedDate());
@@ -437,7 +406,7 @@ public class CommentDatabase {
      * Used for group refreshing.
      */
     public List<String> getAllVideoIds() throws SQLException {
-        Statement s = con.createStatement();
+        Statement s = sqlite.createStatement();
         ResultSet rs = s.executeQuery("SELECT DISTINCT video_id FROM videos");
         List<String> ids = new ArrayList<>();
         while(rs.next()) {
@@ -453,7 +422,7 @@ public class CommentDatabase {
      * Used for group refeshing.
      */
     public List<String> getVideoIds(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT video_id FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT video_id FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY publish_date DESC");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         List<String> list = new ArrayList<>();
@@ -467,7 +436,7 @@ public class CommentDatabase {
 
 
     public YouTubeVideo getVideo(String videoId) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos WHERE video_id = ? LIMIT 1");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM videos WHERE video_id = ? LIMIT 1");
         ps.setString(1, videoId);
         ResultSet rs = ps.executeQuery();
         YouTubeVideo video = null;
@@ -480,9 +449,9 @@ public class CommentDatabase {
     }
 
     public List<YouTubeVideo> getVideos(GroupItem gitem, String keyword, String order, int limit) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video WHERE gitem_id = ?) " +
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video WHERE gitem_id = ?) " +
                 "AND video_title LIKE ? ORDER BY "+order+" LIMIT ?");
-        ps.setString(1, gitem.getYouTubeId());
+        ps.setString(1, gitem.getYoutubeId());
         ps.setString(2, "%"+keyword+"%");
         ps.setInt(3,limit);
         ResultSet rs = ps.executeQuery();
@@ -496,7 +465,7 @@ public class CommentDatabase {
     }
 
     public List<YouTubeVideo> getVideos(Group group, String keyword, String order, int limit) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video LEFT JOIN group_gitem USING (gitem_id) WHERE group_id = ?) " +
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video LEFT JOIN group_gitem USING (gitem_id) WHERE group_id = ?) " +
                 "AND video_title LIKE ? ORDER BY "+order+" LIMIT ?");
         ps.setString(1, group.getId());
         ps.setString(2, "%"+keyword+"%");
@@ -515,7 +484,7 @@ public class CommentDatabase {
      * Updates video data for group refreshing.
      */
     public void updateVideos(List<YouTubeVideo> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("UPDATE videos SET grab_date = ?, video_title = ?, total_comments = ?, total_views = ?, total_likes = ?, total_dislikes = ?, video_desc = ?, thumb_url = ? "
+        PreparedStatement ps = sqlite.prepareStatement("UPDATE videos SET grab_date = ?, video_title = ?, total_comments = ?, total_views = ?, total_likes = ?, total_dislikes = ?, video_desc = ?, thumb_url = ? "
                 + "WHERE video_id = ?");
         for(YouTubeVideo video : items) {
             ps.setLong(1, video.getLastGrabDate());
@@ -526,7 +495,7 @@ public class CommentDatabase {
             ps.setLong(6, video.getDislikes());
             ps.setString(7, video.getDescription());
             ps.setString(8, video.getThumbUrl());
-            ps.setString(9, video.getYouTubeId());
+            ps.setString(9, video.getYoutubeId());
             ps.addBatch();
         }
         ps.executeBatch();
@@ -537,7 +506,7 @@ public class CommentDatabase {
      * Updates http code for group refreshing.
      */
     public void updateVideoHttpCode(String videoId, int httpCode) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("UPDATE videos SET http_code = ? WHERE video_id = ?");
+        PreparedStatement ps = sqlite.prepareStatement("UPDATE videos SET http_code = ? WHERE video_id = ?");
         ps.setInt(1, httpCode);
         ps.setString(2, videoId);
         ps.executeUpdate();
@@ -549,7 +518,7 @@ public class CommentDatabase {
      * Threads with different reply counts are rechecked.
      */
     public Map<String,Integer> getCommentThreadReplyCounts(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT comment_id, db_replies FROM comments JOIN (SELECT parent_id, COUNT(parent_id) AS db_replies FROM comments WHERE parent_id NOT NULL AND is_reply = 1 GROUP BY parent_id) AS cc ON cc.parent_id = comment_id JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE is_reply = ? AND group_id = ?");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT comment_id, db_replies FROM comments JOIN (SELECT parent_id, COUNT(parent_id) AS db_replies FROM comments WHERE parent_id NOT NULL AND is_reply = 1 GROUP BY parent_id) AS cc ON cc.parent_id = comment_id JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE is_reply = ? AND group_id = ?");
         ps.setBoolean(1, false);
         ps.setString(2, group.getId());
         ResultSet rs = ps.executeQuery();
@@ -566,12 +535,12 @@ public class CommentDatabase {
      * Insert channels for group refreshing.
      */
     public void insertChannels(List<YouTubeChannel> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("INSERT OR IGNORE INTO channels (channel_id, channel_name, channel_profile_url, download_profile) VALUES (?, ?, ?, ?)");
+        PreparedStatement ps = sqlite.prepareStatement("INSERT OR IGNORE INTO channels (channel_id, channel_name, channel_profile_url, download_profile) VALUES (?, ?, ?, ?)");
         for(YouTubeChannel c : items) {
-            ps.setString(1, c.getYouTubeId());
+            ps.setString(1, c.getYoutubeId());
             ps.setString(2, c.getTitle());
             ps.setString(3, c.getThumbUrl());
-            ps.setBoolean(4, c.fetchThumb());
+            ps.setBoolean(4, c.isFetchThumb());
             ps.addBatch();
         }
         ps.executeBatch();
@@ -582,12 +551,12 @@ public class CommentDatabase {
      * Updates channels for group refreshing.
      */
     public void updateChannels(List<YouTubeChannel> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("UPDATE channels SET channel_name = ?, channel_profile_url = ?, download_profile = ? WHERE channel_id = ?");
+        PreparedStatement ps = sqlite.prepareStatement("UPDATE channels SET channel_name = ?, channel_profile_url = ?, download_profile = ? WHERE channel_id = ?");
         for(YouTubeChannel c : items) {
             ps.setString(1, c.getTitle());
             ps.setString(2, c.getThumbUrl());
-            ps.setBoolean(3, c.fetchThumb());
-            ps.setString(4, c.getYouTubeId());
+            ps.setBoolean(3, c.isFetchThumb());
+            ps.setString(4, c.getYoutubeId());
             ps.addBatch();
         }
         ps.executeBatch();
@@ -598,7 +567,7 @@ public class CommentDatabase {
      * Checks if exists and caches it if it does.
      */
     public boolean channelExists(String channelId) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM channels WHERE channel_id = ? LIMIT 1");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM channels WHERE channel_id = ? LIMIT 1");
         ps.setString(1, channelId);
         ResultSet rs = ps.executeQuery();
         boolean exists = false;
@@ -615,7 +584,7 @@ public class CommentDatabase {
      * Returns all channel ids for group refreshing.
      */
     public List<String> getAllChannelIds() throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT channel_id FROM channels");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT channel_id FROM channels");
         ResultSet rs = ps.executeQuery();
         List<String> list = new ArrayList<>();
         while(rs.next()) {
@@ -630,7 +599,7 @@ public class CommentDatabase {
      * Inserts to gitem_video for group refreshing.
      */
     public void insertGroupItemVideo(List<GroupItemVideo> items) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("INSERT INTO gitem_video (gitem_id, video_id) VALUES (?, ?)");
+        PreparedStatement ps = sqlite.prepareStatement("INSERT INTO gitem_video (gitem_id, video_id) VALUES (?, ?)");
         for(GroupItemVideo vg : items) {
             ps.setString(1, vg.gitemId);
             ps.setString(2, vg.videoId);
@@ -644,7 +613,7 @@ public class CommentDatabase {
      * Gets all gitem_video for group refreshing.
      */
     public List<GroupItemVideo> getAllGroupItemVideo() throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * from gitem_video");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * from gitem_video");
         ResultSet rs = ps.executeQuery();
         List<GroupItemVideo> list = new ArrayList<>();
         while(rs.next()) {
@@ -746,12 +715,12 @@ public class CommentDatabase {
             Map<String,Object> map = new HashMap<>();
             if(gitem != null) {
                 query += "(SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE gitem_id = :gitem ) ";
-                map.put("gitem", gitem.getYouTubeId());
+                map.put("gitem", gitem.getYoutubeId());
             } else if(videos != null) {
                 List<String> vl = new ArrayList<>();
                 for(int i=0; i<videos.size(); i++) {
                     vl.add(":v"+i);
-                    map.put("v"+i,videos.get(i).getYouTubeId());
+                    map.put("v"+i,videos.get(i).getYoutubeId());
                 }
                 query += "("+vl.stream().collect(Collectors.joining(","))+") ";
             } else {
@@ -765,7 +734,7 @@ public class CommentDatabase {
             map.put("datebefore", new Long(before));
             if(ctype != 0) map.put("isreply", Boolean.valueOf(ctype == 2));
             System.out.println(query);
-            NamedParameterStatement nps = new NamedParameterStatement(con, query);
+            NamedParameterStatement nps = new NamedParameterStatement(sqlite, query);
             for(String key : map.keySet()) {
                 Object value = map.get(key);
                 if(value instanceof Integer) {
@@ -802,7 +771,7 @@ public class CommentDatabase {
      * Returns all of the comments associated with a comment parentId.
      */
     public List<YouTubeComment> getCommentTree(String parentId) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM comments JOIN channels USING (channel_id) WHERE comment_id = ? OR parent_id = ? ORDER BY is_reply ASC, comment_date ASC");
+        PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENT_TREE.toString());
         ps.setString(1, parentId);
         ps.setString(2, parentId);
         ResultSet rs = ps.executeQuery();
@@ -821,7 +790,7 @@ public class CommentDatabase {
     public long getLastChecked(Group group) {
         long checked = Long.MAX_VALUE;
         try {
-            PreparedStatement ps = con.prepareStatement("SELECT MAX(last_checked) AS checked FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
+            PreparedStatement ps = sqlite.prepareStatement("SELECT MAX(last_checked) AS checked FROM gitem_list JOIN group_gitem USING (gitem_id) WHERE group_id = ?");
             ps.setString(1, group.getId());
             ResultSet rs = ps.executeQuery();
             if(rs.next()) {
@@ -834,7 +803,7 @@ public class CommentDatabase {
     }
 
     public Map<Long,Long> getWeekByWeekCommentHistogram(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT CAST(comment_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY week ORDER BY week");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT CAST(comment_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY week ORDER BY week");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         Map<Long,Long> data = new LinkedHashMap<>();
@@ -847,7 +816,7 @@ public class CommentDatabase {
     }
 
     public long getTotalComments(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT COUNT(*) AS count FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         long totalComments = 0;
@@ -860,7 +829,7 @@ public class CommentDatabase {
     }
 
     public long getTotalLikes(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT SUM(comment_likes) AS total_likes FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT SUM(comment_likes) AS total_likes FROM comments WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         long totalLikes = 0;
@@ -873,7 +842,7 @@ public class CommentDatabase {
     }
 
     public long getTotalVideos(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT COUNT(video_id) AS count FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT COUNT(video_id) AS count FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         long totalVideos = 0;
@@ -886,7 +855,7 @@ public class CommentDatabase {
     }
 
     public long getTotalViews(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT SUM(total_views) AS total_views FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT SUM(total_views) AS total_views FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?)");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         long totalViews = 0;
@@ -899,7 +868,7 @@ public class CommentDatabase {
     }
 
     public Map<Long,Long> getWeekByWeekVideoHistogram(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT CAST(publish_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY week ORDER BY week");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT CAST(publish_date/604800000.00 AS INTEGER)*604800000 AS week, count(*) AS count FROM videos WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY week ORDER BY week");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         Map<Long,Long> data = new LinkedHashMap<>();
@@ -913,7 +882,7 @@ public class CommentDatabase {
 
 
     public LinkedHashMap<YouTubeChannel,Long> getMostActiveViewers(Group group, int limit) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT *, count(channel_id) AS count, MAX(comment_date) AS last_comment_on FROM channels JOIN comments USING (channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY channel_id ORDER BY count DESC LIMIT ?");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT *, count(channel_id) AS count, MAX(comment_date) AS last_comment_on FROM channels JOIN comments USING (channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY channel_id ORDER BY count DESC LIMIT ?");
         ps.setString(1, group.getId());
         ps.setInt(2, limit);
         ResultSet rs = ps.executeQuery();
@@ -928,7 +897,7 @@ public class CommentDatabase {
     }
 
     public LinkedHashMap<YouTubeChannel,Long> getMostPopularViewers(Group group, int limit) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT *, SUM(comment_likes) AS total_likes, MAX(comment_date) AS last_comment_on FROM channels JOIN comments USING (channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY channel_id ORDER BY total_likes DESC LIMIT ?");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT *, SUM(comment_likes) AS total_likes, MAX(comment_date) AS last_comment_on FROM channels JOIN comments USING (channel_id) WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) GROUP BY channel_id ORDER BY total_likes DESC LIMIT ?");
         ps.setString(1, group.getId());
         ps.setInt(2, limit);
         ResultSet rs = ps.executeQuery();
@@ -943,7 +912,7 @@ public class CommentDatabase {
     }
 
     public List<YouTubeVideo> getMostPopularVideos(Group group, int limit) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_views DESC LIMIT ?");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_views DESC LIMIT ?");
         ps.setString(1, group.getId());
         ps.setInt(2, limit);
         ResultSet rs = ps.executeQuery();
@@ -957,7 +926,7 @@ public class CommentDatabase {
     }
 
     public List<YouTubeVideo> getMostDislikedVideos(Group group, int limit) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_dislikes DESC LIMIT ?");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_dislikes DESC LIMIT ?");
         ps.setString(1, group.getId());
         ps.setInt(2, limit);
         ResultSet rs = ps.executeQuery();
@@ -971,7 +940,7 @@ public class CommentDatabase {
     }
 
     public List<YouTubeVideo> getMostCommentedVideos(Group group, int limit) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_comments DESC LIMIT ?");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) ORDER BY total_comments DESC LIMIT ?");
         ps.setString(1, group.getId());
         ps.setInt(2, limit);
         ResultSet rs = ps.executeQuery();
@@ -985,7 +954,7 @@ public class CommentDatabase {
     }
 
     public List<YouTubeVideo> getDisabledVideos(Group group) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) AND http_code = 403 ORDER BY publish_date DESC");
+        PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM videos  WHERE video_id IN (SELECT video_id FROM gitem_video JOIN group_gitem USING (gitem_id) WHERE group_id = ?) AND http_code = 403 ORDER BY publish_date DESC");
         ps.setString(1, group.getId());
         ResultSet rs = ps.executeQuery();
         List<YouTubeVideo> list = new ArrayList<>();

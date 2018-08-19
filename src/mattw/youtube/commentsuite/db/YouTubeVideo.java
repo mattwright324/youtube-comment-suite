@@ -2,6 +2,10 @@ package mattw.youtube.commentsuite.db;
 
 import mattw.youtube.datav3.resources.VideosList;
 
+/**
+ * Wrapper for
+ * @author mattwright324
+ */
 public class YouTubeVideo extends YouTubeObject {
 
     private String channelId;
@@ -12,7 +16,7 @@ public class YouTubeVideo extends YouTubeObject {
 
     public YouTubeVideo(VideosList.Item itemSnip, VideosList.Item itemStat) {
         super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.medium.url.toString(), true);
-        this.typeId = 0;
+        setTypeId(YType.VIDEO);
         this.channelId = itemSnip.snippet.channelId;
         this.description = itemSnip.snippet.description;
         this.publishDate = itemSnip.snippet.publishedAt.getTime();
@@ -28,7 +32,7 @@ public class YouTubeVideo extends YouTubeObject {
      */
     public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long publishDate, long grabDate, long comments, long likes, long dislikes, long views, int httpCode) {
         super(videoId, title, thumbUrl, false);
-        this.typeId = 0;
+        setTypeId(YType.VIDEO);
         this.channelId = channelId;
         this.description = description;
         this.publishDate = publishDate;

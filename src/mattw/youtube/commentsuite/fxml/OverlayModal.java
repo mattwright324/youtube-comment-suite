@@ -17,6 +17,7 @@ import java.io.IOException;
 public class OverlayModal<T extends Node> extends StackPane {
 
     @FXML Label title;
+    @FXML Label divider;
     @FXML StackPane content;
     @FXML VBox modalContainer;
 
@@ -38,6 +39,11 @@ public class OverlayModal<T extends Node> extends StackPane {
     public void setContent(T content) {
         this.content.getChildren().clear();
         this.content.getChildren().add(content);
+    }
+
+    public void setDividerClass(String cssClass) {
+        divider.getStyleClass().clear();
+        divider.getStyleClass().add(cssClass);
     }
 
     public T getContent() {

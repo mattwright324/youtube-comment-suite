@@ -58,7 +58,7 @@ public class FXMLSuite extends Application {
                 System.exit(0);
             });
             stage.show();
-        } catch (IOException | SQLException | ClassNotFoundException e) {
+        } catch (IOException | SQLException e) {
             logger.error(e);
             Platform.exit();
             System.exit(0);

@@ -2,6 +2,7 @@ package mattw.youtube.commentsuite.fxml;
 
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
@@ -16,12 +17,15 @@ import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.db.Group;
+import mattw.youtube.commentsuite.db.GroupItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * Manages a specific group; refreshing, stats, renaming, deletion, adding group items, etc.
@@ -47,6 +51,10 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
     @FXML OverlayModal addItemModal;
     @FXML OverlayModal removeItemModal;
     @FXML OverlayModal removeAllModal;
+    @FXML Button btnAddItem;
+    @FXML Button btnRemoveItems;
+    @FXML Button btnRemoveAll;
+    @FXML ListView<MGMVGroupItemView> groupItemList;
 
     @FXML TextField groupTitle;
     @FXML ImageView editIcon;
@@ -114,6 +122,34 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
             });
         }).start());
 
+        SelectionModel selectionModel = groupItemList.getSelectionModel();
+        ((MultipleSelectionModel) selectionModel).setSelectionMode(SelectionMode.MULTIPLE);
+        ((MultipleSelectionModel) selectionModel).getSelectedItems().addListener((ListChangeListener)(lcl) -> {
+            Platform.runLater(() -> {
+                int items = lcl.getList().size();
+                btnRemoveItems.setText(String.format("Remove (%s)", items));
+                btnRemoveItems.setDisable(items <= 0);
+            });
+        });
+        groupItemList.getItems().addListener((ListChangeListener)(lcl) -> {
+           Platform.runLater(() -> {
+               int items = lcl.getList().size();
+               btnRemoveAll.setText(String.format("Remove All (%s)", items));
+               btnRemoveAll.setDisable(items <= 0);
+           });
+        });
+
+        new Thread(() -> {
+            logger.debug("[Load] Loading details...");
+            logger.debug("[Load] Grabbing GroupItems");
+            List<GroupItem> groupItems = database.getGroupItems(this.group);
+            List<MGMVGroupItemView> groupItemViews = groupItems.stream()
+                    .map(MGMVGroupItemView::new).collect(Collectors.toList());
+            logger.debug("[Load] Found "+groupItems.size()+" GroupItem(s)");
+            Platform.runLater(() -> {
+               groupItemList.getItems().addAll(groupItemViews);
+            });
+        }).start();
 
         /**
          * Refresh Modal
@@ -137,6 +173,10 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
          * Delete Modal
          */
         MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal(group);
+        deleteModal.setContent(mgmvDelete);
+        deleteModal.setDividerClass("horizontalDividerRed");
+        btnDelete.setOnAction(ae -> Platform.runLater(() -> deleteModal.setVisible(true)));
+        mgmvDelete.getBtnClose().setOnAction(ae -> deleteModal.setVisible(false));
     }
 
     /**

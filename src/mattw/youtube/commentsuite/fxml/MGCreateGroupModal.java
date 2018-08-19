@@ -11,17 +11,17 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
-public class ManageGroupsCreateGroupModal extends VBox {
+public class MGCreateGroupModal extends VBox {
 
-    private static Logger logger = LogManager.getLogger(ManageGroupsCreateGroupModal.class.getName());
+    private static Logger logger = LogManager.getLogger(MGCreateGroupModal.class.getName());
 
     @FXML Label errorMsg;
     @FXML TextField nameField;
     @FXML Button btnClose;
     @FXML Button btnCreate;
 
-    public ManageGroupsCreateGroupModal() {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("ManageGroupsCreateGroupModal.fxml"));
+    public MGCreateGroupModal() {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("MGCreateGroupModal.fxml"));
         loader.setController(this);
         loader.setRoot(this);
         try {

@@ -70,7 +70,7 @@ public class GroupRefresh extends Thread {
     }
 
     private boolean listHasId(List<? extends YouTubeObject> list, String id) {
-        return list.stream().anyMatch(yo -> yo.getYouTubeId().equals(id));
+        return list.stream().anyMatch(yo -> yo.getYoutubeId().equals(id));
     }
 
     private void clearLists(Collection... lists) {
@@ -109,9 +109,9 @@ public class GroupRefresh extends Thread {
             existingGroupItems.addAll(database.getGroupItems(group));
             existingGIV.addAll(database.getAllGroupItemVideo());
 
-            List<GroupItem> videoItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == GroupItem.VIDEO).collect(Collectors.toList());
-            List<GroupItem> playlistItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == GroupItem.PLAYLIST).collect(Collectors.toList());
-            List<GroupItem> channelItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == GroupItem.CHANNEL).collect(Collectors.toList());
+            List<GroupItem> videoItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == YType.VIDEO).collect(Collectors.toList());
+            List<GroupItem> playlistItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == YType.PLAYLIST).collect(Collectors.toList());
+            List<GroupItem> channelItems = existingGroupItems.stream().filter(gi -> gi.getTypeId() == YType.CHANNEL).collect(Collectors.toList());
 
             System.out.println(String.format("VideoItems %s, PlaylistItems %s, ChannelItems %s", videoItems.size(), playlistItems.size(), channelItems.size()));
 
@@ -213,7 +213,7 @@ public class GroupRefresh extends Thread {
             }
             for(int i=0; i<items.size(); i+=50) {
                 sublist = items.subList(i, i+50 < items.size() ? i+50 : items.size())
-                        .stream().map(YouTubeObject::getYouTubeId).collect(Collectors.toList());
+                        .stream().map(YouTubeObject::getYoutubeId).collect(Collectors.toList());
                 System.out.println("GroupItem Videos: "+sublist.toString());
                 handleVideos(sublist, "");
             }
@@ -221,16 +221,16 @@ public class GroupRefresh extends Thread {
             for(GroupItem item : items) {
                 database.updateGroupItemLastChecked(item);
                 System.out.println("GroupItem Playlist: "+item.getTitle());
-                handlePlaylist(item.getYouTubeId(), item.getYouTubeId());
+                handlePlaylist(item.getYoutubeId(), item.getYoutubeId());
             }
         } else if(type == GroupItem.CHANNEL) {
             for(GroupItem item : items) {
                 database.updateGroupItemLastChecked(item);
                 System.out.println("GroupItem Channel: "+item.getTitle());
-                ChannelsList cl = youtube.channelsList().getByChannel(ChannelsList.PART_CONTENT_DETAILS, item.getYouTubeId(), "");
+                ChannelsList cl = youtube.channelsList().getByChannel(ChannelsList.PART_CONTENT_DETAILS, item.getYoutubeId(), "");
                 if(cl.hasItems() && cl.items[0].hasContentDetails()) {
                     String uploadPlaylistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
-                    handlePlaylist(uploadPlaylistId, item.getYouTubeId());
+                    handlePlaylist(uploadPlaylistId, item.getYoutubeId());
                 }
             }
         }
@@ -268,14 +268,14 @@ public class GroupRefresh extends Thread {
         for(int i=0; i<vlSnippet.items.length; i++) {
             YouTubeVideo video = new YouTubeVideo(vlSnippet.items[i], vlStats.items[i]);
             checkChannel(video.getChannelId(), null);
-            CommentDatabase.GroupItemVideo giv = new CommentDatabase.GroupItemVideo(gitemId.equals("") ? video.getYouTubeId() : gitemId, video.getYouTubeId());
+            CommentDatabase.GroupItemVideo giv = new CommentDatabase.GroupItemVideo(gitemId.equals("") ? video.getYoutubeId() : gitemId, video.getYoutubeId());
             if(!existingGIV.contains(giv)) { givInsert.add(giv); }
-            if(!(existingVideoIds.contains(video.getYouTubeId()) || listHasId(videoInsert, video.getYouTubeId()) || listHasId(videoUpdate, video.getYouTubeId()))) {
+            if(!(existingVideoIds.contains(video.getYoutubeId()) || listHasId(videoInsert, video.getYoutubeId()) || listHasId(videoUpdate, video.getYoutubeId()))) {
                 videoInsert.add(video);
-                System.out.format("INSERT %s: %s\r\n", video.getYouTubeId(), video.getTitle());
-            } else if(existingVideoIds.contains(video.getYouTubeId()) && !listHasId(videoUpdate, video.getYouTubeId())) {
+                System.out.format("INSERT %s: %s\r\n", video.getYoutubeId(), video.getTitle());
+            } else if(existingVideoIds.contains(video.getYoutubeId()) && !listHasId(videoUpdate, video.getYoutubeId())) {
                 videoUpdate.add(video);
-                System.out.format("UPDATE %s: %s\r\n", video.getYouTubeId(), video.getTitle());
+                System.out.format("UPDATE %s: %s\r\n", video.getYoutubeId(), video.getTitle());
             }
         }
     }

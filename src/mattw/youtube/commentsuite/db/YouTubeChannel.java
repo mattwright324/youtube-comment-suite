@@ -8,17 +8,17 @@ public class YouTubeChannel extends YouTubeObject {
 
     public YouTubeChannel(String channelId, String name, String thumbUrl, boolean fetchThumb) {
         super(channelId, name, thumbUrl, fetchThumb);
-        this.typeId = 1;
+        setTypeId(YType.CHANNEL);
     }
 
     public YouTubeChannel(ChannelsList.Item item, boolean fetchThumb) {
         super(item.getId(), StringEscapeUtils.unescapeHtml4(item.snippet.title), item.snippet.thumbnails.default_thumb.url.toString(), fetchThumb);
-        this.typeId = 1;
+        setTypeId(YType.CHANNEL);
     }
 
     public YouTubeChannel(CommentsList.Item item, boolean fetchThumb) {
         this(item.snippet.authorChannelId.value, StringEscapeUtils.unescapeHtml4(item.snippet.authorDisplayName), item.snippet.authorProfileImageUrl, fetchThumb);
-        this.typeId = 1;
+        setTypeId(YType.CHANNEL);
     }
 
     public String toString() { return getTitle(); }

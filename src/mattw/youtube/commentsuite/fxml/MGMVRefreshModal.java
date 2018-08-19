@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -47,8 +48,10 @@ public class MGMVRefreshModal extends HBox {
         private double max = 1000*20.0;
         private boolean stoppedOnError = false;
         private SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
+        private boolean shutdown = false;
 
         SimpleBooleanProperty finished = new SimpleBooleanProperty(false);
+        SimpleStringProperty statusStep = new SimpleStringProperty("Preparing");
         SimpleDoubleProperty progress = new SimpleDoubleProperty(0.0);
         ObservableList<String> errorList = FXCollections.observableArrayList();
 
@@ -61,27 +64,18 @@ public class MGMVRefreshModal extends HBox {
             try {
                 long start = System.currentTimeMillis();
                 double diff;
-                while((diff = System.currentTimeMillis() - start) <= max && !Thread.currentThread().isInterrupted()) {
-                    try {
-                        double p = diff / max;
-                        if(diff > max/2) {
-                            throw new Exception("Test failure.");
-                        }
-                        Platform.runLater(() -> progress.setValue(p));
-                        try { Thread.sleep(100); } catch (Exception ignored) {}
-                    } catch (InterruptedException e) {
-                        logger.debug("Thread Interrupted", e);
-                        Thread.currentThread().interrupt();
-                        break;
+                while((diff = System.currentTimeMillis() - start) <= max && !Thread.currentThread().isInterrupted() && !shutdown) {
+                    double p = diff / max;
+                    if(diff > max/2) {
+                        throw new Exception("Test failure.");
                     }
+                    Platform.runLater(() -> progress.setValue(p));
+                    try { Thread.sleep(100); } catch (Exception ignored) {}
                 }
             } catch (Exception e) {
                 appendError(e.getLocalizedMessage());
                 logger.error("Refresh Failed", e);
                 stoppedOnError = true;
-            }
-            if(this.isInterrupted()) {
-                logger.debug("Refresh Interrupted");
             }
             Platform.runLater(() -> finished.setValue(true));
             logger.debug("Refresh Finished");
@@ -92,20 +86,18 @@ public class MGMVRefreshModal extends HBox {
             Platform.runLater(() -> errorList.add(message));
         }
 
-        public SimpleBooleanProperty finishedProperty() {
-            return finished;
+        public void shutdown() {
+            shutdown = true;
         }
 
-        public SimpleDoubleProperty progressProperty() {
-            return progress;
-        }
-
-        public boolean isStoppedOnError() {
-            return stoppedOnError;
-        }
+        public SimpleBooleanProperty finishedProperty() { return finished; }
+        public SimpleDoubleProperty progressProperty() { return progress; }
+        public SimpleStringProperty statusStepProperty() { return statusStep; }
+        public boolean isStoppedOnError() { return stoppedOnError; }
     }
 
     @FXML Label alert;
+    @FXML Label statusStep;
     @FXML Button btnClose;
     @FXML Button btnStart;
     @FXML ProgressBar progressBar;
@@ -162,7 +154,7 @@ public class MGMVRefreshModal extends HBox {
                         btnStart.setDisable(true);
                         endStatus.setImage(circleMinus);
                     });
-                    example.interrupt();
+                    example.shutdown();
                     while(example.isAlive()) {
                         try { Thread.sleep(250); } catch (Exception ignored) {}
                     }
@@ -185,6 +177,7 @@ public class MGMVRefreshModal extends HBox {
                     example = new RefreshExample(group);
                     errorList.setItems(example.errorList);
                     progressBar.progressProperty().bind(example.progressProperty());
+                    statusStep.textProperty().bind(example.statusStepProperty());
                     example.start();
                     example.finishedProperty().addListener((o, ov, nv) -> {
                         progressBar.progressProperty().unbind();

@@ -35,7 +35,7 @@ public class ManageGroupsController implements Initializable {
 
     private CommentDatabase database;
 
-    @FXML OverlayModal<ManageGroupsCreateGroupModal> overlayModal;
+    @FXML OverlayModal<MGCreateGroupModal> overlayModal;
 
     @FXML ImageView plusIcon;
     @FXML ComboBox<Group> comboGroupSelect;
@@ -91,7 +91,7 @@ public class ManageGroupsController implements Initializable {
          * Logic for Create Group popup.
          */
 
-        ManageGroupsCreateGroupModal modal = new ManageGroupsCreateGroupModal();
+        MGCreateGroupModal modal = new MGCreateGroupModal();
         overlayModal.setContent(modal);
 
         btnCreateGroup.setOnAction(ae -> Platform.runLater(() -> {
