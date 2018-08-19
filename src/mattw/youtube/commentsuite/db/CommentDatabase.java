@@ -21,16 +21,27 @@ public class CommentDatabase {
 
     private static Logger logger = LogManager.getLogger(CommentDatabase.class.getSimpleName());
 
-    private final SQLiteConnection sqlite;
+    private SQLiteConnection sqlite;
 
-    private final Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
-
-    public final ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
+    private Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
+    public ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
 
     private Cache<String,YouTubeChannel> channelCache = CacheBuilder.newBuilder()
             .expireAfterAccess(5, TimeUnit.MINUTES)
             .build();
 
+    /**
+     * Default constructor for testing.
+     */
+    protected CommentDatabase(SQLiteConnection sqlite) {
+        this.sqlite = sqlite;
+    }
+
+    /**
+     * Actual constructor.
+     * @param dbfile name of database file
+     * @throws SQLException
+     */
     public CommentDatabase(String dbfile) throws SQLException {
         logger.debug(String.format("Initialize Database [file=%s]", dbfile));
         sqlite = new SQLiteConnection("./", dbfile);
@@ -47,7 +58,7 @@ public class CommentDatabase {
         sqlite.commit();
     }
 
-    private void create() throws SQLException {
+    protected void create() throws SQLException {
         logger.debug("Creating tables if not exists.");
         Statement statement = sqlite.createStatement();
         statement.executeUpdate(SQLLoader.CREATE_DB.toString());
@@ -65,7 +76,7 @@ public class CommentDatabase {
         this.create();
     }
 
-    private void vacuum() throws SQLException {
+    protected void vacuum() throws SQLException {
         logger.warn("Vacuuming database. This may take a long time.");
         sqlite.setAutoCommit(true);
         Statement s = sqlite.createStatement();
