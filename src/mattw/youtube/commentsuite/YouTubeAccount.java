@@ -1,10 +1,5 @@
 package mattw.youtube.commentsuite;
 
-import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.ChannelsList;
-
-import java.io.IOException;
-
 /**
  * Combination of YouTubeChannel and OAuth2Tokens as sign-in.
  * Data stored in Config 'commentsuite.json'
@@ -49,6 +44,6 @@ public class YouTubeAccount {
     public void setTokens(OAuth2Tokens tokens) { this.tokens = tokens; }
 
     public boolean equals(Object o) {
-        return o != null && o instanceof YouTubeAccount && ((YouTubeAccount) o).getChannelId() != null && ((YouTubeAccount) o).getChannelId().equals(channelId);
+        return o instanceof YouTubeAccount && ((YouTubeAccount) o).getChannelId() != null && ((YouTubeAccount) o).getChannelId().equals(channelId);
     }
 }

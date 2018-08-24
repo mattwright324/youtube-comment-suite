@@ -16,10 +16,10 @@ public class MGMVGroupItemView extends HBox {
 
     private GroupItem groupItem;
 
-    @FXML ImageView icon;
-    @FXML Label title;
-    @FXML Label author;
-    @FXML Label type;
+    private @FXML ImageView icon;
+    private @FXML Label title;
+    private @FXML Label author;
+    private @FXML Label type;
 
     public MGMVGroupItemView(GroupItem groupItem) {
         this.groupItem = groupItem;

@@ -35,36 +35,36 @@ public class SettingsController implements Initializable {
     private OAuth2Handler oauth2;
     private CommentDatabase database;
 
-    @FXML Pane settingsPane;
+    private @FXML Pane settingsPane;
 
-    @FXML VBox vboxSignIn;
-    @FXML Button btnExitSignIn;
+    private @FXML VBox vboxSignIn;
+    private @FXML Button btnExitSignIn;
 
-    @FXML WebView webView;
-    @FXML ProgressIndicator webViewLoading;
-    WebEngine webEngine;
+    private @FXML WebView webView;
+    private @FXML ProgressIndicator webViewLoading;
+    private WebEngine webEngine;
 
-    @FXML VBox vboxSettings;
-    @FXML Button btnClose;
-    @FXML ImageView closeIcon;
-    @FXML CheckBox prefixReply;
-    @FXML CheckBox autoLoadStats;
-    @FXML CheckBox downloadThumbs;
-    @FXML CheckBox customKey;
-    @FXML TextField youtubeApiKey;
-    @FXML Button btnAddAccount;
-    @FXML ListView accountList;
+    private @FXML VBox vboxSettings;
+    private @FXML Button btnClose;
+    private @FXML ImageView closeIcon;
+    private @FXML CheckBox prefixReply;
+    private @FXML CheckBox autoLoadStats;
+    private @FXML CheckBox downloadThumbs;
+    private @FXML CheckBox customKey;
+    private @FXML TextField youtubeApiKey;
+    private @FXML Button btnAddAccount;
+    private @FXML ListView accountList;
 
-    @FXML ProgressIndicator cleanProgress;
-    @FXML Button btnClean;
-    @FXML ProgressIndicator resetProgress;
-    @FXML Button btnReset;
-    @FXML ProgressIndicator removeProgress;
-    @FXML Button btnRemoveThumbs;
+    private @FXML ProgressIndicator cleanProgress;
+    private @FXML Button btnClean;
+    private @FXML ProgressIndicator resetProgress;
+    private @FXML Button btnReset;
+    private @FXML ProgressIndicator removeProgress;
+    private @FXML Button btnRemoveThumbs;
 
-    @FXML Hyperlink github;
-    @FXML ImageView githubIcon;
-    @FXML Button btnSave;
+    private @FXML Hyperlink github;
+    private @FXML ImageView githubIcon;
+    private @FXML Button btnSave;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

@@ -6,7 +6,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -14,7 +13,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import mattw.youtube.commentsuite.FXMLSuite;
-import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.io.BrowserUtil;
 import mattw.youtube.commentsuite.io.ClipboardUtil;
 import mattw.youtube.commentsuite.io.Geolocation;
@@ -43,29 +41,29 @@ public class SearchYouTubeController implements Initializable {
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
 
-    @FXML Pane form;
-    @FXML ImageView searchIcon;
-    @FXML ImageView geoIcon;
-    @FXML ComboBox<String> searchType;
-    @FXML TextField searchText;
-    @FXML Button submit;
-    @FXML HBox locationBox;
-    @FXML TextField searchLocation;
-    @FXML Button geolocate;
-    @FXML ComboBox<String> searchRadius;
-    @FXML ComboBox<String> searchOrder;
-    @FXML ComboBox<String> resultType;
-    @FXML ListView<SearchYouTubeListItemView> resultsList;
-    @FXML HBox bottom;
-    @FXML Button btnAddToGroup;
-    @FXML Button btnClear;
-    @FXML Button btnNextPage;
-    @FXML Label searchInfo;
+    private @FXML Pane form;
+    private @FXML ImageView searchIcon;
+    private @FXML ImageView geoIcon;
+    private @FXML ComboBox<String> searchType;
+    private @FXML TextField searchText;
+    private @FXML Button submit;
+    private @FXML HBox locationBox;
+    private @FXML TextField searchLocation;
+    private @FXML Button geolocate;
+    private @FXML ComboBox<String> searchRadius;
+    private @FXML ComboBox<String> searchOrder;
+    private @FXML ComboBox<String> resultType;
+    private @FXML ListView<SearchYouTubeListItemView> resultsList;
+    private @FXML HBox bottom;
+    private @FXML Button btnAddToGroup;
+    private @FXML Button btnClear;
+    private @FXML Button btnNextPage;
+    private @FXML Label searchInfo;
 
-    @FXML MenuItem menuCopyId;
-    @FXML MenuItem menuOpenBrowser;
-    @FXML MenuItem menuAddToGroup;
-    @FXML MenuItem menuDeselectAll;
+    private @FXML MenuItem menuCopyId;
+    private @FXML MenuItem menuOpenBrowser;
+    private @FXML MenuItem menuAddToGroup;
+    private @FXML MenuItem menuDeselectAll;
 
     private int total = 0;
     private int number = 0;
@@ -98,7 +96,7 @@ public class SearchYouTubeController implements Initializable {
 
         menuCopyId.setOnAction(ae -> {
             List<SearchYouTubeListItemView> list =  ((MultipleSelectionModel) selectionModel).getSelectedItems();
-            List<String> ids = list.stream().map(view -> view.getObjectId()).collect(Collectors.toList());
+            List<String> ids = list.stream().map(SearchYouTubeListItemView::getObjectId).collect(Collectors.toList());
             clipboardUtil.setClipboard(ids);
         });
         menuOpenBrowser.setOnAction(ae -> {

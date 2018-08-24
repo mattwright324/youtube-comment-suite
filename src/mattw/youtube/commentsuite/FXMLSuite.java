@@ -65,10 +65,6 @@ public class FXMLSuite extends Application {
         }
     }
 
-    /* public void stop() {
-        Injector.forgetAll();
-    }*/
-
     public static ConfigFile<ConfigData> getConfig() {
         return config;
     }

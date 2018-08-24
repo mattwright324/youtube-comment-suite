@@ -18,7 +18,7 @@
                 </padding>
                 <Label fx:id="title" styleClass="bold" maxHeight="35" minHeight="35" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
             </HBox>
-            <Label fx:id="divider" styleClass="horizontalDividerBlue" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+            <Label fx:id="divider" styleClass="divider, dividerPrimary" maxWidth="Infinity" maxHeight="4" minHeight="4" />
             <VBox spacing="10">
                 <padding>
                     <Insets topRightBottomLeft="10" />

@@ -35,12 +35,12 @@ public class ManageGroupsController implements Initializable {
 
     private CommentDatabase database;
 
-    @FXML OverlayModal<MGCreateGroupModal> overlayModal;
+    private @FXML OverlayModal<MGCreateGroupModal> overlayModal;
 
-    @FXML ImageView plusIcon;
-    @FXML ComboBox<Group> comboGroupSelect;
-    @FXML Button btnCreateGroup;
-    @FXML Pane content;
+    private @FXML ImageView plusIcon;
+    private @FXML ComboBox<Group> comboGroupSelect;
+    private @FXML Button btnCreateGroup;
+    private @FXML Pane content;
 
     public void initialize(URL location, ResourceBundle resources) {
         database = FXMLSuite.getDatabase();
@@ -68,10 +68,9 @@ public class ManageGroupsController implements Initializable {
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
             ManageGroupsManagerView manager = managerCache.getIfPresent(nv.getId());
             if (manager != null) {
-                ManageGroupsManagerView m = manager;
                 Platform.runLater(() -> {
                     content.getChildren().clear();
-                    content.getChildren().addAll(m);
+                    content.getChildren().addAll(manager);
                 });
             } else {
                 try {

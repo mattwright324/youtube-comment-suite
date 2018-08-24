@@ -3,7 +3,6 @@ package mattw.youtube.commentsuite.fxml;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -96,18 +95,18 @@ public class MGMVRefreshModal extends HBox {
         public boolean isStoppedOnError() { return stoppedOnError; }
     }
 
-    @FXML Label alert;
-    @FXML Label statusStep;
-    @FXML Button btnClose;
-    @FXML Button btnStart;
-    @FXML ProgressBar progressBar;
-    @FXML VBox statusPane;
+    private @FXML Label alert;
+    private @FXML Label statusStep;
+    private @FXML Button btnClose;
+    private @FXML Button btnStart;
+    private @FXML ProgressBar progressBar;
+    private @FXML VBox statusPane;
 
-    @FXML ImageView expandIcon;
-    @FXML ListView<String> errorList;
-    @FXML Hyperlink expand;
-    @FXML ImageView endStatus;
-    @FXML ProgressIndicator statusIndicator;
+    private @FXML ImageView expandIcon;
+    private @FXML ListView<String> errorList;
+    private @FXML Hyperlink expand;
+    private @FXML ImageView endStatus;
+    private @FXML ProgressIndicator statusIndicator;
 
     private Group group;
     private RefreshExample example;
@@ -149,7 +148,7 @@ public class MGMVRefreshModal extends HBox {
 
             btnStart.setOnAction(ae -> new Thread(() -> {
                 if(running) {
-                    logger.debug(String.format("Requesting group refresh stopped for group", group.getId(), group.getName()));
+                    logger.debug(String.format("Requesting group refresh stopped for group [id=%s,name=%s]", group.getId(), group.getName()));
                     Platform.runLater(() -> {
                         btnStart.setDisable(true);
                         endStatus.setImage(circleMinus);

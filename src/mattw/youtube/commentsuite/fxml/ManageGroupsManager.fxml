@@ -44,31 +44,21 @@
             <Accordion HBox.hgrow="ALWAYS">
                 <panes>
                     <TitledPane text="General Stats">
-                        <content>
-                            <VBox></VBox>
-                        </content>
+                        <VBox></VBox>
                     </TitledPane>
                     <TitledPane text="About Videos" disable="true">
-                        <content>
-                            <VBox></VBox>
-                        </content>
+                        <VBox></VBox>
                     </TitledPane>
                     <TitledPane text="About Viewers" disable="true">
-                        <content>
-                            <VBox></VBox>
-                        </content>
+                        <VBox></VBox>
                     </TitledPane>
                     <TitledPane text="Video Query">
-                        <content>
-                            <Label text="Search and sort the videos in this group." />
-                            <!-- <fx:include source="ManageGroupsManagerVideoQuery.fxml" -->
-                        </content>
+                        <Label text="Search and sort the videos in this group."/>
+                        <!-- <fx:include source="ManageGroupsManagerVideoQuery.fxml" -->
                     </TitledPane>
                     <TitledPane text="Viewer Query">
-                        <content>
-                            <Label text="Search and sort the commenting viewers in this group. " />
-                            <!-- <fx:include source="ManageGroupsManagerViewerQuery.fxml" -->
-                        </content>
+                        <Label text="Search and sort the commenting viewers in this group. "/>
+                        <!-- <fx:include source="ManageGroupsManagerViewerQuery.fxml" -->
                     </TitledPane>
                 </panes>
             </Accordion>
@@ -77,36 +67,26 @@
 
     <!-- Overlay: Refresh -->
     <OverlayModal visible="false" fx:id="refreshModal">
-        <title>
-            <String fx:value="Refresh this group" />
-        </title>
+        <title><String fx:value="Refresh this group" /></title>
     </OverlayModal>
 
     <!-- Overlay: Delete -->
     <OverlayModal visible="false" fx:id="deleteModal">
-        <title>
-            <String fx:value="Delete this group" />
-        </title>
+        <title><String fx:value="Delete this group" /></title>
     </OverlayModal>
 
     <!-- Overlay: Add Item -->
     <OverlayModal visible="false" fx:id="addItemModal">
-        <title>
-            <String fx:value="Add new item" />
-        </title>
+        <title><String fx:value="Add new item" /></title>
     </OverlayModal>
 
-    <!-- Overlay: Remove Item -->
+    <!-- Overlay: Remove Selected GroupItem(s) -->
     <OverlayModal visible="false" fx:id="removeItemModal">
-        <title>
-            <String fx:value="Remove selected group items" />
-        </title>
+        <title><String fx:value="Remove selected group items" /></title>
     </OverlayModal>
 
-    <!-- Overlay: Remove All Item(s) -->
+    <!-- Overlay: Remove All GroupItem(s) -->
     <OverlayModal visible="false" fx:id="removeAllModal">
-        <title>
-            <String fx:value="Remove all group items" />
-        </title>
+        <title><String fx:value="Remove all group items" /></title>
     </OverlayModal>
 </fx:root>

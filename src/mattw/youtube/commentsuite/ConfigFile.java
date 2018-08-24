@@ -14,7 +14,7 @@ import java.io.*;
  * @author mattwright324
  * @param <T>
  */
-public class ConfigFile<T extends Object> {
+public class ConfigFile<T> {
 
     private static Logger logger = LogManager.getLogger(ConfigFile.class.getSimpleName());
 
@@ -37,7 +37,7 @@ public class ConfigFile<T extends Object> {
     }
 
     public void load() {
-        logger.debug(String.format("Loading Config File"));
+        logger.debug("Loading Config File");
         try(FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr)) {
             String line;
@@ -58,7 +58,7 @@ public class ConfigFile<T extends Object> {
     }
 
     public void save() {
-        logger.debug(String.format("Saving Config File"));
+        logger.debug("Saving Config File");
         try(FileWriter fw = new FileWriter(file)) {
             fw.write(gson.toJson(dataObject));
         } catch (Exception e) {

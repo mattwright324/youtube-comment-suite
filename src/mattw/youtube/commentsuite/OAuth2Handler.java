@@ -12,6 +12,7 @@ import java.io.*;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public class OAuth2Handler {
 
@@ -87,15 +88,15 @@ public class OAuth2Handler {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.connect();
             OutputStream os = conn.getOutputStream();
-            os.write(payload.getBytes("UTF-8"));
+            os.write(payload.getBytes(StandardCharsets.UTF_8));
             if(conn.getResponseCode() < HttpsURLConnection.HTTP_BAD_REQUEST) {
-                String response = new String(toByteArray(conn.getInputStream()), "UTF-8");
+                String response = new String(toByteArray(conn.getInputStream()), StandardCharsets.UTF_8);
                 return gson.fromJson(response, CommentsList.Item.class);
             } else if(conn.getResponseCode() == 401) {
                 System.out.println("Refreshing tokens and trying again.");
                 refreshTokens();
             } else {
-                String response = new String(toByteArray(conn.getErrorStream()), "UTF-8");
+                String response = new String(toByteArray(conn.getErrorStream()), StandardCharsets.UTF_8);
                 System.out.println(response);
                 throw gson.fromJson(response, YouTubeErrorException.class);
             }

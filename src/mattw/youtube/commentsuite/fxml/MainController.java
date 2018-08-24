@@ -33,20 +33,20 @@ public class MainController implements Initializable {
     public final Image IMG_YOUTUBE = new Image("/mattw/youtube/commentsuite/img/youtube.png");
     public final Image IMG_SETTINGS = new Image("/mattw/youtube/commentsuite/img/settings.png");
 
-    @FXML ImageView headerIcon;
-    @FXML ToggleGroup headerToggleGroup;
-    @FXML ToggleButton btnSearchComments;
-    @FXML ToggleButton btnManageGroups;
-    @FXML ToggleButton btnSearchYoutube;
-    @FXML StackPane content;
+    private @FXML ImageView headerIcon;
+    private @FXML ToggleGroup headerToggleGroup;
+    private @FXML ToggleButton btnSearchComments;
+    private @FXML ToggleButton btnManageGroups;
+    private @FXML ToggleButton btnSearchYoutube;
+    private @FXML StackPane content;
 
-    @FXML Button btnSettings;
-    @FXML ImageView settingsIcon;
+    private @FXML Button btnSettings;
+    private @FXML ImageView settingsIcon;
 
-    @FXML Pane searchComments;
-    @FXML Pane manageGroups;
-    @FXML Pane searchYoutube;
-    @FXML Pane settings;
+    private @FXML Pane searchComments;
+    private @FXML Pane manageGroups;
+    private @FXML Pane searchYoutube;
+    private @FXML Pane settings;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

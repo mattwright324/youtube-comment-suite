@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
 <?import javafx.scene.image.ImageView?>
-<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.web.WebView?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
@@ -27,9 +23,9 @@
                     <Insets right="10" left="10" />
                 </padding>
                 <Label text="YouTube Sign-In" styleClass="bold" maxHeight="35" minHeight="35" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
-                <ProgressIndicator fx:id="webViewLoading" visible="true" maxWidth="30" maxHeight="30" />
+                <ProgressIndicator fx:id="webViewLoading" maxWidth="30" maxHeight="30" />
             </HBox>
-            <Label styleClass="horizontalDividerRed" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+            <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
             <WebView fx:id="webView" />
             <HBox alignment="CENTER_RIGHT">
                 <padding>
@@ -46,7 +42,7 @@
                 <Label text="Settings" styleClass="bold" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
                 <Button fx:id="btnClose" styleClass="settingsBtn" graphic="$closeIcon" />
             </HBox>
-            <Label styleClass="horizontalDividerRed" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+            <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
             <ScrollPane VBox.vgrow="ALWAYS" styleClass="noBorder" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="ALWAYS">
                 <VBox spacing="10">
                     <padding>
@@ -55,8 +51,8 @@
                     <Label text="General" styleClass="sectionTitle, bold" maxWidth="Infinity" />
                     <CheckBox fx:id="prefixReply" text="Prefix +{name} when replying to comments." selected="true" />
                     <CheckBox fx:id="autoLoadStats" text="Auto-load group details in group manager." selected="true" />
-                    <CheckBox fx:id="downloadThumbs" text="Download images when loaded (Offline/Archival)." selected="false" />
-                    <CheckBox fx:id="customKey" text="Custom YouTube API key:" selected="false" />
+                    <CheckBox fx:id="downloadThumbs" text="Download images when loaded (Offline/Archival)."/>
+                    <CheckBox fx:id="customKey" text="Custom YouTube API key:"/>
                     <TextField fx:id="youtubeApiKey" disable="true" text="AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ" />
                     <Label />
 

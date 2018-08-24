@@ -39,9 +39,7 @@ public interface ImageCache {
                     thumbFile.mkdir();
                     thumbFile.createNewFile();
                     ImageIO.write(ImageIO.read(new URL(object.getThumbUrl())), fileFormat, thumbFile);
-                } catch (IOException ignored) {
-                    ignored.printStackTrace();
-                }
+                } catch (IOException ignored) {}
             }
             if(thumbFile.exists()) {
                 logger.debug(String.format("Grabbing File [file=thumbs/%s.%s]", object.getYoutubeId(), fileFormat));

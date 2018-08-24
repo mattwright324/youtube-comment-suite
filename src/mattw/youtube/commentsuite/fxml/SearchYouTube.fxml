@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
-<?import javafx.geometry.Insets?>
 <?import javafx.collections.FXCollections?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import java.lang.*?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            alignment="TOP_CENTER"
@@ -18,7 +15,7 @@
         <ImageView fx:id="geoIcon" fitHeight="18" fitWidth="18" />
         <ImageView fx:id="searchIcon" fitHeight="18" fitWidth="18" />
     </fx:define>
-    <VBox fillWidth="true" maxHeight="Infinity" alignment="TOP_CENTER" spacing="10">
+    <VBox maxHeight="Infinity" alignment="TOP_CENTER" spacing="10">
         <HBox fx:id="form" alignment="CENTER_LEFT" spacing="10">
             <ComboBox fx:id="searchType" value="Normal" styleClass="control">
                 <items>

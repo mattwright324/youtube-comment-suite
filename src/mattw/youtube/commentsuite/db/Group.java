@@ -63,5 +63,5 @@ public class Group {
 
     public String toString() { return name.getValue(); }
     public int hashCode() { return groupId.hashCode(); }
-    public boolean equals(Object o) { return o != null && o instanceof Group && o.hashCode() == hashCode(); }
+    public boolean equals(Object o) { return o instanceof Group && o.hashCode() == hashCode(); }
 }

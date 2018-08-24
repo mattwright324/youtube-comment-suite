@@ -45,8 +45,8 @@ public class ClipboardUtil {
 	 * Converts list into a line.separator delimited string and sets to clipboard.
 	 * @param list
 	 */
-	public void setClipboard(List<? extends Object> list) {
-		List<String> strList = list.stream().map(obj -> obj.toString()).collect(Collectors.toList());
+	public void setClipboard(List<?> list) {
+		List<String> strList = list.stream().map(Object::toString).collect(Collectors.toList());
 		setClipboard(strList.stream().collect(Collectors.joining(System.getProperty("line.separator"))));
 	}
 

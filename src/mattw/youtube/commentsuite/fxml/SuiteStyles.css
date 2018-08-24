@@ -6,14 +6,18 @@
     -fx-background-color: #eee;
     -fx-opacity: 1;
 }
-.horizontalDividerRed {
-    -fx-background-color: derive(firebrick, 80%);
+.divider {
     -fx-border-width: 0 0 0 0;
 }
-.horizontalDividerBlue {
-    -fx-background-color: derive(#007bff, 80%);
-    -fx-border-width: 0 0 0 0;
-}
+.dividerPrimary { -fx-background-color: derive(#007bff, 80%); }
+.dividerSecondary { -fx-background-color: derive(#6c757d, 80%); }
+.dividerSuccess { -fx-background-color: derive(#28a745, 80%); }
+.dividerDangerLight { -fx-background-color: derive(#dc3545, 40%); }
+.dividerDanger { -fx-background-color: derive(#dc3545, 80%); }
+.dividerWarning { -fx-background-color: derive(#ffc107, 40%); }
+.dividerInfo { -fx-background-color: derive(#17a2b8, 80%); }
+.dividerLight { -fx-background-color: derive(#f8f9fa, 80%); }
+.dividerDark { -fx-background-color: derive(#343a40, 80%); }
 .bold {
     -fx-font-weight: 700;
 }
@@ -80,6 +84,10 @@
     -fx-border-color: #f5c6cb;
 }
 .border4 {-fx-border-radius: 4; -fx-background-radius: 4;}
+.addItemExample {
+    -fx-cursor: hand;
+    -fx-text-fill: #155724;
+}
 
 /* Main.fxml */
 .headerBtn {

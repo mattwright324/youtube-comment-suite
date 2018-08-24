@@ -9,7 +9,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.YouTubeSearchItem;
-import mattw.youtube.commentsuite.db.YouTubeObject;
 import mattw.youtube.datav3.resources.SearchList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,12 +27,12 @@ public class SearchYouTubeListItemView extends HBox {
     private static Logger logger = LogManager.getLogger(SearchYouTubeListItemView.class.getName());
     private static Image loading = new Image("/mattw/youtube/commentsuite/img/loading.png");
 
-    @FXML Label type;
-    @FXML Label title;
-    @FXML Label author;
-    @FXML Label description;
-    @FXML Label number;
-    @FXML ImageView thumbnail;
+    private @FXML Label type;
+    private @FXML Label title;
+    private @FXML Label author;
+    private @FXML Label description;
+    private @FXML Label number;
+    private @FXML ImageView thumbnail;
 
     private SearchList.Item data;
     private String objectId;

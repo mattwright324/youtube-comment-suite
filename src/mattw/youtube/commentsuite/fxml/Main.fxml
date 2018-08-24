@@ -7,7 +7,6 @@
 <?import javafx.geometry.Insets?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
-           fx:id="root"
            fx:controller="mattw.youtube.commentsuite.fxml.MainController"
            alignment="TOP_CENTER"
            prefWidth="1000.0" prefHeight="550.0">
@@ -25,15 +24,16 @@
             </padding>
             <ImageView fx:id="headerIcon" fitHeight="25" fitWidth="25" />
             <HBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
-                <children>
-                    <ToggleButton text="Search Comments" fx:id="btnSearchComments" styleClass="headerBtn, bold" toggleGroup="$headerToggleGroup" />
-                    <ToggleButton text="Manage Groups" fx:id="btnManageGroups" styleClass="headerBtn, bold" toggleGroup="$headerToggleGroup" />
-                    <ToggleButton text="Search Youtube" fx:id="btnSearchYoutube" styleClass="headerBtn, bold" toggleGroup="$headerToggleGroup" />
-                </children>
+                <ToggleButton text="Search Comments" fx:id="btnSearchComments" styleClass="headerBtn, bold"
+                              toggleGroup="$headerToggleGroup"/>
+                <ToggleButton text="Manage Groups" fx:id="btnManageGroups" styleClass="headerBtn, bold"
+                              toggleGroup="$headerToggleGroup"/>
+                <ToggleButton text="Search Youtube" fx:id="btnSearchYoutube" styleClass="headerBtn, bold"
+                              toggleGroup="$headerToggleGroup"/>
             </HBox>
             <Button fx:id="btnSettings" styleClass="settingsBtn" graphic="$settingsIcon" />
         </HBox>
-        <Label styleClass="horizontalDividerRed" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+        <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
         <StackPane VBox.vgrow="ALWAYS" fx:id="content" />
     </VBox>
     <fx:include fx:id="settings" source="Settings.fxml" />

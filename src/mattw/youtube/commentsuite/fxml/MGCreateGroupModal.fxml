@@ -7,7 +7,9 @@
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml"
          spacing="10">
-    <fx:include fx:id="errorMsg" managed="false" source="AlertLabel.fxml" />
+    <fx:include source="AlertLabel.fxml" styleClass="alertWarning"
+                fx:id="errorMsg"
+                alignment="CENTER" managed="false" />
     <TextField fx:id="nameField" promptText="Enter name here!" />
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button fx:id="btnClose" styleClass="btnLight" text="Close" />

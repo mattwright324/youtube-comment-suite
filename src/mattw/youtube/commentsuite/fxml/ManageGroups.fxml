@@ -20,7 +20,7 @@
             </padding>
             <Label styleClass="bold, font16" text="Group:" />
             <HBox>
-                <ComboBox fx:id="comboGroupSelect" styleClass="manageGroupSelect, control, noRadiusRight" prefWidth="300">
+                <ComboBox fx:id="comboGroupSelect" styleClass="control, noRadiusRight" prefWidth="300">
                     <tooltip><Tooltip wrapText="true" maxWidth="300" text="Select a group to manage." /></tooltip>
                 </ComboBox>
                 <Button fx:id="btnCreateGroup" styleClass="btn, btnLight, control, noRadiusLeft" graphic="$plusIcon">
@@ -31,7 +31,7 @@
                    style="-fx-text-fill: lightgray"
                    text="Groups can hold many channels, playlists, and videos at once."/>
         </HBox>
-        <Label styleClass="horizontalDividerRed" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+        <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
         <StackPane VBox.vgrow="ALWAYS" fx:id="content" />
     </VBox>
 

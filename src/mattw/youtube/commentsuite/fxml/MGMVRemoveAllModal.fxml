@@ -9,9 +9,9 @@
          spacing="10">
     <fx:include source="AlertLabel.fxml" styleClass="alertDanger"
                 alignment="CENTER"
-                text="This will delete *EVERYTHING* unique to this group."/>
+                text="Warning: This removes ALL GroupItems and data." />
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button fx:id="btnClose" styleClass="btnLight" text="No, Close" />
-        <Button fx:id="btnDelete" styleClass="btnDanger" text="Yes, Delete" />
+        <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
+        <Button fx:id="btnSubmit" styleClass="btnDanger" text="Remove Item(s)" />
     </HBox>
 </fx:root>

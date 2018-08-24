@@ -15,10 +15,10 @@ public class MGCreateGroupModal extends VBox {
 
     private static Logger logger = LogManager.getLogger(MGCreateGroupModal.class.getName());
 
-    @FXML Label errorMsg;
-    @FXML TextField nameField;
-    @FXML Button btnClose;
-    @FXML Button btnCreate;
+    private @FXML Label errorMsg;
+    private @FXML TextField nameField;
+    private @FXML Button btnClose;
+    private @FXML Button btnCreate;
 
     public MGCreateGroupModal() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGCreateGroupModal.fxml"));

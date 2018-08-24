@@ -46,22 +46,22 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
 
     private CommentDatabase database;
 
-    @FXML OverlayModal<MGMVRefreshModal> refreshModal;
-    @FXML OverlayModal deleteModal;
-    @FXML OverlayModal addItemModal;
-    @FXML OverlayModal removeItemModal;
-    @FXML OverlayModal removeAllModal;
-    @FXML Button btnAddItem;
-    @FXML Button btnRemoveItems;
-    @FXML Button btnRemoveAll;
-    @FXML ListView<MGMVGroupItemView> groupItemList;
+    private @FXML OverlayModal<MGMVRefreshModal> refreshModal;
+    private @FXML OverlayModal deleteModal;
+    private @FXML OverlayModal addItemModal;
+    private @FXML OverlayModal removeItemModal;
+    private @FXML OverlayModal removeAllModal;
+    private @FXML Button btnAddItem;
+    private @FXML Button btnRemoveItems;
+    private @FXML Button btnRemoveAll;
+    private @FXML ListView<MGMVGroupItemView> groupItemList;
 
-    @FXML TextField groupTitle;
-    @FXML ImageView editIcon;
-    @FXML Hyperlink rename;
-    @FXML Button btnRefresh;
-    @FXML Button btnReload;
-    @FXML Button btnDelete;
+    private @FXML TextField groupTitle;
+    private @FXML ImageView editIcon;
+    private @FXML Hyperlink rename;
+    private @FXML Button btnRefresh;
+    private @FXML Button btnReload;
+    private @FXML Button btnDelete;
 
     public ManageGroupsManagerView(Group group) throws IOException {
         logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
@@ -89,7 +89,8 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
             // One-time font listener resize.
             // Will match content after font set on label from styleClass.
             // If not removed, when clicking the 'Rename' button, the label will
-            // flicker once between Font size 15 (default) and back to the styleClass font size.
+            // flicker once between Font size 15 (default) and back to the styleClass font size
+            // every time the edit button is clicked.
             groupTitle.fontProperty().removeListener(fontListener);
         });
         groupTitle.setText(group.getName());
@@ -170,13 +171,48 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         });
 
         /**
-         * Delete Modal
+         * Delete Group Modal
          */
         MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal(group);
         deleteModal.setContent(mgmvDelete);
-        deleteModal.setDividerClass("horizontalDividerRed");
+        deleteModal.setDividerClass("dividerDanger");
         btnDelete.setOnAction(ae -> Platform.runLater(() -> deleteModal.setVisible(true)));
         mgmvDelete.getBtnClose().setOnAction(ae -> deleteModal.setVisible(false));
+
+        /**
+         * Add Item Modal
+         */
+        MGMVAddItemModal mgmvAddItem = new MGMVAddItemModal(group);
+        addItemModal.setContent(mgmvAddItem);
+        btnAddItem.setOnAction(ae -> Platform.runLater(() -> {
+            mgmvAddItem.reset();
+            addItemModal.setVisible(true);
+        }));
+        mgmvAddItem.getBtnClose().setOnAction(ae -> addItemModal.setVisible(false));
+
+        /**
+         * Remove Selected GroupItems Modal
+         */
+        MGMVRemoveSelectedModal mgmvRemoveSelected = new MGMVRemoveSelectedModal(group, groupItemList.getSelectionModel());
+        removeItemModal.setContent(mgmvRemoveSelected);
+        removeItemModal.setDividerClass("dividerWarning");
+        btnRemoveItems.setOnAction(ae -> Platform.runLater(() -> {
+            mgmvRemoveSelected.reset();
+            removeItemModal.setVisible(true);
+        }));
+        mgmvRemoveSelected.getBtnClose().setOnAction(ae -> removeItemModal.setVisible(false));
+
+        /**
+         * Remove All GroupItems Modal
+         */
+        MGMVRemoveAllModal mgmvRemoveAll = new MGMVRemoveAllModal(group);
+        removeAllModal.setContent(mgmvRemoveAll);
+        removeAllModal.setDividerClass("dividerDanger");
+        btnRemoveAll.setOnAction(ae -> Platform.runLater(() -> {
+            mgmvRemoveAll.reset();
+            removeAllModal.setVisible(true);
+        }));
+        mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
     }
 
     /**
