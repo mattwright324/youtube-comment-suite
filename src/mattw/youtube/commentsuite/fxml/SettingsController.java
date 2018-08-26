@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -107,13 +107,11 @@ public class SettingsController implements Initializable {
             }
         });
         webViewLoading.visibleProperty().bind(webEngine.getLoadWorker().stateProperty().isEqualTo(Worker.State.SUCCEEDED).not());
-
-        btnSave.setOnAction(ae -> Platform.runLater(() -> {
-            btnClose.fire();
-        }));
+        
+        btnSave.setOnAction(ae -> runLater(() -> btnClose.fire()));
 
         closeIcon.setImage(IMG_CLOSE);
-        btnClose.setOnAction(ae -> Platform.runLater(() -> {
+        btnClose.setOnAction(ae -> runLater(() -> {
             logger.debug("Saving Settings");
             ConfigData data = config.getDataObject();
             data.setAutoLoadStats(autoLoadStats.isSelected());
@@ -135,7 +133,7 @@ public class SettingsController implements Initializable {
 
         githubIcon.setImage(IMG_GITHUB);
 
-        btnAddAccount.setOnAction(ae -> Platform.runLater(() ->  {
+        btnAddAccount.setOnAction(ae -> runLater(() ->  {
             vboxSignIn.setManaged(true);
             vboxSignIn.setVisible(true);
             vboxSettings.setDisable(true);
@@ -146,14 +144,14 @@ public class SettingsController implements Initializable {
             }
         }));
 
-        btnExitSignIn.setOnAction(ae -> Platform.runLater(() -> {
+        btnExitSignIn.setOnAction(ae -> runLater(() -> {
             vboxSignIn.setManaged(false);
             vboxSignIn.setVisible(false);
             vboxSettings.setDisable(false);
         }));
 
         btnClean.setOnAction(ae -> new Thread(() -> {
-            Platform.runLater(() -> {
+            runLater(() -> {
                 btnClean.setDisable(true);
                 btnReset.setDisable(true);
                 cleanProgress.setVisible(true);
@@ -164,7 +162,7 @@ public class SettingsController implements Initializable {
             } catch (Exception e) {
                 logger.error(e);
             }
-            Platform.runLater(() -> {
+            runLater(() -> {
                 btnClean.setDisable(false);
                 btnReset.setDisable(false);
                 cleanProgress.setVisible(false);
@@ -172,7 +170,7 @@ public class SettingsController implements Initializable {
         }).start());
 
         btnReset.setOnAction(ae -> new Thread(() -> {
-            Platform.runLater(() -> {
+            runLater(() -> {
                 btnClean.setDisable(true);
                 btnReset.setDisable(true);
                 resetProgress.setVisible(true);
@@ -183,7 +181,7 @@ public class SettingsController implements Initializable {
             } catch (Exception e) {
                 logger.error(e);
             }
-            Platform.runLater(() -> {
+            runLater(() -> {
                 btnClean.setDisable(false);
                 btnReset.setDisable(false);
                 resetProgress.setVisible(false);

@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
@@ -111,14 +111,14 @@ public class SearchYouTubeController implements Initializable {
         btnAddToGroup.disableProperty().bind(selectionModel.selectedIndexProperty().isEqualTo(-1));
         ((MultipleSelectionModel) selectionModel).getSelectedItems().addListener((ListChangeListener)(c -> {
             int items = ((MultipleSelectionModel) selectionModel).getSelectedItems().size();
-            Platform.runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", items)));
+            runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", items)));
         }));
-        resultsList.itemsProperty().addListener((o, ov, nv) -> Platform.runLater(() -> {
+        resultsList.itemsProperty().addListener((o, ov, nv) -> runLater(() -> {
             int selectedCount = ((MultipleSelectionModel) selectionModel).getSelectedItems().size();
             btnAddToGroup.setText(String.format("Add to Group (%s)", selectedCount));
         }));
 
-        btnClear.setOnAction(ae -> Platform.runLater(() -> resultsList.getItems().clear()));
+        btnClear.setOnAction(ae -> runLater(() -> resultsList.getItems().clear()));
 
         geolocate.setOnAction(ae -> new Thread(() -> {
             geolocate.setDisable(true);
@@ -127,7 +127,7 @@ public class SearchYouTubeController implements Initializable {
 
                 String coordinates = myLocation.geolocation_data.latitude+","+myLocation.geolocation_data.longitude;
 
-                Platform.runLater(() -> searchLocation.setText(coordinates));
+                runLater(() -> searchLocation.setText(coordinates));
             } catch (IOException e) {
                 logger.error(e);
             }
@@ -139,7 +139,7 @@ public class SearchYouTubeController implements Initializable {
 
         form.setOnKeyPressed(ke -> {
             if(ke.getCode() == KeyCode.ENTER) {
-                Platform.runLater(() -> {
+                runLater(() -> {
                     submit.fire();
                 });
             }
@@ -149,7 +149,7 @@ public class SearchYouTubeController implements Initializable {
             number = 0;
             pageToken = emptyToken;
             resultsList.getItems().clear();
-            Platform.runLater(() -> searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total)));
+            runLater(() -> searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total)));
             logger.debug(String.format("Submit New Search [pageToken=%s,type=%s,text=%s,locText=%s,locRadius=%s,order=%s,result=%s]",
                     pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
                     searchRadius.getValue(), searchOrder.getValue(), resultType.getValue()));
@@ -166,10 +166,12 @@ public class SearchYouTubeController implements Initializable {
                         resultType.getSelectionModel().getSelectedIndex());
             }).start();
         });
+
+        // TODO: Add Modal for Add to Group Button
     }
 
     public void search(String pageToken, String type, String text, String locText, String locRadius, String order, int resultType) {
-        Platform.runLater(() -> searching.setValue(true));
+        runLater(() -> searching.setValue(true));
         try {
             searchList = youtubeApi.searchList().order(order.toLowerCase());
 
@@ -190,14 +192,14 @@ public class SearchYouTubeController implements Initializable {
                 searchList = searchList.getByLocation(SearchList.PART_SNIPPET, encodedText, pageToken, locText, locRadius);
             }
 
-            this.pageToken = searchList.nextPageToken.equals(null) ? emptyToken : searchList.nextPageToken;
+            this.pageToken = searchList.nextPageToken == null ? emptyToken : searchList.nextPageToken;
             this.total = searchList.pageInfo.totalResults;
 
             logger.debug(String.format("Search [videos=%s]", searchList.items.length));
             for(SearchList.Item item : searchList.items) {
                 logger.debug(String.format("Video [id=%s,author=%s,groupTitle=%s]", item.id.getId(), item.snippet.channelTitle, item.snippet.title));
                 SearchYouTubeListItemView view = new SearchYouTubeListItemView(item, number++);
-                Platform.runLater(() -> {
+                runLater(() -> {
                     resultsList.getItems().add(view);
                     searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total));
                 });
@@ -206,7 +208,7 @@ public class SearchYouTubeController implements Initializable {
             logger.error(e);
             e.printStackTrace();
         }
-        Platform.runLater(() -> {
+        runLater(() -> {
             if(this.pageToken != null && !this.pageToken.equals(emptyToken)) {
                 btnNextPage.setDisable(false);
             }

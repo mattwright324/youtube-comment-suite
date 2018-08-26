@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -64,23 +64,23 @@ public class MainController implements Initializable {
         });
 
         settingsIcon.setImage(IMG_SETTINGS);
-        btnSettings.setOnAction(ae -> Platform.runLater(() -> {
+        btnSettings.setOnAction(ae -> runLater(() -> {
             logger.debug("Open Settings");
             settings.setManaged(true);
             settings.setVisible(true);
         }));
 
-        btnSearchComments.setOnAction(ae -> Platform.runLater(() -> {
+        btnSearchComments.setOnAction(ae -> runLater(() -> {
             headerIcon.setImage(IMG_SEARCH);
             content.getChildren().clear();
             content.getChildren().add(searchComments);
         }));
-        btnManageGroups.setOnAction(ae -> Platform.runLater(() -> {
+        btnManageGroups.setOnAction(ae -> runLater(() -> {
             headerIcon.setImage(IMG_MANAGE);
             content.getChildren().clear();
             content.getChildren().add(manageGroups);
         }));
-        btnSearchYoutube.setOnAction(ae -> Platform.runLater(() -> {
+        btnSearchYoutube.setOnAction(ae -> runLater(() -> {
             headerIcon.setImage(IMG_YOUTUBE);
             content.getChildren().clear();
             content.getChildren().add(searchYoutube);

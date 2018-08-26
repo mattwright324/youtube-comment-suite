@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS videos (
   http_code int,
   FOREIGN KEY(channel_id) REFERENCES channels(channel_id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_videos_id ON videos (video_id);
 CREATE TABLE IF NOT EXISTS comments (
   comment_id STRING PRIMARY KEY,
   channel_id STRING,
@@ -61,9 +62,11 @@ CREATE TABLE IF NOT EXISTS comments (
   FOREIGN KEY(channel_id) REFERENCES channels(channel_id),
   FOREIGN KEY(video_id) REFERENCES videos(video_id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_comments_id ON comments (comment_id);
 CREATE TABLE IF NOT EXISTS channels (
   channel_id STRING PRIMARY KEY,
   channel_name STRING,
   channel_profile_url STRING,
   download_profile BOOLEAN
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_channels_id ON channels (channel_id);

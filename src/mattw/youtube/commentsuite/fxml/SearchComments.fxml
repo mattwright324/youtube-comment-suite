@@ -1,10 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
-           style="-fx-border-color:green;"
+           alignment="TOP_CENTER"
            fx:controller="mattw.youtube.commentsuite.fxml.SearchCommentsController">
-    <Label text="Search Comments"  />
+    <fx:define>
+        <ImageView fx:id="toggleIcon" fitWidth="15" fitHeight="100" />
+    </fx:define>
+    <HBox alignment="TOP_CENTER">
+        <VBox fx:id="contextPane" minWidth="320" maxWidth="320" spacing="10" alignment="TOP_CENTER">
+            <padding><Insets topRightBottomLeft="10" /></padding>
+            <ImageView fx:id="videoThumb" fitHeight="168" fitWidth="300" />
+            <TextField fx:id="videoTitle" editable="false" styleClass="noBorder"
+                       text="YouTube Comment Suite - Title Placeholder" />
+            <HBox spacing="10">
+                <ImageView fx:id="authorThumb" fitWidth="30" fitHeight="30" />
+                <TextField fx:id="author" editable="false" styleClass="noBorder"
+                           text="mattwright324" />
+            </HBox>
+            <TextArea fx:id="videoDescription" VBox.vgrow="ALWAYS" maxHeight="Infinity"
+                      editable="false"
+                      wrapText="true"
+                      text="Published Nov 11, 1918 • An example description."/>
+        </VBox>
+        <fx:include fx:id="toggleContext" source="VFlexLabel.fxml"
+                    styleClass="toggleContext"
+                    graphic="$toggleIcon" />
+        <VBox HBox.hgrow="ALWAYS" spacing="10" alignment="TOP_CENTER">
+            <padding><Insets topRightBottomLeft="10" /></padding>
+            <ListView fx:id="resultList" VBox.vgrow="ALWAYS" />
+            <HBox alignment="CENTER" spacing="5">
+                <Button text="&lt;&lt;" />
+                <Button text="&lt;" />
+                <Label text="Page" styleClass="font16" />
+                <TextField fx:id="groupTitle" text="1" alignment="CENTER"
+                           editable="false" minWidth="50" maxWidth="50" styleClass="font16, clearTextField"
+                           style="-fx-cursor: hand;"/>
+                <Label text=" of 1" styleClass="font16" />
+                <Button text="&gt;" />
+                <Button text="&gt;&gt;" />
+            </HBox>
+            <HBox alignment="CENTER">
+
+            </HBox>
+        </VBox>
+        <VBox minWidth="320" maxWidth="320" spacing="10" alignment="TOP_CENTER">
+            <padding><Insets topRightBottomLeft="10" /></padding>
+        </VBox>
+    </HBox>
 </StackPane>

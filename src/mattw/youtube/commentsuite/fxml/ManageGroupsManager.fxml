@@ -7,8 +7,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.ImageView?>
 <?import mattw.youtube.commentsuite.fxml.OverlayModal?>
-<fx:root type="StackPane" xmlns="http://javafx.com/javafx"
-         alignment="TOP_CENTER"
+<fx:root type="StackPane" alignment="TOP_CENTER"
+         xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml">
     <fx:define>
         <ImageView fx:id="editIcon" fitHeight="25" fitWidth="25" />
@@ -41,9 +41,9 @@
                 </HBox>
                 <ListView fx:id="groupItemList" VBox.vgrow="ALWAYS" />
             </VBox>
-            <Accordion HBox.hgrow="ALWAYS">
+            <Accordion fx:id="accordion" HBox.hgrow="ALWAYS">
                 <panes>
-                    <TitledPane text="General Stats">
+                    <TitledPane fx:id="generalPane" text="General Stats">
                         <VBox></VBox>
                     </TitledPane>
                     <TitledPane text="About Videos" disable="true">

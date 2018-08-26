@@ -21,6 +21,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+/**
+ * Original Group Refresh Implementation
+ *
+ * Deprecated for replacement by MGMVGroupRefresh
+ *
+ * @author mattwright324
+ */
+@Deprecated
 public class GroupRefresh extends Thread {
 
     private Group group;
@@ -80,13 +88,13 @@ public class GroupRefresh extends Thread {
     public void run() {
         try {
             Platform.runLater(() -> refreshing.setValue(true));
-            elapsedTime.set();
+            elapsedTime.setNow();
 
             ExecutorService es = Executors.newFixedThreadPool(1);
             es.execute(() -> {
                 while(!completed.getValue()) {
                     Platform.runLater(() -> {
-                        elapsedTimeValue.setValue(elapsedTime.getTimeString());
+                        elapsedTimeValue.setValue(elapsedTime.getElapsedString());
                         if(errorCounter.get() > 0) {
                             errorCount.setValue(errorCounter.get());
                         }

@@ -1,16 +1,17 @@
 package mattw.youtube.commentsuite.db;
 
 import javafx.scene.image.Image;
+import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.LetterAvatar;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Similarities between GroupItem, YouTubeChannel, YouTubeComment, and YouTubeVideo.
+ *
+ * @author mattwright324
  */
-public abstract class YouTubeObject {
-
-    private static Map<Character,Image> letterAvatars = new HashMap<>();
+public abstract class YouTubeObject implements ImageCache {
 
     private YType typeId;
     private String youtubeId;
@@ -100,15 +101,7 @@ public abstract class YouTubeObject {
      * @return
      */
     public Image getDefaultThumb() {
-        char letter = getTitle().charAt(0);
-        Image letterAvatar;
-        if(letterAvatars.containsKey(letter)) {
-            letterAvatar = letterAvatars.get(letter);
-        } else {
-            letterAvatar = new LetterAvatar(letter);
-            letterAvatars.put(letter, letterAvatar);
-        }
-        return letterAvatar;
+        return ImageCache.toLetterAvatar(this);
     }
 
     /*public String getYouTubeLink() {

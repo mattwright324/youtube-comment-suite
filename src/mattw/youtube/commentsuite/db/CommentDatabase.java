@@ -76,7 +76,7 @@ public class CommentDatabase {
         this.create();
     }
 
-    protected void vacuum() throws SQLException {
+    public void vacuum() throws SQLException {
         logger.warn("Vacuuming database. This may take a long time.");
         sqlite.setAutoCommit(true);
         Statement s = sqlite.createStatement();
@@ -91,49 +91,7 @@ public class CommentDatabase {
         s.executeUpdate(SQLLoader.CLEAN_DB.toString());
         s.close();
         commit();
-        vacuum();
     }
-
-    /*/**
-     * Attempts to get cached channel or from database to cache it.
-     * Grabs from youtube is both fail.
-     */
-    /*public YouTubeChannel getChannel(String channelId) {
-        YouTubeChannel channel = channelCache.getIfPresent(channelId);
-        if(channel != null) {
-            return channel;
-        }
-        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_CHANNEL_BY_ID.toString())) {
-            ps.setString(1, channelId);
-            ResultSet rs = ps.executeQuery();
-            if(rs.next()) {
-                channel = resultSetToChannel(rs);
-                channelCache.put(channelId, channel);
-            }
-            rs.close();
-            if(channel != null) {
-                return channel;
-            } else {
-                // TODO: Move this out of CommentDatabase.
-                try {
-                    ChannelsList cl = CommentSuite.youtube().channelsList().getByChannel(ChannelsList.PART_SNIPPET, channelId, "");
-                    if(cl.hasItems()) {
-                        List<YouTubeChannel> list = new ArrayList<>();
-                        channel = new YouTubeChannel(cl.items[0], false);
-                        list.add(channel);
-                        insertChannels(list);
-                        commit();
-                        return channel;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }*/
 
     /**
      * Checks if the channel is cached and caches it if not.
@@ -228,6 +186,75 @@ public class CommentDatabase {
                 rs.getInt("http_code"));
     }
 
+    public boolean doesChannelExist(String channelId) {
+        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DOES_CHANNEL_EXIST.toString())) {
+            ps.setString(1, channelId);
+            try(ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public long countChannelsNotExisting(Collection<String> channelIds) throws SQLException {
+        long notExists = 0;
+        for(String id : channelIds) {
+            if(!doesChannelExist(id)) {
+                notExists++;
+            }
+        }
+        return notExists;
+    }
+
+    public boolean doesVideoExist(String videoId) {
+        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DOES_VIDEO_EXIST.toString())) {
+            ps.setString(1, videoId);
+            try(ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            logger.error(e);
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public long countVideosNotExisting(Collection<String> videoIds) throws SQLException {
+        long notExists = 0;
+        for(String id : videoIds) {
+            if(!doesVideoExist(id)) {
+                notExists++;
+            }
+        }
+        return notExists;
+    }
+
+    public boolean doesCommentExist(String commentId) {
+        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DOES_COMMENT_EXIST.toString())) {
+            ps.setString(1, commentId);
+            try(ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            logger.error(e);
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public long countCommentsNotExisting(Collection<String> commentIds) {
+        // logger.trace(String.format("Checking if commentIds's exist [size=%s,ids=%s]", commentIds.size(), commentIds.toString()));
+        long notExists = 0;
+        for(String id : commentIds) {
+            if(!doesCommentExist(id)) {
+                notExists++;
+            }
+        }
+        return notExists;
+    }
+
     /**
      * Returns list of GroupItems for a given Group.
      * If no GroupItems are present, returns a "No groups" Item with id GroupItem.NO_ITEMS
@@ -255,7 +282,7 @@ public class CommentDatabase {
      */
     public Group createGroup(String name) throws SQLException {
         Group group = new Group(name);
-        logger.debug(String.format("Created Group [id=%s,name=%s]", group.getId(), name));
+        logger.trace(String.format("Created Group [id=%s,name=%s]", group.getId(), name));
 
         PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GROUP_CREATE.toString());
         ps.setString(1, group.getId());
@@ -275,7 +302,7 @@ public class CommentDatabase {
      */
     public void renameGroup(Group g, String newName) throws SQLException {
         if(!g.getName().equals(newName)) {
-            logger.debug(String.format("Renaming Group [id=%s,name=%s,newName=%s]", g.getId(), g.getName(), newName));
+            logger.trace(String.format("Renaming Group [id=%s,name=%s,newName=%s]", g.getId(), g.getName(), newName));
             PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GROUP_RENAME.toString());
             ps.setString(1, newName);
             ps.setString(2, g.getId());
@@ -354,7 +381,8 @@ public class CommentDatabase {
      * Inserts comments for group refreshing.
      */
     public void insertComments(List<YouTubeComment> items) throws SQLException {
-        PreparedStatement ps = sqlite.prepareStatement("INSERT OR IGNORE INTO comments (comment_id, channel_id, video_id, comment_date, comment_text, comment_likes, reply_count, is_reply, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        // logger.trace(String.format("Inserting Comments [size=%s]", items.size()));
+        PreparedStatement ps = sqlite.prepareStatement(SQLLoader.INSERT_IGNORE_COMMENTS.toString());
         for(YouTubeComment ct : items) {
             ps.setString(1, ct.getYoutubeId());
             ps.setString(2, ct.getChannelId());
@@ -392,7 +420,8 @@ public class CommentDatabase {
      * Insert videos for group refreshing.
      */
     public void insertVideos(List<YouTubeVideo> items) throws SQLException {
-        PreparedStatement ps = sqlite.prepareStatement("INSERT INTO videos (video_id, channel_id, grab_date, publish_date, video_title, total_comments, total_views, total_likes, total_dislikes, video_desc, thumb_url, http_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+        logger.debug(String.format("Inserting Videos [size=%s]", items.size()));
+        PreparedStatement ps = sqlite.prepareStatement(SQLLoader.INSERT_REPLACE_VIDEOS.toString());
         for(YouTubeVideo video : items) {
             ps.setString(1, video.getYoutubeId());
             ps.setString(2, video.getChannelId());
@@ -546,7 +575,8 @@ public class CommentDatabase {
      * Insert channels for group refreshing.
      */
     public void insertChannels(List<YouTubeChannel> items) throws SQLException {
-        PreparedStatement ps = sqlite.prepareStatement("INSERT OR IGNORE INTO channels (channel_id, channel_name, channel_profile_url, download_profile) VALUES (?, ?, ?, ?)");
+        // logger.debug(String.format("Inserting Channels [size=%s]", items.size()));
+        PreparedStatement ps = sqlite.prepareStatement(SQLLoader.INSERT_IGNORE_CHANNELS.toString());
         for(YouTubeChannel c : items) {
             ps.setString(1, c.getYoutubeId());
             ps.setString(2, c.getTitle());

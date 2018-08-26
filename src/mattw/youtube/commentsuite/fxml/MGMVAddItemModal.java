@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
@@ -53,13 +53,13 @@ public class MGMVAddItemModal extends VBox {
                     Object src = me.getSource();
                     if(src instanceof Label) {
                         Label label = (Label) src;
-                        Platform.runLater(() -> link.setText(label.getText()));
+                        runLater(() -> link.setText(label.getText()));
                     }
                 });
             }
 
             btnSubmit.setOnAction(ae -> new Thread(() -> {
-                Platform.runLater(() -> {
+                runLater(() -> {
                     btnSubmit.setDisable(true);
                 });
                 Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
@@ -92,13 +92,13 @@ public class MGMVAddItemModal extends VBox {
                 }
 
                 if(result.isEmpty()) {
-                    Platform.runLater(() -> setError("Input did not match expected formats."));
+                    runLater(() -> setError("Input did not match expected formats."));
                 } else {
                     // TODO: Submit URL on addItem.
                     String msg = String.format("%s / %s", type.getDisplay(), result);
-                    Platform.runLater(() -> setError(msg));
+                    runLater(() -> setError(msg));
                 }
-                Platform.runLater(() -> btnSubmit.setDisable(false));
+                runLater(() -> btnSubmit.setDisable(false));
             }).start());
         } catch (IOException e) { logger.error(e); }
     }

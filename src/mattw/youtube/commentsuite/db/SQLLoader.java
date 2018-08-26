@@ -30,10 +30,16 @@ public enum SQLLoader {
     GROUP_CREATE("dml_create_group.sql", SQLType.DML),
     GROUP_CREATE_DEFAULT("dml_create_default_group.sql", SQLType.DML),
     GROUP_RENAME("dml_rename_group.sql", SQLType.DML),
+    INSERT_REPLACE_VIDEOS("dml_insert_replace_videos.sql", SQLType.DML),
+    INSERT_IGNORE_COMMENTS("dml_insert_ignore_comments.sql", SQLType.DML),
+    INSERT_IGNORE_CHANNELS("dml_insert_ignore_channels.sql", SQLType.DML),
 
     /* DQL SQL Scripts */
     GET_ALL_GROUPS("dql_get_all_groups.sql", SQLType.DQL),
-    GET_COMMENT_TREE("dql_get_comment_tree.sql", SQLType.DQL)
+    GET_COMMENT_TREE("dql_get_comment_tree.sql", SQLType.DQL),
+    DOES_COMMENT_EXIST("dql_does_comment_exist.sql", SQLType.DQL),
+    DOES_VIDEO_EXIST("dql_does_video_exist.sql", SQLType.DQL),
+    DOES_CHANNEL_EXIST("dql_does_channel_exist.sql", SQLType.DQL)
     ;
 
     /**

@@ -2,7 +2,7 @@ package mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -68,7 +68,7 @@ public class ManageGroupsController implements Initializable {
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
             ManageGroupsManagerView manager = managerCache.getIfPresent(nv.getId());
             if (manager != null) {
-                Platform.runLater(() -> {
+                runLater(() -> {
                     content.getChildren().clear();
                     content.getChildren().addAll(manager);
                 });
@@ -76,7 +76,7 @@ public class ManageGroupsController implements Initializable {
                 try {
                     ManageGroupsManagerView m = new ManageGroupsManagerView(selectionModel.getSelectedItem());
                     managerCache.put(nv.getId(), m);
-                    Platform.runLater(() -> {
+                    runLater(() -> {
                         content.getChildren().clear();
                         content.getChildren().addAll(m);
                     });
@@ -93,39 +93,39 @@ public class ManageGroupsController implements Initializable {
         MGCreateGroupModal modal = new MGCreateGroupModal();
         overlayModal.setContent(modal);
 
-        btnCreateGroup.setOnAction(ae -> Platform.runLater(() -> {
+        btnCreateGroup.setOnAction(ae -> runLater(() -> {
             modal.getErrorMsg().setManaged(false);
             modal.getNameField().setText("");
             overlayModal.setVisible(true);
         }));
 
-        modal.getBtnClose().setOnAction(ae -> Platform.runLater(() -> {
+        modal.getBtnClose().setOnAction(ae -> runLater(() -> {
             overlayModal.setVisible(false);
         }));
 
         modal.getBtnCreate().setOnAction(ae -> new Thread(() -> {
             logger.debug("Attempting to create group");
-            Platform.runLater(() -> overlayModal.setDisable(true));
+            runLater(() -> overlayModal.setDisable(true));
             String name = modal.getNameField().getText();
             if(!name.equals("")) {
                 try {
                     Group g = database.createGroup(name);
                     logger.debug(String.format("Created new group [id=%s,name=%s]", g.getId(), g.getName()));
-                    Platform.runLater(() -> {
+                    runLater(() -> {
                         overlayModal.setDisable(false);
                         modal.getErrorMsg().setManaged(false);
                         overlayModal.setVisible(false);
                     });
                 } catch (SQLException e) {
                     logger.error(e);
-                    Platform.runLater(() -> {
+                    runLater(() -> {
                         overlayModal.setDisable(false);
                         modal.getErrorMsg().setManaged(true);
                         modal.getErrorMsg().setText("Name already exists, try another!");
                     });
                 }
             } else {
-                Platform.runLater(() -> {
+                runLater(() -> {
                     overlayModal.setDisable(true);
                     modal.getErrorMsg().setManaged(true);
                     modal.getErrorMsg().setText("Name must not be empty.");

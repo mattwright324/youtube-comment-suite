@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -63,6 +63,9 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
     private @FXML Button btnReload;
     private @FXML Button btnDelete;
 
+    private @FXML Accordion accordion;
+    private @FXML TitledPane generalPane;
+
     public ManageGroupsManagerView(Group group) throws IOException {
         logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
 
@@ -78,6 +81,8 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         Random random = new Random();
         this.setStyle(String.format("-fx-background-color: linear-gradient(to top, rgba(%s,%s,%s,%s), transparent);",
                 220-random.nextInt(60), 220-random.nextInt(60), 220-random.nextInt(60), 0.4));
+
+        accordion.setExpandedPane(generalPane);
 
         editIcon.setImage(edit);
 
@@ -108,7 +113,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
                     logger.error(e);
                 }
             }
-            Platform.runLater(() -> {
+            runLater(() -> {
                 if(editIcon.getImage().equals(edit)) {
                     editIcon.setImage(close);
                     groupTitle.getStyleClass().remove("clearTextField");
@@ -126,14 +131,14 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         SelectionModel selectionModel = groupItemList.getSelectionModel();
         ((MultipleSelectionModel) selectionModel).setSelectionMode(SelectionMode.MULTIPLE);
         ((MultipleSelectionModel) selectionModel).getSelectedItems().addListener((ListChangeListener)(lcl) -> {
-            Platform.runLater(() -> {
+            runLater(() -> {
                 int items = lcl.getList().size();
                 btnRemoveItems.setText(String.format("Remove (%s)", items));
                 btnRemoveItems.setDisable(items <= 0);
             });
         });
         groupItemList.getItems().addListener((ListChangeListener)(lcl) -> {
-           Platform.runLater(() -> {
+           runLater(() -> {
                int items = lcl.getList().size();
                btnRemoveAll.setText(String.format("Remove All (%s)", items));
                btnRemoveAll.setDisable(items <= 0);
@@ -147,7 +152,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
             List<MGMVGroupItemView> groupItemViews = groupItems.stream()
                     .map(MGMVGroupItemView::new).collect(Collectors.toList());
             logger.debug("[Load] Found "+groupItems.size()+" GroupItem(s)");
-            Platform.runLater(() -> {
+            runLater(() -> {
                groupItemList.getItems().addAll(groupItemViews);
             });
         }).start();
@@ -157,16 +162,16 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
          */
         MGMVRefreshModal mgmvRefresh = new MGMVRefreshModal(group);
         refreshModal.setContent(mgmvRefresh);
-        btnRefresh.setOnAction(ae -> Platform.runLater(() -> {
+        btnRefresh.setOnAction(ae -> runLater(() -> {
             mgmvRefresh.reset();
             refreshModal.setVisible(true);
         }));
         mgmvRefresh.getBtnClose().setOnAction(ae -> refreshModal.setVisible(false));
         mgmvRefresh.getErrorList().managedProperty().addListener((o, ov, nv) -> {
             if(nv) {
-                Platform.runLater(() -> refreshModal.getModalContainer().setMaxWidth(420+250));
+                runLater(() -> refreshModal.getModalContainer().setMaxWidth(420+250));
             } else {
-                Platform.runLater(() -> refreshModal.getModalContainer().setMaxWidth(420));
+                runLater(() -> refreshModal.getModalContainer().setMaxWidth(420));
             }
         });
 
@@ -176,7 +181,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal(group);
         deleteModal.setContent(mgmvDelete);
         deleteModal.setDividerClass("dividerDanger");
-        btnDelete.setOnAction(ae -> Platform.runLater(() -> deleteModal.setVisible(true)));
+        btnDelete.setOnAction(ae -> runLater(() -> deleteModal.setVisible(true)));
         mgmvDelete.getBtnClose().setOnAction(ae -> deleteModal.setVisible(false));
 
         /**
@@ -184,7 +189,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
          */
         MGMVAddItemModal mgmvAddItem = new MGMVAddItemModal(group);
         addItemModal.setContent(mgmvAddItem);
-        btnAddItem.setOnAction(ae -> Platform.runLater(() -> {
+        btnAddItem.setOnAction(ae -> runLater(() -> {
             mgmvAddItem.reset();
             addItemModal.setVisible(true);
         }));
@@ -196,7 +201,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         MGMVRemoveSelectedModal mgmvRemoveSelected = new MGMVRemoveSelectedModal(group, groupItemList.getSelectionModel());
         removeItemModal.setContent(mgmvRemoveSelected);
         removeItemModal.setDividerClass("dividerWarning");
-        btnRemoveItems.setOnAction(ae -> Platform.runLater(() -> {
+        btnRemoveItems.setOnAction(ae -> runLater(() -> {
             mgmvRemoveSelected.reset();
             removeItemModal.setVisible(true);
         }));
@@ -208,7 +213,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         MGMVRemoveAllModal mgmvRemoveAll = new MGMVRemoveAllModal(group);
         removeAllModal.setContent(mgmvRemoveAll);
         removeAllModal.setDividerClass("dividerDanger");
-        btnRemoveAll.setOnAction(ae -> Platform.runLater(() -> {
+        btnRemoveAll.setOnAction(ae -> runLater(() -> {
             mgmvRemoveAll.reset();
             removeAllModal.setVisible(true);
         }));
@@ -221,7 +226,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
      * @param field
      */
     private void resizeTextField(TextField field) {
-        Platform.runLater(() -> {
+        runLater(() -> {
             Text text = new Text(field.getText());
             text.setFont(field.getFont());
             double width = text.getLayoutBounds().getWidth()

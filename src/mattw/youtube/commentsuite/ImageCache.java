@@ -13,24 +13,48 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Cache for images and letter avatars.
+ *
+ * @author mattwright324
+ */
 public interface ImageCache {
 
     Logger logger = LogManager.getLogger(ImageCache.class.getSimpleName());
 
-    Cache<String, Image> thumbCache = CacheBuilder.newBuilder()
-            .maximumSize(250)
+    Cache<Object, Image> thumbCache = CacheBuilder.newBuilder()
+            .maximumSize(500)
             .expireAfterAccess(5, TimeUnit.MINUTES)
             .build();
 
+    static Image toLetterAvatar(YouTubeObject object) {
+        return toLetterAvatar(object.getTitle());
+    }
+
+    static Image toLetterAvatar(String s) {
+        if(s == null || s.isEmpty()) {
+            return toLetterAvatar(" ");
+        } else {
+            return toLetterAvatar(s.charAt(0));
+        }
+    }
+
+    static Image toLetterAvatar(char letter) {
+        Image image = thumbCache.getIfPresent(letter);
+        if(image == null) {
+            image = new LetterAvatar(letter);
+            thumbCache.put(letter, image);
+        }
+        return image;
+    }
+
     static Image findOrGetImage(YouTubeObject object) {
-        logger.debug(String.format("FindOrGet Image [id=%s]", object.getYoutubeId()));
         ConfigFile<ConfigData> config = FXMLSuite.getConfig();
         ConfigData configData = config.getDataObject();
 
         String id = object.getYoutubeId();
         Image image = thumbCache.getIfPresent(id);
         if(image == null) {
-            logger.debug(String.format("Getting [id=%s]", object.getYoutubeId()));
             String fileFormat = "jpg";
             File thumbFile = new File(String.format("thumbs/%s.%s", id, fileFormat));
             if(configData.getArchiveThumbs() && !thumbFile.exists()) {
@@ -42,10 +66,8 @@ public interface ImageCache {
                 } catch (IOException ignored) {}
             }
             if(thumbFile.exists()) {
-                logger.debug(String.format("Grabbing File [file=thumbs/%s.%s]", object.getYoutubeId(), fileFormat));
                 image = new Image(String.format("file:///%s", thumbFile.getAbsolutePath()));
             } else {
-                logger.debug(String.format("Grabbing Image [id=%s]", object.getYoutubeId()));
                 image = new Image(object.getThumbUrl());
             }
             thumbCache.put(id, image);

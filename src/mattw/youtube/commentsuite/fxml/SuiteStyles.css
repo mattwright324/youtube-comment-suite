@@ -138,3 +138,9 @@
     -fx-text-fill: derive(lightgrey, -20%);
     -fx-border-color: lightgray;
 }
+
+/* SearchComments.fxml */
+.toggleContext {
+    -fx-cursor: hand;
+    -fx-background-color: linear-gradient(to right, lightgray, transparent);
+}

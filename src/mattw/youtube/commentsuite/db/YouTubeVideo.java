@@ -3,7 +3,6 @@ package mattw.youtube.commentsuite.db;
 import mattw.youtube.datav3.resources.VideosList;
 
 /**
- * Wrapper for
  * @author mattwright324
  */
 public class YouTubeVideo extends YouTubeObject {
@@ -14,6 +13,20 @@ public class YouTubeVideo extends YouTubeObject {
     private long comments, likes, dislikes, views;
     private int httpCode;
 
+    public YouTubeVideo(VideosList.Item item) {
+        super(item.getId(), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
+        setTypeId(YType.VIDEO);
+        this.channelId = item.snippet.channelId;
+        this.description = item.snippet.description;
+        this.publishDate = item.snippet.publishedAt.getTime();
+        this.views = item.statistics.viewCount;
+        this.likes = item.statistics.likeCount;
+        this.dislikes = item.statistics.dislikeCount;
+        this.comments = item.statistics.commentCount;
+        this.grabDate = System.currentTimeMillis();
+    }
+
+    @Deprecated
     public YouTubeVideo(VideosList.Item itemSnip, VideosList.Item itemStat) {
         super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.medium.url.toString(), true);
         setTypeId(YType.VIDEO);

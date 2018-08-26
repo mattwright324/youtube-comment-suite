@@ -1,11 +1,9 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import static javafx.application.Platform.runLater;
+
+import javafx.beans.binding.Bindings;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
@@ -14,14 +12,14 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import mattw.youtube.commentsuite.MGMVGroupRefresh;
+import mattw.youtube.commentsuite.RefreshInterface;
 import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.commentsuite.io.ClipboardUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Modal for group refreshing set as content within an OverlayModal.
@@ -40,61 +38,6 @@ public class MGMVRefreshModal extends HBox {
 
     private ClipboardUtil clipboard = new ClipboardUtil();
 
-    class RefreshExample extends Thread {
-        private Logger logger = LogManager.getLogger(getClass().getSimpleName());
-
-        private Group group;
-        private double max = 1000*20.0;
-        private boolean stoppedOnError = false;
-        private SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
-        private boolean shutdown = false;
-
-        SimpleBooleanProperty finished = new SimpleBooleanProperty(false);
-        SimpleStringProperty statusStep = new SimpleStringProperty("Preparing");
-        SimpleDoubleProperty progress = new SimpleDoubleProperty(0.0);
-        ObservableList<String> errorList = FXCollections.observableArrayList();
-
-        public RefreshExample(Group group) {
-            this.group = group;
-        }
-
-        public void run() {
-            logger.debug("Refresh Start");
-            try {
-                long start = System.currentTimeMillis();
-                double diff;
-                while((diff = System.currentTimeMillis() - start) <= max && !Thread.currentThread().isInterrupted() && !shutdown) {
-                    double p = diff / max;
-                    if(diff > max/2) {
-                        throw new Exception("Test failure.");
-                    }
-                    Platform.runLater(() -> progress.setValue(p));
-                    try { Thread.sleep(100); } catch (Exception ignored) {}
-                }
-            } catch (Exception e) {
-                appendError(e.getLocalizedMessage());
-                logger.error("Refresh Failed", e);
-                stoppedOnError = true;
-            }
-            Platform.runLater(() -> finished.setValue(true));
-            logger.debug("Refresh Finished");
-        }
-
-        public void appendError(String msg) {
-            String message = sdf.format(new Date()) + " - " + msg;
-            Platform.runLater(() -> errorList.add(message));
-        }
-
-        public void shutdown() {
-            shutdown = true;
-        }
-
-        public SimpleBooleanProperty finishedProperty() { return finished; }
-        public SimpleDoubleProperty progressProperty() { return progress; }
-        public SimpleStringProperty statusStepProperty() { return statusStep; }
-        public boolean isStoppedOnError() { return stoppedOnError; }
-    }
-
     private @FXML Label alert;
     private @FXML Label statusStep;
     private @FXML Button btnClose;
@@ -102,6 +45,8 @@ public class MGMVRefreshModal extends HBox {
     private @FXML ProgressBar progressBar;
     private @FXML VBox statusPane;
 
+    private @FXML HBox warningsPane;
+    private @FXML Label warnings, elapsedTime, newVideos, newComments, totalVideos, totalComments;
     private @FXML ImageView expandIcon;
     private @FXML ListView<String> errorList;
     private @FXML Hyperlink expand;
@@ -109,7 +54,7 @@ public class MGMVRefreshModal extends HBox {
     private @FXML ProgressIndicator statusIndicator;
 
     private Group group;
-    private RefreshExample example;
+    private RefreshInterface refreshThread;
     private boolean running = false;
 
     private boolean expanded = false;
@@ -127,7 +72,7 @@ public class MGMVRefreshModal extends HBox {
 
             expand.setOnAction(ae -> {
                 expanded = !expanded;
-                Platform.runLater(() -> {
+                runLater(() -> {
                     if(expanded) {
                         expandIcon.setImage(angleLeft);
                         errorList.setManaged(true);
@@ -149,22 +94,22 @@ public class MGMVRefreshModal extends HBox {
             btnStart.setOnAction(ae -> new Thread(() -> {
                 if(running) {
                     logger.debug(String.format("Requesting group refresh stopped for group [id=%s,name=%s]", group.getId(), group.getName()));
-                    Platform.runLater(() -> {
+                    runLater(() -> {
                         btnStart.setDisable(true);
                         endStatus.setImage(circleMinus);
                     });
-                    example.shutdown();
-                    while(example.isAlive()) {
-                        try { Thread.sleep(250); } catch (Exception ignored) {}
+                    refreshThread.hardShutdown();
+                    while(refreshThread.isAlive()) {
+                        try { Thread.sleep(97); } catch (Exception ignored) {}
                     }
                     running = false;
-                    Platform.runLater(() -> {
+                    runLater(() -> {
                         btnClose.setDisable(false);
                     });
                 } else {
                     running = true;
                     logger.debug(String.format("Starting group refresh for group [id=%s,name=%s]", group.getId(), group.getName()));
-                    Platform.runLater(() -> {
+                    runLater(() -> {
                         statusPane.setVisible(true);
                         statusPane.setManaged(true);
                         btnClose.setDisable(true);
@@ -173,18 +118,37 @@ public class MGMVRefreshModal extends HBox {
                         alert.setManaged(false);
                     });
 
-                    example = new RefreshExample(group);
-                    errorList.setItems(example.errorList);
-                    progressBar.progressProperty().bind(example.progressProperty());
-                    statusStep.textProperty().bind(example.statusStepProperty());
-                    example.start();
-                    example.finishedProperty().addListener((o, ov, nv) -> {
+                    refreshThread = new MGMVGroupRefresh(group);
+                    runLater(() -> {
+                        refreshThread.getObservableErrorList().addListener((ListChangeListener<String>)(lcl) -> runLater(() -> {
+                            int items = lcl.getList().size();
+                            warningsPane.setManaged(items > 0);
+                            warningsPane.setVisible(items > 0);
+                            warnings.setText(items+" message(s)");
+                        }));
+                        errorList.setItems(refreshThread.getObservableErrorList());
+                        elapsedTime.textProperty().bind(refreshThread.elapsedTimeProperty());
+                        progressBar.progressProperty().bind(refreshThread.progressProperty());
+                        statusStep.textProperty().bind(refreshThread.statusStepProperty());
+                        newVideos.textProperty().bind(Bindings.format("%,d", refreshThread.newVideosProperty()));
+                        totalVideos.textProperty().bind(
+                                Bindings.concat("of ")
+                                        .concat(Bindings.format("%,d", refreshThread.totalVideosProperty()))
+                                        .concat(" total"));
+                        newComments.textProperty().bind(Bindings.format("%,d", refreshThread.newCommentsProperty()));
+                        totalComments.textProperty().bind(
+                                Bindings.concat("of ")
+                                        .concat(Bindings.format("%,d", refreshThread.totalCommentsProperty()))
+                                        .concat(" total"));
+                    });
+                    refreshThread.start();
+                    refreshThread.endedProperty().addListener((o, ov, nv) -> {
                         progressBar.progressProperty().unbind();
-                        Platform.runLater(() -> {
+                        runLater(() -> {
                             btnStart.setVisible(false);
                             btnStart.setManaged(false);
                             btnClose.setDisable(false);
-                            endStatus.setImage(example.isStoppedOnError() ? circleTimes : circleCheck);
+                            endStatus.setImage(refreshThread.isEndedOnError() ? circleTimes : circleCheck);
                             endStatus.setManaged(true);
                             endStatus.setVisible(true);
                             statusIndicator.setManaged(false);
@@ -202,7 +166,7 @@ public class MGMVRefreshModal extends HBox {
     public void reset() {
         logger.debug("Resetting state of Refresh Modal");
         running = false;
-        Platform.runLater(() -> {
+        runLater(() -> {
             if(expanded) {
                 expand.fire();
             }

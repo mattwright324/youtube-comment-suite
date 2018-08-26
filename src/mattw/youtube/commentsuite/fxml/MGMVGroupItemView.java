@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -36,7 +36,7 @@ public class MGMVGroupItemView extends HBox {
 
             new Thread(() -> {
                 Image image = ImageCache.findOrGetImage(groupItem);
-                Platform.runLater(() -> icon.setImage(image));
+                runLater(() -> icon.setImage(image));
             }).start();
 
         } catch (IOException e) {

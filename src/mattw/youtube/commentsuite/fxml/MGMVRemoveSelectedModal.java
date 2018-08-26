@@ -13,6 +13,7 @@ import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import static javafx.application.Platform.runLater;
 
 import java.io.IOException;
 
@@ -43,6 +44,8 @@ public class MGMVRemoveSelectedModal extends VBox {
         loader.setRoot(this);
         try {
             loader.load();
+
+            // TODO: Add remove functionality.
         } catch (IOException e) { logger.error(e); }
     }
 

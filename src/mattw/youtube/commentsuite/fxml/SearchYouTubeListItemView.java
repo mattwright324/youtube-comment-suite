@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
+import static javafx.application.Platform.runLater;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -86,7 +86,7 @@ public class SearchYouTubeListItemView extends HBox {
             author.setText(data.etag);
             description.setText("There was no snippet attached to this object.");
             Image thumb = new Image("/mattw/youtube/commentsuite/img/oops.png");
-            Platform.runLater(() -> {
+            runLater(() -> {
                 thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
                 thumbnail.setImage(thumb);
             });

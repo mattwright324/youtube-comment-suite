@@ -1,10 +1,10 @@
 package mattw.youtube.commentsuite.fxml;
 
-import javafx.application.Platform;
-import javafx.beans.property.SimpleBooleanProperty;
+import static javafx.application.Platform.runLater;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.layout.VBox;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.db.CommentDatabase;
@@ -21,11 +21,11 @@ public class MGMVDeleteGroupModal extends VBox {
 
     private CommentDatabase database;
 
+    private @FXML CheckBox doVacuum;
     private @FXML Button btnClose;
     private @FXML Button btnDelete;
 
     private Group group;
-    private SimpleBooleanProperty deleted = new SimpleBooleanProperty(false);
 
     public MGMVDeleteGroupModal(Group group) {
         this.group = group;
@@ -39,7 +39,10 @@ public class MGMVDeleteGroupModal extends VBox {
             loader.load();
 
             btnDelete.setOnAction(ae -> new Thread(() -> {
-                Platform.runLater(() -> disableProperty().bind(deleted));
+                runLater(() -> {
+                    btnDelete.setDisable(true);
+                    btnClose.setDisable(true);
+                });
 
                 try {
                     logger.warn(String.format("Deleting Group[id=%s,name=%s]", group.getId(), group.getName()));
@@ -48,17 +51,19 @@ public class MGMVDeleteGroupModal extends VBox {
                     logger.warn(String.format("Cleaning up after group delete [id=%s,name=%s]", group.getId(), group.getName()));
                     database.cleanUp();
                     database.commit();
+                    if(doVacuum.isSelected()) {
+                        database.vacuum();
+                    }
                     database.refreshGroups();
-                    Platform.runLater(() -> deleted.setValue(true));
                 } catch (SQLException e) {
                     logger.error("Failed to delete group.", e);
                 }
+                runLater(() -> {
+                    btnDelete.setDisable(false);
+                    btnClose.setDisable(false);
+                });
             }).start());
         } catch (IOException e) { logger.error(e); }
-    }
-
-    public SimpleBooleanProperty deletedProperty() {
-        return deleted;
     }
 
     public Button getBtnClose() {
