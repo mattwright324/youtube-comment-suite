@@ -124,9 +124,9 @@ public class GroupRefresh extends Thread {
             System.out.println(String.format("VideoItems %s, PlaylistItems %s, ChannelItems %s", videoItems.size(), playlistItems.size(), channelItems.size()));
 
             Platform.runLater(() -> refreshStatus.setValue("Grabbing Videos"));
-            parseGroupItems(videoItems, GroupItem.VIDEO);
+            /*parseGroupItems(videoItems, GroupItem.VIDEO);
             parseGroupItems(playlistItems, GroupItem.PLAYLIST);
-            parseGroupItems(channelItems, GroupItem.CHANNEL);
+            parseGroupItems(channelItems, GroupItem.CHANNEL);*/
             database.insertVideos(videoInsert);
             database.updateVideos(videoUpdate);
             database.insertGroupItemVideo(givInsert);
@@ -214,7 +214,7 @@ public class GroupRefresh extends Thread {
      * Handles GroupItems separated by the same type.
      */
     private void parseGroupItems(List<GroupItem> items, int type) throws SQLException, IOException, YouTubeErrorException {
-        if(type == GroupItem.VIDEO) {
+        /*if(type == GroupItem.VIDEO) {
             List<String> sublist;
             for(GroupItem item : items) {
                 database.updateGroupItemLastChecked(item);
@@ -241,7 +241,7 @@ public class GroupRefresh extends Thread {
                     handlePlaylist(uploadPlaylistId, item.getYoutubeId());
                 }
             }
-        }
+        }*/
     }
 
     /**

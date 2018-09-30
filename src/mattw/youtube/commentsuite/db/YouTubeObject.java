@@ -20,7 +20,6 @@ public abstract class YouTubeObject implements ImageCache {
     private boolean fetchThumb;
 
     private String youtubeLink;
-    private String typeName;
 
     public YouTubeObject() {
         typeId = YType.UNKNOWN;
@@ -83,11 +82,7 @@ public abstract class YouTubeObject implements ImageCache {
     }
 
     public String getTypeName() {
-        return typeName;
-    }
-
-    public void setTypeName(String typeName) {
-        this.typeName = typeName;
+        return typeId.getDisplay();
     }
 
     /**
@@ -104,8 +99,8 @@ public abstract class YouTubeObject implements ImageCache {
         return ImageCache.toLetterAvatar(this);
     }
 
-    /*public String getYouTubeLink() {
-        switch(typeId){
+    public String getYouTubeLink() {
+        switch(typeId.id()){
             case 0:  return "https://youtu.be/"+youtubeId;
             case 1:  return "https://www.youtube.com/channel/"+youtubeId;
             case 2:  return "https://www.youtube.com/playlist?list="+youtubeId;
@@ -114,8 +109,8 @@ public abstract class YouTubeObject implements ImageCache {
         }
     }
 
-    public String getTypeName() {
-        switch(typeId) {
+    /*public String getTypeName() {
+        switch(typeId.id()) {
             case 0: return "Video";
             case 1: return "Channel";
             case 2: return "Playlist";

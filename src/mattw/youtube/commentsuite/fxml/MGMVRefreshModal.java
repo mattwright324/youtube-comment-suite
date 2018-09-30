@@ -12,6 +12,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.MGMVGroupRefresh;
 import mattw.youtube.commentsuite.RefreshInterface;
 import mattw.youtube.commentsuite.db.Group;
@@ -29,12 +30,6 @@ import java.io.IOException;
 public class MGMVRefreshModal extends HBox {
 
     private static Logger logger = LogManager.getLogger(MGMVRefreshModal.class.getSimpleName());
-
-    private static Image angleLeft = new Image("/mattw/youtube/commentsuite/img/angle-left.png");
-    private static Image angleRight = new Image("/mattw/youtube/commentsuite/img/angle-right.png");
-    private static Image circleCheck = new Image("/mattw/youtube/commentsuite/img/check-circle.png");
-    private static Image circleTimes = new Image("/mattw/youtube/commentsuite/img/times-circle.png");
-    private static Image circleMinus = new Image("/mattw/youtube/commentsuite/img/minus-circle.png");
 
     private ClipboardUtil clipboard = new ClipboardUtil();
 
@@ -60,6 +55,8 @@ public class MGMVRefreshModal extends HBox {
     private boolean expanded = false;
 
     public MGMVRefreshModal(Group group) {
+        logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
+
         this.group = group;
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRefreshModal.fxml"));
@@ -68,17 +65,17 @@ public class MGMVRefreshModal extends HBox {
         try {
             loader.load();
 
-            expandIcon.setImage(angleRight);
+            expandIcon.setImage(ImageLoader.ANGLE_RIGHT.getImage());
 
             expand.setOnAction(ae -> {
                 expanded = !expanded;
                 runLater(() -> {
                     if(expanded) {
-                        expandIcon.setImage(angleLeft);
+                        expandIcon.setImage(ImageLoader.ANGLE_LEFT.getImage());
                         errorList.setManaged(true);
                         errorList.setVisible(true);
                     } else {
-                        expandIcon.setImage(angleRight);
+                        expandIcon.setImage(ImageLoader.ANGLE_RIGHT.getImage());
                         errorList.setManaged(false);
                         errorList.setVisible(false);
                     }
@@ -96,7 +93,7 @@ public class MGMVRefreshModal extends HBox {
                     logger.debug(String.format("Requesting group refresh stopped for group [id=%s,name=%s]", group.getId(), group.getName()));
                     runLater(() -> {
                         btnStart.setDisable(true);
-                        endStatus.setImage(circleMinus);
+                        endStatus.setImage(ImageLoader.MINUS_CIRCLE.getImage());
                     });
                     refreshThread.hardShutdown();
                     while(refreshThread.isAlive()) {
@@ -148,7 +145,8 @@ public class MGMVRefreshModal extends HBox {
                             btnStart.setVisible(false);
                             btnStart.setManaged(false);
                             btnClose.setDisable(false);
-                            endStatus.setImage(refreshThread.isEndedOnError() ? circleTimes : circleCheck);
+                            endStatus.setImage(refreshThread.isEndedOnError() ?
+                                    ImageLoader.TIMES_CIRCLE.getImage() : ImageLoader.CHECK_CIRCLE.getImage());
                             endStatus.setManaged(true);
                             endStatus.setVisible(true);
                             statusIndicator.setManaged(false);

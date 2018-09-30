@@ -13,6 +13,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import mattw.youtube.commentsuite.FXMLSuite;
+import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.io.BrowserUtil;
 import mattw.youtube.commentsuite.io.ClipboardUtil;
 import mattw.youtube.commentsuite.io.Geolocation;
@@ -32,9 +33,6 @@ import java.util.stream.Collectors;
 public class SearchYouTubeController implements Initializable {
 
     private static Logger logger = LogManager.getLogger(SearchYouTubeController.class.getSimpleName());
-
-    private final Image IMG_SEARCH = new Image("/mattw/youtube/commentsuite/img/search.png");
-    private final Image IMG_LOCATION = new Image("/mattw/youtube/commentsuite/img/location.png");
 
     private Geolocation geolocation;
     private YouTubeData3 youtubeApi;
@@ -83,8 +81,8 @@ public class SearchYouTubeController implements Initializable {
 
         SelectionModel selectionModel = resultsList.getSelectionModel();
 
-        searchIcon.setImage(IMG_SEARCH);
-        geoIcon.setImage(IMG_LOCATION);
+        searchIcon.setImage(ImageLoader.SEARCH.getImage());
+        geoIcon.setImage(ImageLoader.LOCATION.getImage());
 
         BooleanBinding isLocation = searchType.valueProperty().isEqualTo("Location");
         locationBox.managedProperty().bind(isLocation);

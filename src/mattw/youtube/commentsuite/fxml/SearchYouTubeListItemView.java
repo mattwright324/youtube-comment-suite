@@ -8,6 +8,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import mattw.youtube.commentsuite.ImageCache;
+import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.YouTubeSearchItem;
 import mattw.youtube.datav3.resources.SearchList;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +26,7 @@ import java.io.IOException;
 public class SearchYouTubeListItemView extends HBox {
 
     private static Logger logger = LogManager.getLogger(SearchYouTubeListItemView.class.getName());
-    private static Image loading = new Image("/mattw/youtube/commentsuite/img/loading.png");
+    private static Image loading = ImageLoader.LOADING.getImage();
 
     private @FXML Label type;
     private @FXML Label title;
@@ -85,7 +86,7 @@ public class SearchYouTubeListItemView extends HBox {
             title.setText("SearchList.Item Error");
             author.setText(data.etag);
             description.setText("There was no snippet attached to this object.");
-            Image thumb = new Image("/mattw/youtube/commentsuite/img/oops.png");
+            Image thumb = ImageLoader.OOPS.getImage();
             runLater(() -> {
                 thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
                 thumbnail.setImage(thumb);

@@ -11,6 +11,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import mattw.youtube.commentsuite.FXMLSuite;
+import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.db.Group;
 import org.apache.logging.log4j.LogManager;
@@ -28,9 +29,7 @@ import java.util.ResourceBundle;
  */
 public class ManageGroupsController implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(ManageGroupsController.class.getName());
-    private static Image plus = new Image("/mattw/youtube/commentsuite/img/plus.png");
-
+    private static Logger logger = LogManager.getLogger(ManageGroupsController.class.getSimpleName());
     Cache<String,ManageGroupsManagerView> managerCache = CacheBuilder.newBuilder().build();
 
     private CommentDatabase database;
@@ -43,13 +42,15 @@ public class ManageGroupsController implements Initializable {
     private @FXML Pane content;
 
     public void initialize(URL location, ResourceBundle resources) {
+        logger.debug("Initialize ManageGroupsController");
+
         database = FXMLSuite.getDatabase();
 
         /**
          * Logic for main pane.
          */
 
-        plusIcon.setImage(plus);
+        plusIcon.setImage(ImageLoader.PLUS.getImage());
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
         comboGroupSelect.setItems(database.globalGroupList);
@@ -107,11 +108,12 @@ public class ManageGroupsController implements Initializable {
             logger.debug("Attempting to create group");
             runLater(() -> overlayModal.setDisable(true));
             String name = modal.getNameField().getText();
-            if(!name.equals("")) {
+            if(!name.isEmpty()) {
                 try {
                     Group g = database.createGroup(name);
                     logger.debug(String.format("Created new group [id=%s,name=%s]", g.getId(), g.getName()));
                     runLater(() -> {
+                        comboGroupSelect.getSelectionModel().select(g);
                         overlayModal.setDisable(false);
                         modal.getErrorMsg().setManaged(false);
                         overlayModal.setVisible(false);

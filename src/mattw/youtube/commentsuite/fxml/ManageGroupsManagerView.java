@@ -15,12 +15,14 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageCache;
+import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.commentsuite.db.GroupItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -37,9 +39,8 @@ import java.util.stream.Collectors;
 public class ManageGroupsManagerView extends StackPane implements ImageCache {
 
     private Logger logger = LogManager.getLogger(this.toString());
-    private Image loading = new Image("/mattw/youtube/commentsuite/img/loading.png");
-    private Image edit = new Image("/mattw/youtube/commentsuite/img/pencil.png");
-    private Image close = new Image("/mattw/youtube/commentsuite/img/close.png");
+    private Image edit = ImageLoader.PENCIL.getImage();
+    private Image close = ImageLoader.CLOSE.getImage();
 
     private ChangeListener<Font> fontListener;
     private Group group;
@@ -62,6 +63,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
     private @FXML Button btnRefresh;
     private @FXML Button btnReload;
     private @FXML Button btnDelete;
+    private @FXML Label refreshStatus;
 
     private @FXML Accordion accordion;
     private @FXML TitledPane generalPane;
@@ -137,7 +139,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
                 btnRemoveItems.setDisable(items <= 0);
             });
         });
-        groupItemList.getItems().addListener((ListChangeListener)(lcl) -> {
+        groupItemList.getItems().addListener((ListChangeListener<MGMVGroupItemView>)(lcl) -> {
            runLater(() -> {
                int items = lcl.getList().size();
                btnRemoveAll.setText(String.format("Remove All (%s)", items));
@@ -145,17 +147,8 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
            });
         });
 
-        new Thread(() -> {
-            logger.debug("[Load] Loading details...");
-            logger.debug("[Load] Grabbing GroupItems");
-            List<GroupItem> groupItems = database.getGroupItems(this.group);
-            List<MGMVGroupItemView> groupItemViews = groupItems.stream()
-                    .map(MGMVGroupItemView::new).collect(Collectors.toList());
-            logger.debug("[Load] Found "+groupItems.size()+" GroupItem(s)");
-            runLater(() -> {
-               groupItemList.getItems().addAll(groupItemViews);
-            });
-        }).start();
+        reloadGroupItems();
+        reload();
 
         /**
          * Refresh Modal
@@ -194,6 +187,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
             addItemModal.setVisible(true);
         }));
         mgmvAddItem.getBtnClose().setOnAction(ae -> addItemModal.setVisible(false));
+        mgmvAddItem.itemAddedProperty().addListener((o, ov, nv) -> reloadGroupItems());
 
         /**
          * Remove Selected GroupItems Modal
@@ -218,6 +212,34 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
             removeAllModal.setVisible(true);
         }));
         mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
+    }
+
+    private void reload() {
+        long timestamp = database.getLastChecked(this.group);
+        runLater(() ->  refreshStatus.setText(timestamp == Long.MAX_VALUE ? "Never refreshed." : String.valueOf(timestamp)));
+
+        /*try {
+            // TODO: Reload status content: stats, videos, viewers, etc.
+        } catch (SQLException e) {
+            logger.error("Error on data reload.");
+        }*/
+    }
+
+    /**
+     * Starts a thread to reload the GroupItems in the ListView.
+     */
+    private void reloadGroupItems() {
+        new Thread(() -> {
+            logger.debug("[Load] Grabbing GroupItems");
+            List<GroupItem> groupItems = database.getGroupItems(this.group);
+            List<MGMVGroupItemView> groupItemViews = groupItems.stream()
+                    .map(MGMVGroupItemView::new).collect(Collectors.toList());
+            logger.debug("[Load] Found "+groupItems.size()+" GroupItem(s)");
+            runLater(() -> {
+                groupItemList.getItems().clear();
+                groupItemList.getItems().addAll(groupItemViews);
+            });
+        }).start();
     }
 
     /**

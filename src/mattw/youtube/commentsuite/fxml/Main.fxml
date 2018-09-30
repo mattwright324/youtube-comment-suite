@@ -25,10 +25,13 @@
             <ImageView fx:id="headerIcon" fitHeight="25" fitWidth="25" />
             <HBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
                 <ToggleButton text="Search Comments" fx:id="btnSearchComments" styleClass="headerBtn, bold"
+                              maxHeight="33.0" prefHeight="33" minHeight="33"
                               toggleGroup="$headerToggleGroup"/>
                 <ToggleButton text="Manage Groups" fx:id="btnManageGroups" styleClass="headerBtn, bold"
+                              maxHeight="33.0" prefHeight="33" minHeight="33"
                               toggleGroup="$headerToggleGroup"/>
                 <ToggleButton text="Search Youtube" fx:id="btnSearchYoutube" styleClass="headerBtn, bold"
+                              maxHeight="33.0" prefHeight="33" minHeight="33"
                               toggleGroup="$headerToggleGroup"/>
             </HBox>
             <Button fx:id="btnSettings" styleClass="settingsBtn" graphic="$settingsIcon" />

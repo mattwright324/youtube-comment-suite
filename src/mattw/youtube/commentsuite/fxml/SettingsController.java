@@ -27,9 +27,6 @@ public class SettingsController implements Initializable {
 
     private static Logger logger = LogManager.getLogger(SettingsController.class.getSimpleName());
 
-    public final Image IMG_CLOSE = new Image("/mattw/youtube/commentsuite/img/close.png");
-    public final Image IMG_GITHUB = new Image("/mattw/youtube/commentsuite/img/github.png");
-
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;
     private OAuth2Handler oauth2;
@@ -110,7 +107,7 @@ public class SettingsController implements Initializable {
         
         btnSave.setOnAction(ae -> runLater(() -> btnClose.fire()));
 
-        closeIcon.setImage(IMG_CLOSE);
+        closeIcon.setImage(ImageLoader.CLOSE.getImage());
         btnClose.setOnAction(ae -> runLater(() -> {
             logger.debug("Saving Settings");
             ConfigData data = config.getDataObject();
@@ -131,7 +128,7 @@ public class SettingsController implements Initializable {
 
         youtubeApiKey.disableProperty().bind(customKey.selectedProperty().not());
 
-        githubIcon.setImage(IMG_GITHUB);
+        githubIcon.setImage(ImageLoader.GITHUB.getImage());
 
         btnAddAccount.setOnAction(ae -> runLater(() ->  {
             vboxSignIn.setManaged(true);
@@ -159,6 +156,7 @@ public class SettingsController implements Initializable {
             try {
                 logger.warn("Starting DB Clean");
                 database.cleanUp();
+                database.vacuum();
             } catch (Exception e) {
                 logger.error(e);
             }

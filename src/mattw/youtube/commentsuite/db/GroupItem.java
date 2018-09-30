@@ -1,16 +1,15 @@
 package mattw.youtube.commentsuite.db;
 
+import mattw.youtube.datav3.resources.ChannelsList;
+import mattw.youtube.datav3.resources.PlaylistsList;
 import mattw.youtube.datav3.resources.SearchList;
+import mattw.youtube.datav3.resources.VideosList;
 
 /**
  * Database entry for searched YouTube entries (Video, Channel, Playlist).
  * getYouTubeId() from YouTubeObject represents the GroupItem ID.
  */
 public class GroupItem extends YouTubeObject {
-
-    public static int VIDEO = 0;
-    public static int CHANNEL = 1;
-    public static int PLAYLIST = 2;
 
     public static String NO_ITEMS = "GI000";
     public static String ALL_ITEMS = "GI001";
@@ -33,6 +32,33 @@ public class GroupItem extends YouTubeObject {
     }
 
     /**
+     * Group Management
+     * @param item
+     */
+    public GroupItem(VideosList.Item item) {
+        this(item.getId(), YType.VIDEO, item.snippet.title, item.snippet.channelTitle,
+                item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+    }
+
+    /**
+     * Group Management
+     * @param item
+     */
+    public GroupItem(ChannelsList.Item item) {
+        this(item.getId(), YType.CHANNEL, item.snippet.title, item.snippet.title,
+                item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+    }
+
+    /**
+     * Group Management
+     * @param item
+     */
+    public GroupItem(PlaylistsList.Item item) {
+        this(item.getId(), YType.PLAYLIST, item.snippet.title, item.snippet.channelTitle,
+                item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+    }
+
+    /**
      * Used for "All Items (#)" and "No items" display in the "Comment Search" and "Group Manager" ComboBoxes.
      */
     public GroupItem(String gitemId, String title) {
@@ -42,9 +68,9 @@ public class GroupItem extends YouTubeObject {
     /**
      * Used for database init.
      */
-    public GroupItem(String gitemId, int typeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
+    public GroupItem(String gitemId, YType typeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
         super(gitemId, title, thumbUrl, true);
-        setTypeId(YType.values()[typeId+1]);
+        setTypeId(typeId);
         this.channelTitle = channelTitle;
         this.published = published;
         this.lastChecked = lastChecked;

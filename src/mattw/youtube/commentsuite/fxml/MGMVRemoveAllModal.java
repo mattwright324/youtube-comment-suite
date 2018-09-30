@@ -18,7 +18,7 @@ import java.io.IOException;
 
 public class MGMVRemoveAllModal extends VBox {
 
-    private static Logger logger = LogManager.getLogger(MGMVRemoveAllModal.class.getName());
+    private static Logger logger = LogManager.getLogger(MGMVRemoveAllModal.class.getSimpleName());
 
     private CommentDatabase database;
     private YouTubeData3 youtube;
@@ -31,6 +31,8 @@ public class MGMVRemoveAllModal extends VBox {
     private Group group;
 
     public MGMVRemoveAllModal(Group group) {
+        logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
+
         this.group = group;
 
         database = FXMLSuite.getDatabase();

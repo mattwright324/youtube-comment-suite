@@ -10,14 +10,12 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import mattw.youtube.commentsuite.ImageCache;
+import mattw.youtube.commentsuite.ImageLoader;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class SearchCommentsController implements Initializable, ImageCache {
-
-    private Image IMG_VIDEO = new Image("/mattw/youtube/commentsuite/img/videoPlaceholder.png");
-    private Image IMG_TOGGLE_CONTEXT = new Image("/mattw/youtube/commentsuite/img/toggleContext.png");
 
     private @FXML VBox contextPane;
     private @FXML ImageView videoThumb, authorThumb, toggleIcon;
@@ -29,9 +27,9 @@ public class SearchCommentsController implements Initializable, ImageCache {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
-        videoThumb.setImage(IMG_VIDEO);
+        videoThumb.setImage(ImageLoader.VIDEO_PLACEHOLDER.getImage());
         authorThumb.setImage(ImageCache.toLetterAvatar('m'));
-        toggleIcon.setImage(IMG_TOGGLE_CONTEXT);
+        toggleIcon.setImage(ImageLoader.TOGGLE_CONTEXT.getImage());
 
         contextPane.visibleProperty().bind(contextPane.managedProperty());
         toggleContext.setOnMouseClicked(me -> runLater(() -> contextPane.setManaged(!contextPane.isManaged())));

@@ -5,7 +5,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.io.Geolocation;
@@ -34,23 +33,25 @@ public class FXMLSuite extends Application {
 
     public void start(Stage stage) {
         try {
+            // System.setProperty("glass.win.uiScale", "100%");
+
             youtubeApi = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
             database = new CommentDatabase("commentsuite.sqlite3");
 
             Parent parent = FXMLLoader.load(getClass().getResource("/mattw/youtube/commentsuite/fxml/Main.fxml"));
 
             Scene scene = new Scene(parent);
-            scene.getStylesheets().add("/mattw/youtube/commentsuite/fxml/SuiteStyles.css");
+            scene.getStylesheets().add("SuiteStyles.css");
             stage.setTitle("FXML CommentSuite");
             stage.setScene(scene);
-            stage.getIcons().add(new Image("/mattw/youtube/commentsuite/img/icon.png"));
+            stage.getIcons().add(ImageLoader.YCS_ICON.getImage());
             stage.setOnCloseRequest(we -> {
                 try {
                     database.commit();
 
                     logger.debug("Closing - Closing DB Connection");
-                    database.getConnection().close();
-                } catch (SQLException e) {
+                    database.close();
+                } catch (SQLException | IOException e) {
                     logger.error(e);
                 }
                 logger.debug("Closing - Exiting Application");
@@ -59,6 +60,7 @@ public class FXMLSuite extends Application {
             });
             stage.show();
         } catch (IOException | SQLException e) {
+            e.printStackTrace();
             logger.error(e);
             Platform.exit();
             System.exit(0);

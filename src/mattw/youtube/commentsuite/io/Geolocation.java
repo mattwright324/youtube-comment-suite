@@ -8,17 +8,10 @@ import org.jsoup.nodes.Document;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import javax.annotation.PostConstruct;
-
 public class Geolocation {
 
     private Gson gson = new Gson();
     private String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";
-
-    @PostConstruct
-    public void init() {
-        System.out.println("geolocation init");
-    }
 
     public String externalAddress() throws IOException {
         return Jsoup.connect("http://checkip.amazonaws.com").get().text();

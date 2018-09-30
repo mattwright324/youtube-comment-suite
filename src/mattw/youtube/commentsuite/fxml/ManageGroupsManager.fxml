@@ -24,7 +24,7 @@
             <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" />
             <HBox styleClass="btnGroup, control">
                 <Button fx:id="btnRefresh" styleClass="control, btn, btnPrimary, noRadiusRight" text="Refresh" />
-                <Label fx:id="refreshStatus" styleClass="control, noRadiusLeft" text="Never refreshed." />
+                <Label fx:id="refreshStatus" styleClass="control, noRadiusLeft" text="..." />
             </HBox>
             <Button fx:id="btnReload" styleClass="btn, btnLight, control" text="Reload Stats" />
             <Button fx:id="btnDelete" styleClass="btn, btnDanger, control" text="Delete Group" />

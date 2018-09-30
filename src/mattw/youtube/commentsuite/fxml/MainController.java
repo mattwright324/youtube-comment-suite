@@ -13,6 +13,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import mattw.youtube.commentsuite.ImageLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,11 +28,6 @@ import java.util.ResourceBundle;
 public class MainController implements Initializable {
 
     private static Logger logger = LogManager.getLogger(MainController.class.getSimpleName());
-
-    public final Image IMG_MANAGE = new Image("/mattw/youtube/commentsuite/img/manage.png");
-    public final Image IMG_SEARCH = new Image("/mattw/youtube/commentsuite/img/search.png");
-    public final Image IMG_YOUTUBE = new Image("/mattw/youtube/commentsuite/img/youtube.png");
-    public final Image IMG_SETTINGS = new Image("/mattw/youtube/commentsuite/img/settings.png");
 
     private @FXML ImageView headerIcon;
     private @FXML ToggleGroup headerToggleGroup;
@@ -63,7 +59,7 @@ public class MainController implements Initializable {
             }
         });
 
-        settingsIcon.setImage(IMG_SETTINGS);
+        settingsIcon.setImage(ImageLoader.SETTINGS.getImage());
         btnSettings.setOnAction(ae -> runLater(() -> {
             logger.debug("Open Settings");
             settings.setManaged(true);
@@ -71,17 +67,17 @@ public class MainController implements Initializable {
         }));
 
         btnSearchComments.setOnAction(ae -> runLater(() -> {
-            headerIcon.setImage(IMG_SEARCH);
+            headerIcon.setImage(ImageLoader.SEARCH.getImage());
             content.getChildren().clear();
             content.getChildren().add(searchComments);
         }));
         btnManageGroups.setOnAction(ae -> runLater(() -> {
-            headerIcon.setImage(IMG_MANAGE);
+            headerIcon.setImage(ImageLoader.MANAGE.getImage());
             content.getChildren().clear();
             content.getChildren().add(manageGroups);
         }));
         btnSearchYoutube.setOnAction(ae -> runLater(() -> {
-            headerIcon.setImage(IMG_YOUTUBE);
+            headerIcon.setImage(ImageLoader.YOUTUBE.getImage());
             content.getChildren().clear();
             content.getChildren().add(searchYoutube);
         }));

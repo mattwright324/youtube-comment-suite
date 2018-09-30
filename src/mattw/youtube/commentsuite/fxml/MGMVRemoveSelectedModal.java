@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class MGMVRemoveSelectedModal extends VBox {
 
-    private static Logger logger = LogManager.getLogger(MGMVRemoveSelectedModal.class.getName());
+    private static Logger logger = LogManager.getLogger(MGMVRemoveSelectedModal.class.getSimpleName());
 
     private CommentDatabase database;
     private YouTubeData3 youtube;
@@ -33,6 +33,8 @@ public class MGMVRemoveSelectedModal extends VBox {
     private SelectionModel<MGMVGroupItemView> selectionModel;
 
     public MGMVRemoveSelectedModal(Group group, SelectionModel<MGMVGroupItemView> selectionModel) {
+        logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
+
         this.group = group;
         this.selectionModel = selectionModel;
 

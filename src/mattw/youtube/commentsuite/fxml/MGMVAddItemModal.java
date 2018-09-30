@@ -1,6 +1,9 @@
 package mattw.youtube.commentsuite.fxml;
 
 import static javafx.application.Platform.runLater;
+
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
@@ -8,14 +11,19 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import mattw.youtube.commentsuite.FXMLSuite;
-import mattw.youtube.commentsuite.db.CommentDatabase;
-import mattw.youtube.commentsuite.db.Group;
-import mattw.youtube.commentsuite.db.YType;
+import mattw.youtube.commentsuite.db.*;
 import mattw.youtube.datav3.YouTubeData3;
+import mattw.youtube.datav3.YouTubeErrorException;
+import mattw.youtube.datav3.resources.ChannelsList;
+import mattw.youtube.datav3.resources.PlaylistsList;
+import mattw.youtube.datav3.resources.VideosList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +42,8 @@ public class MGMVAddItemModal extends VBox {
     private @FXML Label link1, link2, link3, link4, link5;
 
     private Group group;
+
+    private IntegerProperty itemAdded = new SimpleIntegerProperty(0);
 
     public MGMVAddItemModal(Group group) {
         this.group = group;
@@ -59,9 +69,7 @@ public class MGMVAddItemModal extends VBox {
             }
 
             btnSubmit.setOnAction(ae -> new Thread(() -> {
-                runLater(() -> {
-                    btnSubmit.setDisable(true);
-                });
+                runLater(() -> btnSubmit.setDisable(true));
                 Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
                 Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
                 Pattern playlist = Pattern.compile("(?:http[s]?://www.youtube.com/playlist\\?list=)([\\w_\\-]+)");
@@ -94,9 +102,63 @@ public class MGMVAddItemModal extends VBox {
                 if(result.isEmpty()) {
                     runLater(() -> setError("Input did not match expected formats."));
                 } else {
-                    // TODO: Submit URL on addItem.
-                    String msg = String.format("%s / %s", type.getDisplay(), result);
-                    runLater(() -> setError(msg));
+                    try {
+                        List<GroupItem> list = new ArrayList<>();
+                        if(type == YType.VIDEO) {
+                            VideosList vl = youtube.videosList().getByIds(VideosList.PART_SNIPPET, result, "");
+                            if(vl.items != null && vl.items.length > 0) {
+                                VideosList.Item item = vl.items[0];
+                                GroupItem gitem = new GroupItem(item);
+
+                                list.add(gitem);
+                            }
+                        } else if(type == YType.CHANNEL) {
+                            ChannelsList cl = youtube.channelsList();
+                            if(!channelUsername) {
+                                cl = cl.getByChannel(ChannelsList.PART_SNIPPET, result, "");
+                            } else {
+                                cl = cl.getByUsername(ChannelsList.PART_SNIPPET, result, "");
+                            }
+
+                            if(cl.hasItems()) {
+                                ChannelsList.Item item = cl.items[0];
+                                GroupItem gitem = new GroupItem(item);
+
+                                list.add(gitem);
+                            }
+                        } else if(type == YType.PLAYLIST) {
+                            PlaylistsList pl = youtube.playlistsList().getByPlaylist(PlaylistsList.PART_SNIPPET, result, "");
+                            if(pl.hasItems()) {
+                                PlaylistsList.Item item = pl.items[0];
+                                GroupItem gitem = new GroupItem(item);
+
+                                list.add(gitem);
+                            }
+                        } else {
+                            runLater(() -> setError("Unexpected result."));
+                        }
+
+                        if(!list.isEmpty()) {
+                            try {
+                                database.insertGroupItems(this.group, list);
+                                database.commit();
+                                runLater(() -> {
+                                    itemAdded.setValue(itemAdded.getValue() + 1);
+                                    btnClose.fire();
+                                });
+                            } catch (SQLException e1) {
+                                runLater(() -> setError(e1.getClass().getSimpleName()));
+                            }
+                        }
+                    } catch (YouTubeErrorException | IOException e) {
+                        runLater(() -> {
+                            String message = e.getClass().getSimpleName();
+                            if(e instanceof YouTubeErrorException) {
+                                message = ((YouTubeErrorException) e).error.message;
+                            }
+                            setError(message);
+                        });
+                    }
                 }
                 runLater(() -> btnSubmit.setDisable(false));
             }).start());
@@ -121,6 +183,10 @@ public class MGMVAddItemModal extends VBox {
 
     public Button getBtnSubmit() {
         return btnSubmit;
+    }
+
+    public IntegerProperty itemAddedProperty() {
+        return itemAdded;
     }
 
 }

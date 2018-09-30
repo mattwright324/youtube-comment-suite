@@ -23,13 +23,14 @@ CREATE TABLE IF NOT EXISTS groups (
 CREATE TABLE IF NOT EXISTS group_gitem (
   group_id STRING,
   gitem_id STRING,
-  PRIMARY KEY(group_id, gitem_id)
+  PRIMARY KEY(group_id, gitem_id),
   FOREIGN KEY(group_id) REFERENCES groups(group_id),
   FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id)
 );
 CREATE TABLE IF NOT EXISTS gitem_video (
   gitem_id STRING,
   video_id STRING,
+  PRIMARY KEY(gitem_id, video_id),
   FOREIGN KEY(gitem_id) REFERENCES gitem_list(gitem_id),
   FOREIGN KEY(video_id) REFERENCES videos(video_id)
 );
