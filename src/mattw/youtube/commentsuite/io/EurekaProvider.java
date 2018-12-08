@@ -1,32 +1,30 @@
 package mattw.youtube.commentsuite.io;
 
-import java.io.IOException;
+public class EurekaProvider implements LocationProvider {
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+    private String format = "JSON";
+    private String apiKey = "SAKF9WKS23364926J8NZ";
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-
-public class Geolocation {
-
-    private Gson gson = new Gson();
-    private String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";
-
-    public String externalAddress() throws IOException {
-        return Jsoup.connect("http://checkip.amazonaws.com").get().text();
+    @Override
+    public String getRequestUrl(String ipv4) {
+        return String.format("http://api.eurekapi.com/iplocation/v1.8/locateip?key=%s&ip=%s&format=%s",
+                apiKey,
+                ipv4,
+                format);
     }
 
-    public Location getMyLocation() throws JsonSyntaxException, IOException {
-        return getLocation(externalAddress());
+    /**
+     * @param apiKey Valid API key for the service.
+     */
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
     }
 
-    public Location getLocation(String ipv4) throws JsonSyntaxException, IOException {
-        Document result = Jsoup.connect("http://api.eurekapi.com/iplocation/v1.8/locateip?key=SAKF9WKS23364926J8NZ&ip="+ipv4+"&format=JSON")
-                .userAgent(userAgent)
-                .ignoreContentType(true)
-                .get();
-        return gson.fromJson(result.text(), Location.class);
+    /**
+     * @param format JSON or XML
+     */
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     public class Location {

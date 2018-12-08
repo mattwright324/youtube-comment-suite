@@ -7,7 +7,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import mattw.youtube.commentsuite.db.CommentDatabase;
-import mattw.youtube.commentsuite.io.Geolocation;
+import mattw.youtube.commentsuite.io.EurekaProvider;
+import mattw.youtube.commentsuite.io.Location;
 import mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +25,8 @@ public class FXMLSuite extends Application {
 
     private static Logger logger = LogManager.getLogger(FXMLSuite.class.getSimpleName());
 
-    private static Geolocation geolocation = new Geolocation();
+    private static Location location = new Location<EurekaProvider, EurekaProvider.Location>(
+            new EurekaProvider(), EurekaProvider.Location.class);
     private static ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
     private static YouTubeData3 youtubeApi;
     private static OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com",
@@ -34,7 +36,6 @@ public class FXMLSuite extends Application {
     public void start(Stage stage) {
         try {
             // System.setProperty("glass.win.uiScale", "100%");
-
             youtubeApi = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
             database = new CommentDatabase("commentsuite.sqlite3");
 
@@ -83,8 +84,8 @@ public class FXMLSuite extends Application {
         return database;
     }
 
-    public static Geolocation getGeolocation() {
-        return geolocation;
+    public static Location getLocation() {
+        return location;
     }
 
     public static void main(String[] args) {

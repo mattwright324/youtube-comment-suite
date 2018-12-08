@@ -74,4 +74,8 @@ public interface ImageCache {
         }
         return image;
     }
+
+    static boolean hasImageCached(YouTubeObject object) {
+        return thumbCache.getIfPresent(object.getYoutubeId()) != null;
+    }
 }

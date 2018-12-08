@@ -81,12 +81,8 @@ public class TestCommentDatabase {
 
         // commit() and create()
         verify(statement, times(1)).executeUpdate(anyString());
-        verify(statement, times(2)).close();
+        verify(statement, times(1)).close();
         verify(sqlite, times(1)).commit();
-        // vacuum()
-        verify(statement, times(1)).execute(anyString());
-        verify(sqlite, times(1)).setAutoCommit(true);
-        verify(sqlite, times(1)).setAutoCommit(false);
     }
 
 }

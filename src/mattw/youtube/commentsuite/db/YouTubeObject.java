@@ -2,9 +2,6 @@ package mattw.youtube.commentsuite.db;
 
 import javafx.scene.image.Image;
 import mattw.youtube.commentsuite.ImageCache;
-import mattw.youtube.commentsuite.LetterAvatar;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Similarities between GroupItem, YouTubeChannel, YouTubeComment, and YouTubeVideo.

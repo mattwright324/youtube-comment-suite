@@ -5,7 +5,6 @@ import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -23,6 +22,9 @@ import java.net.CookieManager;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+/**
+ * @author mattwright324
+ */
 public class SettingsController implements Initializable {
 
     private static Logger logger = LogManager.getLogger(SettingsController.class.getSimpleName());

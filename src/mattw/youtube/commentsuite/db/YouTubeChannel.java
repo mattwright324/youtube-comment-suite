@@ -4,6 +4,9 @@ import mattw.youtube.datav3.resources.ChannelsList;
 import mattw.youtube.datav3.resources.CommentsList;
 import org.apache.commons.text.StringEscapeUtils;
 
+/**
+ * @author mattwright324
+ */
 public class YouTubeChannel extends YouTubeObject {
 
     public YouTubeChannel(String channelId, String name, String thumbUrl, boolean fetchThumb) {

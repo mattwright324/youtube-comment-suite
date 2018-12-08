@@ -7,7 +7,6 @@ import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import mattw.youtube.commentsuite.FXMLSuite;
@@ -93,18 +92,14 @@ public class ManageGroupsController implements Initializable {
 
         MGCreateGroupModal modal = new MGCreateGroupModal();
         overlayModal.setContent(modal);
-
         btnCreateGroup.setOnAction(ae -> runLater(() -> {
-            modal.getErrorMsg().setManaged(false);
-            modal.getNameField().setText("");
+            modal.cleanUp();
             overlayModal.setVisible(true);
         }));
-
-        modal.getBtnClose().setOnAction(ae -> runLater(() -> {
-            overlayModal.setVisible(false);
-        }));
-
-        modal.getBtnCreate().setOnAction(ae -> new Thread(() -> {
+        modal.getBtnClose().setOnAction(ae -> runLater(() ->
+                overlayModal.setVisible(false))
+        );
+        modal.getBtnSubmit().setOnAction(ae -> new Thread(() -> {
             logger.debug("Attempting to create group");
             runLater(() -> overlayModal.setDisable(true));
             String name = modal.getNameField().getText();
@@ -134,6 +129,5 @@ public class ManageGroupsController implements Initializable {
                 });
             }
         }).start());
-
     }
 }

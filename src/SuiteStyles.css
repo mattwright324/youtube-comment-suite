@@ -21,6 +21,10 @@
 .bold {
     -fx-font-weight: 700;
 }
+.noPadding {
+    -fx-padding: 0;
+    -fx-border-color: red;
+}
 .noBorder {
     -fx-border-color: transparent;
     -fx-background-color: transparent;
@@ -88,6 +92,10 @@
     -fx-cursor: hand;
     -fx-text-fill: #155724;
 }
+.listView .list-cell {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+}
 
 /* Main.fxml */
 .headerBtn {
@@ -127,7 +135,7 @@
 }
 
 /* ManageGroupManager.fxml */
-#groupTitle {
+.dashedBottom {
     -fx-border-width: 0 0 4 0;
     -fx-border-style: dashed;
     -fx-border-color: transparent transparent darkgray transparent;
@@ -143,4 +151,11 @@
 .toggleContext {
     -fx-cursor: hand;
     -fx-background-color: linear-gradient(to right, lightgray, transparent);
+}
+.toggleQuery {
+    -fx-cursor: hand;
+    -fx-background-color: linear-gradient(to left, lightgray, transparent);
+}
+.reply {
+    -fx-background-color: linear-gradient(to right, rgba(127,255,127,0.2), transparent);
 }

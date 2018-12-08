@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.db.*;
 import mattw.youtube.datav3.YouTubeData3;
@@ -27,7 +28,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MGMVAddItemModal extends VBox {
+/**
+ * @author mattwright324
+ */
+public class MGMVAddItemModal extends VBox implements Cleanable {
 
     private static Logger logger = LogManager.getLogger(MGMVAddItemModal.class.getName());
 
@@ -36,8 +40,7 @@ public class MGMVAddItemModal extends VBox {
 
     private @FXML Label alertError;
     private @FXML TextField link;
-    private @FXML Button btnClose;
-    private @FXML Button btnSubmit;
+    private @FXML Button btnClose, btnSubmit;
 
     private @FXML Label link1, link2, link3, link4, link5;
 
@@ -171,7 +174,12 @@ public class MGMVAddItemModal extends VBox {
         alertError.setManaged(true);
     }
 
-    public void reset() {
+    public IntegerProperty itemAddedProperty() {
+        return itemAdded;
+    }
+
+    @Override
+    public void cleanUp() {
         alertError.setVisible(false);
         alertError.setManaged(false);
         link.setText("");
@@ -184,9 +192,4 @@ public class MGMVAddItemModal extends VBox {
     public Button getBtnSubmit() {
         return btnSubmit;
     }
-
-    public IntegerProperty itemAddedProperty() {
-        return itemAdded;
-    }
-
 }

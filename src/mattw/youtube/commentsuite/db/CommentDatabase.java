@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @author mattwright324
@@ -612,15 +611,15 @@ public class CommentDatabase implements Closeable {
     /**
      * Checks if exists and caches it if it does.
      */
-    public boolean channelExists(String channelId) throws SQLException {
+    public YouTubeChannel channelExists(String channelId) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_CHANNEL_EXISTS.toString())) {
             ps.setString(1, channelId);
             try(ResultSet rs = ps.executeQuery()) {
+                YouTubeChannel channel = null;
                 if(rs.next()) {
-                    channelCache.put(channelId, resultSetToChannel(rs));
-                    return true;
+                    channelCache.put(channelId, channel = resultSetToChannel(rs));
                 }
-                return false;
+                return channel;
             }
         }
     }
@@ -636,6 +635,22 @@ public class CommentDatabase implements Closeable {
                 list.add(rs.getString("channel_id"));
             }
             return list;
+        }
+    }
+
+    /**
+     *
+     */
+    public YouTubeChannel getChannel(String channelId) {
+        YouTubeChannel channel = channelCache.getIfPresent(channelId);
+        if(channel != null) {
+            return channel;
+        } else {
+            try {
+                return channelExists(channelId);
+            } catch (SQLException e) {
+                return null;
+            }
         }
     }
 
@@ -726,7 +741,7 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    public long getTotalComments(Group group) throws SQLException {
+    /*public long getTotalComments(Group group) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_TOTAL_COMMENTS.toString())) {
             ps.setString(1, group.getId());
             try(ResultSet rs = ps.executeQuery()) {
@@ -736,9 +751,9 @@ public class CommentDatabase implements Closeable {
             }
         }
         return 0;
-    }
+    }*/
 
-    public long getTotalLikes(Group group) throws SQLException {
+    /*public long getTotalLikes(Group group) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_TOTAL_LIKES.toString())) {
             ps.setString(1, group.getId());
             try(ResultSet rs = ps.executeQuery()) {
@@ -772,6 +787,42 @@ public class CommentDatabase implements Closeable {
             }
         }
         return 0;
+    }*/
+
+    public VideoStats getVideoStats(Group group) throws SQLException {
+        VideoStats stats = new VideoStats();
+        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_VIDEO_STATS.toString())) {
+            ps.setString(1, group.getId());
+            try(ResultSet rs = ps.executeQuery()) {
+                if(rs.next()) {
+                    stats.setTotalVideos(rs.getLong("total_videos"));
+                    stats.setTotalViews(rs.getLong("total_views"));
+                    stats.setTotalLikes(rs.getLong("total_likes"));
+                    stats.setTotalDislikes(rs.getLong("total_dislikes"));
+                    stats.setTotalComments(rs.getLong("total_comments"));
+                }
+            }
+        }
+        stats.setMostViewed(this.getMostPopularVideos(group, 10));
+        stats.setMostDisliked(this.getMostDislikedVideos(group, 10));
+        stats.setMostCommented(this.getMostCommentedVideos(group, 10));
+        stats.setCommentsDisabled(this.getDisabledVideos(group));
+        stats.setWeeklyUploadHistogram(this.getWeekByWeekVideoHistogram(group));
+
+        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENT_STATS.toString())) {
+            ps.setString(1, group.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    stats.setTotalCommentLikes(rs.getLong("total_likes"));
+                    stats.setTotalGrabbedComments(rs.getLong("total_comments"));
+                }
+            }
+        }
+        stats.setMostLikedViewers(this.getMostPopularViewers(group, 10));
+        stats.setMostActiveViewers(this.getMostActiveViewers(group, 10));
+        stats.setWeeklyCommentHistogram(this.getWeekByWeekCommentHistogram(group));
+
+        return stats;
     }
 
     public Map<Long,Long> getWeekByWeekVideoHistogram(Group group) throws SQLException {

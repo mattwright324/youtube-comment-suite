@@ -2,8 +2,8 @@ package mattw.youtube.commentsuite.fxml;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -13,8 +13,10 @@ import java.io.IOException;
  * Base template for modal format overlaying parent StackPane.
  *
  * @param <T> Custom modal content fxml controller class
+ *
+ * @author mattwright324
  */
-public class OverlayModal<T extends Node> extends StackPane {
+public class OverlayModal<T extends Pane> extends StackPane {
 
     private @FXML Label title;
     private @FXML Label divider;

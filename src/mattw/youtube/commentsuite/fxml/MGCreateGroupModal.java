@@ -6,19 +6,22 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import mattw.youtube.commentsuite.Cleanable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
-public class MGCreateGroupModal extends VBox {
+/**
+ * @author mattwright324
+ */
+public class MGCreateGroupModal extends VBox implements Cleanable {
 
     private static Logger logger = LogManager.getLogger(MGCreateGroupModal.class.getName());
 
     private @FXML Label errorMsg;
     private @FXML TextField nameField;
-    private @FXML Button btnClose;
-    private @FXML Button btnCreate;
+    private @FXML Button btnSubmit, btnClose;
 
     public MGCreateGroupModal() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGCreateGroupModal.fxml"));
@@ -37,11 +40,17 @@ public class MGCreateGroupModal extends VBox {
         return nameField;
     }
 
+    @Override
+    public void cleanUp() {
+        getErrorMsg().setManaged(false);
+        getNameField().setText("");
+    }
+
     public Button getBtnClose() {
         return btnClose;
     }
 
-    public Button getBtnCreate() {
-        return btnCreate;
+    public Button getBtnSubmit() {
+        return btnSubmit;
     }
 }

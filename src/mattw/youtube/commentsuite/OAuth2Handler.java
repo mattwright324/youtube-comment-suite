@@ -14,6 +14,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * @author mattwright324
+ */
 public class OAuth2Handler {
 
     private Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();

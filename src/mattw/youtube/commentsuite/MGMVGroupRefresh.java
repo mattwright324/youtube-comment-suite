@@ -18,6 +18,8 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -84,6 +86,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private LinkedBlockingQueue<Tuple<String,String>> commentThreadQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<YouTubeComment> commentQueue = new LinkedBlockingQueue<>();
     private List<CommentDatabase.GroupItemVideo> gitemVideo = new ArrayList<>();
+    private LinkedBlockingQueue<YouTubeChannel> channelQueue = new LinkedBlockingQueue<>();
 
     private YouTubeData3 youtube = FXMLSuite.getYoutubeApi();
     private CommentDatabase database = FXMLSuite.getDatabase();
@@ -241,10 +244,16 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         es.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
+    <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
+    }
+
     /**
      * Background threads:
      * - Comment Consumers (take from queue into database)
      * - Comment Thread Consumers (produce comments from comment-threads)
+     * - Channel Consumers (take from queue into database)
      */
     private void startBackgroundThreads() {
         logger.debug("Starting Comment Consumers");
@@ -307,6 +316,13 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                         .collect(Collectors.toList());
                                 // submitComments(replies);
                                 commentQueue.addAll(replies);
+
+                                List<YouTubeChannel> channels = Arrays.stream(cl.items)
+                                        .filter(distinctByKey(CommentsList.Item::getId))
+                                        .map(item -> new YouTubeChannel(item, false))
+                                        .collect(Collectors.toList());
+                                channelQueue.addAll(channels);
+
                                 try { Thread.sleep(50); } catch (InterruptedException ignored) {}
                             } while (pageToken != null && !isHardShutdown());
                         } catch (YouTubeErrorException | IOException e) {
@@ -320,6 +336,39 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     if(isHardShutdown()) break;
                 }
                 logger.debug(String.format("CommentThread Consumer [END] [leftInQueue=%s]", commentThreadQueue.size()));
+            });
+        }
+
+        logger.debug("Starting Channel Consumers");
+        for(int i=0; i < 2; i++) {
+            background.execute(() -> {
+                ElapsedTime elapsed = new ElapsedTime();
+                elapsed.setNow();
+
+                List<YouTubeChannel> insert = new ArrayList<>();
+                while(!channelQueue.isEmpty() || progress.getValue() < 1.0 || !isShutdown()) {
+                    YouTubeChannel channel = channelQueue.poll();
+                    if(channel != null) {
+                        insert.add(channel);
+                        if(insert.size() >= 1000 || (elapsed.getElapsedMillis() >= 1200 && !insert.isEmpty())) {
+                            try {
+                                logger.debug(String.format("ChannelConsumer[submitting=%s,leftInQueue=%s]",
+                                        insert.size(),
+                                        channelQueue.size()));
+                                database.insertChannels(insert);
+                                elapsed.setNow();
+                                insert.clear();
+                            } catch (SQLException e) {
+                                logger.error("Error on comment submit", e);
+                            }
+                        }
+                    } else {
+                        try { Thread.sleep(5); } catch (InterruptedException ignored) {}
+                    }
+                    if(isHardShutdown()) break;
+                }
+
+                logger.debug(String.format("Channel Consumer [END] [leftInQueue=%s]", channelQueue.size()));
             });
         }
     }
@@ -370,7 +419,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                         });
                                         comments.removeIf(c -> c.getReplyCount() > 0);
                                         commentQueue.addAll(comments);
-                                        // submitComments(comments);
                                     }
 
                                     try { Thread.sleep(50); } catch (InterruptedException ignored) {}

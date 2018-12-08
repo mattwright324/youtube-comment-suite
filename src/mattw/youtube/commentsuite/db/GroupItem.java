@@ -8,6 +8,8 @@ import mattw.youtube.datav3.resources.VideosList;
 /**
  * Database entry for searched YouTube entries (Video, Channel, Playlist).
  * getYouTubeId() from YouTubeObject represents the GroupItem ID.
+ *
+ * @author mattwright324
  */
 public class GroupItem extends YouTubeObject {
 

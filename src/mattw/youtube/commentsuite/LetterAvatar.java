@@ -11,6 +11,11 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
+/**
+ * Generates images with a letter to mimic the style of default YouTube generated letter-avatars.
+ *
+ * @author mattwright324
+ */
 public class LetterAvatar extends WritableImage {
 
     static int BG_SQUARE = 2;

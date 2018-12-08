@@ -13,10 +13,12 @@ import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import static javafx.application.Platform.runLater;
 
 import java.io.IOException;
 
+/**
+ * @author mattwright324
+ */
 public class MGMVRemoveSelectedModal extends VBox {
 
     private static Logger logger = LogManager.getLogger(MGMVRemoveSelectedModal.class.getSimpleName());

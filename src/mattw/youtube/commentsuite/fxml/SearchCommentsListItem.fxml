@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Hyperlink?>
+<fx:root type="HBox"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         spacing="10">
+    <padding>
+        <Insets topRightBottomLeft="10" />
+    </padding>
+    <VBox maxWidth="75" prefWidth="75" minWidth="75" spacing="6" alignment="CENTER">
+        <ImageView fitHeight="30" fitWidth="30" fx:id="thumbnail" />
+        <Label fx:id="type" />
+    </VBox>
+    <VBox spacing="8" HBox.hgrow="ALWAYS">
+        <Hyperlink fx:id="author">
+            <padding>
+                <Insets topRightBottomLeft="0" />
+            </padding>
+        </Hyperlink>
+        <fx:include source="HFlexLabel.fxml" fx:id="commentText" />
+        <HBox spacing="10">
+            <Label fx:id="date" styleClass="textMutedLight" />
+            <Hyperlink fx:id="showMore" text="Show more" />
+            <Hyperlink fx:id="viewTree" visible="false" managed="false" text="View Tree" />
+            <Hyperlink fx:id="reply" visible="false" managed="false" text="Reply" />
+        </HBox>
+    </VBox>
+</fx:root>

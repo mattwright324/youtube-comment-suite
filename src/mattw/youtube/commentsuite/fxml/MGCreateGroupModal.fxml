@@ -13,6 +13,6 @@
     <TextField fx:id="nameField" promptText="Enter name here!" />
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
-        <Button fx:id="btnCreate" styleClass="btnPrimary" text="Create" />
+        <Button fx:id="btnSubmit" styleClass="btnPrimary" text="Create" />
     </HBox>
 </fx:root>

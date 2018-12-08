@@ -4,7 +4,9 @@ import java.awt.*;
 import java.net.URL;
 
 /**
- * Opens URLs on the system.
+ * Attempts to open URLs on the system.
+ *
+ * @author mattwright324
  */
 public class BrowserUtil {
 

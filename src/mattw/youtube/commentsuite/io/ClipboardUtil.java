@@ -1,5 +1,6 @@
 package mattw.youtube.commentsuite.io;
 
+import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- *
+ * @author mattwright324
  */
 public class ClipboardUtil {
 
@@ -18,15 +19,12 @@ public class ClipboardUtil {
 
 	public ClipboardUtil() {}
 
+	@PostConstruct
 	private void initSystemClipboard() {
-		if(systemClipboard == null) {
-			systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-		}
+		systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 	}
 
 	public String getClipboard() throws UnsupportedFlavorException, IOException {
-		initSystemClipboard();
-
         return (String) systemClipboard.getData(DataFlavor.stringFlavor);
 	}
 
@@ -35,8 +33,6 @@ public class ClipboardUtil {
 	 * @param string
 	 */
 	public void setClipboard(String string) {
-		initSystemClipboard();
-
 		StringSelection selection = new StringSelection(string);
 		systemClipboard.setContents(selection, selection);
 	}
@@ -49,6 +45,7 @@ public class ClipboardUtil {
 		List<String> strList = list.stream().map(Object::toString).collect(Collectors.toList());
 		setClipboard(strList.stream().collect(Collectors.joining(System.getProperty("line.separator"))));
 	}
+
 
 	/**
 	 * Coverts object to string value and sets to clipboard.

@@ -18,7 +18,7 @@
         <padding><Insets topRightBottomLeft="10" /></padding>
         <HBox spacing="10" alignment="CENTER_LEFT">
             <HBox alignment="CENTER_LEFT">
-                <TextField fx:id="groupTitle" editable="false" minWidth="0" styleClass="font18, clearTextField" />
+                <TextField fx:id="groupTitle" editable="false" minWidth="0" styleClass="font18, clearTextField, dashedBottom" />
                 <Hyperlink fx:id="rename" graphic="$editIcon" />
             </HBox>
             <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" />

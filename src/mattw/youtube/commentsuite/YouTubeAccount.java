@@ -3,6 +3,8 @@ package mattw.youtube.commentsuite;
 /**
  * Combination of YouTubeChannel and OAuth2Tokens as sign-in.
  * Data stored in Config 'commentsuite.json'
+ *
+ * @author mattwright324
  */
 public class YouTubeAccount {
 

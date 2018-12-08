@@ -3,6 +3,9 @@ package mattw.youtube.commentsuite;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author mattwright324
+ */
 public class ConfigData  {
 
     public transient String defaultApiKey = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";

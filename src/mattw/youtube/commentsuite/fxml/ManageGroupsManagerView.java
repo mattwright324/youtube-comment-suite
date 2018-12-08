@@ -16,13 +16,10 @@ import javafx.scene.text.Text;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.ImageLoader;
-import mattw.youtube.commentsuite.db.CommentDatabase;
-import mattw.youtube.commentsuite.db.Group;
-import mattw.youtube.commentsuite.db.GroupItem;
+import mattw.youtube.commentsuite.db.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -48,10 +45,10 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
     private CommentDatabase database;
 
     private @FXML OverlayModal<MGMVRefreshModal> refreshModal;
-    private @FXML OverlayModal deleteModal;
-    private @FXML OverlayModal addItemModal;
-    private @FXML OverlayModal removeItemModal;
-    private @FXML OverlayModal removeAllModal;
+    private @FXML OverlayModal<MGMVDeleteGroupModal> deleteModal;
+    private @FXML OverlayModal<MGMVAddItemModal> addItemModal;
+    private @FXML OverlayModal<MGMVRemoveSelectedModal> removeItemModal;
+    private @FXML OverlayModal<MGMVRemoveAllModal> removeAllModal;
     private @FXML Button btnAddItem;
     private @FXML Button btnRemoveItems;
     private @FXML Button btnRemoveAll;
@@ -147,8 +144,14 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
            });
         });
 
-        reloadGroupItems();
-        reload();
+        new Thread(() -> {
+            reloadGroupItems();
+            try {
+                reload();
+            } catch (SQLException e) {
+                logger.error("An error occured during group reload", e);
+            }
+        }).start();
 
         /**
          * Refresh Modal
@@ -159,7 +162,10 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
             mgmvRefresh.reset();
             refreshModal.setVisible(true);
         }));
-        mgmvRefresh.getBtnClose().setOnAction(ae -> refreshModal.setVisible(false));
+        mgmvRefresh.getBtnClose().setOnAction(ae -> {
+            refreshModal.setVisible(false);
+            updateLastRefreshed();
+        });
         mgmvRefresh.getErrorList().managedProperty().addListener((o, ov, nv) -> {
             if(nv) {
                 runLater(() -> refreshModal.getModalContainer().setMaxWidth(420+250));
@@ -183,7 +189,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         MGMVAddItemModal mgmvAddItem = new MGMVAddItemModal(group);
         addItemModal.setContent(mgmvAddItem);
         btnAddItem.setOnAction(ae -> runLater(() -> {
-            mgmvAddItem.reset();
+            mgmvAddItem.cleanUp();
             addItemModal.setVisible(true);
         }));
         mgmvAddItem.getBtnClose().setOnAction(ae -> addItemModal.setVisible(false));
@@ -214,15 +220,50 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
     }
 
-    private void reload() {
-        long timestamp = database.getLastChecked(this.group);
-        runLater(() ->  refreshStatus.setText(timestamp == Long.MAX_VALUE ? "Never refreshed." : String.valueOf(timestamp)));
+    /**
+     * Reloads displayed timestamp and group stats information.
+     * @throws SQLException
+     */
+    private void reload() throws SQLException {
+        updateLastRefreshed();
+
+        VideoStats videoStats = database.getVideoStats(this.group);
+
+        logger.debug(videoStats.toString());
 
         /*try {
             // TODO: Reload status content: stats, videos, viewers, etc.
         } catch (SQLException e) {
             logger.error("Error on data reload.");
         }*/
+    }
+
+    private void updateLastRefreshed() {
+        long timestamp = database.getLastChecked(this.group);
+        runLater(() ->  refreshStatus.setText(timestamp == Long.MAX_VALUE ? "Never refreshed." : timeSince(timestamp)));
+    }
+
+    private String timeSince(long timestamp) {
+        long diff = System.currentTimeMillis() - timestamp;
+        long temp = diff;
+        long ms   = temp % 1000; temp /= 1000;
+        long s    = temp % 60; temp /= 60;
+        long m    = temp % 60; temp /= 60;
+        long h    = temp % 24; temp /= 24;
+        long d    = temp; temp /= 7;
+        long w    = temp;
+
+        if(diff < 1000 * 60) {
+            return "just now";
+        } else if(diff < 1000 * 60 * 60) {
+            return String.format("%s minute(s) ago", m);
+        } else if(diff < 1000 * 60 * 60 * 24) {
+            return String.format("%s hour(s) ago", h);
+        } else if(diff < 1000 * 60 * 60 * 24 * 7) {
+            return String.format("%s day(s)ago", d);
+        } else {
+            return String.format("%s week(s) ago", w);
+        }
     }
 
     /**

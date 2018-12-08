@@ -9,6 +9,9 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author mattwright324
+ */
 public class Group {
     public static String NO_GROUP = "G000";
 

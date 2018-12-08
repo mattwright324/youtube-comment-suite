@@ -8,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -82,6 +81,6 @@ public class MainController implements Initializable {
             content.getChildren().add(searchYoutube);
         }));
 
-        btnManageGroups.fire();
+        btnSearchComments.fire();
     }
 }

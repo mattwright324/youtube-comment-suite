@@ -7,7 +7,7 @@ import java.util.*;
  * Source:
  * https://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html?page=2
  */
-public class NamedParameterStatement {
+public class NamedParameterStatement implements AutoCloseable {
     /** The statement this object is wrapping. */
     private final PreparedStatement statement;
 

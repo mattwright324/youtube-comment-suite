@@ -4,6 +4,9 @@ import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * @author mattwright324
+ */
 public enum ImageLoader {
     ANGLE_DOUBLE_LEFT("angle-double-left.png"),
     ANGLE_DOUBLE_RIGHT("angle-double-right.png"),
@@ -35,6 +38,7 @@ public enum ImageLoader {
     THUMBS_UP("thumbs-up.png"),
     TIMES_CIRCLE("times-circle.png"),
     TOGGLE_CONTEXT("toggleContext.png"),
+    TOGGLE_QUERY("toggleQuery.png"),
     VIDEO("video.png"),
     VIDEO_PLACEHOLDER("videoPlaceholder.png"),
     YOUTUBE("youtube.png")

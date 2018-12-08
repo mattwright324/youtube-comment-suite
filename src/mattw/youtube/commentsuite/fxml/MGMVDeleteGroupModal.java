@@ -15,6 +15,9 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.sql.SQLException;
 
+/**
+ * @author mattwright324
+ */
 public class MGMVDeleteGroupModal extends VBox {
 
     private static Logger logger = LogManager.getLogger(MGMVDeleteGroupModal.class.getName());

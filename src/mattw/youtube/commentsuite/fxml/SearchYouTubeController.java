@@ -7,7 +7,6 @@ import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
@@ -16,7 +15,8 @@ import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.io.BrowserUtil;
 import mattw.youtube.commentsuite.io.ClipboardUtil;
-import mattw.youtube.commentsuite.io.Geolocation;
+import mattw.youtube.commentsuite.io.EurekaProvider;
+import mattw.youtube.commentsuite.io.Location;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.YouTubeErrorException;
 import mattw.youtube.datav3.resources.SearchList;
@@ -30,11 +30,14 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
+/**
+ * @author mattwright324
+ */
 public class SearchYouTubeController implements Initializable {
 
     private static Logger logger = LogManager.getLogger(SearchYouTubeController.class.getSimpleName());
 
-    private Geolocation geolocation;
+    private Location<EurekaProvider, EurekaProvider.Location> location;
     private YouTubeData3 youtubeApi;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
@@ -77,7 +80,7 @@ public class SearchYouTubeController implements Initializable {
         logger.debug("Initialize SearchYouTubeController");
 
         youtubeApi = FXMLSuite.getYoutubeApi();
-        geolocation = FXMLSuite.getGeolocation();
+        this.location = FXMLSuite.getLocation();
 
         SelectionModel selectionModel = resultsList.getSelectionModel();
 
@@ -121,7 +124,7 @@ public class SearchYouTubeController implements Initializable {
         geolocate.setOnAction(ae -> new Thread(() -> {
             geolocate.setDisable(true);
             try {
-                Geolocation.Location myLocation = geolocation.getMyLocation();
+                EurekaProvider.Location myLocation = this.location.getMyLocation();
 
                 String coordinates = myLocation.geolocation_data.latitude+","+myLocation.geolocation_data.longitude;
 
