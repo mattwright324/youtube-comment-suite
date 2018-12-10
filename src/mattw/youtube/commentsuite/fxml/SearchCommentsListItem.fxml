@@ -23,8 +23,9 @@
             </padding>
         </Hyperlink>
         <fx:include source="HFlexLabel.fxml" fx:id="commentText" />
-        <HBox spacing="10">
-            <Label fx:id="date" styleClass="textMutedLight" />
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label fx:id="date" styleClass="textMuted, commentDate" />
+            <Label fx:id="likes" styleClass="commentLikes" />
             <Hyperlink fx:id="showMore" text="Show more" />
             <Hyperlink fx:id="viewTree" visible="false" managed="false" text="View Tree" />
             <Hyperlink fx:id="reply" visible="false" managed="false" text="Reply" />

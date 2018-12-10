@@ -35,6 +35,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     private @FXML Label commentText;
     private @FXML Label date;
     private @FXML Label type;
+    private @FXML Label likes;
     private @FXML Hyperlink showMore, viewTree, reply;
 
     private YouTubeComment comment;
@@ -67,11 +68,21 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         if(comment.getReplyCount() > 0 || comment.isReply()) {
             viewTree.setManaged(true);
             viewTree.setVisible(true);
+            if(!comment.isReply()) {
+                viewTree.setText(String.format("View Tree (%,d)", comment.getReplyCount()));
+            }
         }
 
         if(comment.isReply()) {
             type.setText("Reply");
             this.getStyleClass().add("reply");
+        }
+
+        if(comment.getLikes() > 0) {
+            likes.setText(String.format("+%,d", comment.getLikes()));
+        } else {
+            likes.setVisible(false);
+            likes.setManaged(false);
         }
 
         reply.setManaged(false);
@@ -92,6 +103,11 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
 
     Hyperlink getViewTree() {
         return viewTree;
+    }
+
+    void treeMode() {
+        viewTree.setVisible(false);
+        viewTree.setManaged(false);
     }
 
     /**

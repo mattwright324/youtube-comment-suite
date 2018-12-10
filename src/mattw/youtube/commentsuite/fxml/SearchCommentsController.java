@@ -339,7 +339,11 @@ public class SearchCommentsController implements Initializable, ImageCache {
         List<SearchCommentsListItem> commentListItems = comments.stream()
                 .map(yc -> {
                     try {
-                        return new SearchCommentsListItem(yc);
+                        SearchCommentsListItem item = new SearchCommentsListItem(yc);
+                        if(treeMode) {
+                            runLater(item::treeMode);
+                        }
+                        return item;
                     } catch (IOException e) {
                         logger.error("Failed to convert YouTubeComment to SearchCommentsListItem", e);
                         return null;

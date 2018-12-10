@@ -6,9 +6,9 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.ProgressBar;
 import mattw.youtube.commentsuite.db.*;
 import mattw.youtube.commentsuite.io.ElapsedTime;
+import mattw.youtube.datav3.Parts;
 import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.*;
+import mattw.youtube.datav3.entrypoints.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import static javafx.application.Platform.runLater;
@@ -80,13 +80,15 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private ExecutorService background = Executors.newCachedThreadPool();
     private ElapsedTime elapsedTimer = new ElapsedTime();
     private SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
+
     private LinkedBlockingQueue<GroupItem> gitemQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<YouTubeVideo> videoQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<Tuple<String,String>> commentThreadQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<YouTubeComment> commentQueue = new LinkedBlockingQueue<>();
     private List<CommentDatabase.GroupItemVideo> gitemVideo = new ArrayList<>();
-    private LinkedBlockingQueue<YouTubeChannel> channelQueue = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<String> channelQueue = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<YouTubeChannel> channelInsertQueue = new LinkedBlockingQueue<>();
 
     private YouTubeData3 youtube = FXMLSuite.getYoutubeApi();
     private CommentDatabase database = FXMLSuite.getDatabase();
@@ -174,6 +176,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                 newComments.getValue(),
                 totalComments.getValue(),
                 statusStep.getValue()));
+        logger.debug(String.format("YouTube API Est. Used Quota this YCS session [totalSpent=%,d units]",
+                youtube.getTotalSpentCost()));
     }
 
     /**
@@ -195,7 +199,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                         if(gitem.getTypeId() == YType.CHANNEL || gitem.getTypeId() == YType.PLAYLIST) {
                             String playlistId = gitem.getYoutubeId();
                             if(gitem.getTypeId() == YType.CHANNEL) {
-                                ChannelsList cl = youtube.channelsList().getByChannel(ChannelsList.PART_CONTENT_DETAILS, gitem.getYoutubeId(), "");
+                                ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.CONTENT_DETAILS))
+                                        .getByChannel(gitem.getYoutubeId(), "");
                                 if(cl.hasItems() && cl.items[0].hasContentDetails()) {
                                     playlistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
                                 }
@@ -204,14 +209,14 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             PlaylistItemsList pil;
                             String pageToken = "";
                             do {
-                                pil = youtube.playlistItemsList().get(PlaylistItemsList.PART_SNIPPET,
-                                        playlistId, pageToken);
+                                pil = ((PlaylistItemsList) youtube.playlistItemsList().part(Parts.SNIPPET))
+                                        .get(playlistId, pageToken);
                                 pageToken = pil.nextPageToken;
                                 if(pil.hasItems()) {
                                     List<String> videoIds = Arrays.stream(pil.items)
                                             .map(item -> item.snippet.resourceId.videoId)
                                             .collect(Collectors.toList());
-                                    videoIds.stream().forEach(videoId -> {
+                                    videoIds.forEach(videoId -> {
                                         gitemVideo.add(new CommentDatabase.GroupItemVideo(
                                                 gitem.getYoutubeId(), videoId));
                                     });
@@ -244,7 +249,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         es.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
-    <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+    private <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Set<Object> seen = ConcurrentHashMap.newKeySet();
         return t -> seen.add(keyExtractor.apply(t));
     }
@@ -253,7 +258,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
      * Background threads:
      * - Comment Consumers (take from queue into database)
      * - Comment Thread Consumers (produce comments from comment-threads)
-     * - Channel Consumers (take from queue into database)
+     * - ChannelId Consumers (produce channels from channel-ids for channel-insert consumers)
+     * - Channel Insert Consumers (take from queue into database)
      */
     private void startBackgroundThreads() {
         logger.debug("Starting Comment Consumers");
@@ -273,6 +279,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                         commentQueue.size(),
                                         commentThreadQueue.size()));
                                 submitComments(comments);
+
                                 elapsed.setNow();
                                 comments.clear();
                             } catch (SQLException e) {
@@ -295,7 +302,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             });
         }
 
-
         logger.debug("Starting Comment Thread Consumers");
         for(int i=0; i < 20; i++) {
             background.execute(() -> {
@@ -306,22 +312,21 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             CommentsList cl;
                             String pageToken = "";
                             do {
-                                cl = youtube.commentsList()
-                                        .getByParentId(CommentsList.PART_SNIPPET, tuple.getFirst(), pageToken);
+                                cl = ((CommentsList) youtube.commentsList().part(Parts.SNIPPET))
+                                        .getByParentId(tuple.getFirst(), pageToken);
                                 pageToken = cl.nextPageToken;
 
                                 List<YouTubeComment> replies = Arrays.stream(cl.items)
                                         .map(item -> new YouTubeComment(item, tuple.getSecond()))
                                         .filter(yc -> !"".equals(yc.getChannelId()) /* Filter out G+ comments. */)
                                         .collect(Collectors.toList());
-                                // submitComments(replies);
                                 commentQueue.addAll(replies);
 
                                 List<YouTubeChannel> channels = Arrays.stream(cl.items)
                                         .filter(distinctByKey(CommentsList.Item::getId))
                                         .map(item -> new YouTubeChannel(item, false))
                                         .collect(Collectors.toList());
-                                channelQueue.addAll(channels);
+                                channelInsertQueue.addAll(channels);
 
                                 try { Thread.sleep(50); } catch (InterruptedException ignored) {}
                             } while (pageToken != null && !isHardShutdown());
@@ -339,27 +344,34 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             });
         }
 
-        logger.debug("Starting Channel Consumers");
-        for(int i=0; i < 2; i++) {
+        logger.debug("Starting ChannelId Consumers");
+        for(int i=0; i < 20; i++) {
             background.execute(() -> {
                 ElapsedTime elapsed = new ElapsedTime();
                 elapsed.setNow();
 
-                List<YouTubeChannel> insert = new ArrayList<>();
+                Set<String> channelIds = new HashSet<>();
                 while(!channelQueue.isEmpty() || progress.getValue() < 1.0 || !isShutdown()) {
-                    YouTubeChannel channel = channelQueue.poll();
+                    String channel = channelQueue.poll();
                     if(channel != null) {
-                        insert.add(channel);
-                        if(insert.size() >= 1000 || (elapsed.getElapsedMillis() >= 1200 && !insert.isEmpty())) {
+                        channelIds.add(channel);
+                        if(channelIds.size() >= 50 || (elapsed.getElapsedMillis() >= 500 && !channelIds.isEmpty())) {
+                            logger.debug(String.format("ChannelIdConsumer[submitting=%s,leftInQueue=%s]",
+                                    channelIds.size(),
+                                    channelQueue.size()));
                             try {
-                                logger.debug(String.format("ChannelConsumer[submitting=%s,leftInQueue=%s]",
-                                        insert.size(),
-                                        channelQueue.size()));
-                                database.insertChannels(insert);
+                                ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.SNIPPET))
+                                        .getByChannel(String.join(",", channelIds), "");
+
+                                List<YouTubeChannel> channels = Arrays.stream(cl.items).map(YouTubeChannel::new)
+                                        .collect(Collectors.toList());
+
+                                channelInsertQueue.addAll(channels);
+
                                 elapsed.setNow();
-                                insert.clear();
-                            } catch (SQLException e) {
-                                logger.error("Error on comment submit", e);
+                                channelIds.clear();
+                            } catch (IOException | YouTubeErrorException e) {
+                                logger.error("Error on channel grab", e);
                             }
                         }
                     } else {
@@ -368,7 +380,40 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     if(isHardShutdown()) break;
                 }
 
-                logger.debug(String.format("Channel Consumer [END] [leftInQueue=%s]", channelQueue.size()));
+                logger.debug(String.format("ChannelId Consumer [END] [leftInQueue=%s]", channelQueue.size()));
+            });
+        }
+
+        logger.debug("Starting Channel Insert Consumers");
+        for(int i=0; i < 2; i++) {
+            background.execute(() -> {
+                ElapsedTime elapsed = new ElapsedTime();
+                elapsed.setNow();
+
+                List<YouTubeChannel> insert = new ArrayList<>();
+                while(!channelInsertQueue.isEmpty() || progress.getValue() < 1.0 || !isShutdown()) {
+                    YouTubeChannel channel = channelInsertQueue.poll();
+                    if(channel != null) {
+                        insert.add(channel);
+                        if(insert.size() >= 1000 || (elapsed.getElapsedMillis() >= 1200 && !insert.isEmpty())) {
+                            try {
+                                logger.debug(String.format("ChannelInsertConsumer[submitting=%s,leftInQueue=%s]",
+                                        insert.size(),
+                                        channelInsertQueue.size()));
+                                database.insertChannels(insert);
+                                elapsed.setNow();
+                                insert.clear();
+                            } catch (SQLException e) {
+                                logger.error("Error on channel submit", e);
+                            }
+                        }
+                    } else {
+                        try { Thread.sleep(5); } catch (InterruptedException ignored) {}
+                    }
+                    if(isHardShutdown()) break;
+                }
+
+                logger.debug(String.format("Channel Insert Consumer [END] [leftInQueue=%s]", channelInsertQueue.size()));
             });
         }
     }
@@ -385,7 +430,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     /**
      * Consumes YouTubeVideo objects in the queue.
-     * @param consumers
+     * @param consumers number of consuming threads
      * @throws InterruptedException
      */
     private void startAndAwaitVideoParse(int consumers) throws InterruptedException {
@@ -403,22 +448,27 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             try {
                                 logger.info(String.format("%s - %s", video.getYoutubeId(), video.getTitle()));
                                 do {
-                                    ctl = youtube.commentThreadsList()
-                                            .getThreadsByVideo(CommentThreadsList.PART_SNIPPET, video.getYoutubeId(), pageToken);
+                                    ctl = ((CommentThreadsList) youtube.commentThreadsList().part(Parts.SNIPPET))
+                                            .getThreadsByVideo(video.getYoutubeId(), pageToken);
                                     pageToken = ctl.nextPageToken;
 
                                     if(ctl.hasItems()) {
                                         List<YouTubeComment> comments = Arrays.stream(ctl.items)
                                                 .map(YouTubeComment::new).collect(Collectors.toList());
-                                        comments.stream().forEach(c -> {
+                                        comments.forEach(c -> {
                                             if(c.getReplyCount() > 0) {
                                                 incrTotalProgress(1);
                                                 updateProgress();
                                                 commentThreadQueue.add(new Tuple<>(c.getYoutubeId(), video.getYoutubeId()));
                                             }
                                         });
-                                        comments.removeIf(c -> c.getReplyCount() > 0);
+
                                         commentQueue.addAll(comments);
+
+                                        channelQueue.addAll(comments.stream()
+                                                .map(YouTubeComment::getChannelId)
+                                                .distinct()
+                                                .collect(Collectors.toList()));
                                     }
 
                                     try { Thread.sleep(50); } catch (InterruptedException ignored) {}
@@ -428,7 +478,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                 String message;
                                 if(e instanceof YouTubeErrorException) {
                                     YouTubeErrorException yee = (YouTubeErrorException) e;
-                                    int responseCode = yee.getError().code;
+                                    int responseCode = yee.getError().getCode();
                                     if(responseCode == 400) {
                                         // Either there is a slow connection or we hit the YouTube API quota limit.
                                         message = String.format("[%s/%s] HTTP400 [videoId=%s]", attempts, 5, video.getYoutubeId());
@@ -501,8 +551,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
      */
     private void parseVideoIdsToObjects(List<String> videoIds) throws IOException, YouTubeErrorException, SQLException {
         logger.debug(String.format("Grabbing Video Data [ids=%s]", videoIds.toString()));
-        VideosList vl = youtube.videosList().getByIds(VideosList.PART_SNIPPET+","+VideosList.PART_STATISTICS,
-                videoIds.stream().collect(Collectors.joining(",")), "");
+        VideosList vl = ((VideosList) youtube.videosList().parts(Parts.SNIPPET, Parts.STATISTICS))
+                .getByIds(String.join(",", videoIds), "");
         if(vl.items != null) {
             List<YouTubeVideo> videos = Arrays.stream(vl.items)
                     .map(YouTubeVideo::new).collect(Collectors.toList());

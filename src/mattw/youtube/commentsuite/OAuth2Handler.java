@@ -2,8 +2,8 @@ package mattw.youtube.commentsuite;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.CommentsList;
+import mattw.youtube.datav3.entrypoints.CommentsList;
+import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 

@@ -1,7 +1,7 @@
 package mattw.youtube.commentsuite;
 
 import mattw.youtube.commentsuite.db.YouTubeObject;
-import mattw.youtube.datav3.resources.SearchList;
+import mattw.youtube.datav3.entrypoints.SearchList;
 
 /**
  * @author mattwright324
@@ -11,7 +11,7 @@ public class YouTubeSearchItem extends YouTubeObject {
     public YouTubeSearchItem(SearchList.Item searchListItem) {
         setYoutubeId(searchListItem.id.getId());
         setTitle(searchListItem.snippet.title);
-        setThumbUrl(searchListItem.snippet.thumbnails.medium.url.toString());
+        setThumbUrl(searchListItem.snippet.thumbnails.getMedium().getURL().toString());
         setFetchThumb(false);
     }
 }

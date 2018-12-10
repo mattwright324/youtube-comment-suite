@@ -159,3 +159,16 @@
 .reply {
     -fx-background-color: linear-gradient(to right, rgba(127,255,127,0.2), transparent);
 }
+
+.commentDate {
+    -fx-padding: 0 8 0 8;
+    -fx-background-color: derive(rgba(255,255,255,0.5), 70%);
+    -fx-background-radius: 5;
+}
+
+.commentLikes {
+    -fx-padding: 0 8 0 8;
+    -fx-background-color: derive(rgba(255,255,255,0.5), 70%);
+    -fx-text-fill: derive(cornflowerblue, -20%);
+    -fx-background-radius: 5;
+}

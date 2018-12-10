@@ -1,8 +1,8 @@
 package mattw.youtube.commentsuite.db;
 
 import mattw.youtube.commentsuite.FXMLSuite;
-import mattw.youtube.datav3.resources.CommentThreadsList;
-import mattw.youtube.datav3.resources.CommentsList;
+import mattw.youtube.datav3.entrypoints.CommentThreadsList;
+import mattw.youtube.datav3.entrypoints.CommentsList;
 
 import java.util.Date;
 
@@ -74,7 +74,7 @@ public class YouTubeComment extends YouTubeObject {
     public Date getDate() { return date; }
     public String getVideoId() { return videoId; }
     public String getChannelId() { return channelId; }
-     public YouTubeChannel getChannel() { return FXMLSuite.getDatabase().getChannel(channelId); }
+    public YouTubeChannel getChannel() { return FXMLSuite.getDatabase().getChannel(channelId); }
     public int getLikes() { return likes; }
     public int getReplyCount() { return replies; }
     public boolean isReply() { return isReply; }

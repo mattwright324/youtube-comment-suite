@@ -1,9 +1,10 @@
 package mattw.youtube.commentsuite.db;
 
-import mattw.youtube.datav3.resources.ChannelsList;
-import mattw.youtube.datav3.resources.PlaylistsList;
-import mattw.youtube.datav3.resources.SearchList;
-import mattw.youtube.datav3.resources.VideosList;
+
+import mattw.youtube.datav3.entrypoints.ChannelsList;
+import mattw.youtube.datav3.entrypoints.PlaylistsList;
+import mattw.youtube.datav3.entrypoints.SearchList;
+import mattw.youtube.datav3.entrypoints.VideosList;
 
 /**
  * Database entry for searched YouTube entries (Video, Channel, Playlist).
@@ -24,7 +25,7 @@ public class GroupItem extends YouTubeObject {
      * Used for converting selected search items for inserting into database.
      */
     public GroupItem(SearchList.Item item) {
-        super(item.id.getId(), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
+        super(item.id.getId(), item.snippet.title, item.snippet.thumbnails.getMedium().getURL().toString(), true);
         this.published = item.snippet.publishedAt.getTime();
         this.channelTitle = item.snippet.channelTitle;
         this.lastChecked = 0;
@@ -39,7 +40,7 @@ public class GroupItem extends YouTubeObject {
      */
     public GroupItem(VideosList.Item item) {
         this(item.getId(), YType.VIDEO, item.snippet.title, item.snippet.channelTitle,
-                item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                item.snippet.thumbnails.getMedium().getURL().toString(), item.snippet.publishedAt.getTime(), 0);
     }
 
     /**
@@ -48,7 +49,7 @@ public class GroupItem extends YouTubeObject {
      */
     public GroupItem(ChannelsList.Item item) {
         this(item.getId(), YType.CHANNEL, item.snippet.title, item.snippet.title,
-                item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                item.snippet.thumbnails.getMedium().getURL().toString(), item.snippet.publishedAt.getTime(), 0);
     }
 
     /**
@@ -57,7 +58,7 @@ public class GroupItem extends YouTubeObject {
      */
     public GroupItem(PlaylistsList.Item item) {
         this(item.getId(), YType.PLAYLIST, item.snippet.title, item.snippet.channelTitle,
-                item.snippet.thumbnails.medium.url.toString(), item.snippet.publishedAt.getTime(), 0);
+                item.snippet.thumbnails.getMedium().getURL().toString(), item.snippet.publishedAt.getTime(), 0);
     }
 
     /**

@@ -13,11 +13,12 @@ import javafx.scene.layout.VBox;
 import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.db.*;
+import mattw.youtube.datav3.Parts;
 import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.ChannelsList;
-import mattw.youtube.datav3.resources.PlaylistsList;
-import mattw.youtube.datav3.resources.VideosList;
+import mattw.youtube.datav3.entrypoints.ChannelsList;
+import mattw.youtube.datav3.entrypoints.PlaylistsList;
+import mattw.youtube.datav3.entrypoints.VideosList;
+import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -108,7 +109,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                     try {
                         List<GroupItem> list = new ArrayList<>();
                         if(type == YType.VIDEO) {
-                            VideosList vl = youtube.videosList().getByIds(VideosList.PART_SNIPPET, result, "");
+                            VideosList vl = ((VideosList) youtube.videosList().part(Parts.SNIPPET))
+                                    .getByIds(result, "");
                             if(vl.items != null && vl.items.length > 0) {
                                 VideosList.Item item = vl.items[0];
                                 GroupItem gitem = new GroupItem(item);
@@ -116,11 +118,11 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 list.add(gitem);
                             }
                         } else if(type == YType.CHANNEL) {
-                            ChannelsList cl = youtube.channelsList();
+                            ChannelsList cl = youtube.channelsList().part(Parts.SNIPPET);
                             if(!channelUsername) {
-                                cl = cl.getByChannel(ChannelsList.PART_SNIPPET, result, "");
+                                cl = cl.getByChannel(result, "");
                             } else {
-                                cl = cl.getByUsername(ChannelsList.PART_SNIPPET, result, "");
+                                cl = cl.getByUsername(result, "");
                             }
 
                             if(cl.hasItems()) {
@@ -130,7 +132,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 list.add(gitem);
                             }
                         } else if(type == YType.PLAYLIST) {
-                            PlaylistsList pl = youtube.playlistsList().getByPlaylist(PlaylistsList.PART_SNIPPET, result, "");
+                            PlaylistsList pl = ((PlaylistsList) youtube.playlistsList().part(Parts.SNIPPET))
+                                    .getByPlaylist(result, "");
                             if(pl.hasItems()) {
                                 PlaylistsList.Item item = pl.items[0];
                                 GroupItem gitem = new GroupItem(item);
@@ -157,7 +160,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                         runLater(() -> {
                             String message = e.getClass().getSimpleName();
                             if(e instanceof YouTubeErrorException) {
-                                message = ((YouTubeErrorException) e).error.message;
+                                message = ((YouTubeErrorException) e).getError().getMessage();
                             }
                             setError(message);
                         });

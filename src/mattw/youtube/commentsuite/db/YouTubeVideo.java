@@ -1,6 +1,6 @@
 package mattw.youtube.commentsuite.db;
 
-import mattw.youtube.datav3.resources.VideosList;
+import mattw.youtube.datav3.entrypoints.VideosList;
 
 /**
  * @author mattwright324
@@ -14,7 +14,7 @@ public class YouTubeVideo extends YouTubeObject {
     private int httpCode;
 
     public YouTubeVideo(VideosList.Item item) {
-        super(item.getId(), item.snippet.title, item.snippet.thumbnails.medium.url.toString(), true);
+        super(item.getId(), item.snippet.title, item.snippet.thumbnails.getMedium().getURL().toString(), true);
         setTypeId(YType.VIDEO);
         this.channelId = item.snippet.channelId;
         this.description = item.snippet.description;
@@ -28,7 +28,7 @@ public class YouTubeVideo extends YouTubeObject {
 
     @Deprecated
     public YouTubeVideo(VideosList.Item itemSnip, VideosList.Item itemStat) {
-        super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.medium.url.toString(), true);
+        super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.getMedium().getURL().toString(), true);
         setTypeId(YType.VIDEO);
         this.channelId = itemSnip.snippet.channelId;
         this.description = itemSnip.snippet.description;

@@ -17,9 +17,10 @@ import mattw.youtube.commentsuite.io.BrowserUtil;
 import mattw.youtube.commentsuite.io.ClipboardUtil;
 import mattw.youtube.commentsuite.io.EurekaProvider;
 import mattw.youtube.commentsuite.io.Location;
+import mattw.youtube.datav3.Parts;
 import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.SearchList;
+import mattw.youtube.datav3.entrypoints.SearchList;
+import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -174,7 +175,7 @@ public class SearchYouTubeController implements Initializable {
     public void search(String pageToken, String type, String text, String locText, String locRadius, String order, int resultType) {
         runLater(() -> searching.setValue(true));
         try {
-            searchList = youtubeApi.searchList().order(order.toLowerCase());
+            searchList = ((SearchList) youtubeApi.searchList().part(Parts.SNIPPET)).order(order.toLowerCase());
 
             if(pageToken.equals(emptyToken)) {
                 pageToken = "";
@@ -186,15 +187,15 @@ public class SearchYouTubeController implements Initializable {
             if(type.equals("Normal")) {
                 logger.debug(String.format("Normal Search [key=%s,part=snippet,text=%s,type=%s,order=%s,token=%s]",
                         youtubeApi.getDataApiKey(),encodedText,searchType,order.toLowerCase(),pageToken));
-                searchList = searchList.get(SearchList.PART_SNIPPET, encodedText, searchType, pageToken);
+                searchList = searchList.get(encodedText, searchType, pageToken);
             } else {
                 logger.debug(String.format("Location Search [key=%s,part=snippet,text=%s,loc=%s,radius=%s,type=%s,order=%s,token=%s]",
                         youtubeApi.getDataApiKey(),encodedText,locText,locRadius,searchType,order.toLowerCase(),pageToken));
-                searchList = searchList.getByLocation(SearchList.PART_SNIPPET, encodedText, pageToken, locText, locRadius);
+                searchList = searchList.getByLocation(encodedText, pageToken, locText, locRadius);
             }
 
             this.pageToken = searchList.nextPageToken == null ? emptyToken : searchList.nextPageToken;
-            this.total = searchList.pageInfo.totalResults;
+            this.total = searchList.getPageInfo().getTotalResults();
 
             logger.debug(String.format("Search [videos=%s]", searchList.items.length));
             for(SearchList.Item item : searchList.items) {

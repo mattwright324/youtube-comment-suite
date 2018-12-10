@@ -10,7 +10,7 @@ import javafx.scene.layout.HBox;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.YouTubeSearchItem;
-import mattw.youtube.datav3.resources.SearchList;
+import mattw.youtube.datav3.entrypoints.SearchList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
