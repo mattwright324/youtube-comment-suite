@@ -75,6 +75,7 @@ public class SearchCommentsController implements Initializable, ImageCache {
     private @FXML Button btnSearch, btnClear;
 
     private @FXML OverlayModal<SCVideoSelectModal> videoSelectModal;
+    private @FXML OverlayModal<SCShowMoreModal> showMoreModal;
 
     private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
     private SimpleBooleanProperty searchingProperty = new SimpleBooleanProperty(false);
@@ -212,7 +213,7 @@ public class SearchCommentsController implements Initializable, ImageCache {
                         videoTitle.setText(v.getTitle());
                         videoLikes.setText(trunc(v.getLikes()));
                         videoDislikes.setText(trunc(v.getDislikes()));
-                        videoViews.setText(trunc(v.getViews()));
+                        videoViews.setText(String.format("%s views", trunc(v.getViews())));
                         videoDescription.setText(String.format("Published %s • %s",
                                 sdf.format(v.getPublishedDate()),
                                 StringEscapeUtils.unescapeHtml4(v.getDescription())));
@@ -233,6 +234,17 @@ public class SearchCommentsController implements Initializable, ImageCache {
 
         SCVideoSelectModal scVideoSelectModal = new SCVideoSelectModal();
         videoSelectModal.setContent(scVideoSelectModal);
+        videoSelect.setOnAction(ae -> runLater(() -> {
+            scVideoSelectModal.cleanUp();
+            videoSelectModal.setVisible(true);
+        }));
+        scVideoSelectModal.getBtnClose().setOnAction(ae -> videoSelectModal.setVisible(false));
+        scVideoSelectModal.getBtnSubmit().setOnAction(ae -> videoSelectModal.setVisible(false));
+
+        SCShowMoreModal scShowMoreModal = new SCShowMoreModal();
+        showMoreModal.setContent(scShowMoreModal);
+        scShowMoreModal.getBtnClose().setOnAction(ae -> showMoreModal.setVisible(false));
+        scShowMoreModal.getBtnSubmit().setOnAction(ae -> showMoreModal.setVisible(false));
     }
 
     /**
@@ -377,7 +389,13 @@ public class SearchCommentsController implements Initializable, ImageCache {
 
 
     private void showMore(SearchCommentsListItem scli) {
+        YouTubeComment comment = scli.getComment();
 
+        logger.debug(String.format("Showing more window for commment [videoId=%s,commentId=%s]",
+                comment.getVideoId(),
+                comment.getYoutubeId()));
+
+        commentModal(comment, false);
     }
 
     private void reply(SearchCommentsListItem scli) {
@@ -386,6 +404,19 @@ public class SearchCommentsController implements Initializable, ImageCache {
         logger.debug(String.format("Showing reply window for commment [videoId=%s,commentId=%s]",
                 comment.getVideoId(),
                 comment.getYoutubeId()));
+
+        commentModal(comment, true);
+    }
+
+    private void commentModal(YouTubeComment comment, boolean replyMode) {
+        runLater(() -> {
+            showMoreModal.setVisible(true);
+            showMoreModal.setManaged(true);
+
+            SCShowMoreModal modalContent = showMoreModal.getContent();
+            modalContent.cleanUp();
+            modalContent.loadComment(comment, replyMode);
+        });
     }
 
     private void viewTree(SearchCommentsListItem scli) {

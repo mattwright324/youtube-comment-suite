@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
+import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import org.apache.logging.log4j.LogManager;
@@ -14,7 +15,7 @@ import java.io.IOException;
 /**
  * @author mattwright324
  */
-public class SCVideoSelectModal extends VBox {
+public class SCVideoSelectModal extends VBox implements Cleanable {
 
     private static Logger logger = LogManager.getLogger(SCVideoSelectModal.class.getSimpleName());
 
@@ -28,13 +29,13 @@ public class SCVideoSelectModal extends VBox {
 
         database = FXMLSuite.getDatabase();
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRemoveAllModal.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("SCVideoSelectModal.fxml"));
         loader.setController(this);
         loader.setRoot(this);
         try {
             loader.load();
 
-            // TODO: Add remove functionality.
+            // TODO: Add video selection funcationality.
         } catch (IOException e) { logger.error(e); }
     }
 
@@ -46,4 +47,8 @@ public class SCVideoSelectModal extends VBox {
         return btnSubmit;
     }
 
+    @Override
+    public void cleanUp() {
+
+    }
 }

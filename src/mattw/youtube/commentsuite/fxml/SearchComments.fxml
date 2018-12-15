@@ -119,6 +119,11 @@
 
     <!-- Overlay: Remove Selected GroupItem(s) -->
     <OverlayModal visible="false" fx:id="videoSelectModal">
-        <title><String fx:value="Remove selected group items" /></title>
+        <title><String fx:value="Select Video" /></title>
+    </OverlayModal>
+
+    <!-- Overlay: Reply / Show More -->
+    <OverlayModal visible="false" fx:id="showMoreModal">
+        <title><String fx:value="Comment View" /></title>
     </OverlayModal>
 </StackPane>

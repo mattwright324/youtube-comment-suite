@@ -7,11 +7,11 @@
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml"
          spacing="10">
-    <fx:include source="AlertLabel.fxml" styleClass="alertDanger"
+    <fx:include source="AlertLabel.fxml" styleClass="alertPrimary"
                 alignment="CENTER"
-                text="Warning: This removes ALL GroupItems and data." />
+                text="Select Video" />
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
-        <Button fx:id="btnSubmit" styleClass="btnDanger" text="Remove Item(s)" />
+        <Button fx:id="btnSubmit" styleClass="btnPrimary" text="Finish" />
     </HBox>
 </fx:root>

@@ -188,6 +188,8 @@ public class SettingsController implements Initializable {
             });
         }).start());
 
+        // TODO: Remove thumb files functionality
+
         github.setOnAction(ae -> browserUtil.open("https://github.com/mattwright324/youtube-comment-suite"));
     }
 }

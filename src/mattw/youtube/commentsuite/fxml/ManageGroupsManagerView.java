@@ -202,22 +202,24 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
         removeItemModal.setContent(mgmvRemoveSelected);
         removeItemModal.setDividerClass("dividerWarning");
         btnRemoveItems.setOnAction(ae -> runLater(() -> {
-            mgmvRemoveSelected.reset();
+            mgmvRemoveSelected.cleanUp();
             removeItemModal.setVisible(true);
         }));
         mgmvRemoveSelected.getBtnClose().setOnAction(ae -> removeItemModal.setVisible(false));
+        mgmvRemoveSelected.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
 
         /**
          * Remove All GroupItems Modal
          */
-        MGMVRemoveAllModal mgmvRemoveAll = new MGMVRemoveAllModal(group);
+        MGMVRemoveAllModal mgmvRemoveAll = new MGMVRemoveAllModal(group, groupItemList.getItems());
         removeAllModal.setContent(mgmvRemoveAll);
         removeAllModal.setDividerClass("dividerDanger");
         btnRemoveAll.setOnAction(ae -> runLater(() -> {
-            mgmvRemoveAll.reset();
+            mgmvRemoveAll.cleanUp();
             removeAllModal.setVisible(true);
         }));
         mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
+        mgmvRemoveAll.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
     }
 
     /**

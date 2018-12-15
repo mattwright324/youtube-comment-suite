@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TextArea?>
+<fx:root type="VBox"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         spacing="10">
+    <fx:include source="AlertLabel.fxml" styleClass="alertWarning"
+                alignment="CENTER" managed="false" visible="false"
+                text="" />
+    <HBox spacing="10" alignment="BASELINE_CENTER">
+        <TextArea fx:id="commentText"
+                  editable="false"
+                  wrapText="true" />
+    </HBox>
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button fx:id="btnClose" styleClass="btnLight" text="Close"
+            managed="false" visible="false" />
+        <Button fx:id="btnSubmit" styleClass="btnPrimary" text="Finish" />
+    </HBox>
+</fx:root>

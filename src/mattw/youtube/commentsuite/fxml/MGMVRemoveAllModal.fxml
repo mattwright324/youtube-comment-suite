@@ -8,6 +8,7 @@
          xmlns:fx="http://javafx.com/fxml"
          spacing="10">
     <fx:include source="AlertLabel.fxml" styleClass="alertDanger"
+                fx:id="alertError"
                 alignment="CENTER"
                 text="Warning: This removes ALL GroupItems and data." />
     <HBox spacing="10" alignment="CENTER_RIGHT">
