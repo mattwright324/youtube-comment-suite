@@ -5,11 +5,15 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import mattw.youtube.commentsuite.Cleanable;
+import mattw.youtube.commentsuite.*;
+import mattw.youtube.commentsuite.db.YouTubeChannel;
 import mattw.youtube.commentsuite.db.YouTubeComment;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,37 +21,79 @@ import java.io.IOException;
 
 import static javafx.application.Platform.runLater;
 
-public class SCShowMoreModal extends VBox implements Cleanable {
+public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
     private static Logger logger = LogManager.getLogger(SCShowMoreModal.class.getSimpleName());
 
-    private @FXML TextArea commentText;
+    private @FXML TextArea commentText, replyText;
+    private @FXML TextField author;
+    private @FXML ImageView authorThumb, accountThumb;
+    private @FXML VBox replyPane;
+    private @FXML ComboBox<YouTubeAccount> comboAccountSelect;
 
     private @FXML Button btnClose;
-    private @FXML Button btnSubmit;
+    private @FXML Button btnSubmit, btnReply;
 
     private SimpleBooleanProperty replyMode = new SimpleBooleanProperty(false);
 
+    private ConfigFile<ConfigData> config;
+    private ConfigData configData;
+
     public SCShowMoreModal() {
         logger.debug("Initialize SCShowMoreModal");
+
+        config = FXMLSuite.getConfig();
+        configData = config.getDataObject();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SCShowMoreModal.fxml"));
         loader.setController(this);
         loader.setRoot(this);
         try {
             loader.load();
-        } catch (IOException e) { logger.error(e); }
+
+            cleanUp();
+
+            accountThumb.setImage(ImageCache.toLetterAvatar('a'));
+
+            btnSubmit.setOnAction(ae -> runLater(() -> enableReplyMode(!replyMode.getValue())));
+
+            replyMode.addListener((o, ov, nv) -> {
+                btnSubmit.setText(replyMode.getValue() ? "Cancel Reply" : "Make Reply");
+
+                if(replyText.getText().trim().isEmpty()) {
+                    if(configData.getPrefixReplies()) {
+                        replyText.setText(String.format("+%s ", author.getText()));
+                    }
+                }
+            });
+
+            replyPane.managedProperty().bind(replyMode);
+            replyPane.visibleProperty().bind(replyMode);
+        } catch (IOException e) {
+            logger.error(e);
+            e.printStackTrace();
+        }
     }
 
+    /**
+     * Loads comment into modal.
+     *
+     * @param comment comment to display
+     * @param replyMode show modal with reply elements enabled
+     */
     public void loadComment(YouTubeComment comment, boolean replyMode) {
-        String processedText = StringEscapeUtils.unescapeHtml4(comment.getText())
-                .replace("<br />", "\r\n")
-                .replaceAll("[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︠-︯]","");
+        YouTubeChannel channel = comment.getChannel();
+
+        Image thumb = ImageCache.findOrGetImage(channel);
 
         runLater(() -> {
-           enableReplyMode(replyMode);
+            cleanUp();
 
-           commentText.setText(processedText);
+            author.setText(channel.getTitle());
+            authorThumb.setImage(thumb);
+            commentText.setText(comment.getCleanText());
+
+            enableReplyMode(replyMode);
         });
     }
 
@@ -69,6 +115,12 @@ public class SCShowMoreModal extends VBox implements Cleanable {
 
     @Override
     public void cleanUp() {
+        enableReplyMode(false);
 
+        author.setText("mattwright324");
+        authorThumb.setImage(ImageCache.toLetterAvatar('m'));
+        commentText.setText("Show more modal comment text.");
+
+        replyText.setText("");
     }
 }

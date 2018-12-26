@@ -16,10 +16,12 @@
 <?import javafx.scene.control.DatePicker?>
 <?import mattw.youtube.commentsuite.fxml.OverlayModal?>
 <?import java.lang.String?>
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.MenuItem?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            alignment="TOP_CENTER"
-           fx:controller="mattw.youtube.commentsuite.fxml.SearchCommentsController">
+           fx:controller="mattw.youtube.commentsuite.fxml.SearchComments">
     <fx:define>
         <ImageView fx:id="toggleContextIcon" fitWidth="15" fitHeight="100" />
         <ImageView fx:id="firstPageIcon" fitWidth="20" fitHeight="20" />
@@ -61,7 +63,20 @@
                     graphic="$toggleContextIcon" />
         <VBox fx:id="resultsPane" HBox.hgrow="ALWAYS" spacing="10" alignment="TOP_CENTER">
             <padding><Insets topRightBottomLeft="10" /></padding>
-            <ListView fx:id="resultsList" styleClass="listView" VBox.vgrow="ALWAYS" />
+            <ListView fx:id="resultsList" styleClass="listView" VBox.vgrow="ALWAYS">
+                <contextMenu>
+                    <ContextMenu>
+                        <items>
+                            <MenuItem fx:id="openInBrowser" text="Open in Browser" />
+                            <MenuItem fx:id="copyNames" text="Copy Name(s)" />
+                            <MenuItem fx:id="copyComments" text="Copy Comment(s)" />
+                            <MenuItem fx:id="copyChannelLinks" text="Copy Channel Link(s)" />
+                            <MenuItem fx:id="copyVideoLinks" text="Copy Video Link(s)" />
+                            <MenuItem fx:id="copyCommentLinks" text="Copy Comment Link(s)" />
+                        </items>
+                    </ContextMenu>
+                </contextMenu>
+            </ListView>
             <HBox fx:id="paginationPane" alignment="CENTER" spacing="5">
                 <Button fx:id="btnFirst" graphic="$firstPageIcon" />
                 <Button fx:id="btnPrev" graphic="$prevPageIcon" />

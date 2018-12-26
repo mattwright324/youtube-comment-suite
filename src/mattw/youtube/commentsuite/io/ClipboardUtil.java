@@ -1,6 +1,5 @@
 package mattw.youtube.commentsuite.io;
 
-import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -19,9 +18,14 @@ public class ClipboardUtil {
 
 	public ClipboardUtil() {}
 
-	@PostConstruct
 	private void initSystemClipboard() {
-		systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		if(systemClipboard == null) {
+			systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		}
+	}
+
+	private void setSystemClipboard(Clipboard clipboard) {
+		this.systemClipboard = clipboard;
 	}
 
 	public String getClipboard() throws UnsupportedFlavorException, IOException {
@@ -33,6 +37,7 @@ public class ClipboardUtil {
 	 * @param string
 	 */
 	public void setClipboard(String string) {
+		initSystemClipboard();
 		StringSelection selection = new StringSelection(string);
 		systemClipboard.setContents(selection, selection);
 	}

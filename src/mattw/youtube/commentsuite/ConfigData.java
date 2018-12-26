@@ -1,23 +1,30 @@
 package mattw.youtube.commentsuite;
 
+import javafx.beans.property.ReadOnlyIntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * @author mattwright324
  */
-public class ConfigData  {
+public class ConfigData implements Serializable {
 
-    public transient String defaultApiKey = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
+    private transient String defaultApiKey = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
+    private transient SimpleIntegerProperty accountListChanged = new SimpleIntegerProperty(0);
 
-    public boolean autoLoadStats = true;
-    public boolean prefixReplies = true;
-    public boolean archiveThumbs = false;
-    public boolean customApiKey = false;
-    public List<YouTubeAccount> accounts = new ArrayList<>();
-    public String youtubeApiKey = defaultApiKey;
+    private boolean autoLoadStats = true;
+    private boolean prefixReplies = true;
+    private boolean archiveThumbs = false;
+    private boolean customApiKey = false;
+    private List<YouTubeAccount> accounts = new ArrayList<>();
+    private String youtubeApiKey = defaultApiKey;
 
-    public ConfigData() {}
+    public ConfigData() { }
 
     public String getDefaultApiKey() { return defaultApiKey; }
 
@@ -25,6 +32,35 @@ public class ConfigData  {
     public void setYoutubeApiKey(String apiKey) { this.youtubeApiKey = apiKey; }
 
     public List<YouTubeAccount> getAccounts() { return accounts; }
+
+    public void refreshAccounts() {
+        accounts.forEach(acc -> {
+            FXMLSuite.getYoutubeApi().setProfileAccessToken(acc.getTokens().getAccessToken());
+
+            acc.updateData();
+        });
+    }
+
+    public void addAccount(YouTubeAccount account) {
+        if(accounts.stream().noneMatch(ac -> ac.getChannelId().equals(account.getChannelId()))) {
+            accounts.add(account);
+            triggerAccountListChanged();
+        }
+    }
+
+    public void removeAccount(YouTubeAccount account) {
+        if(accounts.removeIf(acc -> acc.getChannelId() != null && acc.getChannelId().equals(account.getChannelId()))) {
+            triggerAccountListChanged();
+        }
+    }
+
+    public ReadOnlyIntegerProperty accountListChangedProperty() {
+        return accountListChanged;
+    }
+
+    public void triggerAccountListChanged() {
+        runLater(() -> accountListChanged.setValue(accountListChanged.getValue()+1));
+    }
 
     public boolean usingCustomApiKey() { return customApiKey; }
     public void setCustomApiKey(boolean customApiKey) { this.customApiKey = customApiKey; }

@@ -47,6 +47,8 @@ public class FXMLSuite extends Application {
             stage.setScene(scene);
             stage.getIcons().add(ImageLoader.YCS_ICON.getImage());
             stage.setOnCloseRequest(we -> {
+                logger.debug("Closing - [totalSpentQuota={} units]", youtubeApi.getTotalSpentCost());
+
                 try {
                     database.commit();
 

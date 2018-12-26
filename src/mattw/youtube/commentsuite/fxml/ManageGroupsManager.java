@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *
  * @author mattwright324
  */
-public class ManageGroupsManagerView extends StackPane implements ImageCache {
+public class ManageGroupsManager extends StackPane implements ImageCache {
 
     private Logger logger = LogManager.getLogger(this.toString());
     private Image edit = ImageLoader.PENCIL.getImage();
@@ -65,7 +65,7 @@ public class ManageGroupsManagerView extends StackPane implements ImageCache {
     private @FXML Accordion accordion;
     private @FXML TitledPane generalPane;
 
-    public ManageGroupsManagerView(Group group) throws IOException {
+    public ManageGroupsManager(Group group) throws IOException {
         logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
 
         database = FXMLSuite.getDatabase();

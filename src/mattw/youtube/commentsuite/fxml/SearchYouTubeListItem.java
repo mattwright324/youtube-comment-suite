@@ -19,13 +19,13 @@ import java.io.IOException;
 /**
  * Loads template FXML and displays info from SearchList.Item.
  *
- * Searching occurs in the SearchYouTubeController.
+ * Searching occurs in the SearchYouTube.
  *
  * @author mattwright324
  */
-public class SearchYouTubeListItemView extends HBox {
+public class SearchYouTubeListItem extends HBox {
 
-    private static Logger logger = LogManager.getLogger(SearchYouTubeListItemView.class.getName());
+    private static Logger logger = LogManager.getLogger(SearchYouTubeListItem.class.getName());
     private static Image loading = ImageLoader.LOADING.getImage();
 
     private @FXML Label type;
@@ -40,7 +40,7 @@ public class SearchYouTubeListItemView extends HBox {
     private String youtubeURL;
     private String typeStr;
 
-    public SearchYouTubeListItemView(SearchList.Item data, int num) throws IOException {
+    public SearchYouTubeListItem(SearchList.Item data, int num) throws IOException {
         this.data = data;
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SearchYouTubeListItem.fxml"));

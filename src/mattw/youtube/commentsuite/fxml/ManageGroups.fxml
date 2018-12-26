@@ -9,7 +9,7 @@
 <?import mattw.youtube.commentsuite.fxml.OverlayModal?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
-           fx:controller="mattw.youtube.commentsuite.fxml.ManageGroupsController">
+           fx:controller="mattw.youtube.commentsuite.fxml.ManageGroups">
     <fx:define>
         <ImageView fx:id="plusIcon" fitWidth="20" fitHeight="20" />
     </fx:define>

@@ -34,9 +34,9 @@ import java.util.stream.Collectors;
 /**
  * @author mattwright324
  */
-public class SearchYouTubeController implements Initializable {
+public class SearchYouTube implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(SearchYouTubeController.class.getSimpleName());
+    private static Logger logger = LogManager.getLogger(SearchYouTube.class.getSimpleName());
 
     private Location<EurekaProvider, EurekaProvider.Location> location;
     private YouTubeData3 youtubeApi;
@@ -55,7 +55,7 @@ public class SearchYouTubeController implements Initializable {
     private @FXML ComboBox<String> searchRadius;
     private @FXML ComboBox<String> searchOrder;
     private @FXML ComboBox<String> resultType;
-    private @FXML ListView<SearchYouTubeListItemView> resultsList;
+    private @FXML ListView<SearchYouTubeListItem> resultsList;
     private @FXML HBox bottom;
     private @FXML Button btnAddToGroup;
     private @FXML Button btnClear;
@@ -66,6 +66,8 @@ public class SearchYouTubeController implements Initializable {
     private @FXML MenuItem menuOpenBrowser;
     private @FXML MenuItem menuAddToGroup;
     private @FXML MenuItem menuDeselectAll;
+
+    private @FXML OverlayModal<SYAddToGroupModal> addToGroupModal;
 
     private int total = 0;
     private int number = 0;
@@ -78,7 +80,7 @@ public class SearchYouTubeController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        logger.debug("Initialize SearchYouTubeController");
+        logger.debug("Initialize SearchYouTube");
 
         youtubeApi = FXMLSuite.getYoutubeApi();
         this.location = FXMLSuite.getLocation();
@@ -97,13 +99,13 @@ public class SearchYouTubeController implements Initializable {
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         menuCopyId.setOnAction(ae -> {
-            List<SearchYouTubeListItemView> list =  ((MultipleSelectionModel) selectionModel).getSelectedItems();
-            List<String> ids = list.stream().map(SearchYouTubeListItemView::getObjectId).collect(Collectors.toList());
+            List<SearchYouTubeListItem> list =  ((MultipleSelectionModel) selectionModel).getSelectedItems();
+            List<String> ids = list.stream().map(SearchYouTubeListItem::getObjectId).collect(Collectors.toList());
             clipboardUtil.setClipboard(ids);
         });
         menuOpenBrowser.setOnAction(ae -> {
-            List<SearchYouTubeListItemView> list =  ((MultipleSelectionModel) selectionModel).getSelectedItems();
-            for(SearchYouTubeListItemView view : list) {
+            List<SearchYouTubeListItem> list =  ((MultipleSelectionModel) selectionModel).getSelectedItems();
+            for(SearchYouTubeListItem view : list) {
                 browserUtil.open(view.getYoutubeURL());
             }
         });
@@ -169,7 +171,17 @@ public class SearchYouTubeController implements Initializable {
             }).start();
         });
 
-        // TODO: Add Modal for Add to Group Button
+        SYAddToGroupModal syAddToGroupModal = new SYAddToGroupModal(resultsList);
+        addToGroupModal.setContent(syAddToGroupModal);
+        syAddToGroupModal.getBtnClose().setOnAction(ae -> {
+            addToGroupModal.setVisible(false);
+            addToGroupModal.setManaged(false);
+        });
+        btnAddToGroup.setOnAction(ae -> {
+            syAddToGroupModal.cleanUp();
+            addToGroupModal.setVisible(true);
+            addToGroupModal.setManaged(true);
+        });
     }
 
     public void search(String pageToken, String type, String text, String locText, String locRadius, String order, int resultType) {
@@ -199,8 +211,8 @@ public class SearchYouTubeController implements Initializable {
 
             logger.debug(String.format("Search [videos=%s]", searchList.items.length));
             for(SearchList.Item item : searchList.items) {
-                logger.debug(String.format("Video [id=%s,author=%s,groupTitle=%s]", item.id.getId(), item.snippet.channelTitle, item.snippet.title));
-                SearchYouTubeListItemView view = new SearchYouTubeListItemView(item, number++);
+                logger.debug(String.format("Video [id=%s,author=%s,title=%s]", item.id.getId(), item.snippet.channelTitle, item.snippet.title));
+                SearchYouTubeListItem view = new SearchYouTubeListItem(item, number++);
                 runLater(() -> {
                     resultsList.getItems().add(view);
                     searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total));

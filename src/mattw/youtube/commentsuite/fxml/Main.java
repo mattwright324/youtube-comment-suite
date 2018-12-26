@@ -24,9 +24,9 @@ import java.util.ResourceBundle;
  *
  * @author mattwright324
  */
-public class MainController implements Initializable {
+public class Main implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(MainController.class.getSimpleName());
+    private static Logger logger = LogManager.getLogger(Main.class.getSimpleName());
 
     private @FXML ImageView headerIcon;
     private @FXML ToggleGroup headerToggleGroup;
@@ -45,7 +45,7 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        logger.debug("Initialize MainController");
+        logger.debug("Initialize Main");
 
         headerToggleGroup.getToggles().addListener((ListChangeListener<Toggle>) c -> {
             while(c.next()) {

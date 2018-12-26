@@ -19,7 +19,7 @@
 .dividerLight { -fx-background-color: derive(#f8f9fa, 80%); }
 .dividerDark { -fx-background-color: derive(#343a40, 80%); }
 .bold {
-    -fx-font-weight: 700;
+    -fx-font-weight: bold;
 }
 .noPadding {
     -fx-padding: 0;
@@ -42,7 +42,7 @@
 .question {
     -fx-padding: 0;
     -fx-text-fill: cornflowerblue;
-    -fx-font-weight: 700;
+    -fx-font-weight: bold;
     -fx-cursor: hand;
 }
 .font12 { -fx-font-size: 12; }
@@ -71,6 +71,11 @@
     -fx-padding: 4;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
+}
+.alertPrimary {
+    -fx-text-fill: #004085;
+    -fx-background-color: #cce5ff;
+    -fx-border-color: #b8daff;
 }
 .alertWarning {
     -fx-text-fill: #856404;

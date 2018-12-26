@@ -15,7 +15,6 @@ import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.db.YouTubeChannel;
 import mattw.youtube.commentsuite.db.YouTubeComment;
 import mattw.youtube.commentsuite.io.BrowserUtil;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -60,7 +59,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         author.setOnAction(ae -> browserUtil.open(channel.getYouTubeLink()));
         author.setBorder(Border.EMPTY);
 
-        commentText.setText(StringEscapeUtils.unescapeHtml4(comment.getText()));
+        commentText.setText(comment.getCleanText());
         commentText.setTextOverrun(OverrunStyle.ELLIPSIS);
 
         date.setText(comment.getDate().toString());

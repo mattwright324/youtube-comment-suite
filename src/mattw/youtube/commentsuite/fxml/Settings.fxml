@@ -11,7 +11,7 @@
            managed="false"
            visible="false"
            fx:id="settingsPane"
-           fx:controller="mattw.youtube.commentsuite.fxml.SettingsController">
+           fx:controller="mattw.youtube.commentsuite.fxml.Settings">
     <fx:define>
         <ImageView fx:id="githubIcon" fitWidth="25" fitHeight="25" />
         <ImageView fx:id="closeIcon" fitHeight="25" fitWidth="25" />

@@ -26,10 +26,10 @@ import java.util.ResourceBundle;
  *
  * @author mattwright324
  */
-public class ManageGroupsController implements Initializable {
+public class ManageGroups implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(ManageGroupsController.class.getSimpleName());
-    Cache<String,ManageGroupsManagerView> managerCache = CacheBuilder.newBuilder().build();
+    private static Logger logger = LogManager.getLogger(ManageGroups.class.getSimpleName());
+    Cache<String, ManageGroupsManager> managerCache = CacheBuilder.newBuilder().build();
 
     private CommentDatabase database;
 
@@ -41,7 +41,7 @@ public class ManageGroupsController implements Initializable {
     private @FXML Pane content;
 
     public void initialize(URL location, ResourceBundle resources) {
-        logger.debug("Initialize ManageGroupsController");
+        logger.debug("Initialize ManageGroups");
 
         database = FXMLSuite.getDatabase();
 
@@ -66,7 +66,7 @@ public class ManageGroupsController implements Initializable {
             }
         }));
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            ManageGroupsManagerView manager = managerCache.getIfPresent(nv.getId());
+            ManageGroupsManager manager = managerCache.getIfPresent(nv.getId());
             if (manager != null) {
                 runLater(() -> {
                     content.getChildren().clear();
@@ -74,7 +74,7 @@ public class ManageGroupsController implements Initializable {
                 });
             } else {
                 try {
-                    ManageGroupsManagerView m = new ManageGroupsManagerView(selectionModel.getSelectedItem());
+                    ManageGroupsManager m = new ManageGroupsManager(selectionModel.getSelectedItem());
                     managerCache.put(nv.getId(), m);
                     runLater(() -> {
                         content.getChildren().clear();

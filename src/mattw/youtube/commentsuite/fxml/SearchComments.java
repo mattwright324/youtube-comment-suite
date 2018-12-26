@@ -19,6 +19,8 @@ import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.db.*;
+import mattw.youtube.commentsuite.io.BrowserUtil;
+import mattw.youtube.commentsuite.io.ClipboardUtil;
 import mattw.youtube.commentsuite.io.ElapsedTime;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,9 +42,9 @@ import java.util.stream.Collectors;
 /**
  * @author mattwright324
  */
-public class SearchCommentsController implements Initializable, ImageCache {
+public class SearchComments implements Initializable, ImageCache {
 
-    private static Logger logger = LogManager.getLogger(SearchCommentsController.class);
+    private static Logger logger = LogManager.getLogger(SearchComments.class);
 
     private Cache<Object, YouTubeVideo> videoCache = CacheBuilder.newBuilder()
             .maximumSize(500)
@@ -58,6 +60,7 @@ public class SearchCommentsController implements Initializable, ImageCache {
     private @FXML Label videoViews, videoLikes, videoDislikes;
     private @FXML TextArea videoDescription;
 
+    private @FXML MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks;
     private @FXML ListView<SearchCommentsListItem> resultsList;
     private @FXML TextField pageValue;
     private @FXML Label displayCount, lblMaxPage;
@@ -86,6 +89,8 @@ public class SearchCommentsController implements Initializable, ImageCache {
     private CommentDatabase database;
     private CommentQuery query;
     private List<YouTubeComment> lastResultsList;
+    private ClipboardUtil clipboardUtil = new ClipboardUtil();
+    private BrowserUtil browserUtil = new BrowserUtil();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -96,7 +101,7 @@ public class SearchCommentsController implements Initializable, ImageCache {
         comboGroupSelect.setItems(database.globalGroupList);
         comboGroupSelect.getItems().addListener((ListChangeListener<Group>)(c -> {
             if(!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
-                selectionModel.select(0);
+                runLater(() -> selectionModel.select(0));
             }
         }));
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
@@ -161,6 +166,11 @@ public class SearchCommentsController implements Initializable, ImageCache {
                 submitPageValue(page);
             }
         });
+        pageValue.onMouseClickedProperty().addListener((cl) -> {
+            runLater(() -> pageValue.getStyleClass().remove("clearTextField"));
+            int page = interpretPageValue(pageValue.getText());
+            submitPageValue(page);
+        });
         pageValue.setOnKeyPressed(ke -> {
             if(ke.getCode() == KeyCode.ENTER || ke.getCode() == KeyCode.SPACE) {
                 int page = interpretPageValue(pageValue.getText());
@@ -192,43 +202,70 @@ public class SearchCommentsController implements Initializable, ImageCache {
         btnClear.setOnAction(ae -> runLater(() -> resultsList.getItems().clear()));
 
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        resultsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> new Thread(() -> {
+        MultipleSelectionModel<SearchCommentsListItem> scSelection = resultsList.getSelectionModel();
+        scSelection.selectedItemProperty().addListener((o, ov, nv) -> new Thread(() -> {
             if(nv != null) {
-                nv.loadProfileThumb();
-                for(SearchCommentsListItem comment : resultsList.getItems()) {
-                    comment.checkProfileThumb();
-                }
-                try {
-                    String videoId = nv.getComment().getVideoId();
-                    YouTubeVideo video = videoCache.getIfPresent(videoId);
-                    if(video == null) {
-                        video = database.getVideo(nv.getComment().getVideoId());
-                        videoCache.put(videoId, video);
-                    }
-
-                    final YouTubeVideo v = video;
-                    final YouTubeChannel va = database.getChannel(video.getChannelId());
-                    runLater(() -> {
-                        author.setText(va.getTitle());
-                        videoTitle.setText(v.getTitle());
-                        videoLikes.setText(trunc(v.getLikes()));
-                        videoDislikes.setText(trunc(v.getDislikes()));
-                        videoViews.setText(String.format("%s views", trunc(v.getViews())));
-                        videoDescription.setText(String.format("Published %s • %s",
-                                sdf.format(v.getPublishedDate()),
-                                StringEscapeUtils.unescapeHtml4(v.getDescription())));
-                    });
-                    Image vthumb = ImageCache.findOrGetImage(video);
-                    Image athumb = ImageCache.findOrGetImage(va);
-                    runLater(() -> {
-                        videoThumb.setImage(vthumb);
-                        authorThumb.setImage(athumb);
-                    });
-                } catch (SQLException e) {
-                    logger.error("Failed to load YouTubeVideo", e);
-                }
+                checkUpdateThumbs(nv);
             }
         }).start());
+
+        openInBrowser.setOnAction(ae -> {
+            String link = scSelection.getSelectedItem()
+                    .getComment()
+                    .getYouTubeLink();
+            browserUtil.open(link);
+        });
+        copyNames.setOnAction(ae -> {
+            List<String> uniqueNames = scSelection.getSelectedItems()
+                    .stream()
+                    .map(SearchCommentsListItem::getComment)
+                    .map(YouTubeComment::getChannel)
+                    .map(YouTubeChannel::getTitle)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            clipboardUtil.setClipboard(uniqueNames);
+        });
+        copyComments.setOnAction(ae -> {
+            List<String> comments = scSelection.getSelectedItems()
+                    .stream()
+                    .map(SearchCommentsListItem::getComment)
+                    .map(YouTubeComment::getText)
+                    .collect(Collectors.toList());
+
+            clipboardUtil.setClipboard(comments);
+        });
+        copyChannelLinks.setOnAction(ae -> {
+            List<String> uniqueChannelLinks = scSelection.getSelectedItems()
+                    .stream()
+                    .map(SearchCommentsListItem::getComment)
+                    .map(YouTubeComment::getChannel)
+                    .map(YouTubeChannel::getYouTubeLink)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            clipboardUtil.setClipboard(uniqueChannelLinks);
+        });
+        copyCommentLinks.setOnAction(ae -> {
+            List<String> uniqueCommentLinks = scSelection.getSelectedItems()
+                    .stream()
+                    .map(SearchCommentsListItem::getComment)
+                    .map(YouTubeComment::getYouTubeLink)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            clipboardUtil.setClipboard(uniqueCommentLinks);
+        });
+        copyVideoLinks.setOnAction(ae -> {
+            List<String> uniqueVideoLinks = scSelection.getSelectedItems()
+                    .stream()
+                    .map(SearchCommentsListItem::getComment)
+                    .map(c -> String.format("https://youtu.be/%s", c.getVideoId()))
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            clipboardUtil.setClipboard(uniqueVideoLinks);
+        });
 
         btnBackToResults.setOnAction(ae -> setResultsList(lastResultsList, false));
 
@@ -244,7 +281,50 @@ public class SearchCommentsController implements Initializable, ImageCache {
         SCShowMoreModal scShowMoreModal = new SCShowMoreModal();
         showMoreModal.setContent(scShowMoreModal);
         scShowMoreModal.getBtnClose().setOnAction(ae -> showMoreModal.setVisible(false));
-        scShowMoreModal.getBtnSubmit().setOnAction(ae -> showMoreModal.setVisible(false));
+        scShowMoreModal.replyModeProperty().addListener((o, ov, nv) -> runLater(() -> {
+            showMoreModal.getModalContainer().setMaxWidth(420 * (nv ? 2 : 1));
+        }));
+    }
+
+    private void checkUpdateThumbs(SearchCommentsListItem commentItem) {
+        YouTubeComment comment = commentItem.getComment();
+
+        commentItem.loadProfileThumb();
+
+        for(SearchCommentsListItem scli : resultsList.getItems()) {
+            scli.checkProfileThumb();
+        }
+
+        try {
+            String videoId = comment.getVideoId();
+            YouTubeVideo video = videoCache.getIfPresent(videoId);
+            if(video == null) {
+                video = database.getVideo(videoId);
+                videoCache.put(videoId, video);
+            }
+
+            final YouTubeVideo v = video;
+            final YouTubeChannel va = database.getChannel(video.getChannelId());
+            runLater(() -> {
+                author.setText(va.getTitle());
+                videoTitle.setText(v.getTitle());
+                videoLikes.setText(trunc(v.getLikes()));
+                videoDislikes.setText(trunc(v.getDislikes()));
+                videoViews.setText(String.format("%s views", trunc(v.getViews())));
+                videoDescription.setText(String.format("Published %s • %s",
+                        sdf.format(v.getPublishedDate()),
+                        StringEscapeUtils.unescapeHtml4(v.getDescription())));
+            });
+
+            Image vthumb = ImageCache.findOrGetImage(video);
+            Image athumb = ImageCache.findOrGetImage(va);
+            runLater(() -> {
+                videoThumb.setImage(vthumb);
+                authorThumb.setImage(athumb);
+            });
+        } catch (SQLException e) {
+            logger.error("Failed to load YouTubeVideo", e);
+        }
     }
 
     /**
@@ -395,6 +475,7 @@ public class SearchCommentsController implements Initializable, ImageCache {
                 comment.getVideoId(),
                 comment.getYoutubeId()));
 
+        checkUpdateThumbs(scli);
         commentModal(comment, false);
     }
 
@@ -405,6 +486,7 @@ public class SearchCommentsController implements Initializable, ImageCache {
                 comment.getVideoId(),
                 comment.getYoutubeId()));
 
+        checkUpdateThumbs(scli);
         commentModal(comment, true);
     }
 
@@ -421,6 +503,8 @@ public class SearchCommentsController implements Initializable, ImageCache {
 
     private void viewTree(SearchCommentsListItem scli) {
         runLater(() -> searchingProperty.setValue(true));
+
+        checkUpdateThumbs(scli);
 
         YouTubeComment comment = scli.getComment();
 

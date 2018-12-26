@@ -48,31 +48,38 @@ public interface ImageCache {
         return image;
     }
 
-    static Image findOrGetImage(YouTubeObject object) {
+    static Image findOrGetImage(String id, String imageUrl) {
         ConfigFile<ConfigData> config = FXMLSuite.getConfig();
         ConfigData configData = config.getDataObject();
 
-        String id = object.getYoutubeId();
         Image image = thumbCache.getIfPresent(id);
         if(image == null) {
             String fileFormat = "jpg";
             File thumbFile = new File(String.format("thumbs/%s.%s", id, fileFormat));
             if(configData.getArchiveThumbs() && !thumbFile.exists()) {
-                logger.debug(String.format("Archiving [id=%s]", object.getYoutubeId()));
+                logger.debug(String.format("Archiving [id=%s]", id));
                 try {
                     thumbFile.mkdir();
                     thumbFile.createNewFile();
-                    ImageIO.write(ImageIO.read(new URL(object.getThumbUrl())), fileFormat, thumbFile);
+                    ImageIO.write(ImageIO.read(new URL(imageUrl)), fileFormat, thumbFile);
                 } catch (IOException ignored) {}
             }
             if(thumbFile.exists()) {
                 image = new Image(String.format("file:///%s", thumbFile.getAbsolutePath()));
             } else {
-                image = new Image(object.getThumbUrl());
+                image = new Image(imageUrl);
             }
             thumbCache.put(id, image);
         }
         return image;
+    }
+
+    static Image findOrGetImage(YouTubeObject object) {
+        return findOrGetImage(object.getYoutubeId(), object.getThumbUrl());
+    }
+
+    static Image findOrGetImage(YouTubeAccount account) {
+        return findOrGetImage(account.getChannelId(), account.getThumbUrl());
     }
 
     static boolean hasImageCached(YouTubeObject object) {

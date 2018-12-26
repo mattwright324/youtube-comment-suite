@@ -12,36 +12,30 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
 /**
- * Generates images with a letter to mimic the style of default YouTube generated letter-avatars.
+ * Generates images with a character to mimic the style of default YouTube generated letter-avatars.
  *
  * @author mattwright324
  */
 public class LetterAvatar extends WritableImage {
 
-    static int BG_SQUARE = 2;
-
     private int scale = 32;
-    private char letter;
+    private char character;
     private Color background;
-    private int bgStyle;
 
-    public LetterAvatar(char letter) {
-        this(letter, Color.LIGHTGRAY);
+    LetterAvatar(char character) {
+        this(character, Color.LIGHTGRAY);
     }
 
-    public LetterAvatar(char letter, Color bg) {
-        this(letter, bg, BG_SQUARE);
+    LetterAvatar(char character, Color bg) {
+        this(character, bg, 32);
     }
 
-    public LetterAvatar(char letter, Color bg, int bgStyle) {
-        this(letter, bg, bgStyle, 32);
-    }
-
-    public LetterAvatar(char letter, Color bg, int bgStyle, int scale) {
+    LetterAvatar(char character, Color bg, int scale) {
         super(scale, scale);
-        this.letter = letter;
+
+        this.character = character;
         this.background = bg;
-        this.bgStyle = bgStyle;
+
         draw();
     }
 
@@ -50,15 +44,15 @@ public class LetterAvatar extends WritableImage {
      * @param scale width and height of new image
      */
     public Image rescaleTo(int scale) {
-        return new LetterAvatar(letter, background, bgStyle, scale);
+        return new LetterAvatar(character, background, scale);
     }
 
     public int getScale() {
         return this.scale;
     }
 
-    public void setLetter(char letter) {
-        this.letter = letter;
+    public void setCharacter(char character) {
+        this.character = character;
         draw();
     }
 
@@ -67,27 +61,22 @@ public class LetterAvatar extends WritableImage {
         draw();
     }
 
-    public void setBackgroundStyle(int bgStyle) {
-        this.bgStyle = bgStyle;
-        draw();
-    }
-
     private void draw() {
         Canvas canvas = new Canvas(scale, scale);
         GraphicsContext gc = canvas.getGraphicsContext2D();
+
         gc.setFill(Color.TRANSPARENT);
         gc.fillRect(0,0, scale, scale);
+
         gc.setFill(background);
-        if(bgStyle == BG_SQUARE) {
-            gc.fillRect(0,0, scale, scale);
-        } else {
-            gc.fillOval(0,0, scale, scale);
-        }
+        gc.fillRect(0,0, scale, scale);
+
         gc.setFill(Color.WHITE);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setTextBaseline(VPos.CENTER);
-        gc.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, scale*0.6));
-        gc.fillText(letter+"", Math.round(scale/2.0), Math.round(scale/2.0));
+        gc.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, scale * 0.6));
+
+        gc.fillText(String.valueOf(character), Math.round(scale / 2.0), Math.round(scale / 2.0));
         Platform.runLater(() -> canvas.snapshot(null, this));
     }
 }

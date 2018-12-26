@@ -2,7 +2,6 @@ package mattw.youtube.commentsuite.io;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Measures elapsed time from a given millis timestamp.

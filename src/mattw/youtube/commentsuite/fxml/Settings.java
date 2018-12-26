@@ -16,18 +16,21 @@ import mattw.youtube.commentsuite.io.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URL;
+import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author mattwright324
  */
-public class SettingsController implements Initializable {
+public class Settings implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(SettingsController.class.getSimpleName());
+    private static Logger logger = LogManager.getLogger(Settings.class.getSimpleName());
 
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;
@@ -41,7 +44,6 @@ public class SettingsController implements Initializable {
 
     private @FXML WebView webView;
     private @FXML ProgressIndicator webViewLoading;
-    private WebEngine webEngine;
 
     private @FXML VBox vboxSettings;
     private @FXML Button btnClose;
@@ -52,7 +54,7 @@ public class SettingsController implements Initializable {
     private @FXML CheckBox customKey;
     private @FXML TextField youtubeApiKey;
     private @FXML Button btnAddAccount;
-    private @FXML ListView accountList;
+    private @FXML ListView<SettingsAccountItemView> accountList;
 
     private @FXML ProgressIndicator cleanProgress;
     private @FXML Button btnClean;
@@ -67,38 +69,49 @@ public class SettingsController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        logger.debug("Initialize SettingsController");
+        logger.debug("Initialize Settings");
 
         oauth2 = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
         database = FXMLSuite.getDatabase();
 
-        ConfigData cdata = config.getDataObject();
-        autoLoadStats.setSelected(cdata.getAutoLoadStats());
-        prefixReply.setSelected(cdata.getPrefixReplies());
-        downloadThumbs.setSelected(cdata.getArchiveThumbs());
-        customKey.setSelected(cdata.usingCustomApiKey());
-        youtubeApiKey.setText(cdata.getYoutubeApiKey());
+        ConfigData configData = config.getDataObject();
+        configData.refreshAccounts();
+        autoLoadStats.setSelected(configData.getAutoLoadStats());
+        prefixReply.setSelected(configData.getPrefixReplies());
+        downloadThumbs.setSelected(configData.getArchiveThumbs());
+        customKey.setSelected(configData.usingCustomApiKey());
+        youtubeApiKey.setText(configData.getYoutubeApiKey());
 
         CookieManager cm = new CookieManager();
         CookieHandler.setDefault(cm);
-        webEngine = webView.getEngine();
+        WebEngine webEngine = webView.getEngine();
         webEngine.setJavaScriptEnabled(true);
         webEngine.titleProperty().addListener((o, ov, nv) -> {
             if(nv != null) {
                 logger.debug(String.format("YouTubeSignIn [loading-page=%s]", nv));
                 if(nv.contains("code=")) {
-                    String code = nv.substring(nv.indexOf("code=")+5);
+                    configData.refreshAccounts();
+
+                    String code = Stream.of(nv.split("&"))
+                            .filter(query -> query.startsWith("Success code="))
+                            .collect(Collectors.joining()).substring(13);
+
                     logger.debug(String.format("YouTubeSignIn [returned-code=%s]", code));
                     try {
                         OAuth2Tokens tokens = oauth2.getAccessTokens(code);
                         oauth2.setTokens(tokens);
 
                         YouTubeAccount account = new YouTubeAccount(tokens);
-                        // TODO: Check if config contains account, if not add.
+
+                        configData.addAccount(account);
+
                         btnExitSignIn.fire();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         logger.error(e);
+                    } finally {
+                        config.save();
                     }
                 } else if(nv.contains("error=")) {
                     logger.debug(String.format("YouTubeSignIn Failed [%s]", nv));
@@ -106,7 +119,26 @@ public class SettingsController implements Initializable {
             }
         });
         webViewLoading.visibleProperty().bind(webEngine.getLoadWorker().stateProperty().isEqualTo(Worker.State.SUCCEEDED).not());
-        
+
+        configData.accountListChangedProperty().addListener((lcl) -> {
+            config.save();
+
+            List<SettingsAccountItemView> listItems = configData.getAccounts()
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(account -> account.getChannelId() != null && account.getThumbUrl() != null
+                        && account.getUsername() != null)
+                    .map(SettingsAccountItemView::new)
+                    .collect(Collectors.toList());
+
+            runLater(() -> {
+                accountList.getItems().clear();
+                accountList.getItems().addAll(listItems);
+            });
+        });
+
+        configData.triggerAccountListChanged();
+
         btnSave.setOnAction(ae -> runLater(() -> btnClose.fire()));
 
         closeIcon.setImage(ImageLoader.CLOSE.getImage());
@@ -136,11 +168,7 @@ public class SettingsController implements Initializable {
             vboxSignIn.setManaged(true);
             vboxSignIn.setVisible(true);
             vboxSettings.setDisable(true);
-            try {
-                webView.getEngine().load(oauth2.getAuthURL());
-            } catch (UnsupportedEncodingException e) {
-                logger.error(e);
-            }
+            webView.getEngine().load(oauth2.getAuthUrl());
         }));
 
         btnExitSignIn.setOnAction(ae -> runLater(() -> {

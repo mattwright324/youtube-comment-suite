@@ -3,6 +3,7 @@ package mattw.youtube.commentsuite.db;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.datav3.entrypoints.CommentThreadsList;
 import mattw.youtube.datav3.entrypoints.CommentsList;
+import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Date;
 
@@ -79,4 +80,18 @@ public class YouTubeComment extends YouTubeObject {
     public int getReplyCount() { return replies; }
     public boolean isReply() { return isReply; }
     public String getParentId() { return parentId; }
+
+    /**
+     * Processes text for cleaner output when displayed in show/reply modal and comment list view when searching.
+     *  - Replaces html line breaks with newline characters.
+     *  - Removes Zalgo characters (https://codegolf.stackexchange.com/a/142699)
+     *  - Unescapes HTML-escaped characters
+     *
+     * @return cleaned text
+     */
+    public String getCleanText() {
+        return StringEscapeUtils.unescapeHtml4(text)
+                .replace("<br />", "\r\n")
+                .replaceAll("[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︠-︯]","");
+    }
 }

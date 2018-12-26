@@ -5,13 +5,13 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestSearchCommentsController {
+public class TestSearchComments {
 
-    SearchCommentsController controller;
+    SearchComments controller;
 
     @Before
     public void setup() {
-        controller = new SearchCommentsController();
+        controller = new SearchComments();
     }
 
     @Test

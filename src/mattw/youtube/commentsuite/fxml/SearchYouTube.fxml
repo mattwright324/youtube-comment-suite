@@ -6,16 +6,17 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import java.lang.*?>
+<?import mattw.youtube.commentsuite.fxml.OverlayModal?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            alignment="TOP_CENTER"
-           fx:controller="mattw.youtube.commentsuite.fxml.SearchYouTubeController">
-    <padding><Insets topRightBottomLeft="10" /></padding>
+           fx:controller="mattw.youtube.commentsuite.fxml.SearchYouTube">
     <fx:define>
         <ImageView fx:id="geoIcon" fitHeight="18" fitWidth="18" />
         <ImageView fx:id="searchIcon" fitHeight="18" fitWidth="18" />
     </fx:define>
     <VBox maxHeight="Infinity" alignment="TOP_CENTER" spacing="10">
+        <padding><Insets topRightBottomLeft="10" /></padding>
         <HBox fx:id="form" alignment="CENTER_LEFT" spacing="10">
             <ComboBox fx:id="searchType" value="Normal" styleClass="control">
                 <items>
@@ -97,4 +98,9 @@
                         styleClass="textMutedLight" text="Showing 0 out of 0" />
         </HBox>
     </VBox>
+
+    <!-- Overlay: Add selection to (new) group -->
+    <OverlayModal visible="false" fx:id="addToGroupModal">
+        <title><String fx:value="Add to Group" /></title>
+    </OverlayModal>
 </StackPane>
