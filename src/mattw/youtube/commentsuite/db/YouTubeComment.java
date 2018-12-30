@@ -8,6 +8,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import java.util.Date;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class YouTubeComment extends YouTubeObject {

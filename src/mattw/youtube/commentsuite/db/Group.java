@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class Group {

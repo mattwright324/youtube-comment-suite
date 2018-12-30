@@ -2,6 +2,8 @@ package mattw.youtube.commentsuite.db;
 
 /**
  * Type definition for YouTubeObjects
+ *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public enum YType {

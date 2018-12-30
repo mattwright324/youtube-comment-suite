@@ -24,6 +24,7 @@ import java.io.IOException;
 /**
  * Modal for group refreshing set as content within an OverlayModal.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class MGMVRefreshModal extends HBox {

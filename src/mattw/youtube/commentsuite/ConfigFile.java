@@ -11,8 +11,9 @@ import java.io.*;
  *
  * Can take any object as long as it has fields that Gson is configured to read.
  *
+ * @since 2018-12-30
  * @author mattwright324
- * @param <T>
+ * @param <T> data object JSON (de)serialized
  */
 public class ConfigFile<T> {
 

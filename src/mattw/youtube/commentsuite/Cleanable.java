@@ -6,6 +6,7 @@ package mattw.youtube.commentsuite;
  *
  * Most applicable to modals.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public interface Cleanable {

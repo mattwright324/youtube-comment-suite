@@ -17,6 +17,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class OAuth2Handler {

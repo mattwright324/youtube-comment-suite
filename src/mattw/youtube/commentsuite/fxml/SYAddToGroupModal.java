@@ -16,6 +16,10 @@ import java.io.IOException;
 
 import static javafx.application.Platform.runLater;
 
+/**
+ * @since 2018-12-30
+ * @author mattwright324
+ */
 public class SYAddToGroupModal extends VBox implements Cleanable {
 
     private static Logger logger = LogManager.getLogger(SYAddToGroupModal.class.getSimpleName());

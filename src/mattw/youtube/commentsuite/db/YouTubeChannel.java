@@ -5,6 +5,7 @@ import mattw.youtube.datav3.entrypoints.CommentsList;
 import org.apache.commons.text.StringEscapeUtils;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class YouTubeChannel extends YouTubeObject {

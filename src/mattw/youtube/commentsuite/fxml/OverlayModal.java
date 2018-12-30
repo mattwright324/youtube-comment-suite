@@ -14,6 +14,7 @@ import java.io.IOException;
  *
  * @param <T> Custom modal content fxml controller class
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class OverlayModal<T extends Pane> extends StackPane {

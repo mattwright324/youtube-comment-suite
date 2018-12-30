@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
  *
  * Interacts heavily with YouTube API v3 and the CommentDatabase.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class MGMVGroupRefresh extends Thread implements RefreshInterface {

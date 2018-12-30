@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class SearchComments implements Initializable, ImageCache {

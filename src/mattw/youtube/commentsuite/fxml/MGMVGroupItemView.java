@@ -13,6 +13,7 @@ import mattw.youtube.commentsuite.db.GroupItem;
 import java.io.IOException;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class MGMVGroupItemView extends HBox {

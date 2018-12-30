@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
  * TODO: Combine all stats queries into one method called and put into object.
  * TODO: Query 'Snippets' to be used/replaced for group/gitem selection.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public enum SQLLoader {

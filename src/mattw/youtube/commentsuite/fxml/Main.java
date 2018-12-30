@@ -22,6 +22,7 @@ import java.util.ResourceBundle;
 /**
  * Controls the header: switching content and opening the settings view.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class Main implements Initializable {

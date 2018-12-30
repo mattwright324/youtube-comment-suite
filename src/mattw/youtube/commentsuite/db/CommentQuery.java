@@ -12,6 +12,7 @@ import java.util.*;
 /**
  * SQL query builder to query comments in database
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class CommentQuery {

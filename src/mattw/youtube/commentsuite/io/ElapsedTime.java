@@ -6,6 +6,7 @@ import java.util.List;
 /**
  * Measures elapsed time from a given millis timestamp.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class ElapsedTime {

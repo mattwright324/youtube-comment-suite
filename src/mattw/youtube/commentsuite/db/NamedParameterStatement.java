@@ -4,8 +4,8 @@ import java.sql.*;
 import java.util.*;
 
 /**
- * Source:
- * https://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html?page=2
+ * @since 2018-12-30
+ * @link https://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html?page=2
  */
 public class NamedParameterStatement implements AutoCloseable {
 

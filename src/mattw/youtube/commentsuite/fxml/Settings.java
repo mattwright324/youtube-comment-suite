@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class Settings implements Initializable {

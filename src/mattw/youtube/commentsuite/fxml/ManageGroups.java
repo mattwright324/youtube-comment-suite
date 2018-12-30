@@ -24,6 +24,7 @@ import java.util.ResourceBundle;
 /**
  * Manages group selection, creation, and content switching.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class ManageGroups implements Initializable {

@@ -11,6 +11,13 @@ import org.jsoup.nodes.Document;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+/**
+ * @since 2018-12-30
+ * @author mattwright324
+ *
+ * @param <T> LocationProvider
+ * @param <K> return data object
+ */
 public class Location<T extends LocationProvider, K> {
 
     public static String UA_W10_CHROME70 = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36";

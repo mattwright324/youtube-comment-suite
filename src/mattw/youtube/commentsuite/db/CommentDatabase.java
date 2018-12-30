@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class CommentDatabase implements Closeable {

@@ -19,6 +19,7 @@ import java.sql.SQLException;
 /**
  * Application Window
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class FXMLSuite extends Application {

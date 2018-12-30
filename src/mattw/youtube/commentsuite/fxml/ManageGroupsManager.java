@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
  *
  * Loads template FXML and displays info from database.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class ManageGroupsManager extends StackPane implements ImageCache {

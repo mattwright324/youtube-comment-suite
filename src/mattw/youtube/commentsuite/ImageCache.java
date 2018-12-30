@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Cache for images and letter avatars.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public interface ImageCache {

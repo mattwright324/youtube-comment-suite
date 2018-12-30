@@ -6,6 +6,7 @@ import mattw.youtube.commentsuite.ImageCache;
 /**
  * Similarities between GroupItem, YouTubeChannel, YouTubeComment, and YouTubeVideo.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public abstract class YouTubeObject implements ImageCache {

@@ -21,6 +21,7 @@ import java.io.IOException;
  *
  * Searching occurs in the SearchYouTube.
  *
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class SearchYouTubeListItem extends HBox {

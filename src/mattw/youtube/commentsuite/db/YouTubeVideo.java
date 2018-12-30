@@ -3,6 +3,7 @@ package mattw.youtube.commentsuite.db;
 import mattw.youtube.datav3.entrypoints.VideosList;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class YouTubeVideo extends YouTubeObject {

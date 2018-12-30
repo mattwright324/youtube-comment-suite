@@ -21,6 +21,10 @@ import java.io.IOException;
 
 import static javafx.application.Platform.runLater;
 
+/**
+ * @since 2018-12-30
+ * @author mattwright324
+ */
 public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
     private static Logger logger = LogManager.getLogger(SCShowMoreModal.class.getSimpleName());

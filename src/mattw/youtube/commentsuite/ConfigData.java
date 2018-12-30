@@ -10,6 +10,7 @@ import java.util.List;
 import static javafx.application.Platform.runLater;
 
 /**
+ * @since 2018-12-30
  * @author mattwright324
  */
 public class ConfigData implements Serializable {
