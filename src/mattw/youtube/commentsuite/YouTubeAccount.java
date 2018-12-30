@@ -22,10 +22,15 @@ import java.util.Collections;
  */
 public class YouTubeAccount implements Serializable {
 
-    private Logger logger = LogManager.getLogger(this);
+    private transient Logger logger = LogManager.getLogger(this);
 
     private String username, channelId, thumbUrl;
     private OAuth2Tokens tokens;
+
+    /**
+     * Default constructor.
+     */
+    public YouTubeAccount() {}
 
     /**
      * Only used with "YouTube Account Sign-in," otherwise initialized by Gson & Config.

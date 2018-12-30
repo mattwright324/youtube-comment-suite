@@ -11,9 +11,9 @@
     <padding>
         <Insets topRightBottomLeft="5" />
     </padding>
-    <HBox spacing="10" alignment="CENTER_LEFT">
+    <HBox spacing="10" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
         <ImageView fx:id="accountThumb" fitWidth="30" fitHeight="30" />
-        <fx:include source="HFlexLabel.fxml" fx:id="accountName" />
+        <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" fx:id="accountName" styleClass="font16" />
         <Button fx:id="btnRemove" text="Remove" styleClass="btn, btnDanger"/>
     </HBox>
 </fx:root>
