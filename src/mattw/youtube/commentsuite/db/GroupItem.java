@@ -26,13 +26,14 @@ public class GroupItem extends YouTubeObject {
      * Used for converting selected search items for inserting into database.
      */
     public GroupItem(SearchList.Item item) {
-        super(item.id.getId(), item.snippet.title, item.snippet.thumbnails.getMedium().getURL().toString(), true);
-        this.published = item.snippet.publishedAt.getTime();
-        this.channelTitle = item.snippet.channelTitle;
+        super(item.getId().getId(), item.getSnippet().getTitle(),
+                item.getSnippet().getThumbnails().getMedium().getURL().toString(), true);
+        this.published = item.getSnippet().getPublishedAt().getTime();
+        this.channelTitle = item.getSnippet().getChannelTitle();
         this.lastChecked = 0;
-        if(item.id.videoId != null) setTypeId(YType.VIDEO);
-        if(item.id.channelId != null) setTypeId(YType.CHANNEL);
-        if(item.id.playlistId != null) setTypeId(YType.PLAYLIST);
+        if(item.getId().getVideoId() != null) setTypeId(YType.VIDEO);
+        if(item.getId().getChannelId() != null) setTypeId(YType.CHANNEL);
+        if(item.getId().getPlaylistId() != null) setTypeId(YType.PLAYLIST);
     }
 
     /**
@@ -40,8 +41,8 @@ public class GroupItem extends YouTubeObject {
      * @param item
      */
     public GroupItem(VideosList.Item item) {
-        this(item.getId(), YType.VIDEO, item.snippet.title, item.snippet.channelTitle,
-                item.snippet.thumbnails.getMedium().getURL().toString(), item.snippet.publishedAt.getTime(), 0);
+        this(item.getId(), YType.VIDEO, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
+                item.getSnippet().getThumbnails().getMedium().getURL().toString(), item.getSnippet().getPublishedAt().getTime(), 0);
     }
 
     /**
@@ -49,8 +50,8 @@ public class GroupItem extends YouTubeObject {
      * @param item
      */
     public GroupItem(ChannelsList.Item item) {
-        this(item.getId(), YType.CHANNEL, item.snippet.title, item.snippet.title,
-                item.snippet.thumbnails.getMedium().getURL().toString(), item.snippet.publishedAt.getTime(), 0);
+        this(item.getId(), YType.CHANNEL, item.getSnippet().getTitle(), item.getSnippet().getTitle(),
+                item.getSnippet().getThumbnails().getMedium().getURL().toString(), item.getSnippet().getPublishedAt().getTime(), 0);
     }
 
     /**
@@ -58,8 +59,8 @@ public class GroupItem extends YouTubeObject {
      * @param item
      */
     public GroupItem(PlaylistsList.Item item) {
-        this(item.getId(), YType.PLAYLIST, item.snippet.title, item.snippet.channelTitle,
-                item.snippet.thumbnails.getMedium().getURL().toString(), item.snippet.publishedAt.getTime(), 0);
+        this(item.getId(), YType.PLAYLIST, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
+                item.getSnippet().getThumbnails().getMedium().getURL().toString(), item.getSnippet().getPublishedAt().getTime(), 0);
     }
 
     /**

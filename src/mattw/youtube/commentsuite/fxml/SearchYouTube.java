@@ -20,7 +20,6 @@ import mattw.youtube.commentsuite.io.Location;
 import mattw.youtube.datav3.Parts;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.entrypoints.SearchList;
-import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -207,19 +206,22 @@ public class SearchYouTube implements Initializable {
                 searchList = searchList.getByLocation(encodedText, pageToken, locText, locRadius);
             }
 
-            this.pageToken = searchList.nextPageToken == null ? emptyToken : searchList.nextPageToken;
+            this.pageToken = searchList.getNextPageToken() == null ? emptyToken : searchList.getNextPageToken();
             this.total = searchList.getPageInfo().getTotalResults();
 
-            logger.debug(String.format("Search [videos=%s]", searchList.items.length));
-            for(SearchList.Item item : searchList.items) {
-                logger.debug(String.format("Video [id=%s,author=%s,title=%s]", item.id.getId(), item.snippet.channelTitle, item.snippet.title));
+            logger.debug(String.format("Search [videos=%s]", searchList.getItems().length));
+            for(SearchList.Item item : searchList.getItems()) {
+                logger.debug(String.format("Video [id=%s,author=%s,title=%s]",
+                        item.getId().getId(),
+                        item.getSnippet().getChannelTitle(),
+                        item.getSnippet().getTitle()));
                 SearchYouTubeListItem view = new SearchYouTubeListItem(item, number++);
                 runLater(() -> {
                     resultsList.getItems().add(view);
                     searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total));
                 });
             }
-        } catch (IOException | YouTubeErrorException e) {
+        } catch (IOException e) {
             logger.error(e);
             e.printStackTrace();
         }

@@ -24,15 +24,15 @@ public class YouTubeComment extends YouTubeObject {
     public YouTubeComment(CommentsList.Item item, String videoId) {
         super(item.getId(), null, null, false);
         this.setTypeId(YType.COMMENT);
-        this.text = item.snippet.textDisplay;
-        this.date = item.snippet.publishedAt;
+        this.text = item.getSnippet().getTextDisplay();
+        this.date = item.getSnippet().getPublishedAt();
         this.videoId = videoId; // this.videoId = item.snippet.videoId;
-        this.likes = item.snippet.likeCount;
+        this.likes = item.getSnippet().getLikeCount();
         this.replies = -1;
         this.isReply = true;
-        this.parentId = item.snippet.parentId;
-        if(item.snippet.authorChannelId != null && item.snippet.authorChannelId.value != null) {
-            this.channelId = item.snippet.authorChannelId.value;
+        this.parentId = item.getSnippet().getParentId();
+        if(item.getSnippet().getAuthorChannelId() != null && item.getSnippet().getAuthorChannelId().getValue() != null) {
+            this.channelId = item.getSnippet().getAuthorChannelId().getValue();
         } else {
             System.out.println("Null channel");
         }
@@ -41,16 +41,16 @@ public class YouTubeComment extends YouTubeObject {
     public YouTubeComment(CommentThreadsList.Item item) {
         super(item.getId(), null, null, false);
         this.setTypeId(YType.COMMENT);
-        this.videoId = item.snippet.videoId;
-        this.replies = item.snippet.totalReplyCount;
-        CommentsList.Item tlc = item.snippet.topLevelComment;
-        this.text = tlc.snippet.textDisplay;
-        this.date = tlc.snippet.publishedAt;
-        this.likes = tlc.snippet.likeCount;
+        this.videoId = item.getSnippet().getVideoId();
+        this.replies = item.getSnippet().getTotalReplyCount();
+        CommentsList.Item tlc = item.getSnippet().getTopLevelComment();
+        this.text = tlc.getSnippet().getTextDisplay();
+        this.date = tlc.getSnippet().getPublishedAt();
+        this.likes = tlc.getSnippet().getLikeCount();
         this.isReply = false;
         this.parentId = null;
-        if(tlc.snippet.authorChannelId != null && tlc.snippet.authorChannelId.value != null) {
-            this.channelId = tlc.snippet.authorChannelId.value;
+        if(tlc.getSnippet().getAuthorChannelId() != null && tlc.getSnippet().getAuthorChannelId().getValue() != null) {
+            this.channelId = tlc.getSnippet().getAuthorChannelId().getValue();
         } else {
            System.out.println("Null channel");
         }

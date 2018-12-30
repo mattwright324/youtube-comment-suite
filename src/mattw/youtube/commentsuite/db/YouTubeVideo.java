@@ -15,29 +15,29 @@ public class YouTubeVideo extends YouTubeObject {
     private int httpCode;
 
     public YouTubeVideo(VideosList.Item item) {
-        super(item.getId(), item.snippet.title, item.snippet.thumbnails.getMedium().getURL().toString(), true);
+        super(item.getId(), item.getSnippet().getTitle(), item.getSnippet().getThumbnails().getMedium().getURL().toString(), true);
         setTypeId(YType.VIDEO);
-        this.channelId = item.snippet.channelId;
-        this.description = item.snippet.description;
-        this.publishDate = item.snippet.publishedAt.getTime();
-        this.views = item.statistics.viewCount;
-        this.likes = item.statistics.likeCount;
-        this.dislikes = item.statistics.dislikeCount;
-        this.comments = item.statistics.commentCount;
+        this.channelId = item.getSnippet().getChannelId();
+        this.description = item.getSnippet().getDescription();
+        this.publishDate = item.getSnippet().getPublishedAt().getTime();
+        this.views = item.getStatistics().getViewCount();
+        this.likes = item.getStatistics().getLikeCount();
+        this.dislikes = item.getStatistics().getDislikeCount();
+        this.comments = item.getStatistics().getCommentCount();
         this.grabDate = System.currentTimeMillis();
     }
 
     @Deprecated
     public YouTubeVideo(VideosList.Item itemSnip, VideosList.Item itemStat) {
-        super(itemSnip.getId(), itemSnip.snippet.title, itemSnip.snippet.thumbnails.getMedium().getURL().toString(), true);
+        super(itemSnip.getId(), itemSnip.getSnippet().getTitle(), itemSnip.getSnippet().getThumbnails().getMedium().getURL().toString(), true);
         setTypeId(YType.VIDEO);
-        this.channelId = itemSnip.snippet.channelId;
-        this.description = itemSnip.snippet.description;
-        this.publishDate = itemSnip.snippet.publishedAt.getTime();
-        this.views = itemStat.statistics.viewCount;
-        this.likes = itemStat.statistics.likeCount;
-        this.dislikes = itemStat.statistics.dislikeCount;
-        this.comments = itemStat.statistics.commentCount;
+        this.channelId = itemSnip.getSnippet().getChannelId();
+        this.description = itemSnip.getSnippet().getDescription();
+        this.publishDate = itemSnip.getSnippet().getPublishedAt().getTime();
+        this.views = itemStat.getStatistics().getViewCount();
+        this.likes = itemStat.getStatistics().getLikeCount();
+        this.dislikes = itemStat.getStatistics().getDislikeCount();
+        this.comments = itemStat.getStatistics().getCommentCount();
         this.grabDate = System.currentTimeMillis();
     }
 

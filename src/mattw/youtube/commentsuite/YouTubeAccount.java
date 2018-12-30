@@ -5,7 +5,6 @@ import mattw.youtube.commentsuite.db.YouTubeChannel;
 import mattw.youtube.datav3.Parts;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.entrypoints.ChannelsList;
-import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,13 +55,13 @@ public class YouTubeAccount implements Serializable {
 
         try {
             ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.SNIPPET)).getMine("");
-            ChannelsList.Item cli = cl.items[0];
+            ChannelsList.Item cli = cl.getItems()[0];
 
             this.channelId = cli.getId();
 
             if(cli.hasSnippet()) {
-                this.username = cli.snippet.title;
-                this.thumbUrl = cli.snippet.thumbnails.getMedium().getURL().toString();
+                this.username = cli.getSnippet().getTitle();
+                this.thumbUrl = cli.getSnippet().getThumbnails().getMedium().getURL().toString();
 
                 try {
                     YouTubeChannel channel = new YouTubeChannel(cli);
@@ -72,7 +71,7 @@ public class YouTubeAccount implements Serializable {
                     logger.error("Unable to insert account channel into database.", e);
                 }
             }
-        } catch (YouTubeErrorException | IOException e) {
+        } catch (IOException e) {
             logger.error("Failed to query for account channel info.", e);
         } finally {
             if(oldAccessToken == null || oldAccessToken.trim().isEmpty()) {

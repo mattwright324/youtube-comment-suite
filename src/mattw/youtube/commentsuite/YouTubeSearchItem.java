@@ -10,9 +10,9 @@ import mattw.youtube.datav3.entrypoints.SearchList;
 public class YouTubeSearchItem extends YouTubeObject {
 
     public YouTubeSearchItem(SearchList.Item searchListItem) {
-        setYoutubeId(searchListItem.id.getId());
-        setTitle(searchListItem.snippet.title);
-        setThumbUrl(searchListItem.snippet.thumbnails.getMedium().getURL().toString());
+        setYoutubeId(searchListItem.getId().getId());
+        setTitle(searchListItem.getSnippet().getTitle());
+        setThumbUrl(searchListItem.getSnippet().getThumbnails().getMedium().getURL().toString());
         setFetchThumb(false);
     }
 }

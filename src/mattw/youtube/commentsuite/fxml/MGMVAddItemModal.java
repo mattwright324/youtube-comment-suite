@@ -112,8 +112,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                         if(type == YType.VIDEO) {
                             VideosList vl = ((VideosList) youtube.videosList().part(Parts.SNIPPET))
                                     .getByIds(result, "");
-                            if(vl.items != null && vl.items.length > 0) {
-                                VideosList.Item item = vl.items[0];
+                            if(vl.hasItems()) {
+                                VideosList.Item item = vl.getItems()[0];
                                 GroupItem gitem = new GroupItem(item);
 
                                 list.add(gitem);
@@ -127,7 +127,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             }
 
                             if(cl.hasItems()) {
-                                ChannelsList.Item item = cl.items[0];
+                                ChannelsList.Item item = cl.getItems()[0];
                                 GroupItem gitem = new GroupItem(item);
 
                                 list.add(gitem);
@@ -136,7 +136,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             PlaylistsList pl = ((PlaylistsList) youtube.playlistsList().part(Parts.SNIPPET))
                                     .getByPlaylist(result, "");
                             if(pl.hasItems()) {
-                                PlaylistsList.Item item = pl.items[0];
+                                PlaylistsList.Item item = pl.getItems()[0];
                                 GroupItem gitem = new GroupItem(item);
 
                                 list.add(gitem);
@@ -157,7 +157,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 runLater(() -> setError(e1.getClass().getSimpleName()));
                             }
                         }
-                    } catch (YouTubeErrorException | IOException e) {
+                    } catch (IOException e) {
                         runLater(() -> {
                             String message = e.getClass().getSimpleName();
                             if(e instanceof YouTubeErrorException) {

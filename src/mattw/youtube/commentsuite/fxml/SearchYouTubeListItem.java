@@ -53,16 +53,13 @@ public class SearchYouTubeListItem extends HBox {
         thumbnail.setFitWidth(thumbnail.getFitHeight() * loading.getWidth() / loading.getHeight());
         thumbnail.setImage(loading);
 
-        if(data.id.videoId != null) {
-            objectId = data.id.videoId;
+        if((objectId = data.getId().getVideoId()) != null) {
             youtubeURL = String.format("https://youtu.be/%s", objectId);
             typeStr = "Video";
-        } else if(data.id.channelId != null) {
-            objectId = data.id.channelId;
+        } else if((objectId = data.getId().getChannelId()) != null) {
             youtubeURL = String.format("https://youtube.com/channel/%s", objectId);
             typeStr = "Channel";
-        } else if(data.id.playlistId != null) {
-            objectId = data.id.playlistId;
+        } else if((objectId = data.getId().getPlaylistId()) != null) {
             youtubeURL = String.format("https://youtube.com/playlist?list=%s", objectId);
             typeStr = "Playlist";
         } else {
@@ -72,10 +69,10 @@ public class SearchYouTubeListItem extends HBox {
 
         type.setText(typeStr);
 
-        if(data.snippet != null) {
-            title.setText(data.snippet.title);
-            author.setText(data.snippet.channelTitle);
-            description.setText(data.snippet.description);
+        if(data.hasSnippet()) {
+            title.setText(data.getSnippet().getTitle());
+            author.setText(data.getSnippet().getChannelTitle());
+            description.setText(data.getSnippet().getDescription());
 
             new Thread(() -> {
                 YouTubeSearchItem obj = new YouTubeSearchItem(data);
@@ -85,7 +82,7 @@ public class SearchYouTubeListItem extends HBox {
             }).start();
         } else {
             title.setText("SearchList.Item Error");
-            author.setText(data.etag);
+            author.setText(data.getEtag());
             description.setText("There was no snippet attached to this object.");
             Image thumb = ImageLoader.OOPS.getImage();
             runLater(() -> {

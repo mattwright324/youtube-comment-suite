@@ -202,8 +202,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             if(gitem.getTypeId() == YType.CHANNEL) {
                                 ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.CONTENT_DETAILS))
                                         .getByChannel(gitem.getYoutubeId(), "");
-                                if(cl.hasItems() && cl.items[0].hasContentDetails()) {
-                                    playlistId = cl.items[0].contentDetails.relatedPlaylists.uploads;
+                                if(cl.hasItems() && cl.getItems()[0].hasContentDetails()) {
+                                    playlistId = cl.getItems()[0].getContentDetails().getRelatedPlaylists().getUploads();
                                 }
                             }
 
@@ -212,10 +212,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             do {
                                 pil = ((PlaylistItemsList) youtube.playlistItemsList().part(Parts.SNIPPET))
                                         .get(playlistId, pageToken);
-                                pageToken = pil.nextPageToken;
+                                pageToken = pil.getNextPageToken();
                                 if(pil.hasItems()) {
-                                    List<String> videoIds = Arrays.stream(pil.items)
-                                            .map(item -> item.snippet.resourceId.videoId)
+                                    List<String> videoIds = Arrays.stream(pil.getItems())
+                                            .map(item -> item.getSnippet().getResourceId().getVideoId())
                                             .collect(Collectors.toList());
                                     videoIds.forEach(videoId -> {
                                         gitemVideo.add(new CommentDatabase.GroupItemVideo(
@@ -223,9 +223,9 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                     });
                                     videoIdQueue.addAll(videoIds);
                                     incrLongProperty(newVideos, database.countVideosNotExisting(videoIds));
-                                    incrLongProperty(totalVideos, pil.items.length);
+                                    incrLongProperty(totalVideos, pil.getItems().length);
                                 }
-                            } while(pil.nextPageToken != null  && !isHardShutdown());
+                            } while(pil.getNextPageToken() != null  && !isHardShutdown());
                         } else if(gitem.getTypeId() == YType.VIDEO) {
                             try {
                                 gitemVideo.add(new CommentDatabase.GroupItemVideo(
@@ -238,7 +238,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                 incrLongProperty(totalVideos, 1);
                             } catch (InterruptedException ignored) {}
                         }
-                    } catch (SQLException | IOException | YouTubeErrorException e) {
+                    } catch (SQLException | IOException e) {
                         appendError(String.format("Failed GItem[id=%s]", gitem.getYoutubeId()));
                         logger.error(e);
                     }
@@ -315,15 +315,15 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             do {
                                 cl = ((CommentsList) youtube.commentsList().part(Parts.SNIPPET))
                                         .getByParentId(tuple.getFirst(), pageToken);
-                                pageToken = cl.nextPageToken;
+                                pageToken = cl.getNextPageToken();
 
-                                List<YouTubeComment> replies = Arrays.stream(cl.items)
+                                List<YouTubeComment> replies = Arrays.stream(cl.getItems())
                                         .map(item -> new YouTubeComment(item, tuple.getSecond()))
                                         .filter(yc -> !"".equals(yc.getChannelId()) /* Filter out G+ comments. */)
                                         .collect(Collectors.toList());
                                 commentQueue.addAll(replies);
 
-                                List<YouTubeChannel> channels = Arrays.stream(cl.items)
+                                List<YouTubeChannel> channels = Arrays.stream(cl.getItems())
                                         .filter(distinctByKey(CommentsList.Item::getId))
                                         .map(item -> new YouTubeChannel(item, false))
                                         .collect(Collectors.toList());
@@ -331,7 +331,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                                 try { Thread.sleep(50); } catch (InterruptedException ignored) {}
                             } while (pageToken != null && !isHardShutdown());
-                        } catch (YouTubeErrorException | IOException e) {
+                        } catch (IOException e) {
                             logger.error(String.format("Couldn't grab commentThread[id=%s]", tuple.getFirst()), e);
                         }
                         incrVideoProgress();
@@ -364,14 +364,14 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                 ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.SNIPPET))
                                         .getByChannel(String.join(",", channelIds), "");
 
-                                List<YouTubeChannel> channels = Arrays.stream(cl.items).map(YouTubeChannel::new)
+                                List<YouTubeChannel> channels = Arrays.stream(cl.getItems()).map(YouTubeChannel::new)
                                         .collect(Collectors.toList());
 
                                 channelInsertQueue.addAll(channels);
 
                                 elapsed.setNow();
                                 channelIds.clear();
-                            } catch (IOException | YouTubeErrorException e) {
+                            } catch (IOException e) {
                                 logger.error("Error on channel grab", e);
                             }
                         }
@@ -451,10 +451,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                 do {
                                     ctl = ((CommentThreadsList) youtube.commentThreadsList().part(Parts.SNIPPET))
                                             .getThreadsByVideo(video.getYoutubeId(), pageToken);
-                                    pageToken = ctl.nextPageToken;
+                                    pageToken = ctl.getNextPageToken();
 
                                     if(ctl.hasItems()) {
-                                        List<YouTubeComment> comments = Arrays.stream(ctl.items)
+                                        List<YouTubeComment> comments = Arrays.stream(ctl.getItems())
                                                 .map(YouTubeComment::new).collect(Collectors.toList());
                                         comments.forEach(c -> {
                                             if(c.getReplyCount() > 0) {
@@ -475,7 +475,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                     try { Thread.sleep(50); } catch (InterruptedException ignored) {}
                                 } while (pageToken != null && !isHardShutdown());
                                 break;
-                            } catch (YouTubeErrorException | IOException e) {
+                            } catch (IOException e) {
                                 String message;
                                 if(e instanceof YouTubeErrorException) {
                                     YouTubeErrorException yee = (YouTubeErrorException) e;
@@ -554,8 +554,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         logger.debug(String.format("Grabbing Video Data [ids=%s]", videoIds.toString()));
         VideosList vl = ((VideosList) youtube.videosList().parts(Parts.SNIPPET, Parts.STATISTICS))
                 .getByIds(String.join(",", videoIds), "");
-        if(vl.items != null) {
-            List<YouTubeVideo> videos = Arrays.stream(vl.items)
+        if(vl.hasItems()) {
+            List<YouTubeVideo> videos = Arrays.stream(vl.getItems())
                     .map(YouTubeVideo::new).collect(Collectors.toList());
             videoQueue.addAll(videos);
             database.insertVideos(videos);
