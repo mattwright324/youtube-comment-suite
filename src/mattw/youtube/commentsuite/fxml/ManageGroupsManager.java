@@ -5,6 +5,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -36,7 +37,7 @@ import java.util.stream.Stream;
  *
  * Loads template FXML and displays info from database.
  *
- * @since 2018-12-30
+ * @since 2019-01-06
  * @author mattwright324
  */
 public class ManageGroupsManager extends StackPane implements ImageCache, Cleanable {
@@ -258,11 +259,41 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
 
         List<LineChart.Data<String,Number>> commentChartData = groupStats.getWeeklyCommentHistogram().entrySet().stream()
-                .map(entry -> new LineChart.Data<String,Number>(sdf.format(new Date(entry.getKey())), entry.getValue()))
+                .map(entry -> {
+                    Date date = new Date(entry.getKey());
+                    Date endOfWeek = new Date(entry.getKey()+604800000);
+
+                    LineChart.Data<String,Number> dataPoint = new LineChart.Data<>(sdf.format(date), entry.getValue());
+
+                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new comments",
+                            sdf.format(date), sdf.format(endOfWeek),
+                            entry.getValue()));
+
+                    StackPane node = new StackPane();
+
+                    installDataTooltip(tooltip, node, dataPoint);
+
+                    return dataPoint;
+                })
                 .collect(Collectors.toList());
 
         List<LineChart.Data<String,Number>> videoChartData = groupStats.getWeeklyUploadHistogram().entrySet().stream()
-                .map(entry -> new LineChart.Data<String,Number>(sdf.format(new Date(entry.getKey())), entry.getValue()))
+                .map(entry -> {
+                    Date date = new Date(entry.getKey());
+                    Date endOfWeek = new Date(entry.getKey()+604800000);
+
+                    LineChart.Data<String,Number> dataPoint = new LineChart.Data<>(sdf.format(date), entry.getValue());
+
+                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new videos",
+                            sdf.format(date), sdf.format(endOfWeek),
+                            entry.getValue()));
+
+                    StackPane node = new StackPane();
+
+                    installDataTooltip(tooltip, node, dataPoint);
+
+                    return dataPoint;
+                })
                 .collect(Collectors.toList());
 
         long gcd = gcd(groupStats.getTotalLikes(), groupStats.getTotalDislikes());
@@ -324,6 +355,16 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             activeViewersList.getItems().addAll(mostActiveViewers);
             viewerPane.setDisable(false);
         });
+    }
+
+    private void installDataTooltip(Tooltip tooltip, Node node, LineChart.Data<?, ?> dataPoint) {
+        node.setStyle("-fx-background-color: transparent;");
+        node.setOnMouseEntered(e -> node.setStyle("-fx-background-color: orangered;"));
+        node.setOnMouseExited(e -> node.setStyle("-fx-background-color: transparent;"));
+
+        Tooltip.install(node, tooltip);
+
+        dataPoint.setNode(node);
     }
 
     private long gcd(long p, long q) {

@@ -20,6 +20,10 @@ import java.io.IOException;
 
 import static javafx.application.Platform.runLater;
 
+/**
+ * @since 2019-01-05
+ * @author mattwright324
+ */
 public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
 
     private static Logger logger = LogManager.getLogger();
