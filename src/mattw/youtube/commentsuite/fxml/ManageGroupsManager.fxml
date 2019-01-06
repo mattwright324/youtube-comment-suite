@@ -7,6 +7,9 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.ImageView?>
 <?import mattw.youtube.commentsuite.fxml.OverlayModal?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
 <fx:root type="StackPane" alignment="TOP_CENTER"
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml">
@@ -44,22 +47,103 @@
             <Accordion fx:id="accordion" HBox.hgrow="ALWAYS">
                 <panes>
                     <TitledPane fx:id="generalPane" text="General Stats">
-                        <VBox></VBox>
+                        <ScrollPane hbarPolicy="NEVER" fitToHeight="true" fitToWidth="true">
+                            <VBox spacing="10">
+                                <padding><Insets top="10" bottom="10" /></padding>
+                                <LineChart fx:id="commentsLineChart" minHeight="250" maxHeight="300" title="Comments By Week"
+                                           createSymbols="false" legendVisible="false">
+                                    <xAxis><CategoryAxis animated="false" label="Week Of" /></xAxis>
+                                    <yAxis><NumberAxis label="New Comments" /></yAxis>
+                                </LineChart>
+                                <GridPane vgap="10" hgap="10">
+                                    <children>
+                                        <Label text="Total Comments" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="bold" />
+                                        <Label text="..." fx:id="totalComments"
+                                               GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                        <Label text="Total Likes" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="bold" />
+                                        <Label text="..." fx:id="totalLikes" style="-fx-text-fill:cornflowerblue"
+                                               GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                                    </children>
+                                    <columnConstraints>
+                                        <ColumnConstraints />
+                                        <ColumnConstraints halignment="RIGHT" maxWidth="150" prefWidth="150" />
+                                    </columnConstraints>
+                                </GridPane>
+
+                                <LineChart fx:id="videosLineChart" minHeight="250" maxHeight="300" title="Videos By Week"
+                                           createSymbols="false" legendVisible="false">
+                                    <xAxis><CategoryAxis animated="false" label="Week Of" /></xAxis>
+                                    <yAxis><NumberAxis label="Published Videos" /></yAxis>
+                                </LineChart>
+                                <GridPane vgap="10" hgap="10">
+                                    <children>
+                                        <Label text="Total Videos"            GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="bold" />
+                                        <Label text="..." fx:id="totalVideos" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+
+                                        <Label text="Total Views"            GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="bold" />
+                                        <Label text="..." fx:id="totalViews" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+
+                                        <Label text="Total Video Likes"           GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="bold" />
+                                        <Label text="..." fx:id="totalVideoLikes" GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                               style="-fx-text-fill:cornflowerblue" />
+
+                                        <Label text="Total Video Dislikes"           GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="bold" />
+                                        <Label text="..." fx:id="totalVideoDislikes" GridPane.columnIndex="2" GridPane.rowIndex="4"
+                                               style="-fx-text-fill:orangered" />
+
+                                        <Label text="Like/Dislike Ratio"                   GridPane.columnIndex="1" GridPane.rowIndex="5" styleClass="bold" />
+                                        <Label text="+... : -..." fx:id="likeDislikeRatio" GridPane.columnIndex="2" GridPane.rowIndex="5" />
+
+                                        <Label text="Normalized Ratio"                    GridPane.columnIndex="1" GridPane.rowIndex="6" styleClass="bold" />
+                                        <Label text="+... : -..." fx:id="normalizedRatio" GridPane.columnIndex="2" GridPane.rowIndex="6" />
+                                    </children>
+                                    <columnConstraints>
+                                        <ColumnConstraints />
+                                        <ColumnConstraints halignment="RIGHT" maxWidth="150" prefWidth="150" />
+                                    </columnConstraints>
+                                </GridPane>
+                            </VBox>
+                        </ScrollPane>
                     </TitledPane>
-                    <TitledPane text="About Videos" disable="true">
-                        <VBox></VBox>
+                    <TitledPane fx:id="videoPane" text="About Videos" disable="true">
+                        <ScrollPane hbarPolicy="NEVER" fitToHeight="true" fitToWidth="true">
+                            <VBox spacing="10">
+                                <padding><Insets top="10" bottom="10" right="25" left="25" /></padding>
+                                <Label text="Most Popular Videos (top 10)" styleClass="font18" />
+                                <ListView fx:id="popularVideosList" minHeight="300" maxHeight="300" />
+
+                                <Label text="Most Disliked Videos (top 10)" styleClass="font18" />
+                                <ListView fx:id="dislikedVideosList" minHeight="300" maxHeight="300" />
+
+                                <Label text="Most Commented Videos (top 10)" styleClass="font18" />
+                                <ListView fx:id="commentedVideosList" minHeight="300" maxHeight="300" />
+
+                                <Label text="Comments Disabled (all)" styleClass="font18" />
+                                <ListView fx:id="disabledVideosList" minHeight="300" maxHeight="300" />
+                            </VBox>
+                        </ScrollPane>
                     </TitledPane>
-                    <TitledPane text="About Viewers" disable="true">
-                        <VBox></VBox>
+                    <TitledPane fx:id="viewerPane" text="About Viewers" disable="true">
+                        <ScrollPane hbarPolicy="NEVER" fitToHeight="true" fitToWidth="true">
+                            <VBox spacing="10">
+                                <padding><Insets top="10" bottom="10" right="25" left="25" /></padding>
+                                <Label text="Most Popular Viewers (top 25)" styleClass="font18" />
+                                <ListView fx:id="popularViewersList" minHeight="300" maxHeight="300" />
+
+                                <Label text="Most Active Viewers (top 25)" styleClass="font18" />
+                                <ListView fx:id="activeViewersList" minHeight="300" maxHeight="300" />
+                            </VBox>
+                        </ScrollPane>
                     </TitledPane>
-                    <TitledPane text="Video Query">
+                    <!-- TODO: Video and Viewer Query -->
+                    <!--<TitledPane text="Video Query">
                         <Label text="Search and sort the videos in this group."/>
-                        <!-- <fx:include source="ManageGroupsManagerVideoQuery.fxml" -->
+                        <fx:include source="ManageGroupsManagerVideoQuery.fxml"
                     </TitledPane>
                     <TitledPane text="Viewer Query">
                         <Label text="Search and sort the commenting viewers in this group. "/>
-                        <!-- <fx:include source="ManageGroupsManagerViewerQuery.fxml" -->
-                    </TitledPane>
+                        <fx:include source="ManageGroupsManagerViewerQuery.fxml"
+                    </TitledPane>-->
                 </panes>
             </Accordion>
         </HBox>

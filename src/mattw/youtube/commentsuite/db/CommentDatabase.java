@@ -735,63 +735,8 @@ public class CommentDatabase implements Closeable {
         return Long.MAX_VALUE;
     }
 
-    public Map<Long,Long> getWeekByWeekCommentHistogram(Group group) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENT_WEEK_HISTOGRAM.toString())) {
-            ps.setString(1, group.getId());
-            return resultSetToHistogram(ps);
-        }
-    }
-
-    /*public long getTotalComments(Group group) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_TOTAL_COMMENTS.toString())) {
-            ps.setString(1, group.getId());
-            try(ResultSet rs = ps.executeQuery()) {
-                if(rs.next()) {
-                    return rs.getLong("count");
-                }
-            }
-        }
-        return 0;
-    }*/
-
-    /*public long getTotalLikes(Group group) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_TOTAL_LIKES.toString())) {
-            ps.setString(1, group.getId());
-            try(ResultSet rs = ps.executeQuery()) {
-                if(rs.next()) {
-                    return rs.getLong("total_likes");
-                }
-            }
-        }
-        return 0;
-    }
-
-    public long getTotalVideos(Group group) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_TOTAL_VIDEOS.toString())) {
-            ps.setString(1, group.getId());
-            try(ResultSet rs = ps.executeQuery()) {
-                if(rs.next()) {
-                    return rs.getLong("count");
-                }
-            }
-        }
-        return 0;
-    }
-
-    public long getTotalViews(Group group) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_TOTAL_VIEWS.toString())){
-            ps.setString(1, group.getId());
-            try(ResultSet rs = ps.executeQuery()) {
-                if(rs.next()) {
-                    return rs.getLong("total_views");
-                }
-            }
-        }
-        return 0;
-    }*/
-
-    public VideoStats getVideoStats(Group group) throws SQLException {
-        VideoStats stats = new VideoStats();
+    public GroupStats getGroupStats(Group group) throws SQLException {
+        GroupStats stats = new GroupStats();
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_VIDEO_STATS.toString())) {
             ps.setString(1, group.getId());
             try(ResultSet rs = ps.executeQuery()) {
@@ -819,21 +764,28 @@ public class CommentDatabase implements Closeable {
                 }
             }
         }
-        stats.setMostLikedViewers(this.getMostPopularViewers(group, 10));
-        stats.setMostActiveViewers(this.getMostActiveViewers(group, 10));
+        stats.setMostLikedViewers(this.getMostPopularViewers(group, 25));
+        stats.setMostActiveViewers(this.getMostActiveViewers(group, 25));
         stats.setWeeklyCommentHistogram(this.getWeekByWeekCommentHistogram(group));
 
         return stats;
     }
 
-    public Map<Long,Long> getWeekByWeekVideoHistogram(Group group) throws SQLException {
+    private Map<Long,Long> getWeekByWeekCommentHistogram(Group group) throws SQLException {
+        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENT_WEEK_HISTOGRAM.toString())) {
+            ps.setString(1, group.getId());
+            return resultSetToHistogram(ps);
+        }
+    }
+
+    private Map<Long,Long> getWeekByWeekVideoHistogram(Group group) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_VIDEO_WEEK_HISTOGRAM.toString())) {
             ps.setString(1, group.getId());
             return resultSetToHistogram(ps);
         }
     }
 
-    public LinkedHashMap<YouTubeChannel,Long> getMostActiveViewers(Group group, int limit) throws SQLException {
+    private LinkedHashMap<YouTubeChannel,Long> getMostActiveViewers(Group group, int limit) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_ACTIVE_VIEWERS.toString())) {
             ps.setString(1, group.getId());
             ps.setInt(2, limit);
@@ -848,7 +800,7 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    public LinkedHashMap<YouTubeChannel,Long> getMostPopularViewers(Group group, int limit) throws SQLException {
+    private LinkedHashMap<YouTubeChannel,Long> getMostPopularViewers(Group group, int limit) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_POPULAR_VIEWERS.toString())) {
             ps.setString(1, group.getId());
             ps.setInt(2, limit);
@@ -863,7 +815,7 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    public List<YouTubeVideo> getMostPopularVideos(Group group, int limit) throws SQLException {
+    private List<YouTubeVideo> getMostPopularVideos(Group group, int limit) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_POPULAR_VIDEOS.toString())) {
             ps.setString(1, group.getId());
             ps.setInt(2, limit);
@@ -871,7 +823,7 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    public List<YouTubeVideo> getMostDislikedVideos(Group group, int limit) throws SQLException {
+    private List<YouTubeVideo> getMostDislikedVideos(Group group, int limit) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_DISLIKED_VIDEOS.toString())) {
             ps.setString(1, group.getId());
             ps.setInt(2, limit);
@@ -879,7 +831,7 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    public List<YouTubeVideo> getMostCommentedVideos(Group group, int limit) throws SQLException {
+    private List<YouTubeVideo> getMostCommentedVideos(Group group, int limit) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_COMMENTED_VIDEOS.toString())) {
             ps.setString(1, group.getId());
             ps.setInt(2, limit);
@@ -887,7 +839,7 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    public List<YouTubeVideo> getDisabledVideos(Group group) throws SQLException {
+    private List<YouTubeVideo> getDisabledVideos(Group group) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_DISABLED_VIDEOS.toString())) {
             ps.setString(1, group.getId());
             return resultSetToVideoList(ps);

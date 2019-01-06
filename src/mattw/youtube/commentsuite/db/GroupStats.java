@@ -9,7 +9,7 @@ import java.util.Map;
  * @since 2018-12-30
  * @author mattwright324
  */
-public class VideoStats {
+public class GroupStats {
 
     private long totalViews = 0;
     private long totalVideos = 0;
@@ -28,7 +28,7 @@ public class VideoStats {
     private Map<YouTubeChannel, Long> mostActiveViewers = new LinkedHashMap<>();
     private Map<Long, Long> weeklyCommentHistogram = new LinkedHashMap<>();
 
-    public VideoStats() {}
+    public GroupStats() {}
 
     public long getTotalViews() {
         return totalViews;
@@ -152,7 +152,7 @@ public class VideoStats {
 
     @Override
     public String toString() {
-        return "VideoStats{" +
+        return "GroupStats{" +
                 "totalViews=" + totalViews +
                 ", totalVideos=" + totalVideos +
                 ", totalLikes=" + totalLikes +

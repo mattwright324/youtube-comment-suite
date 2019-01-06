@@ -3,12 +3,14 @@ package mattw.youtube.commentsuite.fxml;
 import static javafx.application.Platform.runLater;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.db.GroupItem;
+import mattw.youtube.commentsuite.io.BrowserUtil;
 
 import java.io.IOException;
 
@@ -25,6 +27,8 @@ public class MGMVGroupItemView extends HBox {
     private @FXML Label author;
     private @FXML Label type;
 
+    private BrowserUtil browserUtil = new BrowserUtil();
+
     public MGMVGroupItemView(GroupItem groupItem) {
         this.groupItem = groupItem;
 
@@ -37,6 +41,9 @@ public class MGMVGroupItemView extends HBox {
             title.setText(groupItem.getTitle());
             author.setText(groupItem.getChannelTitle());
             type.setText(groupItem.getTypeName());
+
+            icon.setCursor(Cursor.HAND);
+            icon.setOnMouseClicked(me -> browserUtil.open(groupItem.getYouTubeLink()));
 
             new Thread(() -> {
                 Image image = ImageCache.findOrGetImage(groupItem);

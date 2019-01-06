@@ -82,6 +82,6 @@ public class Main implements Initializable {
             content.getChildren().add(searchYoutube);
         }));
 
-        btnSearchComments.fire();
+        btnManageGroups.fire();
     }
 }

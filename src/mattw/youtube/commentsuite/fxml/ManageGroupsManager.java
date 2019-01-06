@@ -5,6 +5,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.chart.LineChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -13,6 +14,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.ImageLoader;
@@ -22,9 +24,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Manages a specific group; refreshing, stats, renaming, deletion, adding group items, etc.
@@ -34,7 +39,7 @@ import java.util.stream.Collectors;
  * @since 2018-12-30
  * @author mattwright324
  */
-public class ManageGroupsManager extends StackPane implements ImageCache {
+public class ManageGroupsManager extends StackPane implements ImageCache, Cleanable {
 
     private Logger logger = LogManager.getLogger(this.toString());
     private Image edit = ImageLoader.PENCIL.getImage();
@@ -63,8 +68,15 @@ public class ManageGroupsManager extends StackPane implements ImageCache {
     private @FXML Button btnDelete;
     private @FXML Label refreshStatus;
 
+    private @FXML LineChart<String,Number> commentsLineChart, videosLineChart;
+    private LineChart.Series<String,Number> commentsLineChartData, videosLineChartData;
+    private @FXML Label totalComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+            likeDislikeRatio, normalizedRatio;
+    private @FXML ListView<MGMVYouTubeObjectItem> popularVideosList, dislikedVideosList, commentedVideosList,
+            disabledVideosList, popularViewersList, activeViewersList;
+
     private @FXML Accordion accordion;
-    private @FXML TitledPane generalPane;
+    private @FXML TitledPane generalPane, videoPane, viewerPane;
 
     public ManageGroupsManager(Group group) throws IOException {
         logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
@@ -83,6 +95,12 @@ public class ManageGroupsManager extends StackPane implements ImageCache {
                 220-random.nextInt(60), 220-random.nextInt(60), 220-random.nextInt(60), 0.4));
 
         accordion.setExpandedPane(generalPane);
+
+        commentsLineChartData = new LineChart.Series<>();
+        commentsLineChart.getData().add(commentsLineChartData);
+
+        videosLineChartData = new LineChart.Series<>();
+        videosLineChart.getData().add(videosLineChartData);
 
         editIcon.setImage(edit);
 
@@ -145,14 +163,16 @@ public class ManageGroupsManager extends StackPane implements ImageCache {
            });
         });
 
-        new Thread(() -> {
+        btnReload.setOnAction(ae -> new Thread(() -> {
             reloadGroupItems();
             try {
                 reload();
             } catch (SQLException e) {
                 logger.error("An error occured during group reload", e);
             }
-        }).start();
+        }).start());
+
+        btnReload.fire();
 
         /**
          * Refresh Modal
@@ -224,21 +244,94 @@ public class ManageGroupsManager extends StackPane implements ImageCache {
     }
 
     /**
-     * Reloads displayed timestamp and group stats information.
-     * @throws SQLException
+     * Reloads displayed timestamp and group stats information. Information displayed is queried from the database
+     * and formatted and processed before being added to the labels, lists, and charts.
+     *
+     * @throws SQLException the group stats operation failed
      */
     private void reload() throws SQLException {
+        cleanUp();
         updateLastRefreshed();
 
-        VideoStats videoStats = database.getVideoStats(this.group);
+        GroupStats groupStats = database.getGroupStats(this.group);
 
-        logger.debug(videoStats.toString());
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
 
-        /*try {
-            // TODO: Reload status content: stats, videos, viewers, etc.
-        } catch (SQLException e) {
-            logger.error("Error on data reload.");
-        }*/
+        List<LineChart.Data<String,Number>> commentChartData = groupStats.getWeeklyCommentHistogram().entrySet().stream()
+                .map(entry -> new LineChart.Data<String,Number>(sdf.format(new Date(entry.getKey())), entry.getValue()))
+                .collect(Collectors.toList());
+
+        List<LineChart.Data<String,Number>> videoChartData = groupStats.getWeeklyUploadHistogram().entrySet().stream()
+                .map(entry -> new LineChart.Data<String,Number>(sdf.format(new Date(entry.getKey())), entry.getValue()))
+                .collect(Collectors.toList());
+
+        long gcd = gcd(groupStats.getTotalLikes(), groupStats.getTotalDislikes());
+        long gcdLikes = groupStats.getTotalLikes() / gcd;
+        long gcdDislikes = groupStats.getTotalDislikes() / gcd;
+
+        long nLikes, nDislikes;
+        if(gcdLikes > gcdDislikes) {
+            nLikes = gcdLikes / gcdDislikes;
+            nDislikes = 1;
+        } else {
+            nLikes = 1;
+            nDislikes = gcdDislikes / gcdLikes;
+        }
+
+        List<MGMVYouTubeObjectItem> popularVideos = groupStats.getMostViewed().stream()
+                .map(video -> new MGMVYouTubeObjectItem(video, video.getViews(), "views"))
+                .collect(Collectors.toList());
+        List<MGMVYouTubeObjectItem> dislikedVideos = groupStats.getMostDisliked().stream()
+                .map(video -> new MGMVYouTubeObjectItem(video, video.getDislikes(), "dislikes"))
+                .collect(Collectors.toList());
+        List<MGMVYouTubeObjectItem> commentedVideos = groupStats.getMostCommented().stream()
+                .map(video -> new MGMVYouTubeObjectItem(video, video.getCommentCount(), "comments"))
+                .collect(Collectors.toList());
+        List<MGMVYouTubeObjectItem> disabledVideos = groupStats.getCommentsDisabled().stream()
+                .map(video -> new MGMVYouTubeObjectItem(video, 0L, "Comments Disabled", true))
+                .collect(Collectors.toList());
+
+        List<MGMVYouTubeObjectItem> mostLikedViewers = groupStats.getMostLikedViewers().entrySet().stream()
+                .map(entry -> new MGMVYouTubeObjectItem(entry.getKey(), entry.getValue(), "likes"))
+                .collect(Collectors.toList());
+        List<MGMVYouTubeObjectItem> mostActiveViewers = groupStats.getMostActiveViewers().entrySet().stream()
+                .map(entry -> new MGMVYouTubeObjectItem(entry.getKey(), entry.getValue(), "comments"))
+                .collect(Collectors.toList());
+
+        runLater(() -> {
+            commentsLineChartData.getData().addAll(commentChartData);
+            totalComments.setText(String.format("%,d", groupStats.getTotalComments()));
+            totalLikes.setText(String.format("+%,d", groupStats.getTotalCommentLikes()));
+
+            videosLineChartData.getData().addAll(videoChartData);
+            totalVideos.setText(String.format("%,d", groupStats.getTotalVideos()));
+            totalViews.setText(String.format("%,d", groupStats.getTotalViews()));
+            totalVideoLikes.setText(String.format("+%,d", groupStats.getTotalLikes()));
+            totalVideoDislikes.setText(String.format("-%,d", groupStats.getTotalDislikes()));
+            likeDislikeRatio.setText(String.format("+%,d : -%,d", gcdLikes, gcdDislikes));
+            likeDislikeRatio.setStyle(String.format("-fx-text-fill:%s", gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered"));
+            normalizedRatio.setText(String.format("+%,d : -%,d", nLikes, nDislikes));
+            normalizedRatio.setStyle(String.format("-fx-text-fill:%s", gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered"));
+            generalPane.setDisable(false);
+
+            popularVideosList.getItems().addAll(popularVideos);
+            dislikedVideosList.getItems().addAll(dislikedVideos);
+            commentedVideosList.getItems().addAll(commentedVideos);
+            disabledVideosList.getItems().addAll(disabledVideos);
+            videoPane.setDisable(false);
+
+            popularViewersList.getItems().addAll(mostLikedViewers);
+            activeViewersList.getItems().addAll(mostActiveViewers);
+            viewerPane.setDisable(false);
+        });
+    }
+
+    private long gcd(long p, long q) {
+        if (q == 0) {
+            return p;
+        } else {
+            return gcd(q, p % q);
+        }
     }
 
     private void updateLastRefreshed() {
@@ -303,4 +396,22 @@ public class ManageGroupsManager extends StackPane implements ImageCache {
         });
     }
 
+    /**
+     * Cleans up the statistics area, removing all data, disables the accordion panes.
+     */
+    @Override
+    public void cleanUp() {
+        runLater(() -> {
+            commentsLineChartData.getData().clear();
+            videosLineChartData.getData().clear();
+            Stream.of(totalComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+                    likeDislikeRatio, normalizedRatio)
+                    .forEach(label -> label.setText("..."));
+            Stream.of(generalPane, videoPane, viewerPane)
+                    .forEach(pane -> pane.setDisable(true));
+            Stream.of(popularVideosList, dislikedVideosList, commentedVideosList,
+                    disabledVideosList, popularViewersList, activeViewersList)
+                    .forEach(list -> list.getItems().clear());
+        });
+    }
 }

@@ -16,8 +16,6 @@ import java.io.InputStreamReader;
  *  - Use in NamedParameterStatement (:params)
  *  - String replacement before use in one of above (:order)
  *
- * TODO: Look into combining comment/video stats queries.
- * TODO: Combine all stats queries into one method called and put into object.
  * TODO: Query 'Snippets' to be used/replaced for group/gitem selection.
  *
  * @since 2018-12-30
@@ -67,10 +65,6 @@ public enum SQLLoader {
     GET_ALL_GITEM_VIDEO("dql_get_all_gitem_video.sql", SQLType.DQL),
     GET_GROUP_LAST_CHECKED("dql_get_group_last_checked.sql", SQLType.DQL),
     GET_COMMENT_WEEK_HISTOGRAM("dql_get_comment_week_histogram.sql", SQLType.DQL),
-    //GET_GROUP_TOTAL_COMMENTS("dql_get_group_total_comments.sql", SQLType.DQL),
-    //GET_GROUP_TOTAL_LIKES("dql_get_group_total_likes.sql", SQLType.DQL),
-    //GET_GROUP_TOTAL_VIDEOS("dql_get_group_total_videos.sql", SQLType.DQL),
-    //GET_GROUP_TOTAL_VIEWS("dql_get_group_total_views.sql", SQLType.DQL),
     GET_VIDEO_WEEK_HISTOGRAM("dql_get_video_week_histogram.sql", SQLType.DQL),
     GET_GROUP_ACTIVE_VIEWERS("dql_get_group_active_viewers.sql", SQLType.DQL),
     GET_GROUP_POPULAR_VIEWERS("dql_get_group_popular_viewers.sql", SQLType.DQL),

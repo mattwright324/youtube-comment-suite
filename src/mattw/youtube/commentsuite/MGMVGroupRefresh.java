@@ -156,7 +156,15 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             } catch (SQLException e2) {
                 appendError("Failed to commit after refresh failure.");
             }
-            appendError(e.getLocalizedMessage());
+
+            if(e instanceof YouTubeErrorException) {
+                YouTubeErrorException yee = (YouTubeErrorException) e;
+
+                appendError(yee.getError().getMessage());
+            } else {
+                appendError(e.getLocalizedMessage());
+            }
+
             logger.error("FATAL: Refresh Failed", e);
             runLater(() -> {
                 statusStep.setValue(statusStep.getValue() + " (FATAL)");
@@ -240,7 +248,14 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                         }
                     } catch (SQLException | IOException e) {
                         appendError(String.format("Failed GItem[id=%s]", gitem.getYoutubeId()));
-                        logger.error(e);
+
+                        if(e instanceof YouTubeErrorException) {
+                            YouTubeErrorException yee = (YouTubeErrorException) e;
+
+                            logger.error(yee.getError().getMessage());
+                        } else {
+                            logger.error(e);
+                        }
                     }
                 }
             }

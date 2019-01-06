@@ -9,6 +9,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -315,6 +316,11 @@ public class SearchComments implements Initializable, ImageCache {
                 videoDescription.setText(String.format("Published %s • %s",
                         sdf.format(v.getPublishedDate()),
                         StringEscapeUtils.unescapeHtml4(v.getDescription())));
+
+                videoThumb.setCursor(Cursor.HAND);
+                videoThumb.setOnMouseClicked(me -> browserUtil.open(v.getYouTubeLink()));
+                authorThumb.setCursor(Cursor.HAND);
+                authorThumb.setOnMouseClicked(me -> browserUtil.open(va.getYouTubeLink()));
             });
 
             Image vthumb = ImageCache.findOrGetImage(video);
