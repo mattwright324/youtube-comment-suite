@@ -13,12 +13,7 @@ import javafx.scene.layout.VBox;
 import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.db.*;
-import mattw.youtube.datav3.Parts;
 import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.entrypoints.ChannelsList;
-import mattw.youtube.datav3.entrypoints.PlaylistsList;
-import mattw.youtube.datav3.entrypoints.VideosList;
-import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,8 +21,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @since 2018-12-30
@@ -75,98 +68,29 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
             btnSubmit.setOnAction(ae -> new Thread(() -> {
                 runLater(() -> btnSubmit.setDisable(true));
-                Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
-                Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
-                Pattern playlist = Pattern.compile("(?:http[s]?://www.youtube.com/playlist\\?list=)([\\w_\\-]+)");
-                Pattern channel1 = Pattern.compile("(?:http[s]?://www.youtube.com/channel/)([\\w_\\-]+)");
-                Pattern channel2 = Pattern.compile("(?:http[s]?://www.youtube.com/user/)([\\w_\\-]+)");
 
-                Matcher m;
-                String fullLink = link.getText();
-                YType type = YType.UNKNOWN;
-                boolean channelUsername = false;
-                String result = "";
-                if((m = video1.matcher(fullLink)).matches()) {
-                    result = m.group(1);
-                    type = YType.VIDEO;
-                } else if((m = video2.matcher(fullLink)).matches()) {
-                    result = m.group(1);
-                    type = YType.VIDEO;
-                } else if((m = playlist.matcher(fullLink)).matches()) {
-                    result = m.group(1);
-                    type = YType.PLAYLIST;
-                } else if((m = channel1.matcher(fullLink)).matches()) {
-                    result = m.group(1);
-                    type = YType.CHANNEL;
-                } else if((m = channel2.matcher(fullLink)).matches()) {
-                    result = m.group(1);
-                    type = YType.CHANNEL;
-                    channelUsername = true;
-                }
+                try {
+                    List<GroupItem> list = new ArrayList<>();
+                    list.add(new GroupItem(link.getText()));
 
-                if(result.isEmpty()) {
-                    runLater(() -> setError("Input did not match expected formats."));
-                } else {
-                    try {
-                        List<GroupItem> list = new ArrayList<>();
-                        if(type == YType.VIDEO) {
-                            VideosList vl = ((VideosList) youtube.videosList().part(Parts.SNIPPET))
-                                    .getByIds(result, "");
-                            if(vl.hasItems()) {
-                                VideosList.Item item = vl.getItems()[0];
-                                GroupItem gitem = new GroupItem(item);
-
-                                list.add(gitem);
-                            }
-                        } else if(type == YType.CHANNEL) {
-                            ChannelsList cl = youtube.channelsList().part(Parts.SNIPPET);
-                            if(!channelUsername) {
-                                cl = cl.getByChannel(result, "");
-                            } else {
-                                cl = cl.getByUsername(result, "");
-                            }
-
-                            if(cl.hasItems()) {
-                                ChannelsList.Item item = cl.getItems()[0];
-                                GroupItem gitem = new GroupItem(item);
-
-                                list.add(gitem);
-                            }
-                        } else if(type == YType.PLAYLIST) {
-                            PlaylistsList pl = ((PlaylistsList) youtube.playlistsList().part(Parts.SNIPPET))
-                                    .getByPlaylist(result, "");
-                            if(pl.hasItems()) {
-                                PlaylistsList.Item item = pl.getItems()[0];
-                                GroupItem gitem = new GroupItem(item);
-
-                                list.add(gitem);
-                            }
-                        } else {
-                            runLater(() -> setError("Unexpected result."));
+                    if(!list.isEmpty()) {
+                        try {
+                            database.insertGroupItems(this.group, list);
+                            database.commit();
+                            runLater(() -> {
+                                itemAdded.setValue(itemAdded.getValue() + 1);
+                                btnClose.fire();
+                            });
+                        } catch (SQLException e1) {
+                            runLater(() -> setError(e1.getClass().getSimpleName()));
                         }
-
-                        if(!list.isEmpty()) {
-                            try {
-                                database.insertGroupItems(this.group, list);
-                                database.commit();
-                                runLater(() -> {
-                                    itemAdded.setValue(itemAdded.getValue() + 1);
-                                    btnClose.fire();
-                                });
-                            } catch (SQLException e1) {
-                                runLater(() -> setError(e1.getClass().getSimpleName()));
-                            }
-                        }
-                    } catch (IOException e) {
-                        runLater(() -> {
-                            String message = e.getClass().getSimpleName();
-                            if(e instanceof YouTubeErrorException) {
-                                message = ((YouTubeErrorException) e).getError().getMessage();
-                            }
-                            setError(message);
-                        });
                     }
+                } catch (IOException e) {
+                    runLater(() -> setError(e.getLocalizedMessage()));
+
+                    logger.error("Failed to submit link", e);
                 }
+
                 runLater(() -> btnSubmit.setDisable(false));
             }).start());
         } catch (IOException e) { logger.error(e); }

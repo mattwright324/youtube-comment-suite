@@ -42,8 +42,8 @@ public class Location<T extends LocationProvider, K> {
 
     /**
      * Using the Amazon checkip service, returns your external address.
-     * @return
-     * @throws IOException
+     * @return your external ip address
+     * @throws IOException failed to connect to web or checkip.amazonaws.com
      */
     public String externalAddress() throws IOException {
         return Jsoup.connect("http://checkip.amazonaws.com").get().text();

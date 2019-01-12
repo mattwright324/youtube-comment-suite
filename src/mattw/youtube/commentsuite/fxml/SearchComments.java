@@ -283,9 +283,9 @@ public class SearchComments implements Initializable, ImageCache {
         SCShowMoreModal scShowMoreModal = new SCShowMoreModal();
         showMoreModal.setContent(scShowMoreModal);
         scShowMoreModal.getBtnClose().setOnAction(ae -> showMoreModal.setVisible(false));
-        scShowMoreModal.replyModeProperty().addListener((o, ov, nv) -> runLater(() -> {
-            showMoreModal.getModalContainer().setMaxWidth(420 * (nv ? 2 : 1));
-        }));
+        scShowMoreModal.replyModeProperty().addListener((o, ov, nv) -> runLater(() ->
+            showMoreModal.getModalContainer().setMaxWidth(420 * (nv ? 2 : 1))
+        ));
     }
 
     private void checkUpdateThumbs(SearchCommentsListItem commentItem) {

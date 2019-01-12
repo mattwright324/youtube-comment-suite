@@ -191,7 +191,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     /**
      * Consumes the GroupItems listed under the group, finds the videoId's associated, and places them in a queue.
-     * @throws InterruptedException
+     * @throws InterruptedException executors/thread was interrupted
      */
     private void startAndAwaitParsingGitems() throws InterruptedException {
         ExecutorService es = Executors.newFixedThreadPool(1);
@@ -225,10 +225,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                     List<String> videoIds = Arrays.stream(pil.getItems())
                                             .map(item -> item.getSnippet().getResourceId().getVideoId())
                                             .collect(Collectors.toList());
-                                    videoIds.forEach(videoId -> {
+                                    videoIds.forEach(videoId ->
                                         gitemVideo.add(new CommentDatabase.GroupItemVideo(
-                                                gitem.getYoutubeId(), videoId));
-                                    });
+                                                gitem.getYoutubeId(), videoId))
+                                    );
                                     videoIdQueue.addAll(videoIds);
                                     incrLongProperty(newVideos, database.countVideosNotExisting(videoIds));
                                     incrLongProperty(totalVideos, pil.getItems().length);
@@ -436,7 +436,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     /**
      * Await the background threads to finish before continuing.
-     * @throws InterruptedException
+     * @throws InterruptedException executors/thread was interrupted
      */
     private void awaitBackgroundThreads() throws InterruptedException {
         logger.debug("Awaiting background threads to close.");
@@ -447,7 +447,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     /**
      * Consumes YouTubeVideo objects in the queue.
      * @param consumers number of consuming threads
-     * @throws InterruptedException
+     * @throws InterruptedException executors/thread was interrupted
      */
     private void startAndAwaitVideoParse(int consumers) throws InterruptedException {
         logger.debug(String.format("Starting Comment Grabbing [consumers=%s,videos=%s]", consumers, videoQueue.size()));
@@ -560,10 +560,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     /**
      * Takes a list of videoId's and adds their data to the video queue and submits to database.
-     * @param videoIds
-     * @throws IOException
-     * @throws YouTubeErrorException
-     * @throws SQLException
+     * @param videoIds list of YouTube video ids
+     * @throws IOException failed to call YouTube API
+     * @throws YouTubeErrorException failed to call YouTube API
+     * @throws SQLException failed to insert to database
      */
     private void parseVideoIdsToObjects(List<String> videoIds) throws IOException, YouTubeErrorException, SQLException {
         logger.debug(String.format("Grabbing Video Data [ids=%s]", videoIds.toString()));
@@ -581,8 +581,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     /**
      * Inserts comments into database and updates statuses.
-     * @param comments
-     * @throws SQLException
+     * @param comments list of YouTubeComments
+     * @throws SQLException failed to insert to database
      */
     private synchronized void submitComments(List<YouTubeComment> comments) throws SQLException {
         List<String> commentIds = comments.stream()

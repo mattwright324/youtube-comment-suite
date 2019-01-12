@@ -46,7 +46,7 @@ public class ManageGroups implements Initializable {
 
         database = FXMLSuite.getDatabase();
 
-        /**
+        /*
          * Logic for main pane.
          */
 
@@ -87,7 +87,7 @@ public class ManageGroups implements Initializable {
             }
         });
 
-        /**
+        /*
          * Logic for Create Group popup.
          */
 

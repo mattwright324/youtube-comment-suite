@@ -149,20 +149,20 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         SelectionModel selectionModel = groupItemList.getSelectionModel();
         ((MultipleSelectionModel) selectionModel).setSelectionMode(SelectionMode.MULTIPLE);
-        ((MultipleSelectionModel) selectionModel).getSelectedItems().addListener((ListChangeListener)(lcl) -> {
+        ((MultipleSelectionModel) selectionModel).getSelectedItems().addListener((ListChangeListener)(lcl) ->
             runLater(() -> {
                 int items = lcl.getList().size();
                 btnRemoveItems.setText(String.format("Remove (%s)", items));
                 btnRemoveItems.setDisable(items <= 0);
-            });
-        });
-        groupItemList.getItems().addListener((ListChangeListener<MGMVGroupItemView>)(lcl) -> {
+            })
+        );
+        groupItemList.getItems().addListener((ListChangeListener<MGMVGroupItemView>)(lcl) ->
            runLater(() -> {
                int items = lcl.getList().size();
                btnRemoveAll.setText(String.format("Remove All (%s)", items));
                btnRemoveAll.setDisable(items <= 0);
-           });
-        });
+           })
+        );
 
         btnReload.setOnAction(ae -> new Thread(() -> {
             reloadGroupItems();
@@ -175,8 +175,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         btnReload.fire();
 
-        /**
-         * Refresh Modal
+        /*
+          Refresh Modal
          */
         MGMVRefreshModal mgmvRefresh = new MGMVRefreshModal(group);
         refreshModal.setContent(mgmvRefresh);
@@ -187,6 +187,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         mgmvRefresh.getBtnClose().setOnAction(ae -> {
             refreshModal.setVisible(false);
             updateLastRefreshed();
+            if(mgmvRefresh.isHasBeenStarted()) {
+                btnReload.fire();
+            }
         });
         mgmvRefresh.getErrorList().managedProperty().addListener((o, ov, nv) -> {
             if(nv) {
@@ -196,8 +199,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             }
         });
 
-        /**
-         * Delete Group Modal
+        /*
+          Delete Group Modal
          */
         MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal(group);
         deleteModal.setContent(mgmvDelete);
@@ -205,8 +208,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         btnDelete.setOnAction(ae -> runLater(() -> deleteModal.setVisible(true)));
         mgmvDelete.getBtnClose().setOnAction(ae -> deleteModal.setVisible(false));
 
-        /**
-         * Add Item Modal
+        /*
+          Add Item Modal
          */
         MGMVAddItemModal mgmvAddItem = new MGMVAddItemModal(group);
         addItemModal.setContent(mgmvAddItem);
@@ -217,8 +220,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         mgmvAddItem.getBtnClose().setOnAction(ae -> addItemModal.setVisible(false));
         mgmvAddItem.itemAddedProperty().addListener((o, ov, nv) -> reloadGroupItems());
 
-        /**
-         * Remove Selected GroupItems Modal
+        /*
+          Remove Selected GroupItems Modal
          */
         MGMVRemoveSelectedModal mgmvRemoveSelected = new MGMVRemoveSelectedModal(group, groupItemList.getSelectionModel());
         removeItemModal.setContent(mgmvRemoveSelected);
@@ -230,8 +233,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         mgmvRemoveSelected.getBtnClose().setOnAction(ae -> removeItemModal.setVisible(false));
         mgmvRemoveSelected.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
 
-        /**
-         * Remove All GroupItems Modal
+        /*
+          Remove All GroupItems Modal
          */
         MGMVRemoveAllModal mgmvRemoveAll = new MGMVRemoveAllModal(group, groupItemList.getItems());
         removeAllModal.setContent(mgmvRemoveAll);
@@ -251,6 +254,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
      * @throws SQLException the group stats operation failed
      */
     private void reload() throws SQLException {
+        runLater(() -> btnReload.setDisable(true));
+
         cleanUp();
         updateLastRefreshed();
 
@@ -265,7 +270,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
                     LineChart.Data<String,Number> dataPoint = new LineChart.Data<>(sdf.format(date), entry.getValue());
 
-                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new comments",
+                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new comment(s)",
                             sdf.format(date), sdf.format(endOfWeek),
                             entry.getValue()));
 
@@ -284,7 +289,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
                     LineChart.Data<String,Number> dataPoint = new LineChart.Data<>(sdf.format(date), entry.getValue());
 
-                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new videos",
+                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new video(s)",
                             sdf.format(date), sdf.format(endOfWeek),
                             entry.getValue()));
 
@@ -297,17 +302,23 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 .collect(Collectors.toList());
 
         long gcd = gcd(groupStats.getTotalLikes(), groupStats.getTotalDislikes());
-        long gcdLikes = groupStats.getTotalLikes() / gcd;
-        long gcdDislikes = groupStats.getTotalDislikes() / gcd;
+        long gcdLikes = gcd == 0 ? 0 : groupStats.getTotalLikes() / gcd;
+        long gcdDislikes = gcd == 0 ? 0 : groupStats.getTotalDislikes() / gcd;
 
         long nLikes, nDislikes;
-        if(gcdLikes > gcdDislikes) {
-            nLikes = gcdLikes / gcdDislikes;
-            nDislikes = 1;
+        if(gcd != 0) {
+            if(gcdLikes > gcdDislikes) {
+                nLikes = gcdLikes / gcdDislikes;
+                nDislikes = 1;
+            } else {
+                nLikes = 1;
+                nDislikes = gcdDislikes / gcdLikes;
+            }
         } else {
-            nLikes = 1;
-            nDislikes = gcdDislikes / gcdLikes;
+            nLikes = 0;
+            nDislikes = 0;
         }
+
 
         List<MGMVYouTubeObjectItem> popularVideos = groupStats.getMostViewed().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getViews(), "views"))
@@ -354,6 +365,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             popularViewersList.getItems().addAll(mostLikedViewers);
             activeViewersList.getItems().addAll(mostActiveViewers);
             viewerPane.setDisable(false);
+
+            btnReload.setDisable(false);
         });
     }
 
@@ -421,9 +434,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     }
 
     /**
-     * Source: https://stackoverflow.com/a/25643696/2650847
-     * Modifies a TextField's preferred width based on it's text content.
-     * @param field
+     * Modifies a TextField's preferred width based on it's text content
+     *
+     * @link https://stackoverflow.com/a/25643696/2650847
+     * @param field TextField element
      */
     private void resizeTextField(TextField field) {
         runLater(() -> {

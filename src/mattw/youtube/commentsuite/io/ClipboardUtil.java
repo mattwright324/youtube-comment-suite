@@ -35,7 +35,7 @@ public class ClipboardUtil {
 
 	/**
 	 * Sets clipboard to string value.
-	 * @param string
+	 * @param string text to set clipboard as
 	 */
 	public void setClipboard(String string) {
 		initSystemClipboard();
@@ -45,7 +45,7 @@ public class ClipboardUtil {
 
 	/**
 	 * Converts list into a line.separator delimited string and sets to clipboard.
-	 * @param list
+	 * @param list list of objects converted to line separated toString()
 	 */
 	public void setClipboard(List<?> list) {
 		List<String> strList = list.stream().map(Object::toString).collect(Collectors.toList());
@@ -55,7 +55,7 @@ public class ClipboardUtil {
 
 	/**
 	 * Coverts object to string value and sets to clipboard.
-	 * @param object
+	 * @param object uses toString() for clipboard
 	 */
 	public void setClipboard(Object object) {
 		setClipboard(object.toString());

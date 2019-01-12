@@ -57,10 +57,10 @@ public class SearchYouTubeListItem extends HBox {
             youtubeURL = String.format("https://youtu.be/%s", objectId);
             typeStr = "Video";
         } else if((objectId = data.getId().getChannelId()) != null) {
-            youtubeURL = String.format("https://youtube.com/channel/%s", objectId);
+            youtubeURL = String.format("https://www.youtube.com/channel/%s", objectId);
             typeStr = "Channel";
         } else if((objectId = data.getId().getPlaylistId()) != null) {
-            youtubeURL = String.format("https://youtube.com/playlist?list=%s", objectId);
+            youtubeURL = String.format("https://www.youtube.com/playlist?list=%s", objectId);
             typeStr = "Playlist";
         } else {
             logger.error("A SearchList.Item object has been passed with no id.");

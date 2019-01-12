@@ -51,6 +51,7 @@ public class MGMVRefreshModal extends HBox {
     private Group group;
     private RefreshInterface refreshThread;
     private boolean running = false;
+    private boolean hasBeenStarted = false;
 
     private boolean expanded = false;
 
@@ -100,9 +101,7 @@ public class MGMVRefreshModal extends HBox {
                         try { Thread.sleep(97); } catch (Exception ignored) {}
                     }
                     running = false;
-                    runLater(() -> {
-                        btnClose.setDisable(false);
-                    });
+                    runLater(() -> btnClose.setDisable(false));
                 } else {
                     running = true;
                     logger.debug(String.format("Starting group refresh for group [id=%s,name=%s]", group.getId(), group.getName()));
@@ -139,6 +138,7 @@ public class MGMVRefreshModal extends HBox {
                                         .concat(" total"));
                     });
                     refreshThread.start();
+                    hasBeenStarted = true;
                     refreshThread.endedProperty().addListener((o, ov, nv) -> {
                         progressBar.progressProperty().unbind();
                         runLater(() -> {
@@ -164,6 +164,7 @@ public class MGMVRefreshModal extends HBox {
     public void reset() {
         logger.debug("Resetting state of Refresh Modal");
         running = false;
+        hasBeenStarted = false;
         runLater(() -> {
             if(expanded) {
                 expand.fire();
@@ -193,4 +194,8 @@ public class MGMVRefreshModal extends HBox {
     public Button getBtnStart() { return btnStart; }
 
     public ListView<String> getErrorList() { return errorList; }
+
+    public boolean isHasBeenStarted() {
+        return hasBeenStarted;
+    }
 }

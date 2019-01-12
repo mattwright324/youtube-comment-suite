@@ -143,9 +143,9 @@ public class SearchYouTube implements Initializable {
 
         form.setOnKeyPressed(ke -> {
             if(ke.getCode() == KeyCode.ENTER) {
-                runLater(() -> {
-                    submit.fire();
-                });
+                runLater(() ->
+                    submit.fire()
+                );
             }
         });
         submit.setOnAction(ae -> {
@@ -157,19 +157,19 @@ public class SearchYouTube implements Initializable {
             logger.debug(String.format("Submit New Search [pageToken=%s,type=%s,text=%s,locText=%s,locRadius=%s,order=%s,result=%s]",
                     pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
                     searchRadius.getValue(), searchOrder.getValue(), resultType.getValue()));
-            new Thread(() -> {
+            new Thread(() ->
                 search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
                         searchRadius.getValue(), searchOrder.getValue(),
-                        resultType.getSelectionModel().getSelectedIndex());
-            }).start();
+                        resultType.getSelectionModel().getSelectedIndex())
+            ).start();
         });
-        btnNextPage.setOnAction(ae -> {
-            new Thread(() -> {
+        btnNextPage.setOnAction(ae ->
+            new Thread(() ->
                 search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
                         searchRadius.getValue(), searchOrder.getValue(),
-                        resultType.getSelectionModel().getSelectedIndex());
-            }).start();
-        });
+                        resultType.getSelectionModel().getSelectedIndex())
+            ).start()
+        );
 
         SYAddToGroupModal syAddToGroupModal = new SYAddToGroupModal(resultsList);
         addToGroupModal.setContent(syAddToGroupModal);

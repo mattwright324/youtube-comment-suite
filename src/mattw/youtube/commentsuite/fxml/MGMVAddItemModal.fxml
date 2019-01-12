@@ -32,9 +32,9 @@
                GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
         <Label text="Playlist" styleClass="bold, font14"
-               GridPane.columnIndex="0" GridPane.rowIndex="2" disable="true" />
+               GridPane.columnIndex="0" GridPane.rowIndex="2" />
         <Label text="https://www.youtube.com/playlist?list=PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc" styleClass="font14, addItemExample"
-               fx:id="link3" disable="true"
+               fx:id="link3"
                GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
         <Label text="Channel #1" styleClass="bold, font14"

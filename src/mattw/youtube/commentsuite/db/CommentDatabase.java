@@ -42,7 +42,7 @@ public class CommentDatabase implements Closeable {
     /**
      * Actual constructor.
      * @param dbfile name of database file
-     * @throws SQLException
+     * @throws SQLException failed to create database
      */
     public CommentDatabase(String dbfile) throws SQLException {
         logger.debug(String.format("Initialize Database [file=%s]", dbfile));
