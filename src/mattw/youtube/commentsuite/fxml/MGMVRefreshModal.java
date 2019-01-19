@@ -22,8 +22,12 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 
 /**
- * Modal for group refreshing set as content within an OverlayModal.
+ * This modal allows the user to start a group refresh. The group refresh will use the YouTube API to download
+ * videos under the GroupItems of the Group in the ManageGroupsManager.
  *
+ * @see RefreshInterface
+ * @see MGMVGroupRefresh
+ * @see ManageGroupsManager
  * @since 2018-12-30
  * @author mattwright324
  */

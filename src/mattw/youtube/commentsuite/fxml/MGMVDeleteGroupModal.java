@@ -16,6 +16,12 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 /**
+ * This modal allows the user to delete the entire Group of its ManageGroupsManager. This deletes only the Group
+ * object from the database and does not clean up its GroupItems, Videos, Comments, or Channels unless the
+ * vacuum option is selected before deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
+ * if they did not select vacuum when deleting.
+ *
+ * @see ManageGroupsManager
  * @since 2018-12-30
  * @author mattwright324
  */

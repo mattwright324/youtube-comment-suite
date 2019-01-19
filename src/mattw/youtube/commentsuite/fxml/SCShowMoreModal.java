@@ -22,6 +22,11 @@ import java.io.IOException;
 import static javafx.application.Platform.runLater;
 
 /**
+ * This modal allows the user to see a specific comment in scrollable TextArea so that they may read the comment
+ * in its entirety. It also allows the user to reply to the comment with any of currently signed-into accounts
+ * if they exist.
+ *
+ * @see SearchComments
  * @since 2018-12-30
  * @author mattwright324
  */

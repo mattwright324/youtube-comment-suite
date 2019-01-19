@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 import static javafx.application.Platform.runLater;
 
 /**
+ * This modal allows the user to remove all GroupItems from the Group of its ManageGroupManager.
+ *
+ * @see ManageGroupsManager
  * @since 2018-12-30
  * @author mattwright324
  */

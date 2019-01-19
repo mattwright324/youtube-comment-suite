@@ -6,13 +6,19 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.control.Label?>
+<?import javafx.geometry.Insets?>
 <fx:root type="VBox"
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml"
          spacing="10">
     <HBox styleClass="alert, alertPrimary">
-        <Label fx:id="" styleClass="alertPrimary" />
-
+        <padding>
+            <Insets topRightBottomLeft="5" />
+        </padding>
+        <Label fx:id="lblSelection" text="group > groupItem > videos"
+               HBox.hgrow="ALWAYS" minWidth="0" maxWidth="Infinity"
+               styleClass="alertPrimary, bold" style="-fx-border-color: transparent;" />
+        <ImageView fx:id="btnReset" fitHeight="25" fitWidth="25" />
     </HBox>
     <ListView fx:id="videoList" maxHeight="Infinity" VBox.vgrow="ALWAYS" />
     <HBox spacing="10" alignment="CENTER_RIGHT">

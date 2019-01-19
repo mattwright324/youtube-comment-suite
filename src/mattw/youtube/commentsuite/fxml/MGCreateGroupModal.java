@@ -13,6 +13,9 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 
 /**
+ * This modal allows the user to create a new and empty Group with the name of their choosing. The name must be unique.
+ *
+ * @see ManageGroups
  * @since 2018-12-30
  * @author mattwright324
  */

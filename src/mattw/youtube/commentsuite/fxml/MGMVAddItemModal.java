@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * This modal allows the user to add a GroupItem to the Group of the ManageGroupsManager with a YouTube link.
+ * The YouTube link can be any of a video, channel, or playlist and should match the example formats to be accepted.
+ *
+ * @see GroupItem#GroupItem(String)
+ * @see ManageGroupsManager
  * @since 2018-12-30
  * @author mattwright324
  */

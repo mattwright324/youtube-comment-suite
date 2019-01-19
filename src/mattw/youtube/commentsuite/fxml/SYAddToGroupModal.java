@@ -22,6 +22,10 @@ import java.util.stream.Collectors;
 import static javafx.application.Platform.runLater;
 
 /**
+ * This modal allows the user to add selected items (Videos, Channels, Playlists) from the Search YouTube section to an
+ * already existing group or create an entirely new group to add the selection to.
+ *
+ * @see SearchYouTube
  * @since 2018-12-30
  * @author mattwright324
  */

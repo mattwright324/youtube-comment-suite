@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.ProgressBar;
 import mattw.youtube.commentsuite.db.*;
 import mattw.youtube.commentsuite.io.ElapsedTime;
+import mattw.youtube.commentsuite.io.Tuple;
 import mattw.youtube.datav3.Parts;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.entrypoints.*;
@@ -33,31 +34,6 @@ import java.util.stream.Collectors;
 public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     private Logger logger = LogManager.getLogger(getClass().getSimpleName());
-
-    /**
-     * Tuple to hold commentThreadId and videoId for consuming threads.
-     *
-     * VideoId's are not included in comment thread / comments.list. Using tuple
-     * to pair a comment thread id with the video it was found on.
-     *
-     * @author mattwright324
-     * @param <K>
-     * @param <V>
-     */
-    private class Tuple<K,V> {
-        final K first;
-        final V second;
-        Tuple(K first, V second) {
-            this.first = first;
-            this.second = second;
-        }
-        public K getFirst() {
-            return first;
-        }
-        public V getSecond() {
-            return second;
-        }
-    }
 
     private Group group;
     private ObservableList<String> errorList = FXCollections.observableArrayList();
@@ -475,6 +451,13 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                             if(c.getReplyCount() > 0) {
                                                 incrTotalProgress(1);
                                                 updateProgress();
+
+                                                /*
+                                                 * Tuple to hold commentThreadId and videoId for consuming threads.
+                                                 *
+                                                 * VideoId's are not included in comment thread / comments.list. Using tuple
+                                                 * to pair a comment thread id with the video it was found on.
+                                                 */
                                                 commentThreadQueue.add(new Tuple<>(c.getYoutubeId(), video.getYoutubeId()));
                                             }
                                         });

@@ -16,8 +16,6 @@ import java.io.InputStreamReader;
  *  - Use in NamedParameterStatement (:params)
  *  - String replacement before use in one of above (:order)
  *
- * TODO: Query 'Snippets' to be used/replaced for group/gitem selection.
- *
  * @since 2018-12-30
  * @author mattwright324
  */
