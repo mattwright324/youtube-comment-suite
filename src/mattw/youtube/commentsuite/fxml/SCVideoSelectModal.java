@@ -13,13 +13,17 @@ import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.commentsuite.db.GroupItem;
+import mattw.youtube.commentsuite.db.YouTubeVideo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * This modal allows the user to select a specific video to list comments from that are within the currently
+ * This modal allows the user to select a specific video for comment searching that are within the currently
  * selected Group and GroupItem prior to opening the modal.
  *
  * @see SearchComments
@@ -32,13 +36,14 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
 
     private CommentDatabase database;
 
-    private @FXML Label lblSelection;
-    private @FXML ListView videoList;
+    private @FXML Label lblSelection, errorMsg;
+    private @FXML ListView<MGMVYouTubeObjectItem> videoList;
     private @FXML ImageView btnReset;
     private @FXML Button btnClose, btnSubmit;
 
     private Group group;
     private GroupItem groupItem;
+    private YouTubeVideo selectedVideo;
 
     public SCVideoSelectModal() {
         logger.debug("Initialize SCVideoSelectModal");
@@ -54,7 +59,9 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
             btnReset.setImage(ImageLoader.CLOSE.getImage());
             btnReset.setDisable(true);
 
-
+            videoList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+                //selectedVideo = nv;
+            });
 
             // TODO: Add video selection funcationality.
         } catch (IOException e) { logger.error("An error occurred loading the SCVideoSelectModal", e); }
@@ -68,12 +75,40 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
         return btnSubmit;
     }
 
-    public void loadWith(Group group, GroupItem groupItem) {
+    YouTubeVideo getSelectedVideo() {
+        return selectedVideo;
+    }
 
+    void loadWith(Group group, GroupItem groupItem) {
+        if(this.group != group || this.groupItem != groupItem) {
+            this.group = group;
+            this.groupItem = groupItem;
+            this.selectedVideo = null;
+            videoList.getSelectionModel().clearSelection();
+        }
+
+        updateSelectionLabel();
+    }
+
+    void updateSelectionLabel() {
+        btnReset.setDisable(selectedVideo == null);
+        lblSelection.setText(String.format("%s > %s > %s",
+                group.getName(),
+                groupItem.getTitle(),
+                selectedVideo != null ? selectedVideo.getTitle() : "All Videos"));
+    }
+
+    void updateVideoList() throws SQLException {
+        List<YouTubeVideo> videos;
+        List<MGMVYouTubeObjectItem> itemList = new ArrayList<>();
+
+        if(groupItem.getYoutubeId().equals(GroupItem.ALL_ITEMS)) {
+            videos = database.getVideos(groupItem, "", "", 50);
+        }
     }
 
     @Override
     public void cleanUp() {
-
+        updateSelectionLabel();
     }
 }

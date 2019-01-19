@@ -280,6 +280,10 @@ public class SearchComments implements Initializable, ImageCache {
         videoSelectModal.setPadding(new Insets(25));
         HBox.setHgrow(videoSelectModal.getModalContainer(), Priority.ALWAYS);
         videoSelect.setOnAction(ae -> runLater(() -> {
+            Group group = comboGroupSelect.getValue();
+            GroupItem groupItem = comboGroupItemSelect.getValue();
+
+            scVideoSelectModal.loadWith(group, groupItem);
             scVideoSelectModal.cleanUp();
             videoSelectModal.setVisible(true);
         }));
