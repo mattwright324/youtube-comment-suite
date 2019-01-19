@@ -11,6 +11,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.io.BrowserUtil;
@@ -85,7 +86,7 @@ public class SearchYouTube implements Initializable {
         youtubeApi = FXMLSuite.getYoutubeApi();
         this.location = FXMLSuite.getLocation();
 
-        SelectionModel selectionModel = resultsList.getSelectionModel();
+        MultipleSelectionModel selectionModel = resultsList.getSelectionModel();
 
         searchIcon.setImage(ImageLoader.SEARCH.getImage());
         geoIcon.setImage(ImageLoader.LOCATION.getImage());
@@ -99,12 +100,12 @@ public class SearchYouTube implements Initializable {
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         menuCopyId.setOnAction(ae -> {
-            List<SearchYouTubeListItem> list =  ((MultipleSelectionModel) selectionModel).getSelectedItems();
+            List<SearchYouTubeListItem> list = selectionModel.getSelectedItems();
             List<String> ids = list.stream().map(SearchYouTubeListItem::getObjectId).collect(Collectors.toList());
             clipboardUtil.setClipboard(ids);
         });
         menuOpenBrowser.setOnAction(ae -> {
-            List<SearchYouTubeListItem> list =  ((MultipleSelectionModel) selectionModel).getSelectedItems();
+            List<SearchYouTubeListItem> list = selectionModel.getSelectedItems();
             for(SearchYouTubeListItem view : list) {
                 browserUtil.open(view.getYoutubeURL());
             }
@@ -113,12 +114,12 @@ public class SearchYouTube implements Initializable {
         menuDeselectAll.setOnAction(ae -> selectionModel.clearSelection());
 
         btnAddToGroup.disableProperty().bind(selectionModel.selectedIndexProperty().isEqualTo(-1));
-        ((MultipleSelectionModel) selectionModel).getSelectedItems().addListener((ListChangeListener)(c -> {
-            int items = ((MultipleSelectionModel) selectionModel).getSelectedItems().size();
+        selectionModel.getSelectedItems().addListener((ListChangeListener)(c -> {
+            int items = selectionModel.getSelectedItems().size();
             runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", items)));
         }));
         resultsList.itemsProperty().addListener((o, ov, nv) -> runLater(() -> {
-            int selectedCount = ((MultipleSelectionModel) selectionModel).getSelectedItems().size();
+            int selectedCount = selectionModel.getSelectedItems().size();
             btnAddToGroup.setText(String.format("Add to Group (%s)", selectedCount));
         }));
 

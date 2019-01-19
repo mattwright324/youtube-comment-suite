@@ -21,6 +21,7 @@ public class OverlayModal<T extends Pane> extends StackPane {
 
     private @FXML Label title;
     private @FXML Label divider;
+    private @FXML Label topSpacer, bottomSpacer;
     private @FXML StackPane content;
     private @FXML VBox modalContainer;
 
@@ -55,5 +56,24 @@ public class OverlayModal<T extends Pane> extends StackPane {
 
     public VBox getModalContainer() {
         return this.modalContainer;
+    }
+
+    public Label getTopSpacer() {
+        return topSpacer;
+    }
+
+    public Label getBottomSpacer() {
+        return bottomSpacer;
+    }
+
+    /**
+     * Enable/disable the spacers. The spacers make the modal content shrink vertically to its minimum height.
+     * @param show show/hide the spacers
+     */
+    void showSpacers(boolean show) {
+        topSpacer.setVisible(show);
+        topSpacer.setManaged(show);
+        bottomSpacer.setVisible(show);
+        bottomSpacer.setManaged(show);
     }
 }

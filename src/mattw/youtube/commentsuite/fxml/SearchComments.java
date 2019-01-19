@@ -9,12 +9,14 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageCache;
@@ -273,6 +275,10 @@ public class SearchComments implements Initializable, ImageCache {
 
         SCVideoSelectModal scVideoSelectModal = new SCVideoSelectModal();
         videoSelectModal.setContent(scVideoSelectModal);
+        videoSelectModal.getModalContainer().setMaxWidth(Double.MAX_VALUE);
+        videoSelectModal.showSpacers(false);
+        videoSelectModal.setPadding(new Insets(25));
+        HBox.setHgrow(videoSelectModal.getModalContainer(), Priority.ALWAYS);
         videoSelect.setOnAction(ae -> runLater(() -> {
             scVideoSelectModal.cleanUp();
             videoSelectModal.setVisible(true);

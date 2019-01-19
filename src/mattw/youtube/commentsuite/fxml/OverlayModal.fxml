@@ -9,9 +9,12 @@
          styleClass="overlay"
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml">
+    <padding>
+        <Insets topRightBottomLeft="10" />
+    </padding>
     <VBox alignment="CENTER">
-        <fx:include source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
-        <VBox fx:id="modalContainer" styleClass="overlayMenu, border4" maxWidth="420">
+        <fx:include fx:id="topSpacer" source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
+        <VBox fx:id="modalContainer" styleClass="overlayMenu, border4" VBox.vgrow="SOMETIMES" maxWidth="420">
             <HBox alignment="CENTER_RIGHT">
                 <padding>
                     <Insets right="10" left="10" />
@@ -19,13 +22,13 @@
                 <Label fx:id="title" styleClass="bold" maxHeight="35" minHeight="35" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
             </HBox>
             <Label fx:id="divider" styleClass="divider, dividerPrimary" maxWidth="Infinity" maxHeight="4" minHeight="4" />
-            <VBox spacing="10">
+            <VBox VBox.vgrow="SOMETIMES" spacing="10">
                 <padding>
                     <Insets topRightBottomLeft="10" />
                 </padding>
-                <StackPane fx:id="content" />
+                <StackPane VBox.vgrow="SOMETIMES" fx:id="content" />
             </VBox>
         </VBox>
-        <fx:include source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
+        <fx:include fx:id="bottomSpacer" source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
     </VBox>
 </fx:root>
