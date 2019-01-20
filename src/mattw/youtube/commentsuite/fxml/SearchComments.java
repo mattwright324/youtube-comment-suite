@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
@@ -279,6 +280,7 @@ public class SearchComments implements Initializable, ImageCache {
         videoSelectModal.showSpacers(false);
         videoSelectModal.setPadding(new Insets(25));
         HBox.setHgrow(videoSelectModal.getModalContainer(), Priority.ALWAYS);
+        videoSelect.textProperty().bind(scVideoSelectModal.valueProperty());
         videoSelect.setOnAction(ae -> runLater(() -> {
             Group group = comboGroupSelect.getValue();
             GroupItem groupItem = comboGroupItemSelect.getValue();
@@ -289,6 +291,8 @@ public class SearchComments implements Initializable, ImageCache {
         }));
         scVideoSelectModal.getBtnClose().setOnAction(ae -> videoSelectModal.setVisible(false));
         scVideoSelectModal.getBtnSubmit().setOnAction(ae -> videoSelectModal.setVisible(false));
+        comboGroupSelect.valueProperty().addListener((o, ov, nv) -> scVideoSelectModal.reset());
+        comboGroupItemSelect.valueProperty().addListener((o, ov, nv) -> scVideoSelectModal.reset());
 
         SCShowMoreModal scShowMoreModal = new SCShowMoreModal();
         showMoreModal.setContent(scShowMoreModal);
@@ -423,6 +427,8 @@ public class SearchComments implements Initializable, ImageCache {
             GroupItem groupItem = comboGroupItemSelect.getSelectionModel().getSelectedItem();
             groupItem = GroupItem.ALL_ITEMS.equals(groupItem.getYoutubeId()) ? null : groupItem;
 
+            YouTubeVideo selectedVideo = videoSelectModal.getContent().getSelectedVideo();
+
             elapsedTime.setNow();
             lastResultsList = query
                     .ctype(comboCommentType.getSelectionModel().getSelectedIndex())
@@ -431,7 +437,7 @@ public class SearchComments implements Initializable, ImageCache {
                     .nameLike(nameLike.getText())
                     .before(localDateToEpochMillis(dateTo.getValue(), true))
                     .after(localDateToEpochMillis(dateFrom.getValue(), false))
-                    .get(page, group, groupItem, null);
+                    .get(page, group, groupItem, Collections.singletonList(selectedVideo));
             logger.debug(String.format("Query completed [time=%s,comments=%s]",
                     elapsedTime.getElapsedString(),
                     lastResultsList.size()));

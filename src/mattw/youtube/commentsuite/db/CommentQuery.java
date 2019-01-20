@@ -61,16 +61,16 @@ public class CommentQuery {
 
         String subquery;
         Map<String,Object> map = new HashMap<>();
-        if(gitem != null) {
-            subquery = "SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE gitem_id = :gitem";
-            map.put("gitem", gitem.getYoutubeId());
-        } else if(videos != null) {
+        if(videos != null && !videos.isEmpty()) {
             List<String> vl = new ArrayList<>();
             for(int i=0; i<videos.size(); i++) {
                 vl.add(":v"+i);
                 map.put("v"+i,videos.get(i).getYoutubeId());
             }
             subquery = String.join(" ", vl);
+        } else if(gitem != null) {
+            subquery = "SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE gitem_id = :gitem";
+            map.put("gitem", gitem.getYoutubeId());
         } else {
             subquery = "SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) WHERE group_id = :group";
             map.put("group", group.getId());

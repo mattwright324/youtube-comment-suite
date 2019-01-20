@@ -33,11 +33,21 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
 
     private YouTubeObject object;
     private Long value;
+    private String subtitleText;
     private String subtitleSuffix;
     private boolean commentsDisabled = false;
     private boolean isVideo = true;
+    private boolean justSubtitle = false;
 
     private BrowserUtil browserUtil = new BrowserUtil();
+
+    public MGMVYouTubeObjectItem(YouTubeVideo video, String subtitle) {
+        this.object = video;
+        this.subtitleText = subtitle;
+        this.justSubtitle = true;
+
+        initialize();
+    }
 
     public MGMVYouTubeObjectItem(YouTubeVideo video, Long value, String subtitleSuffix) {
         this(video, value, subtitleSuffix, false);
@@ -86,9 +96,9 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
 
             title.setText(object.getTitle());
 
-            subtitle.setText(commentsDisabled ?
-                    String.format("%s", subtitleSuffix) :
-                    String.format("%,d %s", value, subtitleSuffix));
+            subtitle.setText(justSubtitle ? subtitleText :
+                        (commentsDisabled ? String.format("%s", subtitleSuffix) :
+                                String.format("%,d %s", value, subtitleSuffix)));
 
             if(commentsDisabled) {
                 subtitle.setStyle("-fx-text-fill:orangered");
@@ -96,7 +106,10 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
         } catch (IOException e) {
             logger.error("Failed to initialize MGMVYouTubeObjectListItem", e);
         }
+    }
 
+    public YouTubeObject getObject() {
+        return object;
     }
 
 }
