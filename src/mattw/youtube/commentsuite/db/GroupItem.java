@@ -101,8 +101,6 @@ public class GroupItem extends YouTubeObject {
     private void ofLink(String fullLink) throws IOException {
         logger.debug("Matching link to type [fullLink={}]", fullLink);
 
-        YouTubeData3 youtube = FXMLSuite.getYoutubeApi();
-
         Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
         Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
         Pattern playlist = Pattern.compile("(?:http[s]?://www.youtube.com/playlist\\?list=)([\\w_\\-]+)");
@@ -130,6 +128,8 @@ public class GroupItem extends YouTubeObject {
             type = YType.CHANNEL;
             channelUsername = true;
         }
+
+        YouTubeData3 youtube = FXMLSuite.getYoutubeApi();
 
         if(result.isEmpty()) {
             throw new IOException(String.format("Input did not match expected formats [fullLink=%s]", fullLink));
@@ -180,7 +180,7 @@ public class GroupItem extends YouTubeObject {
         setTitle(groupItem.getTitle());
         setThumbUrl(groupItem.getThumbUrl());
         setFetchThumb(groupItem.isFetchThumb());
-        setYoutubeLink(groupItem.getYoutubeLink());
+        setYouTubeLink(groupItem.getYouTubeLink());
 
         setChannelTitle(groupItem.getChannelTitle());
         setLastChecked(groupItem.getLastChecked());

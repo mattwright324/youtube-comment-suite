@@ -17,7 +17,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * @since 2018-12-30
+ * @since 2019-01-21
  * @author mattwright324
  */
 public class OAuth2Handler {
@@ -96,15 +96,22 @@ public class OAuth2Handler {
     }
 
     /**
-     * Posts a reply to a comment, parentId.
+     * Attempts to send a reply to the parent comment id and text supplied. It will attempt to send to reply 10 times
+     * before failure and throwing an error. On each failure, if it detects the tokens used by the account have
+     * expired, it will attempt to refresh them and use and newly updated tokens.
+     *
+     * @param parentId id of comment or parentId of reply-comment to reply to
+     * @param textOriginal text to reply to the comment with
+     * @throws IOException failed to reply
      */
-    public CommentsList.Item postReply(String parentId, String textOriginal) throws IOException, YouTubeErrorException {
+    public CommentsList.Item postReply(String parentId, String textOriginal) throws IOException {
         String payload = gson.toJson(new MakeReply(parentId, textOriginal));
-        String replyUrl = String.format("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token=%s",
-                tokens.getAccessToken());
 
         int attempt = 0;
         do {
+            String replyUrl = String.format("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token=%s",
+                    tokens.getAccessToken());
+
             HttpsURLConnection conn = (HttpsURLConnection) new URL(replyUrl).openConnection();
             try {
                 conn.setDoInput(true);

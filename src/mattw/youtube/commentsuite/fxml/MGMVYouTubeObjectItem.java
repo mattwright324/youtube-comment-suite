@@ -80,7 +80,7 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
 
             thumbnail.setImage(ImageLoader.LOADING.getImage());
             thumbnail.setCursor(Cursor.HAND);
-            thumbnail.setOnMouseClicked(me -> browserUtil.open(object.getYouTubeLink()));
+            thumbnail.setOnMouseClicked(me -> browserUtil.open(object.buildYouTubeLink()));
 
             if(isVideo) {
                 thumbnail.setFitWidth(89);

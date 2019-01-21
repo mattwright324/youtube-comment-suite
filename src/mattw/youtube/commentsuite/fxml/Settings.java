@@ -13,6 +13,7 @@ import javafx.scene.web.WebView;
 import mattw.youtube.commentsuite.*;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.io.BrowserUtil;
+import mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,6 +38,7 @@ public class Settings implements Initializable {
     private ConfigFile<ConfigData> config;
     private OAuth2Handler oauth2;
     private CommentDatabase database;
+    private YouTubeData3 youtube, youtubeForAccounts;
 
     private @FXML Pane settingsPane;
 
@@ -75,6 +77,8 @@ public class Settings implements Initializable {
         oauth2 = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
         database = FXMLSuite.getDatabase();
+        youtube = FXMLSuite.getYoutubeApi();
+        youtubeForAccounts = FXMLSuite.getYoutubeApiForAccounts();
 
         ConfigData configData = config.getDataObject();
         configData.refreshAccounts();
@@ -151,10 +155,17 @@ public class Settings implements Initializable {
             data.setArchiveThumbs(downloadThumbs.isSelected());
             data.setCustomApiKey(customKey.isSelected());
             data.setYoutubeApiKey(youtubeApiKey.getText());
-            // TODO: Set account data.
-            // data.getAccounts().addAll()
+
             config.setDataObject(data);
             config.save();
+
+            if(customKey.isSelected()) {
+                youtube.setDataApiKey(data.getYoutubeApiKey());
+                youtubeForAccounts.setDataApiKey(data.getYoutubeApiKey());
+            } else {
+                youtube.setDataApiKey(data.getDefaultApiKey());
+                youtubeForAccounts.setDataApiKey(data.getDefaultApiKey());
+            }
 
             logger.debug("Closing Settings");
             settingsPane.setManaged(false);

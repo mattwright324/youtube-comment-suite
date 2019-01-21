@@ -217,7 +217,7 @@ public class SearchComments implements Initializable, ImageCache {
         openInBrowser.setOnAction(ae -> {
             String link = scSelection.getSelectedItem()
                     .getComment()
-                    .getYouTubeLink();
+                    .buildYouTubeLink();
             browserUtil.open(link);
         });
         copyNames.setOnAction(ae -> {
@@ -245,7 +245,7 @@ public class SearchComments implements Initializable, ImageCache {
                     .stream()
                     .map(SearchCommentsListItem::getComment)
                     .map(YouTubeComment::getChannel)
-                    .map(YouTubeChannel::getYouTubeLink)
+                    .map(YouTubeChannel::buildYouTubeLink)
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -255,7 +255,7 @@ public class SearchComments implements Initializable, ImageCache {
             List<String> uniqueCommentLinks = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
-                    .map(YouTubeComment::getYouTubeLink)
+                    .map(YouTubeComment::buildYouTubeLink)
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -332,9 +332,9 @@ public class SearchComments implements Initializable, ImageCache {
                         StringEscapeUtils.unescapeHtml4(v.getDescription())));
 
                 videoThumb.setCursor(Cursor.HAND);
-                videoThumb.setOnMouseClicked(me -> browserUtil.open(v.getYouTubeLink()));
+                videoThumb.setOnMouseClicked(me -> browserUtil.open(v.buildYouTubeLink()));
                 authorThumb.setCursor(Cursor.HAND);
-                authorThumb.setOnMouseClicked(me -> browserUtil.open(va.getYouTubeLink()));
+                authorThumb.setOnMouseClicked(me -> browserUtil.open(va.buildYouTubeLink()));
             });
 
             Image vthumb = ImageCache.findOrGetImage(video);

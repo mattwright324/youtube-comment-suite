@@ -2,6 +2,7 @@ package mattw.youtube.commentsuite;
 
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.ObservableList;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -10,8 +11,8 @@ import java.util.List;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
+ * @since 2018-12-30
  */
 public class ConfigData implements Serializable {
 
@@ -25,32 +26,42 @@ public class ConfigData implements Serializable {
     private List<YouTubeAccount> accounts = new ArrayList<>();
     private String youtubeApiKey = defaultApiKey;
 
-    public ConfigData() { }
+    public ConfigData() {}
 
-    public String getDefaultApiKey() { return defaultApiKey; }
+    public String getDefaultApiKey() {
+        return defaultApiKey;
+    }
 
-    public String getYoutubeApiKey() { return customApiKey ? youtubeApiKey : defaultApiKey; }
-    public void setYoutubeApiKey(String apiKey) { this.youtubeApiKey = apiKey; }
+    public String getYoutubeApiKey() {
+        return customApiKey ? youtubeApiKey : defaultApiKey;
+    }
 
-    public List<YouTubeAccount> getAccounts() { return accounts; }
+    public void setYoutubeApiKey(String apiKey) {
+        this.youtubeApiKey = apiKey;
+    }
+
+    public List<YouTubeAccount> getAccounts() {
+        return accounts;
+    }
 
     public void refreshAccounts() {
         accounts.forEach(acc -> {
-            FXMLSuite.getYoutubeApi().setProfileAccessToken(acc.getTokens().getAccessToken());
+            FXMLSuite.getYoutubeApiForAccounts()
+                    .setProfileAccessToken(acc.getTokens().getAccessToken());
 
             acc.updateData();
         });
     }
 
     public void addAccount(YouTubeAccount account) {
-        if(accounts.stream().noneMatch(ac -> ac.getChannelId().equals(account.getChannelId()))) {
+        if (accounts.stream().noneMatch(ac -> ac.getChannelId().equals(account.getChannelId()))) {
             accounts.add(account);
             triggerAccountListChanged();
         }
     }
 
     public void removeAccount(YouTubeAccount account) {
-        if(accounts.removeIf(acc -> acc.getChannelId() != null && acc.getChannelId().equals(account.getChannelId()))) {
+        if (accounts.removeIf(acc -> acc.getChannelId() != null && acc.getChannelId().equals(account.getChannelId()))) {
             triggerAccountListChanged();
         }
     }
@@ -60,19 +71,39 @@ public class ConfigData implements Serializable {
     }
 
     public void triggerAccountListChanged() {
-        runLater(() -> accountListChanged.setValue(accountListChanged.getValue()+1));
+        runLater(() -> accountListChanged.setValue(accountListChanged.getValue() + 1));
     }
 
-    public boolean usingCustomApiKey() { return customApiKey; }
-    public void setCustomApiKey(boolean customApiKey) { this.customApiKey = customApiKey; }
+    public boolean usingCustomApiKey() {
+        return customApiKey;
+    }
 
-    public boolean getArchiveThumbs() { return archiveThumbs; }
-    public void setArchiveThumbs(boolean archiveThumbs) { this.archiveThumbs = archiveThumbs; }
+    public void setCustomApiKey(boolean customApiKey) {
+        this.customApiKey = customApiKey;
+    }
 
-    public boolean getPrefixReplies() { return prefixReplies; }
-    public void setPrefixReplies(boolean prefixReplies) { this.prefixReplies = prefixReplies; }
+    public boolean getArchiveThumbs() {
+        return archiveThumbs;
+    }
 
-    public boolean getAutoLoadStats() { return autoLoadStats; }
-    public void setAutoLoadStats(boolean autoLoadStats) { this.autoLoadStats = autoLoadStats; }
+    public void setArchiveThumbs(boolean archiveThumbs) {
+        this.archiveThumbs = archiveThumbs;
+    }
+
+    public boolean getPrefixReplies() {
+        return prefixReplies;
+    }
+
+    public void setPrefixReplies(boolean prefixReplies) {
+        this.prefixReplies = prefixReplies;
+    }
+
+    public boolean getAutoLoadStats() {
+        return autoLoadStats;
+    }
+
+    public void setAutoLoadStats(boolean autoLoadStats) {
+        this.autoLoadStats = autoLoadStats;
+    }
 
 }

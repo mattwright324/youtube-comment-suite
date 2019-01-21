@@ -65,6 +65,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
         orderTypes.put("By Date", "publish_date DESC");
         orderTypes.put("By Title", "video_title ASC");
         orderTypes.put("By Views", "total_views DESC");
+        orderTypes.put("By Comments", "total_comments DESC");
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SCVideoSelectModal.fxml"));
         loader.setController(this);
@@ -154,9 +155,10 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                     videoList.getItems().clear();
                     videoList.getItems().addAll(videos.stream()
                             .map(video -> {
-                                String subtitle = String.format("Published %s • %,d views",
+                                String subtitle = String.format("Published %s • %,d views • %,d comments",
                                         sdf.format(new Date(video.getPublishedDate())),
-                                        video.getViews());
+                                        video.getViews(),
+                                        video.getCommentCount());
 
                                 return new MGMVYouTubeObjectItem(video, subtitle);
                             })

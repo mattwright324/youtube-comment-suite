@@ -8,11 +8,12 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.control.CheckBox?>
 <fx:root type="VBox"
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml"
          spacing="10">
-    <fx:include source="AlertLabel.fxml" styleClass="alertWarning"
+    <fx:include fx:id="errorMsg" source="AlertLabel.fxml" styleClass="alertWarning"
                 alignment="CENTER" managed="false" visible="false"
                 text="" />
     <HBox spacing="10">
@@ -37,6 +38,7 @@
             <TextArea fx:id="replyText"
                       promptText="Write your reply here..."
                       wrapText="true" />
+            <CheckBox fx:id="openReply" text="Open your reply in the browser." />
         </VBox>
     </HBox>
     <HBox spacing="10" alignment="CENTER_RIGHT">

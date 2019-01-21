@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * SQL query builder to query comments in database
@@ -61,7 +62,7 @@ public class CommentQuery {
 
         String subquery;
         Map<String,Object> map = new HashMap<>();
-        if(videos != null && !videos.isEmpty()) {
+        if(videos != null && !videos.stream().filter(Objects::nonNull).collect(Collectors.toList()).isEmpty()) {
             List<String> vl = new ArrayList<>();
             for(int i=0; i<videos.size(); i++) {
                 vl.add(":v"+i);

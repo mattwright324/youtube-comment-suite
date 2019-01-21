@@ -14,6 +14,7 @@ import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.db.*;
 import mattw.youtube.datav3.YouTubeData3;
+import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -91,7 +92,13 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                         }
                     }
                 } catch (IOException e) {
-                    runLater(() -> setError(e.getLocalizedMessage()));
+                    String message;
+                    if(e instanceof YouTubeErrorException) {
+                        message = ((YouTubeErrorException) e).getError().getMessage();
+                    } else {
+                        message = e.getMessage();
+                    }
+                    runLater(() -> setError(message));
 
                     logger.error("Failed to submit link", e);
                 }

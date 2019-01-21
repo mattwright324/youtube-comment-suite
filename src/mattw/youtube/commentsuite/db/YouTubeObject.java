@@ -17,7 +17,13 @@ public abstract class YouTubeObject implements ImageCache {
     private String thumbUrl;
     private boolean fetchThumb;
 
-    private String youtubeLink;
+    /**
+     * This field differs from what's returned by  {@link #buildYouTubeLink()} because it is used solely by
+     * {@link GroupItem} as part of field duplication.
+     *
+     * TODO: Can potentially remove this field entirely? It does not appear to be set or used anywhere.
+     */
+    private String youTubeLink;
 
     public YouTubeObject() {
         typeId = YType.UNKNOWN;
@@ -71,12 +77,12 @@ public abstract class YouTubeObject implements ImageCache {
         this.fetchThumb = fetchThumb;
     }
 
-    public String getYoutubeLink() {
-        return youtubeLink;
+    public String getYouTubeLink() {
+        return youTubeLink;
     }
 
-    public void setYoutubeLink(String youtubeLink) {
-        this.youtubeLink = youtubeLink;
+    public void setYouTubeLink(String youTubeLink) {
+        this.youTubeLink = youTubeLink;
     }
 
     public String getTypeName() {
@@ -98,25 +104,22 @@ public abstract class YouTubeObject implements ImageCache {
         return ImageCache.toLetterAvatar(this);
     }
 
-    public String getYouTubeLink() {
-        switch(typeId.id()){
-            case 0:  return "https://youtu.be/"+youtubeId;
-            case 1:  return "https://www.youtube.com/channel/"+youtubeId;
-            case 2:  return "https://www.youtube.com/playlist?list="+youtubeId;
-            case 3:  return "https://www.youtube.com/watch?v="+(this instanceof YouTubeComment ? ((YouTubeComment) this).getVideoId()+"&lc="+youtubeId : youtubeId);
-            default: return "https://www.youtube.com/error/"+youtubeId;
+    /**
+     * Returns a full youtube link for videos, channels, playlists, and comments.
+     *
+     * @return full youtube link for the associated object's type
+     */
+    public String buildYouTubeLink() {
+        switch(typeId){
+            case VIDEO:    return "https://youtu.be/" + youtubeId;
+            case CHANNEL:  return "https://www.youtube.com/channel/" + youtubeId;
+            case PLAYLIST: return "https://www.youtube.com/playlist?list=" + youtubeId;
+            case COMMENT:  return "https://www.youtube.com/watch?v=" +
+                            (this instanceof YouTubeComment ? ((YouTubeComment) this).getVideoId() +
+                            "&lc="+youtubeId : youtubeId);
+            default:       return "https://www.youtube.com/error/" + youtubeId;
         }
     }
-
-    /*public String getTypeName() {
-        switch(typeId.id()) {
-            case 0: return "Video";
-            case 1: return "Channel";
-            case 2: return "Playlist";
-            case 3: return "Comment";
-            default: return "Error";
-        }
-    }*/
 
     public String toString() {
         return getYoutubeId();

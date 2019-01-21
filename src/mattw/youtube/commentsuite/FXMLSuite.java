@@ -29,22 +29,24 @@ public class FXMLSuite extends Application {
     private static Location location = new Location<EurekaProvider, EurekaProvider.Location>(
             new EurekaProvider(), EurekaProvider.Location.class);
     private static ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
-    private static YouTubeData3 youtubeApi;
+    private static YouTubeData3 youtubeApi, youtubeApiForAccounts;
     private static OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com",
             "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
     private static CommentDatabase database;
 
     public void start(Stage stage) {
         try {
+
             // System.setProperty("glass.win.uiScale", "100%");
             youtubeApi = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
+            youtubeApiForAccounts = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
             database = new CommentDatabase("commentsuite.sqlite3");
 
             Parent parent = FXMLLoader.load(getClass().getResource("/mattw/youtube/commentsuite/fxml/Main.fxml"));
 
             Scene scene = new Scene(parent);
             scene.getStylesheets().add("SuiteStyles.css");
-            stage.setTitle("FXML CommentSuite");
+            stage.setTitle("YouTube Comment Suite");
             stage.setScene(scene);
             stage.getIcons().add(ImageLoader.YCS_ICON.getImage());
             stage.setOnCloseRequest(we -> {
@@ -79,6 +81,10 @@ public class FXMLSuite extends Application {
         return youtubeApi;
     }
 
+    public static YouTubeData3 getYoutubeApiForAccounts() {
+        return youtubeApiForAccounts;
+    }
+
     public static OAuth2Handler getOauth2() {
         return oauth2;
     }
@@ -94,11 +100,12 @@ public class FXMLSuite extends Application {
     public static void main(String[] args) {
         logger.debug("Starting Application");
 
-        // *Fix* for issue with WebView not working
-        // when the Google 'Tap Yes' authentication method was used.
-        // It would do nothing and an icon would flicker --
-        // requiring alternative authentication such as entering
-        // an SMS code.
+        /*
+         * Setting this system property is a fix for the JavaFX Webview behaving improperly.
+         * The 'Tap Yes' authentication when signing in from {@link mattw.youtube.commentsuite.fxml.Settings)
+         * would do nothing and the icon would flicker when not set, requiring the user to use SMS
+         * authentication instead.
+         */
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 
         launch(args);

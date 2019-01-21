@@ -43,7 +43,7 @@ public class MGMVGroupItemView extends HBox {
             type.setText(groupItem.getTypeName());
 
             icon.setCursor(Cursor.HAND);
-            icon.setOnMouseClicked(me -> browserUtil.open(groupItem.getYouTubeLink()));
+            icon.setOnMouseClicked(me -> browserUtil.open(groupItem.buildYouTubeLink()));
 
             new Thread(() -> {
                 Image image = ImageCache.findOrGetImage(groupItem);

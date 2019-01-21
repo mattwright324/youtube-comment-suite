@@ -49,7 +49,7 @@ public class YouTubeAccount implements Serializable {
      */
     void updateData() {
         CommentDatabase database = FXMLSuite.getDatabase();
-        YouTubeData3 youtube = FXMLSuite.getYoutubeApi();
+        YouTubeData3 youtube = FXMLSuite.getYoutubeApiForAccounts();
 
         logger.debug("Getting account data for [accessToken={}]", this.tokens.getAccessToken().substring(0,10)+"...");
 

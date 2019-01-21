@@ -9,9 +9,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.HBox;
-import mattw.youtube.commentsuite.Cleanable;
-import mattw.youtube.commentsuite.ImageCache;
-import mattw.youtube.commentsuite.ImageLoader;
+import mattw.youtube.commentsuite.*;
 import mattw.youtube.commentsuite.db.YouTubeChannel;
 import mattw.youtube.commentsuite.db.YouTubeComment;
 import mattw.youtube.commentsuite.io.BrowserUtil;
@@ -42,9 +40,12 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     private YouTubeChannel channel;
 
     private BrowserUtil browserUtil = new BrowserUtil();
+    private ConfigData configData = new ConfigData();
 
     SearchCommentsListItem(YouTubeComment comment) throws IOException {
         this.comment = comment;
+
+        configData = FXMLSuite.getConfig().getDataObject();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SearchCommentsListItem.fxml"));
         loader.setController(this);
@@ -57,7 +58,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         checkProfileThumb();
 
         author.setText(channel.getTitle());
-        author.setOnAction(ae -> browserUtil.open(channel.getYouTubeLink()));
+        author.setOnAction(ae -> browserUtil.open(channel.buildYouTubeLink()));
         author.setBorder(Border.EMPTY);
 
         commentText.setText(comment.getCleanText());
@@ -85,8 +86,13 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             likes.setManaged(false);
         }
 
-        reply.setManaged(false);
-        reply.setVisible(false);
+        reply.setManaged(!configData.getAccounts().isEmpty());
+        reply.setVisible(!configData.getAccounts().isEmpty());
+
+        configData.accountListChangedProperty().addListener((o, ov, nv) -> {
+            reply.setManaged(!configData.getAccounts().isEmpty());
+            reply.setVisible(!configData.getAccounts().isEmpty());
+        });
     }
 
     YouTubeComment getComment() {
