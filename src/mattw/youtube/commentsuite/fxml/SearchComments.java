@@ -1,7 +1,5 @@
 package mattw.youtube.commentsuite.fxml;
 
-import static javafx.application.Platform.runLater;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -42,6 +40,8 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * @since 2018-12-30

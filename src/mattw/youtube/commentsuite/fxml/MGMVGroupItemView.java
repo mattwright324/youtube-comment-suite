@@ -1,6 +1,5 @@
 package mattw.youtube.commentsuite.fxml;
 
-import static javafx.application.Platform.runLater;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
@@ -13,6 +12,8 @@ import mattw.youtube.commentsuite.db.GroupItem;
 import mattw.youtube.commentsuite.io.BrowserUtil;
 
 import java.io.IOException;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * @since 2018-12-30

@@ -1,6 +1,5 @@
 package mattw.youtube.commentsuite.fxml;
 
-import static javafx.application.Platform.runLater;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -19,7 +18,10 @@ import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageCache;
 import mattw.youtube.commentsuite.ImageLoader;
-import mattw.youtube.commentsuite.db.*;
+import mattw.youtube.commentsuite.db.CommentDatabase;
+import mattw.youtube.commentsuite.db.Group;
+import mattw.youtube.commentsuite.db.GroupItem;
+import mattw.youtube.commentsuite.db.GroupStats;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,6 +33,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * Manages a specific group; refreshing, stats, renaming, deletion, adding group items, etc.

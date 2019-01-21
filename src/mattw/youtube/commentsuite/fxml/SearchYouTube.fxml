@@ -5,8 +5,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
-<?import java.lang.*?>
 <?import mattw.youtube.commentsuite.fxml.OverlayModal?>
+<?import java.lang.*?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            alignment="TOP_CENTER"

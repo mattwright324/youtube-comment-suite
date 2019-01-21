@@ -1,6 +1,5 @@
 package mattw.youtube.commentsuite.fxml;
 
-import static javafx.application.Platform.runLater;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -25,6 +24,8 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * @since 2018-12-30

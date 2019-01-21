@@ -1,7 +1,10 @@
 package mattw.youtube.commentsuite.db;
 
 import java.sql.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @since 2018-12-30

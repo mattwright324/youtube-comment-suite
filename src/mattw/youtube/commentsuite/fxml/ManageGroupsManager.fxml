@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
-<?import mattw.youtube.commentsuite.fxml.OverlayModal?>
-<?import javafx.scene.chart.LineChart?>
-<?import javafx.scene.chart.CategoryAxis?>
-<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.layout.*?>
+<?import mattw.youtube.commentsuite.fxml.*?>
+<?import java.lang.*?>
 <fx:root type="StackPane" alignment="TOP_CENTER"
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml">

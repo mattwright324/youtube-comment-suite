@@ -12,7 +12,6 @@ import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.entrypoints.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import static javafx.application.Platform.runLater;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -22,6 +21,8 @@ import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * Refresh implementation for MGMVRefreshModal with bindable properties.

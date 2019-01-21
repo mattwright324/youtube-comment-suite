@@ -1,6 +1,5 @@
 package mattw.youtube.commentsuite.fxml;
 
-import static javafx.application.Platform.runLater;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
@@ -29,6 +28,8 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * @since 2018-12-30

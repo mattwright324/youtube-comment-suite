@@ -1,6 +1,5 @@
 package mattw.youtube.commentsuite.fxml;
 
-import static javafx.application.Platform.runLater;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
@@ -14,6 +13,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * This modal allows the user to delete the entire Group of its ManageGroupsManager. This deletes only the Group

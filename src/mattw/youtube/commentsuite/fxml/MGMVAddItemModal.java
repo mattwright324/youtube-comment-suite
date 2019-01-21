@@ -1,7 +1,5 @@
 package mattw.youtube.commentsuite.fxml;
 
-import static javafx.application.Platform.runLater;
-
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
@@ -12,7 +10,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import mattw.youtube.commentsuite.Cleanable;
 import mattw.youtube.commentsuite.FXMLSuite;
-import mattw.youtube.commentsuite.db.*;
+import mattw.youtube.commentsuite.db.CommentDatabase;
+import mattw.youtube.commentsuite.db.Group;
+import mattw.youtube.commentsuite.db.GroupItem;
 import mattw.youtube.datav3.YouTubeData3;
 import mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * This modal allows the user to add a GroupItem to the Group of the ManageGroupsManager with a YouTube link.

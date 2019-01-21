@@ -2,11 +2,12 @@ package mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import static javafx.application.Platform.runLater;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.SelectionModel;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import mattw.youtube.commentsuite.FXMLSuite;
@@ -20,6 +21,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
+
+import static javafx.application.Platform.runLater;
 
 /**
  * Manages group selection, creation, and content switching.
