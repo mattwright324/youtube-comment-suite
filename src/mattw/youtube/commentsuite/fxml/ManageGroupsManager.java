@@ -167,6 +167,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
            })
         );
 
+        group.itemsUpdatedProperty().addListener((o, ov, nv) -> this.reloadGroupItems());
+
         btnReload.setOnAction(ae -> new Thread(() -> {
             reloadGroupItems();
             try {

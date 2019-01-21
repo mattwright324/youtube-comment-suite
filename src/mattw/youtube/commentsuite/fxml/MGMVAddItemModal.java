@@ -87,6 +87,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             database.commit();
                             runLater(() -> {
                                 itemAdded.setValue(itemAdded.getValue() + 1);
+                                group.reloadGroupItems();
                                 btnClose.fire();
                             });
                         } catch (SQLException e1) {

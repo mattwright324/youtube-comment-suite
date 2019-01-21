@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -88,6 +89,7 @@ public class SearchComments implements Initializable, ImageCache {
     private SimpleIntegerProperty pageProperty = new SimpleIntegerProperty();
     private SimpleIntegerProperty maxPageProperty = new SimpleIntegerProperty();
     private ElapsedTime elapsedTime = new ElapsedTime();
+    private ChangeListener<Number> cl;
 
     private CommentDatabase database;
     private CommentQuery query;
@@ -109,21 +111,29 @@ public class SearchComments implements Initializable, ImageCache {
             }
         }));
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            if(nv == null) {
+            if(ov != null) {
+                ov.itemsUpdatedProperty().removeListener(cl);
+                ov.itemsUpdatedProperty().unbind();
+                ov.nameProperty().unbind();
+            }
+            if(nv != null) {
+                nv.itemsUpdatedProperty().addListener(cl = (o1, ov2, nv3) -> {
+                    List<GroupItem> groupItems = database.getGroupItems(nv);
+                    GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
+                    runLater(() -> {
+                        comboGroupItemSelect.getItems().clear();
+                        comboGroupItemSelect.getItems().add(all);
+                        comboGroupItemSelect.getItems().addAll(groupItems);
+                        comboGroupItemSelect.setDisable(false);
+                        comboGroupItemSelect.getSelectionModel().select(0);
+                        videoSelect.setDisable(false);
+                    });
+                });
+                runLater(nv::reloadGroupItems);
+            } else {
                 runLater(() -> {
                     comboGroupItemSelect.setDisable(true);
                     videoSelect.setDisable(true);
-                });
-            } else {
-                List<GroupItem> groupItems = database.getGroupItems(nv);
-                GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
-                runLater(() -> {
-                    comboGroupItemSelect.getItems().clear();
-                    comboGroupItemSelect.getItems().add(all);
-                    comboGroupItemSelect.getItems().addAll(groupItems);
-                    comboGroupItemSelect.setDisable(false);
-                    comboGroupItemSelect.getSelectionModel().select(0);
-                    videoSelect.setDisable(false);
                 });
             }
         });
