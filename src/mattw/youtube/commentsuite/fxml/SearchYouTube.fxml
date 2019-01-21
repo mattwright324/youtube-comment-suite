@@ -34,23 +34,23 @@
                 <TextField fx:id="searchLocation" promptText="40.7058253,-74.1180864" styleClass="control, noRadiusRight" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
                 <Button fx:id="geolocate" styleClass="btn, btnLight, control, noRadiusLeft" graphic="$geoIcon" />
             </HBox>
-            <ComboBox fx:id="searchRadius" value="5m" styleClass="control">
+            <ComboBox fx:id="searchRadius" value="5km" styleClass="control">
                 <items>
                     <FXCollections fx:factory="observableArrayList">
-                        <String fx:value="1m" />
-                        <String fx:value="2m" />
-                        <String fx:value="5m" />
-                        <String fx:value="10m" />
-                        <String fx:value="20m" />
-                        <String fx:value="25m" />
-                        <String fx:value="50m" />
-                        <String fx:value="75m" />
-                        <String fx:value="100m" />
-                        <String fx:value="200m" />
-                        <String fx:value="250m" />
-                        <String fx:value="500m" />
-                        <String fx:value="750m" />
-                        <String fx:value="1000m" />
+                        <String fx:value="1km" />
+                        <String fx:value="2km" />
+                        <String fx:value="5km" />
+                        <String fx:value="10km" />
+                        <String fx:value="20km" />
+                        <String fx:value="25km" />
+                        <String fx:value="50km" />
+                        <String fx:value="75km" />
+                        <String fx:value="100km" />
+                        <String fx:value="200km" />
+                        <String fx:value="250km" />
+                        <String fx:value="500km" />
+                        <String fx:value="750km" />
+                        <String fx:value="1000km" />
                     </FXCollections>
                 </items>
             </ComboBox>

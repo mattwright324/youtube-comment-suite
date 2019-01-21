@@ -62,6 +62,7 @@ public class SearchComments implements Initializable, ImageCache {
     private @FXML Label videoViews, videoLikes, videoDislikes;
     private @FXML TextArea videoDescription;
 
+    private @FXML ImageView browserIcon;
     private @FXML MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks;
     private @FXML ListView<SearchCommentsListItem> resultsList;
     private @FXML TextField pageValue;
@@ -212,6 +213,7 @@ public class SearchComments implements Initializable, ImageCache {
             }
         }).start());
 
+        browserIcon.setImage(ImageLoader.BROWSER.getImage());
         openInBrowser.setOnAction(ae -> {
             String link = scSelection.getSelectedItem()
                     .getComment()

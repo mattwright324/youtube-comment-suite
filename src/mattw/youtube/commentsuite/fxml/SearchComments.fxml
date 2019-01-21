@@ -55,7 +55,9 @@
                 <contextMenu>
                     <ContextMenu>
                         <items>
-                            <MenuItem fx:id="openInBrowser" text="Open in Browser" />
+                            <MenuItem fx:id="openInBrowser" text="Open in Browser">
+                                <graphic><ImageView fx:id="browserIcon" fitHeight="24" fitWidth="24"/></graphic>
+                            </MenuItem>
                             <MenuItem fx:id="copyNames" text="Copy Name(s)" />
                             <MenuItem fx:id="copyComments" text="Copy Comment(s)" />
                             <MenuItem fx:id="copyChannelLinks" text="Copy Channel Link(s)" />

@@ -70,22 +70,32 @@ public class ManageGroups implements Initializable {
             }
         }));
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            ManageGroupsManager manager = managerCache.getIfPresent(nv.getId());
-            if (manager != null) {
-                runLater(() -> {
-                    content.getChildren().clear();
-                    content.getChildren().addAll(manager);
-                });
-            } else {
-                try {
-                    ManageGroupsManager m = new ManageGroupsManager(selectionModel.getSelectedItem());
-                    managerCache.put(nv.getId(), m);
+            if(nv != null) {
+                ManageGroupsManager manager = managerCache.getIfPresent(nv.getId());
+                if (manager != null) {
                     runLater(() -> {
                         content.getChildren().clear();
-                        content.getChildren().addAll(m);
+                        content.getChildren().addAll(manager);
                     });
-                } catch (IOException e) {
-                    logger.error(e);
+                } else {
+                    try {
+                        ManageGroupsManager m = new ManageGroupsManager(selectionModel.getSelectedItem());
+                        managerCache.put(nv.getId(), m);
+                        runLater(() -> {
+                            content.getChildren().clear();
+                            content.getChildren().addAll(m);
+                        });
+                    } catch (IOException e) {
+                        logger.error(e);
+                    }
+                }
+            } else {
+                managerCache.invalidateAll();
+
+                try {
+                    database.refreshGroups();
+                } catch (SQLException e) {
+                    logger.error("Failed to refresh groups", e);
                 }
             }
         });
