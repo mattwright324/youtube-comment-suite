@@ -70,7 +70,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             viewTree.setManaged(true);
             viewTree.setVisible(true);
             if(!comment.isReply()) {
-                viewTree.setText(String.format("View Tree (%,d)", comment.getReplyCount()));
+                viewTree.setText(String.format("View Thread (%,d)", comment.getReplyCount()));
             }
         }
 

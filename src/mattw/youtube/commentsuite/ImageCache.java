@@ -56,14 +56,16 @@ public interface ImageCache {
         Image image = thumbCache.getIfPresent(id);
         if(image == null) {
             String fileFormat = "jpg";
-            File thumbFile = new File(String.format("thumbs/%s.%s", id, fileFormat));
+            File thumbFile = new File(String.format("./thumbs/%s.%s", id, fileFormat));
             if(configData.getArchiveThumbs() && !thumbFile.exists()) {
                 logger.debug(String.format("Archiving [id=%s]", id));
                 try {
-                    thumbFile.mkdir();
+                    thumbFile.mkdirs();
                     thumbFile.createNewFile();
                     ImageIO.write(ImageIO.read(new URL(imageUrl)), fileFormat, thumbFile);
-                } catch (IOException ignored) {}
+                } catch (IOException e) {
+                    logger.error("Failed to archive image.", e);
+                }
             }
             if(thumbFile.exists()) {
                 image = new Image(String.format("file:///%s", thumbFile.getAbsolutePath()));

@@ -34,10 +34,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -94,6 +91,7 @@ public class SearchComments implements Initializable, ImageCache {
     private CommentDatabase database;
     private CommentQuery query;
     private List<YouTubeComment> lastResultsList;
+    private SearchCommentsListItem actionComment;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
 
@@ -272,7 +270,20 @@ public class SearchComments implements Initializable, ImageCache {
             clipboardUtil.setClipboard(uniqueVideoLinks);
         });
 
-        btnBackToResults.setOnAction(ae -> setResultsList(lastResultsList, false));
+        btnBackToResults.setOnAction(ae -> {
+            setResultsList(lastResultsList, false);
+
+            runLater(() -> {
+                Optional<SearchCommentsListItem> toSelect = resultsList.getItems().stream()
+                        .filter(scli -> scli.getComment().getYoutubeId().equals(actionComment.getComment().getYoutubeId()))
+                        .findFirst();
+
+                SearchCommentsListItem scli = toSelect.orElse(null);
+
+                resultsList.scrollTo(scli);
+                resultsList.getSelectionModel().select(scli);
+            });
+        });
 
         SCVideoSelectModal scVideoSelectModal = new SCVideoSelectModal();
         videoSelectModal.setContent(scVideoSelectModal);
@@ -487,6 +498,16 @@ public class SearchComments implements Initializable, ImageCache {
             displayCount.setText(String.format("Showing %,d of %,d total",
                     comments.size(),
                     query.getTotalResults()));
+
+            if(treeMode) {
+                resultsList.scrollTo(0);
+
+                Optional<SearchCommentsListItem> toSelect = resultsList.getItems().stream()
+                        .filter(scli -> scli.getComment().getYoutubeId().equals(actionComment.getComment().getYoutubeId()))
+                        .findFirst();
+
+                resultsList.getSelectionModel().select(toSelect.orElse(null));
+            }
         });
     }
 
@@ -526,6 +547,8 @@ public class SearchComments implements Initializable, ImageCache {
 
     private void viewTree(SearchCommentsListItem scli) {
         runLater(() -> searchingProperty.setValue(true));
+
+        actionComment = scli;
 
         checkUpdateThumbs(scli);
 

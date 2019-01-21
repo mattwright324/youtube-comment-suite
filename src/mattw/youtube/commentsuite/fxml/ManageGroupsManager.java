@@ -14,10 +14,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import mattw.youtube.commentsuite.Cleanable;
-import mattw.youtube.commentsuite.FXMLSuite;
-import mattw.youtube.commentsuite.ImageCache;
-import mattw.youtube.commentsuite.ImageLoader;
+import mattw.youtube.commentsuite.*;
 import mattw.youtube.commentsuite.db.CommentDatabase;
 import mattw.youtube.commentsuite.db.Group;
 import mattw.youtube.commentsuite.db.GroupItem;
@@ -54,6 +51,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private Group group;
 
     private CommentDatabase database;
+    private ConfigData configData;
 
     private @FXML OverlayModal<MGMVRefreshModal> refreshModal;
     private @FXML OverlayModal<MGMVDeleteGroupModal> deleteModal;
@@ -87,6 +85,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
 
         database = FXMLSuite.getDatabase();
+        configData = FXMLSuite.getConfig().getDataObject();
 
         this.group = group;
 
@@ -177,7 +176,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             }
         }).start());
 
-        btnReload.fire();
+        if(configData.getAutoLoadStats()) {
+            btnReload.fire();
+        }
 
         /*
           Refresh Modal

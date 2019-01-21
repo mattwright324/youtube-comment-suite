@@ -26,7 +26,7 @@
             <Label fx:id="date" styleClass="textMuted, commentDate" />
             <Label fx:id="likes" styleClass="commentLikes" />
             <Hyperlink fx:id="showMore" text="Show more" />
-            <Hyperlink fx:id="viewTree" visible="false" managed="false" text="View Tree" />
+            <Hyperlink fx:id="viewTree" visible="false" managed="false" text="View Thread" />
             <Hyperlink fx:id="reply" visible="false" managed="false" text="Reply" />
         </HBox>
     </VBox>

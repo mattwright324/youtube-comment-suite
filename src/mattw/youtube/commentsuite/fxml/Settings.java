@@ -16,6 +16,7 @@ import mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URL;
@@ -230,7 +231,28 @@ public class Settings implements Initializable {
         }).start());
 
         // TODO: Remove thumb files functionality
+        btnRemoveThumbs.setOnAction(ae -> new Thread(() -> {
+            runLater(() -> {
+                btnRemoveThumbs.setDisable(true);
+                removeProgress.setVisible(true);
+            });
+
+            deleteDirectoryContents("thumbs/");
+
+            runLater(() -> {
+                btnRemoveThumbs.setDisable(false);
+                removeProgress.setVisible(false);
+            });
+        }).start());
 
         github.setOnAction(ae -> browserUtil.open("https://github.com/mattwright324/youtube-comment-suite"));
+    }
+
+    private void deleteDirectoryContents(String dir) {
+        File file = new File(dir);
+
+        for(File f : file.listFiles()) {
+            f.delete();
+        }
     }
 }
