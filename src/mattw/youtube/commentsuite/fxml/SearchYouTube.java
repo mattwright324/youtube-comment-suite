@@ -11,7 +11,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import mattw.youtube.commentsuite.FXMLSuite;
 import mattw.youtube.commentsuite.ImageLoader;
 import mattw.youtube.commentsuite.io.BrowserUtil;

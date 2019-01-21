@@ -40,7 +40,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     private YouTubeChannel channel;
 
     private BrowserUtil browserUtil = new BrowserUtil();
-    private ConfigData configData = new ConfigData();
+    private ConfigData configData;
 
     SearchCommentsListItem(YouTubeComment comment) throws IOException {
         this.comment = comment;

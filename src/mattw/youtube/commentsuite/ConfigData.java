@@ -2,7 +2,6 @@ package mattw.youtube.commentsuite;
 
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.collections.ObservableList;
 
 import java.io.Serializable;
 import java.util.ArrayList;
