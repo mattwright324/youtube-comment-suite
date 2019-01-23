@@ -1,54 +1,115 @@
 package mattw.youtube.commentsuite;
 
-import mattw.youtube.datav3.YouTubeErrorException;
-import mattw.youtube.datav3.resources.ChannelsList;
+import mattw.youtube.commentsuite.db.CommentDatabase;
+import mattw.youtube.commentsuite.db.YouTubeChannel;
+import mattw.youtube.datav3.Parts;
+import mattw.youtube.datav3.YouTubeData3;
+import mattw.youtube.datav3.entrypoints.ChannelsList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.sql.SQLException;
+import java.util.Collections;
 
 /**
  * Combination of YouTubeChannel and OAuth2Tokens as sign-in.
  * Data stored in Config 'commentsuite.json'
+ *
+ * @since 2018-12-30
+ * @author mattwright324
  */
-public class YouTubeAccount {
+public class YouTubeAccount implements Serializable {
 
-    public String username;
-    public String channelId;
-    public String thumbUrl;
-    public OAuth2Tokens tokens;
+    private transient Logger logger = LogManager.getLogger(this);
+
+    private String username, channelId, thumbUrl;
+    private OAuth2Tokens tokens;
+
+    /**
+     * Default constructor.
+     */
+    public YouTubeAccount() {}
 
     /**
      * Only used with "YouTube Account Sign-in," otherwise initialized by Gson & Config.
      */
     public YouTubeAccount(OAuth2Tokens tokens) {
         this.tokens = tokens;
+
         updateData();
     }
 
-    public void updateData() {
-        CommentSuite.youtube().setProfileAccessToken(tokens.access_token);
+    /**
+     * Using the OAuth2Tokens passed in, query the YouTube API to get the "mine"
+     * channel for those tokens.
+     *
+     * Pushes the channel to the database.
+     */
+    void updateData() {
+        CommentDatabase database = FXMLSuite.getDatabase();
+        YouTubeData3 youtube = FXMLSuite.getYoutubeApiForAccounts();
+
+        logger.debug("Getting account data for [accessToken={}]", this.tokens.getAccessToken().substring(0,10)+"...");
+
+        String oldAccessToken = youtube.getProfileAccessToken();
+        String newAccessToken = getTokens().getAccessToken();
+
+        youtube.setProfileAccessToken(newAccessToken);
+
         try {
-            ChannelsList cl = CommentSuite.youtube().channelsList().getMine(ChannelsList.PART_SNIPPET, "");
-            ChannelsList.Item cli = cl.items[0];
+            ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.SNIPPET)).getMine("");
+            ChannelsList.Item cli = cl.getItems()[0];
+
             this.channelId = cli.getId();
+
             if(cli.hasSnippet()) {
-                this.username = cli.snippet.title;
-                this.thumbUrl = cli.snippet.thumbnails.medium.url.toString();
+                this.username = cli.getSnippet().getTitle();
+                this.thumbUrl = cli.getSnippet().getThumbnails().getMedium().getURL().toString();
+
+                try {
+                    YouTubeChannel channel = new YouTubeChannel(cli);
+                    database.insertChannels(Collections.singletonList(channel));
+                    database.commit();
+                } catch (SQLException e) {
+                    logger.error("Unable to insert account channel into database.", e);
+                }
             }
-        } catch (IOException | YouTubeErrorException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            logger.error("Failed to query for account channel info.", e);
+        } finally {
+            if(oldAccessToken == null || oldAccessToken.trim().isEmpty()) {
+                youtube.setProfileAccessToken(newAccessToken);
+            }
         }
     }
 
-    public String getUsername() { return username; }
-    public String getChannelId() { return channelId; }
-    public String getThumbUrl() { return thumbUrl; }
+    public String getUsername() {
+        return username;
+    }
 
-    public String toString() { return username; }
+    public String getChannelId() {
+        return channelId;
+    }
 
-    public OAuth2Tokens getTokens() { return tokens; }
-    public void setTokens(OAuth2Tokens tokens) { this.tokens = tokens; }
+    public String getThumbUrl() {
+        return thumbUrl;
+    }
+
+    public String toString() {
+        return username;
+    }
+
+    public OAuth2Tokens getTokens() {
+        return tokens;
+    }
+
+    public void setTokens(OAuth2Tokens tokens) {
+        this.tokens = tokens;
+    }
 
     public boolean equals(Object o) {
-        return o != null && o instanceof YouTubeAccount && ((YouTubeAccount) o).getChannelId() != null && ((YouTubeAccount) o).getChannelId().equals(channelId);
+        return o instanceof YouTubeAccount && ((YouTubeAccount) o).getChannelId() != null && ((YouTubeAccount) o).getChannelId().equals(channelId);
     }
 }

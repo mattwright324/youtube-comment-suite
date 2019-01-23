@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           styleClass="overlay"
+           managed="false"
+           visible="false"
+           fx:id="settingsPane"
+           fx:controller="mattw.youtube.commentsuite.fxml.Settings">
+    <fx:define>
+        <ImageView fx:id="githubIcon" fitWidth="25" fitHeight="25" />
+        <ImageView fx:id="closeIcon" fitHeight="25" fitWidth="25" />
+    </fx:define>
+    <HBox alignment="CENTER_RIGHT">
+        <VBox fx:id="vboxSignIn" managed="false" visible="false" styleClass="overlayMenu" alignment="TOP_CENTER" maxWidth="420" prefWidth="420">
+            <HBox alignment="CENTER_RIGHT">
+                <padding>
+                    <Insets right="10" left="10" />
+                </padding>
+                <Label text="YouTube Sign-In" styleClass="bold" maxHeight="35" minHeight="35" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                <ProgressIndicator fx:id="webViewLoading" maxWidth="30" maxHeight="30" />
+            </HBox>
+            <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+            <WebView fx:id="webView" />
+            <HBox alignment="CENTER_RIGHT">
+                <padding>
+                    <Insets right="10" left="10" top="10" bottom="10" />
+                </padding>
+                <Button fx:id="btnExitSignIn" styleClass="btn, btnSecondary" text="Save and Return" />
+            </HBox>
+        </VBox>
+        <VBox fx:id="vboxSettings" styleClass="overlayMenu" alignment="TOP_CENTER" maxWidth="420" prefWidth="420">
+            <HBox alignment="CENTER_RIGHT">
+                <padding>
+                    <Insets right="10" left="10" />
+                </padding>
+                <Label text="Settings" styleClass="bold" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                <Button fx:id="btnClose" styleClass="settingsBtn" graphic="$closeIcon" />
+            </HBox>
+            <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
+            <ScrollPane VBox.vgrow="ALWAYS" styleClass="noBorder" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="ALWAYS">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets right="10" left="10" top="10" bottom="10" />
+                    </padding>
+                    <Label text="General" styleClass="sectionTitle, bold" maxWidth="Infinity" />
+                    <CheckBox fx:id="prefixReply" text="Prefix +{name} when replying to comments." selected="true" />
+                    <CheckBox fx:id="autoLoadStats" text="Auto-load group details in group manager." selected="true" />
+                    <CheckBox fx:id="downloadThumbs" text="Download images when loaded (Offline/Archival)."/>
+                    <CheckBox fx:id="customKey" text="Custom YouTube API key:"/>
+                    <TextField fx:id="youtubeApiKey" disable="true" text="AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ" />
+                    <Label />
+
+                    <Label text="YouTube Accounts" styleClass="sectionTitle, bold" maxWidth="Infinity" />
+                    <Button fx:id="btnAddAccount" styleClass="btn, btnLight" text="Add Account" />
+                    <ListView fx:id="accountList" maxHeight="150" minHeight="150" />
+                    <Label />
+
+                    <Label text="Maintenance" styleClass="sectionTitle, bold" maxWidth="Infinity" />
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Clean Database"/>
+                        <Label styleClass="question" text="?">
+                            <tooltip><Tooltip wrapText="true" prefWidth="300" text="This performs a 'VACUUM' operation on the commentsuite.sqlite3 database to shrink it to its smallest size. NOTE: this may take a long time."/></tooltip>
+                        </Label>
+                        <Label maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+                        <ProgressIndicator fx:id="cleanProgress" visible="false" maxWidth="25" maxHeight="25" />
+                        <Button fx:id="btnClean" prefWidth="100" text="Clean" styleClass="btn, btnSecondary" />
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Reset Database"/>
+                        <Label styleClass="question" text="?">
+                            <tooltip><Tooltip wrapText="true" prefWidth="300" text="WARNING: This will delete everything! There is no going back."/></tooltip>
+                        </Label>
+                        <Label maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+                        <ProgressIndicator fx:id="resetProgress" visible="false" maxWidth="25" maxHeight="25" />
+                        <Button fx:id="btnReset" prefWidth="100" text="Reset" styleClass="btn, btnDanger" />
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Remove Thumbfiles"/>
+                        <Label styleClass="question" text="?">
+                            <tooltip><Tooltip wrapText="true" prefWidth="300" text="This will remove all downloaded thumb files. NOTE: Only relevant when the 'download thumbnails' option has been enabled."/></tooltip>
+                        </Label>
+                        <Label maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+                        <ProgressIndicator fx:id="removeProgress" visible="false" maxWidth="25" maxHeight="25" />
+                        <Button fx:id="btnRemoveThumbs" prefWidth="100" text="Remove All" styleClass="btn, btnWarning" />
+                    </HBox>
+                    <Label />
+
+                    <Label text="About" styleClass="sectionTitle, bold" maxWidth="Infinity" />
+                    <Label text="MIT License. Copyright © 2019 Matthew Wright." />
+                    <Label text="This release version: v1.4.0" />
+                    <Hyperlink fx:id="github" text="mattwright324/youtube-comment-suite" graphic="$githubIcon" />
+                    <Label />
+                </VBox>
+            </ScrollPane>
+            <HBox alignment="CENTER_RIGHT">
+                <padding>
+                    <Insets right="10" left="10" top="10" bottom="10" />
+                </padding>
+                <Button fx:id="btnSave" styleClass="btn, btnPrimary" text="Save and Close" />
+            </HBox>
+        </VBox>
+    </HBox>
+</StackPane>

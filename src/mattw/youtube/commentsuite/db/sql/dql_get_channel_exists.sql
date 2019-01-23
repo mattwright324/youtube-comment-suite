@@ -1,0 +1,1 @@
+SELECT * FROM channels WHERE channel_id = ? LIMIT 1;

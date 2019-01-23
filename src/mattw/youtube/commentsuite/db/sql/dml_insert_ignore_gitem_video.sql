@@ -1,0 +1,1 @@
+INSERT OR IGNORE INTO gitem_video (gitem_id, video_id) VALUES (?, ?);

@@ -1,0 +1,1 @@
+INSERT OR IGNORE INTO group_gitem (group_id, gitem_id) VALUES (?, ?);

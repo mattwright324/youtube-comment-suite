@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS gitem_type;
+DROP TABLE IF EXISTS gitem_list;
+DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS group_gitem;
+DROP TABLE IF EXISTS gitem_video;
+DROP TABLE IF EXISTS videos;
+DROP TABLE IF EXISTS comments;
+DROP INDEX IF EXISTS idx_comments_id;
+DROP TABLE IF EXISTS channels;
+DROP INDEX IF EXISTS idx_channels_id;

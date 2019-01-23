@@ -2,7 +2,6 @@ package mattw.youtube.commentsuite.db;
 
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
-import mattw.youtube.commentsuite.CommentSuite;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +9,10 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @since 2018-12-30
+ * @author mattwright324
+ */
 public class Group {
     public static String NO_GROUP = "G000";
 
@@ -56,7 +59,7 @@ public class Group {
 
     public void reloadGroupItems() {
         groupItems.clear();
-        groupItems.addAll(CommentSuite.db().getGroupItems(this));
+        // groupItems.addAll(CommentSuite.db().getGroupItems(this));
         incrementItemsUpdated();
     }
 
@@ -64,5 +67,5 @@ public class Group {
 
     public String toString() { return name.getValue(); }
     public int hashCode() { return groupId.hashCode(); }
-    public boolean equals(Object o) { return o != null && o instanceof Group && o.hashCode() == hashCode(); }
+    public boolean equals(Object o) { return o instanceof Group && o.hashCode() == hashCode(); }
 }

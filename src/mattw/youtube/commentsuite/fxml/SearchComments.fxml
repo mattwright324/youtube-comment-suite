@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import mattw.youtube.commentsuite.fxml.OverlayModal?>
+<?import java.lang.String?>
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           alignment="TOP_CENTER"
+           fx:controller="mattw.youtube.commentsuite.fxml.SearchComments">
+    <fx:define>
+        <ImageView fx:id="toggleContextIcon" fitWidth="15" fitHeight="100" />
+        <ImageView fx:id="firstPageIcon" fitWidth="20" fitHeight="20" />
+        <ImageView fx:id="prevPageIcon" fitWidth="20" fitHeight="20" />
+        <ImageView fx:id="nextPageIcon" fitWidth="20" fitHeight="20" />
+        <ImageView fx:id="lastPageIcon" fitWidth="20" fitHeight="20" />
+        <ImageView fx:id="toggleQueryIcon" fitWidth="15" fitHeight="100" />
+    </fx:define>
+    <HBox alignment="TOP_CENTER">
+        <VBox fx:id="contextPane" minWidth="320" maxWidth="320" spacing="10" alignment="TOP_CENTER">
+            <padding><Insets topRightBottomLeft="10" /></padding>
+            <ImageView fx:id="videoThumb" fitHeight="168" fitWidth="300" />
+            <TextField fx:id="videoTitle" editable="false" styleClass="noBorder, noPadding, font18"
+                       text="YouTube Comment Suite - Title Placeholder" />
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <ImageView fx:id="authorThumb" fitWidth="30" fitHeight="30" />
+                <TextField fx:id="author" editable="false" styleClass="noBorder, noPadding"
+                           text="mattwright324" />
+                <VBox alignment="CENTER" prefWidth="200">
+                    <Label fx:id="videoViews" styleClass="noBorder, noPadding"
+                               text="8.6M views" />
+                    <HBox alignment="CENTER" spacing="5">
+                        <ImageView fx:id="likesIcon" fitHeight="20" fitWidth="20" />
+                        <Label fx:id="videoLikes"
+                               text="75.3k" />
+                        <ImageView fx:id="dislikesIcon" fitHeight="20" fitWidth="20" />
+                        <Label fx:id="videoDislikes"
+                               text="30.9k" />
+                    </HBox>
+                </VBox>
+            </HBox>
+            <TextArea fx:id="videoDescription" VBox.vgrow="ALWAYS" maxHeight="Infinity"
+                      editable="false"
+                      wrapText="true"
+                      text="Published Nov 11, 1918 • An example description. Author name, video title, and this video description are selectable. Video thumbnail and author profile picture are clickable to go to their respective links. Comments may be replied to when signed in. Comment author names are clickable to open their respective channel links."/>
+        </VBox>
+        <fx:include fx:id="toggleContext" source="VFlexLabel.fxml"
+                    styleClass="toggleContext"
+                    graphic="$toggleContextIcon" />
+        <VBox fx:id="resultsPane" HBox.hgrow="ALWAYS" spacing="10" alignment="TOP_CENTER">
+            <padding><Insets topRightBottomLeft="10" /></padding>
+            <ListView fx:id="resultsList" styleClass="listView" VBox.vgrow="ALWAYS">
+                <contextMenu>
+                    <ContextMenu>
+                        <items>
+                            <MenuItem fx:id="openInBrowser" text="Open in Browser">
+                                <graphic><ImageView fx:id="browserIcon" fitHeight="24" fitWidth="24"/></graphic>
+                            </MenuItem>
+                            <MenuItem fx:id="copyNames" text="Copy Name(s)" />
+                            <MenuItem fx:id="copyComments" text="Copy Comment(s)" />
+                            <MenuItem fx:id="copyChannelLinks" text="Copy Channel Link(s)" />
+                            <MenuItem fx:id="copyVideoLinks" text="Copy Video Link(s)" />
+                            <MenuItem fx:id="copyCommentLinks" text="Copy Comment Link(s)" />
+                        </items>
+                    </ContextMenu>
+                </contextMenu>
+            </ListView>
+            <HBox fx:id="paginationPane" alignment="CENTER" spacing="5">
+                <Button fx:id="btnFirst" graphic="$firstPageIcon" />
+                <Button fx:id="btnPrev" graphic="$prevPageIcon" />
+                <Label text="Page" styleClass="font16" />
+                <TextField fx:id="pageValue" text="1" alignment="CENTER"
+                           editable="false" minWidth="50" maxWidth="50" styleClass="font16, clearTextField, dashedBottom"
+                           style="-fx-cursor: hand;"/>
+                <Label fx:id="lblMaxPage" text=" of 1" styleClass="font16" />
+                <Button fx:id="btnNext" graphic="$nextPageIcon" />
+                <Button fx:id="btnLast" graphic="$lastPageIcon" />
+            </HBox>
+            <HBox fx:id="backToResultsPane" alignment="CENTER" visible="false" managed="false">
+                <Button fx:id="btnBackToResults" text="Back to Results" styleClass="btnSuccess" />
+            </HBox>
+            <HBox alignment="CENTER">
+                <Label fx:id="displayCount" text="Showing 0 of 0 total" />
+            </HBox>
+        </VBox>
+        <fx:include fx:id="toggleQuery" source="VFlexLabel.fxml"
+                    styleClass="toggleQuery"
+                    graphic="$toggleQueryIcon" />
+        <VBox fx:id="queryPane" minWidth="320" maxWidth="320" spacing="10" alignment="TOP_CENTER">
+            <padding><Insets topRightBottomLeft="10" /></padding>
+            <Label text="Group Select" styleClass="font18" />
+            <ComboBox fx:id="comboGroupSelect" maxWidth="Infinity" />
+            <ComboBox fx:id="comboGroupItemSelect" maxWidth="Infinity" />
+            <Hyperlink fx:id="videoSelect" text="Selected: (All Videos)" />
+
+            <Label text="Restrict Results" styleClass="font18" />
+            <GridPane vgap="5" hgap="10">
+                <Label text="Type" styleClass="font16" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                <ComboBox fx:id="comboCommentType" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+                <Label text="Order by" styleClass="font16" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                <ComboBox fx:id="comboOrderBy" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+                <Label text="Name like" styleClass="font16" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                <TextField fx:id="nameLike" promptText="Username contains..." GridPane.rowIndex="2" GridPane.columnIndex="1" />
+
+                <Label text="Text like" styleClass="font16" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                <TextField fx:id="commentLike" promptText="Comment contains..." GridPane.rowIndex="3" GridPane.columnIndex="1" />
+
+                <Label text="Date from" styleClass="font16" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                <DatePicker fx:id="dateFrom" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+
+                <Label text="Date to" styleClass="font16" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+                <DatePicker fx:id="dateTo" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+            </GridPane>
+            <HBox spacing="10">
+                <Button fx:id="btnSearch" text="Search" prefWidth="140" styleClass="btnPrimary" />
+                <Button fx:id="btnClear" text="Clear Results" prefWidth="140" />
+            </HBox>
+        </VBox>
+    </HBox>
+
+    <!-- Overlay: Remove Selected GroupItem(s) -->
+    <OverlayModal visible="false" fx:id="videoSelectModal">
+        <title><String fx:value="Select Video" /></title>
+    </OverlayModal>
+
+    <!-- Overlay: Reply / Show More -->
+    <OverlayModal visible="false" fx:id="showMoreModal">
+        <title><String fx:value="Comment View" /></title>
+    </OverlayModal>
+</StackPane>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<Label xmlns="http://javafx.com/javafx"
+       styleClass="alertBase, bold"
+       minWidth="0" prefWidth="0"
+       maxWidth="Infinity"/>

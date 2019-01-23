@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<fx:root type="HBox"
+         alignment="CENTER_LEFT"
+         spacing="10"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml">
+    <fx:define>
+        <Font fx:id="fontA" size="15" />
+        <Font fx:id="fontB" size="13" />
+        <Font fx:id="fontC" size="13" />
+    </fx:define>
+    <ImageView fx:id="icon" fitWidth="32" fitHeight="32" />
+    <VBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+        <Label fx:id="title" font="$fontA" text="Group Item Title"/>
+        <HBox alignment="CENTER_LEFT">
+            <Label fx:id="author" font="$fontB" text="Author" />
+            <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" />
+            <Label fx:id="type" font="$fontC" text="Type" />
+        </HBox>
+    </VBox>
+</fx:root>

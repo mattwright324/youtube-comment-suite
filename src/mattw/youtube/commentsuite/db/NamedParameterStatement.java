@@ -1,88 +1,79 @@
 package mattw.youtube.commentsuite.db;
 
 import java.sql.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Source:
- * https://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html?page=2
+ * @since 2018-12-30
+ * @link https://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html?page=2
  */
-public class NamedParameterStatement {
-    /** The statement this object is wrapping. */
-    private final PreparedStatement statement;
+public class NamedParameterStatement implements AutoCloseable {
 
-    /** Maps parameter names to arrays of ints which are the parameter indices.
-     */
+    private final PreparedStatement statement;
     private final Map indexMap;
 
 
     /**
      * Creates a NamedParameterStatement.  Wraps a call to
-     * c.{@link Connection#prepareStatement(java.lang.String)
-    prepareStatement}.
+     * c.{@link Connection#prepareStatement(java.lang.String) prepareStatement}.
      * @param connection the database connection
      * @param query      the parameterized query
      * @throws SQLException if the statement could not be created
      */
-    public NamedParameterStatement(Connection connection, String query) throws
-            SQLException {
-        indexMap=new HashMap();
-        String parsedQuery = parse(query, indexMap);
-        statement=connection.prepareStatement(parsedQuery);
+    public NamedParameterStatement(Connection connection, String query) throws SQLException {
+        indexMap = new HashMap();
+        statement = connection.prepareStatement(parse(query, indexMap));
     }
 
 
     /**
-     * Parses a query with named parameters.  The parameter-index mappings are
-     put into the map, and the
-     * parsed query is returned.  DO NOT CALL FROM CLIENT CODE.  This
-     method is non-private so JUnit code can
+     * Parses a query with named parameters.  The parameter-index mappings are put into the map, and the
+     * parsed query is returned.  DO NOT CALL FROM CLIENT CODE.  This method is non-private so JUnit code can
      * test it.
      * @param query    query to parse
      * @param paramMap map to hold parameter-index mappings
      * @return the parsed query
      */
     static String parse(String query, Map paramMap) {
-        // I was originally using regular expressions, but they didn't work well
-        // for ignoring
-        // parameter-like strings inside quotes.
-        int length=query.length();
-        StringBuffer parsedQuery=new StringBuffer(length);
-        boolean inSingleQuote=false;
-        boolean inDoubleQuote=false;
-        int index=1;
+        int length = query.length();
+        StringBuilder parsedQuery = new StringBuilder(length);
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        int index = 1;
 
-        for(int i=0;i<length;i++) {
-            char c=query.charAt(i);
+        for(int i = 0; i < length; i++) {
+            char c = query.charAt(i);
             if(inSingleQuote) {
-                if(c=='\'') {
-                    inSingleQuote=false;
+                if(c == '\'') {
+                    inSingleQuote = false;
                 }
             } else if(inDoubleQuote) {
-                if(c=='"') {
-                    inDoubleQuote=false;
+                if(c == '"') {
+                    inDoubleQuote = false;
                 }
             } else {
-                if(c=='\'') {
-                    inSingleQuote=true;
-                } else if(c=='"') {
-                    inDoubleQuote=true;
-                } else if(c==':' && i+1<length &&
-                        Character.isJavaIdentifierStart(query.charAt(i+1))) {
-                    int j=i+2;
-                    while(j<length && Character.isJavaIdentifierPart(query.charAt(j))) {
+                if(c == '\'') {
+                    inSingleQuote = true;
+                } else if(c == '"') {
+                    inDoubleQuote = true;
+                } else if(c == ':' && i + 1 < length && Character.isJavaIdentifierStart(query.charAt(i+1))) {
+                    int j = i + 2;
+                    while(j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
                         j++;
                     }
-                    String name=query.substring(i+1,j);
-                    c='?'; // replace the parameter with a question mark
-                    i+=name.length(); // skip past the end if the parameter
+                    String name = query.substring(i+1,j);
+                    c = '?'; // replace the parameter with a question mark
+                    i += name.length(); // skip past the end if the parameter
 
-                    List indexList=(List)paramMap.get(name);
-                    if(indexList==null) {
-                        indexList=new LinkedList();
+                    List indexList = (List) paramMap.get(name);
+                    if(indexList == null) {
+                        indexList = new LinkedList();
                         paramMap.put(name, indexList);
                     }
-                    indexList.add(new Integer(index));
+                    indexList.add(index);
 
                     index++;
                 }
@@ -96,9 +87,9 @@ public class NamedParameterStatement {
             List list = (List) entry.getValue();
             int[] indexes = new int[list.size()];
             int i = 0;
-            for (Iterator itr2 = list.iterator(); itr2.hasNext(); ) {
-                Integer x = (Integer) itr2.next();
-                indexes[i++] = x.intValue();
+            for (Object o1 : list) {
+                Integer x = (Integer) o1;
+                indexes[i++] = x;
             }
             entry.setValue(indexes);
         }
@@ -114,9 +105,9 @@ public class NamedParameterStatement {
      * @throws IllegalArgumentException if the parameter does not exist
      */
     private int[] getIndexes(String name) {
-        int[] indexes=(int[])indexMap.get(name);
-        if(indexes==null) {
-            throw new IllegalArgumentException("Parameter not found: "+name);
+        int[] indexes = (int[]) indexMap.get(name);
+        if(indexes == null) {
+            throw new IllegalArgumentException("Parameter not found: " + name);
         }
         return indexes;
     }
@@ -131,9 +122,9 @@ public class NamedParameterStatement {
      * @see PreparedStatement#setObject(int, java.lang.Object)
      */
     public void setObject(String name, Object value) throws SQLException {
-        int[] indexes=getIndexes(name);
-        for(int i=0; i < indexes.length; i++) {
-            statement.setObject(indexes[i], value);
+        int[] indexes = getIndexes(name);
+        for (int index : indexes) {
+            statement.setObject(index, value);
         }
     }
 
@@ -147,9 +138,9 @@ public class NamedParameterStatement {
      * @see PreparedStatement#setString(int, java.lang.String)
      */
     public void setString(String name, String value) throws SQLException {
-        int[] indexes=getIndexes(name);
-        for(int i=0; i < indexes.length; i++) {
-            statement.setString(indexes[i], value);
+        int[] indexes = getIndexes(name);
+        for (int index : indexes) {
+            statement.setString(index, value);
         }
     }
 
@@ -163,9 +154,9 @@ public class NamedParameterStatement {
      * @see PreparedStatement#setInt(int, int)
      */
     public void setInt(String name, int value) throws SQLException {
-        int[] indexes=getIndexes(name);
-        for(int i=0; i < indexes.length; i++) {
-            statement.setInt(indexes[i], value);
+        int[] indexes = getIndexes(name);
+        for (int index : indexes) {
+            statement.setInt(index, value);
         }
     }
 
@@ -179,9 +170,9 @@ public class NamedParameterStatement {
      * @see PreparedStatement#setInt(int, int)
      */
     public void setLong(String name, long value) throws SQLException {
-        int[] indexes=getIndexes(name);
-        for(int i=0; i < indexes.length; i++) {
-            statement.setLong(indexes[i], value);
+        int[] indexes = getIndexes(name);
+        for (int index : indexes) {
+            statement.setLong(index, value);
         }
     }
 
@@ -194,11 +185,10 @@ public class NamedParameterStatement {
      * @throws IllegalArgumentException if the parameter does not exist
      * @see PreparedStatement#setTimestamp(int, java.sql.Timestamp)
      */
-    public void setTimestamp(String name, Timestamp value) throws SQLException
-    {
-        int[] indexes=getIndexes(name);
-        for(int i=0; i < indexes.length; i++) {
-            statement.setTimestamp(indexes[i], value);
+    public void setTimestamp(String name, Timestamp value) throws SQLException {
+        int[] indexes = getIndexes(name);
+        for (int index : indexes) {
+            statement.setTimestamp(index, value);
         }
     }
 

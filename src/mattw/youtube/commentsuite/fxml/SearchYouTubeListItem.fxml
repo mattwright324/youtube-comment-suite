@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<fx:root type="HBox"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         spacing="10">
+    <padding>
+        <Insets topRightBottomLeft="5" />
+    </padding>
+    <VBox maxWidth="160" minWidth="160" spacing="6" alignment="CENTER">
+        <ImageView fitHeight="80" fx:id="thumbnail" />
+        <Label fx:id="type" styleClass="textMuted" />
+    </VBox>
+    <VBox HBox.hgrow="ALWAYS">
+        <fx:include source="HFlexLabel.fxml" fx:id="title" styleClass="font18" />
+        <fx:include source="HFlexLabel.fxml" fx:id="author" styleClass="font16" />
+        <fx:include source="HFlexLabel.fxml" fx:id="description" styleClass="font14" />
+        <fx:include source="HFlexLabel.fxml" fx:id="number" styleClass="font14, textMuted" />
+    </VBox>
+</fx:root>

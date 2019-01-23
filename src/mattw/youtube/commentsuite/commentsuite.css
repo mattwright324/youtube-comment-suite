@@ -1,5 +1,5 @@
 #menuButton {
-    -fx-font-weight: 700;
+    -fx-font-weight: bold;
     -fx-background-color: #eeeeee;
 	-fx-base: rgba(255,255,255,0.5);
 	-fx-focus-color: transparent;
@@ -20,7 +20,7 @@
 }
 
 #control {
-    -fx-height: 30;
+    -fx-height: 30px;
     -fx-min-height: 30;
     -fx-pref-height: 30;
     -fx-max-height: 30;

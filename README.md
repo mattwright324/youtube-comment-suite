@@ -1,4 +1,4 @@
-# <img src="https://i.imgur.com/edLrUKt.png" width="466" height="64" />
+# <img src="https://i.imgur.com/Uw2CJ7v.png" width="466" height="64" />
 
 ![Github All Releases](https://img.shields.io/github/downloads/mattwright324/youtube-comment-suite/total.svg)
 ![GitHub release](https://img.shields.io/github/release/mattwright324/youtube-comment-suite.svg)
@@ -7,7 +7,7 @@
 YouTube Comment Suite lets you aggregate YouTube comments from numerous videos, playlists, and channels for archiving, general search, and showing activity. 
 Achieve the functionality of the *Community > Comments* tool that is provided to YouTube creators and more.
 
-![Example](https://i.imgur.com/pE57Cql.png)
+![Examples](https://i.imgur.com/J8UP1Gp.png)
 
 * Want to see how often a keyword/topic comes up?
 * Have a question that may have been answered in the thousands of comments and videos?
@@ -24,7 +24,7 @@ Achieve the functionality of the *Community > Comments* tool that is provided to
 * Sign into multiple YouTube accounts and choose which to reply with.
 * View video context when selecting a comment.
 
-## Getting Started
+## Install
 [![GitHub Releases](https://img.shields.io/badge/downloads-releases-brightgreen.svg?maxAge=60&style=flat-square)](https://github.com/mattwright324/youtube-comment-suite/releases)
 
 ### Windows
@@ -37,15 +37,6 @@ Extract the latest release zip file into its own folder. Before you can run the 
 * If your version of Java is `OpenJDK` you will have to install JavaFX which is not included. Use the command `sudo apt-get install openjfx`. 
 * If your version of Java is `OracleJDK`, JavaFX is included and you are good to go!
 
-## Using a Group
-Begin managing a group by starting in the `Manage Groups` tab and selecting the Group that you want. `Default` is the group provided by default and can be renamed using the manager.
+## Getting Started
 
-Adding channels, playlists, or videos to the group can be done one of two ways:
-* **A:** While managing the group, click the `Add Item` button and paste in the full URL to the video, playlist, or channel.
-* **B:** Search for videos, playlists, or channels using the `Search YouTube` tab at the top. Select any of the results and click the `Add to Group` button at the bottom.
-
-Download all of the comments by clicking the `Refresh` button. * *Errors may appear while refreshing. Most commonly 404 errors, they can be caused by a slowed or interrupted internet. **Excessive 404 errors** may be a result of reaching the YouTube API Quota limit. If this happens, wait until the next day when the Quota resets at midnight Pacific Time (PT).*
-
-Stats are viewable in the group manager after every refresh. This can be turned off in the settings.
-
-Search all of the downloaded comments using the `Search Comments` tab. Clicking on a comment will load their profile picture(s) and related video context. Right clicking selected comments provide options to open a direct link to the comment, comment's author, and comment's video of origin. 
+Want to know more about how to use this program? [Check out the Wiki!](https://github.com/mattwright324/youtube-comment-suite/wiki/Overview-of-the-interface)
