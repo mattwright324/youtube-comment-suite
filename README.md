@@ -40,3 +40,7 @@ Extract the latest release zip file into its own folder. Before you can run the 
 ## Getting Started
 
 Want to know more about how to use this program? [Check out the Wiki!](https://github.com/mattwright324/youtube-comment-suite/wiki/Overview-of-the-interface)
+
+## Donate
+
+If you'd like to support future development or just thank me, you can send donations @ [paypal.me/mattwright324](https://www.paypal.me/mattwright324)
