@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<fx:root type="HBox"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         spacing="10">
+    <VBox spacing="10" HBox.hgrow="ALWAYS">
+        <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"
+                    alignment="CENTER"
+                    text="Warning: this could take a while!" />
+        <VBox fx:id="statusPane" spacing="10">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <ImageView fx:id="endStatus" managed="false" visible="false" fitHeight="24" fitWidth="24" />
+                <ProgressIndicator fx:id="statusIndicator" maxWidth="24" maxHeight="24"/>
+                <Label fx:id="statusStep" styleClass="font18" />
+            </HBox>
+
+            <ProgressBar fx:id="progressBar" progress="0.0" maxWidth="Infinity" />
+            <GridPane vgap="10" hgap="20">
+                <Label text="Elapsed time" styleClass="bold, font14" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <Label fx:id="elapsedTime" text="0 ms" styleClass="font14" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="2" />
+
+                <Label text="New videos" styleClass="bold, font14" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <fx:include source="HFlexLabel.fxml" fx:id="newVideos" text="0" styleClass="font14"
+                            GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.hgrow="ALWAYS" />
+                <Label fx:id="totalVideos" text="of 0 total" styleClass="textMutedLight, font14" alignment="TOP_RIGHT"
+                       GridPane.columnIndex="2" GridPane.rowIndex="1" />
+
+                <Label text="New comments" styleClass="bold, font14" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                <fx:include source="HFlexLabel.fxml" fx:id="newComments" text="0" styleClass="font14"
+                            GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.hgrow="ALWAYS" />
+                <Label fx:id="totalComments" text="of 0 total" styleClass="textMutedLight, font14" alignment="TOP_RIGHT"
+                       GridPane.columnIndex="2" GridPane.rowIndex="2" />
+            </GridPane>
+            <HBox fx:id="warningsPane" alignment="CENTER_RIGHT" managed="false" visible="false">
+                <fx:define>
+                    <ImageView fx:id="expandIcon" fitWidth="30" fitHeight="30" />
+                </fx:define>
+                <fx:include fx:id="warnings" source="AlertLabel.fxml" styleClass="alertWarning"
+                            HBox.hgrow="ALWAYS"
+                            alignment="CENTER"
+                            text="0 message(s)" />
+                <Hyperlink fx:id="expand" graphic="$expandIcon" maxHeight="30" />
+            </HBox>
+
+        </VBox>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
+            <Button fx:id="btnStart" styleClass="btnPrimary" text="Start" />
+        </HBox>
+    </VBox>
+    <ListView fx:id="errorList" visible="false" managed="false"
+              minWidth="250" maxHeight="200"
+              styleClass="font12" />
+</fx:root>

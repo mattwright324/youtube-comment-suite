@@ -1,0 +1,1 @@
+SELECT DISTINCT video_id FROM videos;

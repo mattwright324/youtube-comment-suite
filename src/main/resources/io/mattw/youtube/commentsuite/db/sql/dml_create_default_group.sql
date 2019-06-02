@@ -1,0 +1,1 @@
+INSERT INTO groups (group_id, group_name) VALUES ('28da132f5f5b48d881264d892aba790a', 'Default');

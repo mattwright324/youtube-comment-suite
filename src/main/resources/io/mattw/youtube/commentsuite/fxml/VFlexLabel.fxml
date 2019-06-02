@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Vertical flex label.
+  <fx:include source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
+-->
+<?import javafx.scene.control.Label?>
+<Label xmlns="http://javafx.com/javafx"
+       minHeight="0" prefHeight="0"
+       maxHeight="Infinity"/>
