@@ -82,7 +82,7 @@ public enum SQLLoader {
 
     private Logger logger = LogManager.getLogger(SQLLoader.class.getSimpleName());
 
-    private String basePath = "/mattw/youtube/commentsuite/db/sql/";
+    private String basePath = "/io/mattw/youtube/commentsuite/db/sql/";
     private String fileName;
     private SQLType scriptType;
     private String fileData = "";

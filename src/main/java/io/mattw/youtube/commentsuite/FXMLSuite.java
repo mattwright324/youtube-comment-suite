@@ -42,7 +42,7 @@ public class FXMLSuite extends Application {
             youtubeApiForAccounts = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
             database = new CommentDatabase("commentsuite.sqlite3");
 
-            Parent parent = FXMLLoader.load(getClass().getResource("/mattw/youtube/commentsuite/fxml/Main.fxml"));
+            Parent parent = FXMLLoader.load(getClass().getResource("/io/mattw/youtube/commentsuite/fxml/Main.fxml"));
 
             Scene scene = new Scene(parent);
             scene.getStylesheets().add("SuiteStyles.css");

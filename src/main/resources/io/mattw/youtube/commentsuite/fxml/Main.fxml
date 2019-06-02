@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
-           fx:controller="mattw.youtube.commentsuite.fxml.Main"
+           fx:controller="io.mattw.youtube.commentsuite.fxml.Main"
            alignment="TOP_CENTER"
            prefWidth="1000.0" prefHeight="550.0">
     <fx:define>

@@ -47,7 +47,7 @@ public enum ImageLoader {
 
     private Logger logger = LogManager.getLogger(ImageLoader.class.getSimpleName());
 
-    private String basePath = "/mattw/youtube/commentsuite/img";
+    private String basePath = "/io/mattw/youtube/commentsuite/img";
     private Image image;
 
     ImageLoader(String fileName) {
