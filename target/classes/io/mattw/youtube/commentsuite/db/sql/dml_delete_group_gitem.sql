@@ -1,1 +1,0 @@
-DELETE FROM group_gitem WHERE gitem_id = ? AND group_id = ?;

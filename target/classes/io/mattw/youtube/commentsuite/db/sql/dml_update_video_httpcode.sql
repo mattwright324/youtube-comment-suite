@@ -1,1 +1,0 @@
-UPDATE videos SET http_code = ? WHERE video_id = ?;

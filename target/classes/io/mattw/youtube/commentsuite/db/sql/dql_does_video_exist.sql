@@ -1,1 +1,0 @@
-SELECT 1 FROM videos WHERE video_id = ?;
