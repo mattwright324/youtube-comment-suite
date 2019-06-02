@@ -1,15 +1,15 @@
 package io.mattw.youtube.commentsuite;
 
 import io.mattw.youtube.commentsuite.db.*;
+import io.mattw.youtube.datav3.entrypoints.*;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ProgressBar;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import io.mattw.youtube.commentsuite.util.Tuple;
-import mattw.youtube.datav3.Parts;
-import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.entrypoints.*;
+import io.mattw.youtube.datav3.Parts;
+import io.mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

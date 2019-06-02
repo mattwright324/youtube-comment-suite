@@ -1,7 +1,7 @@
 package io.mattw.youtube.commentsuite.db;
 
-import mattw.youtube.datav3.entrypoints.ChannelsList;
-import mattw.youtube.datav3.entrypoints.CommentsList;
+import io.mattw.youtube.datav3.entrypoints.ChannelsList;
+import io.mattw.youtube.datav3.entrypoints.CommentsList;
 import org.apache.commons.text.StringEscapeUtils;
 
 /**

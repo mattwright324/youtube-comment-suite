@@ -1,8 +1,8 @@
 package io.mattw.youtube.commentsuite.db;
 
 import io.mattw.youtube.commentsuite.FXMLSuite;
-import mattw.youtube.datav3.entrypoints.CommentThreadsList;
-import mattw.youtube.datav3.entrypoints.CommentsList;
+import io.mattw.youtube.datav3.entrypoints.CommentThreadsList;
+import io.mattw.youtube.datav3.entrypoints.CommentsList;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Date;

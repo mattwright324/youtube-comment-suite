@@ -16,9 +16,9 @@ import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.ClipboardUtil;
 import io.mattw.youtube.commentsuite.util.EurekaProvider;
 import io.mattw.youtube.commentsuite.util.Location;
-import mattw.youtube.datav3.Parts;
-import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.entrypoints.SearchList;
+import io.mattw.youtube.datav3.Parts;
+import io.mattw.youtube.datav3.YouTubeData3;
+import io.mattw.youtube.datav3.entrypoints.SearchList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

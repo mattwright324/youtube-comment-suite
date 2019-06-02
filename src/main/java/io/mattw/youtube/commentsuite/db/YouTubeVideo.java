@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.db;
 
-import mattw.youtube.datav3.entrypoints.VideosList;
+import io.mattw.youtube.datav3.entrypoints.VideosList;
 
 /**
  * @since 2018-12-30

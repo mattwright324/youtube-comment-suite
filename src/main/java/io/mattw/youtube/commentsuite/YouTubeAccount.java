@@ -2,9 +2,9 @@ package io.mattw.youtube.commentsuite;
 
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import mattw.youtube.datav3.Parts;
-import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.entrypoints.ChannelsList;
+import io.mattw.youtube.datav3.Parts;
+import io.mattw.youtube.datav3.YouTubeData3;
+import io.mattw.youtube.datav3.entrypoints.ChannelsList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -13,7 +13,7 @@ import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import mattw.youtube.datav3.entrypoints.CommentsList;
+import io.mattw.youtube.datav3.entrypoints.CommentsList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

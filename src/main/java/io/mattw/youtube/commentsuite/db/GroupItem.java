@@ -2,12 +2,12 @@ package io.mattw.youtube.commentsuite.db;
 
 
 import io.mattw.youtube.commentsuite.FXMLSuite;
-import mattw.youtube.datav3.Parts;
-import mattw.youtube.datav3.YouTubeData3;
-import mattw.youtube.datav3.entrypoints.ChannelsList;
-import mattw.youtube.datav3.entrypoints.PlaylistItemsList;
-import mattw.youtube.datav3.entrypoints.SearchList;
-import mattw.youtube.datav3.entrypoints.VideosList;
+import io.mattw.youtube.datav3.Parts;
+import io.mattw.youtube.datav3.YouTubeData3;
+import io.mattw.youtube.datav3.entrypoints.ChannelsList;
+import io.mattw.youtube.datav3.entrypoints.PlaylistItemsList;
+import io.mattw.youtube.datav3.entrypoints.SearchList;
+import io.mattw.youtube.datav3.entrypoints.VideosList;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
