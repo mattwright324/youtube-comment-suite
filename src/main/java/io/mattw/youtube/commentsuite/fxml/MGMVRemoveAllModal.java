@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.YouTube;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableList;
@@ -14,7 +15,6 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,7 +37,7 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
     private static Logger logger = LogManager.getLogger(MGMVRemoveAllModal.class.getSimpleName());
 
     private CommentDatabase database;
-    private YouTubeData3 youtube;
+    private YouTube youtube;
 
     private @FXML Label alertError;
     private @FXML TextField link;
@@ -56,7 +56,7 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
         this.groupItems = groupItems;
 
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYoutubeApi();
+        youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRemoveAllModal.fxml"));
         loader.setController(this);

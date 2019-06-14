@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.YouTube;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
@@ -13,8 +14,6 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.datav3.YouTubeData3;
-import io.mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +38,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
     private static Logger logger = LogManager.getLogger(MGMVAddItemModal.class.getName());
 
     private CommentDatabase database;
-    private YouTubeData3 youtube;
+    private YouTube youtube;
 
     private @FXML Label alertError;
     private @FXML TextField link;
@@ -55,7 +54,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
         this.group = group;
 
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYoutubeApi();
+        youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVAddItemModal.fxml"));
         loader.setController(this);
@@ -96,9 +95,10 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                     }
                 } catch (IOException e) {
                     String message;
-                    if(e instanceof YouTubeErrorException) {
+                    // TODO: youtube-api
+                    /*if(e instanceof YouTubeErrorException) {
                         message = ((YouTubeErrorException) e).getError().getMessage();
-                    } else {
+                    } else*/ {
                         message = e.getMessage();
                     }
                     runLater(() -> setError(message));

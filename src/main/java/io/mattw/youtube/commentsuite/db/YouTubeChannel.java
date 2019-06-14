@@ -1,7 +1,7 @@
 package io.mattw.youtube.commentsuite.db;
 
-import io.mattw.youtube.datav3.entrypoints.ChannelsList;
-import io.mattw.youtube.datav3.entrypoints.CommentsList;
+import com.google.api.services.youtube.model.Channel;
+import com.google.api.services.youtube.model.Comment;
 import org.apache.commons.text.StringEscapeUtils;
 
 /**
@@ -10,13 +10,13 @@ import org.apache.commons.text.StringEscapeUtils;
  */
 public class YouTubeChannel extends YouTubeObject {
 
-    public YouTubeChannel(ChannelsList.Item item) {
+    public YouTubeChannel(Channel item) {
         this(item, false);
     }
 
-    public YouTubeChannel(ChannelsList.Item item, boolean fetchThumb) {
+    public YouTubeChannel(Channel item, boolean fetchThumb) {
         super(item.getId(), StringEscapeUtils.unescapeHtml4(item.getSnippet().getTitle()),
-                item.getSnippet().getThumbnails().getDefault().getURL().toString(), fetchThumb);
+                item.getSnippet().getThumbnails().getDefault().getUrl(), fetchThumb);
         setTypeId(YType.CHANNEL);
     }
 
@@ -25,12 +25,12 @@ public class YouTubeChannel extends YouTubeObject {
         setTypeId(YType.CHANNEL);
     }
 
-    public YouTubeChannel(CommentsList.Item item) {
+    public YouTubeChannel(Comment item) {
         this(item, false);
     }
 
-    public YouTubeChannel(CommentsList.Item item, boolean fetchThumb) {
-        this(item.getSnippet().getAuthorChannelId().getValue(),
+    public YouTubeChannel(Comment item, boolean fetchThumb) {
+        this(item.getSnippet().getAuthorChannelId().toString(),
                 StringEscapeUtils.unescapeHtml4(item.getSnippet().getAuthorDisplayName()),
                 item.getSnippet().getAuthorProfileImageUrl(), fetchThumb);
         setTypeId(YType.CHANNEL);

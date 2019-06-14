@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.db;
 
-import io.mattw.youtube.datav3.entrypoints.VideosList;
+import com.google.api.services.youtube.model.Video;
 
 /**
  * @since 2018-12-30
@@ -14,30 +14,30 @@ public class YouTubeVideo extends YouTubeObject {
     private long comments, likes, dislikes, views;
     private int httpCode;
 
-    public YouTubeVideo(VideosList.Item item) {
-        super(item.getId(), item.getSnippet().getTitle(), item.getSnippet().getThumbnails().getMedium().getURL().toString(), true);
+    public YouTubeVideo(Video item) {
+        super(item.getId(), item.getSnippet().getTitle(), item.getSnippet().getThumbnails().getMedium().getUrl().toString(), true);
         setTypeId(YType.VIDEO);
         this.channelId = item.getSnippet().getChannelId();
         this.description = item.getSnippet().getDescription();
-        this.publishDate = item.getSnippet().getPublishedAt().getTime();
-        this.views = item.getStatistics().getViewCount();
-        this.likes = item.getStatistics().getLikeCount();
-        this.dislikes = item.getStatistics().getDislikeCount();
-        this.comments = item.getStatistics().getCommentCount();
+        this.publishDate = item.getSnippet().getPublishedAt().getValue();
+        this.views = item.getStatistics().getViewCount().longValue();
+        this.likes = item.getStatistics().getLikeCount().longValue();
+        this.dislikes = item.getStatistics().getDislikeCount().longValue();
+        this.comments = item.getStatistics().getCommentCount().longValue();
         this.grabDate = System.currentTimeMillis();
     }
 
     @Deprecated
-    public YouTubeVideo(VideosList.Item itemSnip, VideosList.Item itemStat) {
-        super(itemSnip.getId(), itemSnip.getSnippet().getTitle(), itemSnip.getSnippet().getThumbnails().getMedium().getURL().toString(), true);
+    public YouTubeVideo(Video itemSnip, Video itemStat) {
+        super(itemSnip.getId(), itemSnip.getSnippet().getTitle(), itemSnip.getSnippet().getThumbnails().getMedium().getUrl().toString(), true);
         setTypeId(YType.VIDEO);
         this.channelId = itemSnip.getSnippet().getChannelId();
         this.description = itemSnip.getSnippet().getDescription();
-        this.publishDate = itemSnip.getSnippet().getPublishedAt().getTime();
-        this.views = itemStat.getStatistics().getViewCount();
-        this.likes = itemStat.getStatistics().getLikeCount();
-        this.dislikes = itemStat.getStatistics().getDislikeCount();
-        this.comments = itemStat.getStatistics().getCommentCount();
+        this.publishDate = itemSnip.getSnippet().getPublishedAt().getValue();
+        this.views = itemStat.getStatistics().getViewCount().longValue();
+        this.likes = itemStat.getStatistics().getLikeCount().longValue();
+        this.dislikes = itemStat.getStatistics().getDislikeCount().longValue();
+        this.comments = itemStat.getStatistics().getCommentCount().longValue();
         this.grabDate = System.currentTimeMillis();
     }
 

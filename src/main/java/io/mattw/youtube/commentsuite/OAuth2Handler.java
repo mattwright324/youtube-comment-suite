@@ -1,10 +1,9 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.services.youtube.model.Comment;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.mattw.youtube.commentsuite.util.UTF8UrlEncoder;
-import io.mattw.youtube.datav3.entrypoints.CommentsList;
-import io.mattw.youtube.datav3.entrypoints.YouTubeErrorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
@@ -104,7 +103,7 @@ public class OAuth2Handler {
      * @param textOriginal text to reply to the comment with
      * @throws IOException failed to reply
      */
-    public CommentsList.Item postReply(String parentId, String textOriginal) throws IOException {
+    public Comment postReply(String parentId, String textOriginal) throws IOException {
         String payload = gson.toJson(new MakeReply(parentId, textOriginal));
 
         int attempt = 0;
@@ -124,7 +123,7 @@ public class OAuth2Handler {
                     if(conn.getResponseCode() == 200) {
                         String response = streamToString(conn.getInputStream());
 
-                        return gson.fromJson(response, CommentsList.Item.class);
+                        return gson.fromJson(response, Comment.class);
                     } else if(conn.getResponseCode() == 401) {
                         logger.debug("Refreshing tokens and trying again [attempt={}]", attempt);
 
@@ -136,7 +135,9 @@ public class OAuth2Handler {
                                 conn.getResponseCode(),
                                 response);
 
-                        throw gson.fromJson(response, YouTubeErrorException.class);
+                        // TODO: youtube-api
+                        throw new IOException("TODO");
+                        //throw gson.fromJson(response, );
                     }
                 }
             } finally {

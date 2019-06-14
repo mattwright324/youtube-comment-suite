@@ -1,8 +1,8 @@
 package io.mattw.youtube.commentsuite.db;
 
+import com.google.api.services.youtube.model.Comment;
+import com.google.api.services.youtube.model.CommentThread;
 import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.datav3.entrypoints.CommentThreadsList;
-import io.mattw.youtube.datav3.entrypoints.CommentsList;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Date;
@@ -17,40 +17,40 @@ public class YouTubeComment extends YouTubeObject {
     private Date date;
     private String videoId;
     private String channelId = "";
-    private int likes, replies;
+    private long likes, replies;
     private boolean isReply;
     private String parentId;
 
-    public YouTubeComment(CommentsList.Item item, String videoId) {
+    public YouTubeComment(Comment item, String videoId) {
         super(item.getId(), null, null, false);
         this.setTypeId(YType.COMMENT);
         this.text = item.getSnippet().getTextDisplay();
-        this.date = item.getSnippet().getPublishedAt();
+        this.date = new Date(item.getSnippet().getPublishedAt().getValue());
         this.videoId = videoId; // this.videoId = item.snippet.videoId;
         this.likes = item.getSnippet().getLikeCount();
         this.replies = -1;
         this.isReply = true;
         this.parentId = item.getSnippet().getParentId();
-        if(item.getSnippet().getAuthorChannelId() != null && item.getSnippet().getAuthorChannelId().getValue() != null) {
-            this.channelId = item.getSnippet().getAuthorChannelId().getValue();
+        if(item.getSnippet().getAuthorChannelId() != null && item.getSnippet().getAuthorChannelId() != null) {
+            this.channelId = item.getSnippet().getAuthorChannelId().toString();
         } else {
             System.out.println("Null channel");
         }
     }
 
-    public YouTubeComment(CommentThreadsList.Item item) {
+    public YouTubeComment(CommentThread item) {
         super(item.getId(), null, null, false);
         this.setTypeId(YType.COMMENT);
         this.videoId = item.getSnippet().getVideoId();
         this.replies = item.getSnippet().getTotalReplyCount();
-        CommentsList.Item tlc = item.getSnippet().getTopLevelComment();
+        Comment tlc = item.getSnippet().getTopLevelComment();
         this.text = tlc.getSnippet().getTextDisplay();
-        this.date = tlc.getSnippet().getPublishedAt();
+        this.date = new Date(tlc.getSnippet().getPublishedAt().getValue());
         this.likes = tlc.getSnippet().getLikeCount();
         this.isReply = false;
         this.parentId = null;
-        if(tlc.getSnippet().getAuthorChannelId() != null && tlc.getSnippet().getAuthorChannelId().getValue() != null) {
-            this.channelId = tlc.getSnippet().getAuthorChannelId().getValue();
+        if(tlc.getSnippet().getAuthorChannelId() != null && tlc.getSnippet().getAuthorChannelId() != null) {
+            this.channelId = tlc.getSnippet().getAuthorChannelId().toString();
         } else {
            System.out.println("Null channel");
         }
@@ -77,8 +77,8 @@ public class YouTubeComment extends YouTubeObject {
     public String getVideoId() { return videoId; }
     public String getChannelId() { return channelId; }
     public YouTubeChannel getChannel() { return FXMLSuite.getDatabase().getChannel(channelId); }
-    public int getLikes() { return likes; }
-    public int getReplyCount() { return replies; }
+    public long getLikes() { return likes; }
+    public long getReplyCount() { return replies; }
     public boolean isReply() { return isReply; }
     public String getParentId() { return parentId; }
 

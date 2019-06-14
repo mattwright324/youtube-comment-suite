@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.db;
 
+import com.google.api.services.youtube.model.ResourceId;
 import javafx.scene.image.Image;
 import io.mattw.youtube.commentsuite.ImageCache;
 
@@ -32,6 +33,14 @@ public abstract class YouTubeObject implements ImageCache {
     public YouTubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb) {
         this();
         this.youtubeId = youtubeId;
+        this.title = title;
+        this.thumbUrl = thumbUrl;
+        this.fetchThumb = fetchThumb;
+    }
+
+    public YouTubeObject(ResourceId youtubeId, String title, String thumbUrl, boolean fetchThumb) {
+        this();
+        this.youtubeId = getId(youtubeId);
         this.title = title;
         this.thumbUrl = thumbUrl;
         this.fetchThumb = fetchThumb;
@@ -127,5 +136,16 @@ public abstract class YouTubeObject implements ImageCache {
 
     public boolean equals(Object o) {
         return o instanceof YouTubeObject && ((YouTubeObject) o).getYoutubeId() != null && ((YouTubeObject) o).getYoutubeId().equals(youtubeId);
+    }
+
+    public String getId(ResourceId resourceId) {
+        if(resourceId.getVideoId() != null) {
+            return resourceId.getVideoId();
+        } else if(resourceId.getChannelId() != null) {
+            return resourceId.getChannelId();
+        } else if(resourceId.getPlaylistId() != null) {
+            return resourceId.getPlaylistId();
+        }
+        return null;
     }
 }

@@ -24,9 +24,9 @@
     <dependencies>
         <!-- Core libraries -->
         <dependency>
-            <groupId>io.mattw.youtube</groupId>
-            <artifactId>youtube-data-list</artifactId>
-            <version>2.0.1</version>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-youtube</artifactId>
+            <version>v3-rev212-1.25.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

@@ -1,5 +1,10 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.youtube.YouTube;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -9,11 +14,11 @@ import javafx.stage.Stage;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.util.EurekaProvider;
 import io.mattw.youtube.commentsuite.util.Location;
-import io.mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 
 /**
@@ -29,17 +34,27 @@ public class FXMLSuite extends Application {
     private static Location location = new Location<EurekaProvider, EurekaProvider.Location>(
             new EurekaProvider(), EurekaProvider.Location.class);
     private static ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
-    private static YouTubeData3 youtubeApi, youtubeApiForAccounts;
+    //private static YouTubeData3 youtubeApi, youtubeApiForAccounts;
     private static OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com",
             "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
     private static CommentDatabase database;
 
+    private static YouTube youtube;
+    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    private static String youtubeApiKey = "";
+
     public void start(Stage stage) {
         try {
+            NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+            youtube =  new YouTube.Builder(httpTransport, JSON_FACTORY, null)
+                    .setApplicationName("YouTube Comment Suite")
+                    .build();
 
             // System.setProperty("glass.win.uiScale", "100%");
-            youtubeApi = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
-            youtubeApiForAccounts = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
+            //youtubeApi = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
+            //youtubeApiForAccounts = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
+            youtubeApiKey = config.getDataObject().getYoutubeApiKey();
+
             database = new CommentDatabase("commentsuite.sqlite3");
 
             Parent parent = FXMLLoader.load(getClass().getResource("/io/mattw/youtube/commentsuite/fxml/Main.fxml"));
@@ -50,7 +65,7 @@ public class FXMLSuite extends Application {
             stage.setScene(scene);
             stage.getIcons().add(ImageLoader.YCS_ICON.getImage());
             stage.setOnCloseRequest(we -> {
-                logger.debug("Closing - [totalSpentQuota={} units]", youtubeApi.getTotalSpentCost());
+                //logger.debug("Closing - [totalSpentQuota={} units]", youtubeApi.getTotalSpentCost());
 
                 try {
                     database.commit();
@@ -65,7 +80,7 @@ public class FXMLSuite extends Application {
                 System.exit(0);
             });
             stage.show();
-        } catch (IOException | SQLException e) {
+        } catch (IOException | SQLException | GeneralSecurityException e) {
             e.printStackTrace();
             logger.error(e);
             Platform.exit();
@@ -77,12 +92,24 @@ public class FXMLSuite extends Application {
         return config;
     }
 
-    public static YouTubeData3 getYoutubeApi() {
-        return youtubeApi;
+    //public static YouTubeData3 getYoutubeApi() {
+    //    return youtubeApi;
+    //}
+
+    //public static YouTubeData3 getYoutubeApiForAccounts() {
+     //   return youtubeApiForAccounts;
+    //}
+
+    public static YouTube getYouTube() {
+        return youtube;
     }
 
-    public static YouTubeData3 getYoutubeApiForAccounts() {
-        return youtubeApiForAccounts;
+    public static String getYouTubeApiKey() {
+        return youtubeApiKey;
+    }
+
+    public static void setYoutubeApiKey(String apiKey) {
+        youtubeApiKey = apiKey;
     }
 
     public static OAuth2Handler getOauth2() {

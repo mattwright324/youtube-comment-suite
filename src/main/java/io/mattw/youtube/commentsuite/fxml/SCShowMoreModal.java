@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.model.Comment;
 import io.mattw.youtube.commentsuite.*;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -13,7 +14,6 @@ import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.datav3.entrypoints.CommentsList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -120,7 +120,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                     String parentId = loadedComment.isReply() ?
                             loadedComment.getParentId() : loadedComment.getYoutubeId();
 
-                    CommentsList.Item yourReply = oAuth2Handler.postReply(parentId, replyText.getText());
+                    Comment yourReply = oAuth2Handler.postReply(parentId, replyText.getText());
 
                     YouTubeComment comment = new YouTubeComment(yourReply, loadedComment.getVideoId());
 

@@ -1,10 +1,10 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.Channel;
+import com.google.api.services.youtube.model.ChannelListResponse;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.datav3.Parts;
-import io.mattw.youtube.datav3.YouTubeData3;
-import io.mattw.youtube.datav3.entrypoints.ChannelsList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,24 +49,29 @@ public class YouTubeAccount implements Serializable {
      */
     void updateData() {
         CommentDatabase database = FXMLSuite.getDatabase();
-        YouTubeData3 youtube = FXMLSuite.getYoutubeApiForAccounts();
+        YouTube youtube = FXMLSuite.getYouTube();
 
         logger.debug("Getting account data for [accessToken={}]", this.tokens.getAccessToken().substring(0,10)+"...");
 
-        String oldAccessToken = youtube.getProfileAccessToken();
+        String oldAccessToken = null;// = youtube.getProfileAccessToken();
         String newAccessToken = getTokens().getAccessToken();
 
-        youtube.setProfileAccessToken(newAccessToken);
+        // TODO: fix
+        //youtube.setProfileAccessToken(newAccessToken);
 
         try {
-            ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.SNIPPET)).getMine("");
-            ChannelsList.Item cli = cl.getItems()[0];
+            ChannelListResponse cl = youtube.channels().list("snippet")
+                    .setKey(FXMLSuite.getYouTubeApiKey())
+                    .setMine(true)
+                    .execute();
+
+            Channel cli = cl.getItems().get(0);
 
             this.channelId = cli.getId();
 
-            if(cli.hasSnippet()) {
+            if(cli.getSnippet() != null) {
                 this.username = cli.getSnippet().getTitle();
-                this.thumbUrl = cli.getSnippet().getThumbnails().getMedium().getURL().toString();
+                this.thumbUrl = cli.getSnippet().getThumbnails().getMedium().getUrl();
 
                 try {
                     YouTubeChannel channel = new YouTubeChannel(cli);
@@ -79,8 +84,9 @@ public class YouTubeAccount implements Serializable {
         } catch (IOException e) {
             logger.error("Failed to query for account channel info.", e);
         } finally {
+            // TODO: youtube-api
             if(oldAccessToken == null || oldAccessToken.trim().isEmpty()) {
-                youtube.setProfileAccessToken(newAccessToken);
+               // youtube.setProfileAccessToken(newAccessToken);
             }
         }
     }

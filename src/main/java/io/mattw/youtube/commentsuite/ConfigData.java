@@ -45,10 +45,11 @@ public class ConfigData implements Serializable {
 
     public void refreshAccounts() {
         accounts.forEach(acc -> {
-            FXMLSuite.getYoutubeApiForAccounts()
-                    .setProfileAccessToken(acc.getTokens().getAccessToken());
+            // TODO: fix refresh accounts
+            //FXMLSuite.getYoutubeApiForAccounts()
+            //        .setProfileAccessToken(acc.getTokens().getAccessToken());
 
-            acc.updateData();
+            //acc.updateData();
         });
     }
 

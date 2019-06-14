@@ -1,13 +1,9 @@
 package io.mattw.youtube.commentsuite.db;
 
 
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.datav3.Parts;
-import io.mattw.youtube.datav3.YouTubeData3;
-import io.mattw.youtube.datav3.entrypoints.ChannelsList;
-import io.mattw.youtube.datav3.entrypoints.PlaylistItemsList;
-import io.mattw.youtube.datav3.entrypoints.SearchList;
-import io.mattw.youtube.datav3.entrypoints.VideosList;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
@@ -32,10 +28,10 @@ public class GroupItem extends YouTubeObject {
     /**
      * Used for converting selected search items for inserting into database.
      */
-    public GroupItem(SearchList.Item item) {
-        super(item.getId().getId(), item.getSnippet().getTitle(),
-                item.getSnippet().getThumbnails().getMedium().getURL().toString(), true);
-        this.published = item.getSnippet().getPublishedAt().getTime();
+    public GroupItem(SearchResult item) {
+        super(item.getId(), item.getSnippet().getTitle(),
+                item.getSnippet().getThumbnails().getMedium().getUrl(), true);
+        this.published = item.getSnippet().getPublishedAt().getValue();
         this.channelTitle = item.getSnippet().getChannelTitle();
         this.lastChecked = 0;
         if(item.getId().getVideoId() != null) setTypeId(YType.VIDEO);
@@ -48,9 +44,9 @@ public class GroupItem extends YouTubeObject {
      *
      * @param item VideosList.Item
      */
-    public GroupItem(VideosList.Item item) {
+    public GroupItem(Video item) {
         this(item.getId(), YType.VIDEO, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
-                item.getSnippet().getThumbnails().getMedium().getURL().toString(), item.getSnippet().getPublishedAt().getTime(), 0);
+                item.getSnippet().getThumbnails().getMedium().getUrl(), item.getSnippet().getPublishedAt().getValue(), 0);
     }
 
     /**
@@ -58,9 +54,9 @@ public class GroupItem extends YouTubeObject {
      *
      * @param item ChannelsList.Item
      */
-    public GroupItem(ChannelsList.Item item) {
+    public GroupItem(Channel item) {
         this(item.getId(), YType.CHANNEL, item.getSnippet().getTitle(), item.getSnippet().getTitle(),
-                item.getSnippet().getThumbnails().getMedium().getURL().toString(), item.getSnippet().getPublishedAt().getTime(), 0);
+                item.getSnippet().getThumbnails().getMedium().getUrl(), item.getSnippet().getPublishedAt().getValue(), 0);
     }
 
     /**
@@ -68,9 +64,9 @@ public class GroupItem extends YouTubeObject {
      *
      * @param item PlaylistItemsList.Item
      */
-    public GroupItem(PlaylistItemsList.Item item) {
+    public GroupItem(PlaylistItem item) {
         this(item.getId(), YType.PLAYLIST, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
-                item.getSnippet().getThumbnails().getMedium().getURL().toString(), item.getSnippet().getPublishedAt().getTime(), 0);
+                item.getSnippet().getThumbnails().getMedium().getUrl(), item.getSnippet().getPublishedAt().getValue(), 0);
     }
 
     /**
@@ -132,37 +128,47 @@ public class GroupItem extends YouTubeObject {
             channelUsername = true;
         }
 
-        YouTubeData3 youtube = FXMLSuite.getYoutubeApi();
+        YouTube youtube = FXMLSuite.getYouTube();
 
         if(result.isEmpty()) {
             throw new IOException(String.format("Input did not match expected formats [fullLink=%s]", fullLink));
         } else {
             if(type == YType.VIDEO) {
-                VideosList vl = ((VideosList) youtube.videosList().part(Parts.SNIPPET))
-                        .getByIds(result, "");
-                if(vl.hasItems()) {
-                    VideosList.Item item = vl.getItems()[0];
+                VideoListResponse vl = youtube.videos().list("snippet")
+                        .setKey(FXMLSuite.getYouTubeApiKey())
+                        .setId(result)
+                        .execute();
+
+                if(!vl.getItems().isEmpty()) {
+                    Video item = vl.getItems().get(0);
 
                     duplicate(new GroupItem(item));
                 }
             } else if(type == YType.CHANNEL) {
-                ChannelsList cl = youtube.channelsList().part(Parts.SNIPPET);
+                YouTube.Channels.List cl = youtube.channels().list("snippet")
+                        .setKey(FXMLSuite.getYouTubeApiKey());
+
                 if(!channelUsername) {
-                    cl = cl.getByChannel(result, "");
+                    cl = cl.setId(result);
                 } else {
-                    cl = cl.getByUsername(result, "");
+                    cl = cl.setForUsername(result);
                 }
 
-                if(cl.hasItems()) {
-                    ChannelsList.Item item = cl.getItems()[0];
+                ChannelListResponse clr = cl.execute();
+
+                if(!clr.getItems().isEmpty()) {
+                    Channel item = clr.getItems().get(0);
 
                     duplicate(new GroupItem(item));
                 }
             } else if(type == YType.PLAYLIST) {
-                PlaylistItemsList pl = ((PlaylistItemsList) youtube.playlistItemsList().part(Parts.SNIPPET))
-                        .get(result, "");
-                if(pl.hasItems()) {
-                    PlaylistItemsList.Item item = pl.getItems()[0];
+                PlaylistItemListResponse pl = youtube.playlistItems().list("snippet")
+                        .setKey(FXMLSuite.getYouTubeApiKey())
+                        .setId(result)
+                        .execute();
+
+                if(!pl.getItems().isEmpty()) {
+                    PlaylistItem item = pl.getItems().get(0);
 
                     duplicate(new GroupItem(item));
                 }

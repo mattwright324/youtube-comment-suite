@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.model.SearchResult;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -9,7 +10,6 @@ import javafx.scene.layout.HBox;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.YouTubeSearchItem;
-import io.mattw.youtube.datav3.entrypoints.SearchList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,12 +37,12 @@ public class SearchYouTubeListItem extends HBox {
     private @FXML Label number;
     private @FXML ImageView thumbnail;
 
-    private SearchList.Item data;
+    private SearchResult data;
     private String objectId;
     private String youtubeURL;
     private String typeStr;
 
-    public SearchYouTubeListItem(SearchList.Item data, int num) throws IOException {
+    public SearchYouTubeListItem(SearchResult data, int num) throws IOException {
         this.data = data;
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SearchYouTubeListItem.fxml"));
@@ -70,7 +70,7 @@ public class SearchYouTubeListItem extends HBox {
 
         type.setText(typeStr);
 
-        if(data.hasSnippet()) {
+        if(data.getSnippet() != null) {
             title.setText(data.getSnippet().getTitle());
             author.setText(data.getSnippet().getChannelTitle());
             description.setText(data.getSnippet().getDescription());
@@ -97,6 +97,6 @@ public class SearchYouTubeListItem extends HBox {
 
     public String getObjectId() { return this.objectId; }
 
-    public SearchList.Item getData() { return this.data; }
+    public SearchResult getData() { return this.data; }
 
 }

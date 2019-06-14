@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.*;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
@@ -12,7 +13,6 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,7 +40,7 @@ public class Settings implements Initializable {
     private ConfigFile<ConfigData> config;
     private OAuth2Handler oauth2;
     private CommentDatabase database;
-    private YouTubeData3 youtube, youtubeForAccounts;
+    private YouTube youtube;
 
     private @FXML Pane settingsPane;
 
@@ -79,8 +79,7 @@ public class Settings implements Initializable {
         oauth2 = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYoutubeApi();
-        youtubeForAccounts = FXMLSuite.getYoutubeApiForAccounts();
+        youtube = FXMLSuite.getYouTube();
 
         ConfigData configData = config.getDataObject();
         configData.refreshAccounts();
@@ -162,11 +161,9 @@ public class Settings implements Initializable {
             config.save();
 
             if(customKey.isSelected()) {
-                youtube.setDataApiKey(data.getYoutubeApiKey());
-                youtubeForAccounts.setDataApiKey(data.getYoutubeApiKey());
+                FXMLSuite.setYoutubeApiKey(data.getYoutubeApiKey());
             } else {
-                youtube.setDataApiKey(data.getDefaultApiKey());
-                youtubeForAccounts.setDataApiKey(data.getDefaultApiKey());
+                FXMLSuite.setYoutubeApiKey(data.getDefaultApiKey());
             }
 
             logger.debug("Closing Settings");

@@ -1,7 +1,8 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.services.youtube.model.ResourceId;
+import com.google.api.services.youtube.model.SearchResult;
 import io.mattw.youtube.commentsuite.db.YouTubeObject;
-import io.mattw.youtube.datav3.entrypoints.SearchList;
 
 /**
  * @since 2018-12-30
@@ -9,10 +10,10 @@ import io.mattw.youtube.datav3.entrypoints.SearchList;
  */
 public class YouTubeSearchItem extends YouTubeObject {
 
-    public YouTubeSearchItem(SearchList.Item searchListItem) {
-        setYoutubeId(searchListItem.getId().getId());
-        setTitle(searchListItem.getSnippet().getTitle());
-        setThumbUrl(searchListItem.getSnippet().getThumbnails().getMedium().getURL().toString());
+    public YouTubeSearchItem(SearchResult searchResult) {
+        setYoutubeId(getId(searchResult.getId()));
+        setTitle(searchResult.getSnippet().getTitle());
+        setThumbUrl(searchResult.getSnippet().getThumbnails().getMedium().getUrl());
         setFetchThumb(false);
     }
 }
