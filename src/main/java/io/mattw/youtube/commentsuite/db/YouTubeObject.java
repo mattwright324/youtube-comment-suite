@@ -21,8 +21,6 @@ public abstract class YouTubeObject implements ImageCache {
     /**
      * This field differs from what's returned by  {@link #buildYouTubeLink()} because it is used solely by
      * {@link GroupItem} as part of field duplication.
-     *
-     * TODO: Can potentially remove this field entirely? It does not appear to be set or used anywhere.
      */
     private String youTubeLink;
 

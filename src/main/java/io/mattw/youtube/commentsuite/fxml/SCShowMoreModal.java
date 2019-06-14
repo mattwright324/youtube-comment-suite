@@ -104,10 +104,14 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                 comboAccountSelect.getSelectionModel().select(0);
             }));
 
-            btnReply.disableProperty().bind(replyText.textProperty().length().greaterThan(0)
-                    .and(comboAccountSelect.getSelectionModel().selectedIndexProperty().greaterThan(-1))
-                    .and(replyPane.visibleProperty().not())
-                    .or(replyText.disabledProperty()));
+            btnReply.visibleProperty().bind(btnReply.managedProperty());
+            btnReply.managedProperty().bind(replyPane.visibleProperty());
+            btnReply.disableProperty().bind(
+                    replyText.textProperty().isEmpty()
+                            .or(comboAccountSelect.getSelectionModel()
+                                    .selectedIndexProperty().isEqualTo(-1))
+            );
+
             btnReply.setOnAction(ae -> new Thread(() -> {
                 runLater(() -> {
                     replyText.setDisable(true);

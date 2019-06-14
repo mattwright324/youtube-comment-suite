@@ -44,13 +44,7 @@ public class ConfigData implements Serializable {
     }
 
     public void refreshAccounts() {
-        accounts.forEach(acc -> {
-            // TODO: fix refresh accounts
-            //FXMLSuite.getYoutubeApiForAccounts()
-            //        .setProfileAccessToken(acc.getTokens().getAccessToken());
-
-            //acc.updateData();
-        });
+        accounts.forEach(YouTubeAccount::updateData);
     }
 
     public void addAccount(YouTubeAccount account) {

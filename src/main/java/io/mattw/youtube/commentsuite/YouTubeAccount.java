@@ -27,10 +27,9 @@ public class YouTubeAccount implements Serializable {
     private String username, channelId, thumbUrl;
     private OAuth2Tokens tokens;
 
-    /**
-     * Default constructor.
-     */
-    public YouTubeAccount() {}
+    public YouTubeAccount() {
+        // default constructor
+    }
 
     /**
      * Only used with "YouTube Account Sign-in," otherwise initialized by Gson & Config.
@@ -53,15 +52,9 @@ public class YouTubeAccount implements Serializable {
 
         logger.debug("Getting account data for [accessToken={}]", this.tokens.getAccessToken().substring(0,10)+"...");
 
-        String oldAccessToken = null;// = youtube.getProfileAccessToken();
-        String newAccessToken = getTokens().getAccessToken();
-
-        // TODO: fix
-        //youtube.setProfileAccessToken(newAccessToken);
-
         try {
             ChannelListResponse cl = youtube.channels().list("snippet")
-                    .setKey(FXMLSuite.getYouTubeApiKey())
+                    .setOauthToken(getTokens().getAccessToken())
                     .setMine(true)
                     .execute();
 
@@ -83,11 +76,6 @@ public class YouTubeAccount implements Serializable {
             }
         } catch (IOException e) {
             logger.error("Failed to query for account channel info.", e);
-        } finally {
-            // TODO: youtube-api
-            if(oldAccessToken == null || oldAccessToken.trim().isEmpty()) {
-               // youtube.setProfileAccessToken(newAccessToken);
-            }
         }
     }
 

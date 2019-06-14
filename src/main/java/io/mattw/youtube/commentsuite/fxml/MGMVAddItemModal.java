@@ -94,13 +94,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                         }
                     }
                 } catch (IOException e) {
-                    String message;
-                    // TODO: youtube-api
-                    /*if(e instanceof YouTubeErrorException) {
-                        message = ((YouTubeErrorException) e).getError().getMessage();
-                    } else*/ {
-                        message = e.getMessage();
-                    }
+                    String message = e.getMessage();
+                    
                     runLater(() -> setError(message));
 
                     logger.error("Failed to submit link", e);

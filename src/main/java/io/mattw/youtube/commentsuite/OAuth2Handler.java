@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite;
 
 import com.google.api.services.youtube.model.Comment;
+import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.mattw.youtube.commentsuite.util.UTF8UrlEncoder;
@@ -9,11 +10,8 @@ import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.*;
+import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 
 /**
  * @since 2019-01-21
@@ -22,20 +20,6 @@ import java.nio.charset.StandardCharsets;
 public class OAuth2Handler {
 
     private Logger logger = LogManager.getLogger(this);
-
-    /**
-     * Payload object converted to JSON when making replies.
-     */
-    private class MakeReply implements Serializable {
-        private class Snippet implements Serializable {
-            String parentId, textOriginal;
-        }
-        private Snippet snippet = new Snippet();
-        private MakeReply(String parentId, String textOriginal) {
-            snippet.parentId = parentId;
-            snippet.textOriginal = textOriginal;
-        }
-    }
 
     private Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();
     private String clientId;
@@ -104,60 +88,32 @@ public class OAuth2Handler {
      * @throws IOException failed to reply
      */
     public Comment postReply(String parentId, String textOriginal) throws IOException {
-        String payload = gson.toJson(new MakeReply(parentId, textOriginal));
+        CommentSnippet snippet = new CommentSnippet();
+        snippet.setParentId(parentId);
+        snippet.setTextOriginal(textOriginal);
+
+        Comment comment = new Comment();
+        comment.setSnippet(snippet);
 
         int attempt = 0;
         do {
-            String replyUrl = String.format("https://www.googleapis.com/youtube/v3/comments?part=snippet&access_token=%s",
-                    tokens.getAccessToken());
-
-            HttpsURLConnection conn = (HttpsURLConnection) new URL(replyUrl).openConnection();
             try {
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.connect();
+                Comment result = FXMLSuite.getYouTube().comments()
+                        .insert("snippet", comment)
+                        .setOauthToken(tokens.getAccessToken())
+                        .execute();
 
-                try(OutputStream os = conn.getOutputStream()) {
-                    os.write(payload.getBytes(StandardCharsets.UTF_8));
-                    if(conn.getResponseCode() == 200) {
-                        String response = streamToString(conn.getInputStream());
+                return result;
+            } catch (IOException e) {
+                logger.warn("Failed on comment reply, {}", e.getLocalizedMessage());
+                logger.debug("Refreshing tokens and trying again [attempt={}]", attempt);
 
-                        return gson.fromJson(response, Comment.class);
-                    } else if(conn.getResponseCode() == 401) {
-                        logger.debug("Refreshing tokens and trying again [attempt={}]", attempt);
-
-                        refreshTokens();
-                    } else {
-                        String response = streamToString(conn.getErrorStream());
-
-                        logger.warn("Issue when making reply, [code={}, response={}]",
-                                conn.getResponseCode(),
-                                response);
-
-                        // TODO: youtube-api
-                        throw new IOException("TODO");
-                        //throw gson.fromJson(response, );
-                    }
-                }
-            } finally {
-                conn.disconnect();
+                refreshTokens();
             }
 
             attempt++;
         } while(attempt < 10);
 
         throw new IOException("Could not reply and failed to refresh tokens.");
-    }
-
-    private String streamToString(InputStream is) throws IOException {
-        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] b = new byte[65535];
-            int n;
-            while ((n = is.read(b)) != -1) {
-                output.write(b, 0, n);
-            }
-            return new String(output.toByteArray(), StandardCharsets.UTF_8);
-        }
     }
 }
