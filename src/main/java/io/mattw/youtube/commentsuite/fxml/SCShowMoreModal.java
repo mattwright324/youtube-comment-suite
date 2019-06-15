@@ -77,13 +77,12 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
             btnSubmit.setOnAction(ae -> runLater(() -> enableReplyMode(!replyMode.getValue())));
 
-            // TODO: Account selection, sending replies
             replyMode.addListener((o, ov, nv) -> {
                 btnSubmit.setText(replyMode.getValue() ? "Cancel Reply" : "Make Reply");
 
                 if(replyText.getText().trim().isEmpty()) {
                     if(configData.getPrefixReplies()) {
-                        replyText.setText(String.format("+%s ", author.getText()));
+                        replyText.setText(String.format("@%s ", author.getText()));
                     }
                 }
             });

@@ -523,8 +523,14 @@ public class SearchComments implements Initializable, ImageCache {
         });
     }
 
+    private void selectAndShowContext(SearchCommentsListItem item) {
+        resultsList.getSelectionModel().clearSelection();
+        resultsList.getSelectionModel().select(item);
+    }
 
     private void showMore(SearchCommentsListItem scli) {
+        selectAndShowContext(scli);
+
         YouTubeComment comment = scli.getComment();
 
         logger.debug(String.format("Showing more window for commment [videoId=%s,commentId=%s]",
@@ -536,6 +542,8 @@ public class SearchComments implements Initializable, ImageCache {
     }
 
     private void reply(SearchCommentsListItem scli) {
+        selectAndShowContext(scli);
+
         YouTubeComment comment = scli.getComment();
 
         logger.debug(String.format("Showing reply window for commment [videoId=%s,commentId=%s]",
@@ -558,6 +566,8 @@ public class SearchComments implements Initializable, ImageCache {
     }
 
     private void viewTree(SearchCommentsListItem scli) {
+        selectAndShowContext(scli);
+
         runLater(() -> searchingProperty.setValue(true));
 
         actionComment = scli;

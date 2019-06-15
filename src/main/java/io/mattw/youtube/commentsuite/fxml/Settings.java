@@ -227,7 +227,6 @@ public class Settings implements Initializable {
             });
         }).start());
 
-        // TODO: Remove thumb files functionality
         btnRemoveThumbs.setOnAction(ae -> new Thread(() -> {
             runLater(() -> {
                 btnRemoveThumbs.setDisable(true);
