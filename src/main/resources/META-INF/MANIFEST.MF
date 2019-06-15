@@ -1,4 +1,15 @@
 Manifest-Version: 1.0
-Class-Path:
+Class-Path: lib\jsoup-1.12.1.jar lib\failureaccess-1.0.1.jar lib\jsr30
+ 5-3.0.2.jar lib\listenablefuture-9999.0-empty-to-avoid-conflict-with-
+ guava.jar lib\animal-sniffer-annotations-1.17.jar lib\checker-qual-2.
+ 5.2.jar lib\error_prone_annotations-2.2.0.jar lib\guava-27.1-jre.jar 
+ lib\j2objc-annotations-1.1.jar lib\commons-text-1.6.jar lib\commons-l
+ ang3-3.9.jar lib\commons-codec-1.10.jar lib\commons-logging-1.2.jar l
+ ib\log4j-core-2.11.2.jar lib\log4j-api-2.11.2.jar lib\gson-2.8.5.jar 
+ lib\google-api-client-1.25.0.jar lib\google-api-services-youtube-v3-r
+ ev212-1.25.0.jar lib\google-http-client-1.25.0.jar lib\google-http-cl
+ ient-jackson2-1.25.0.jar lib\httpclient-4.5.5.jar lib\httpcore-4.4.9.
+ jar lib\jackson-core-2.9.6.jar lib\google-oauth-client-1.25.0.jar lib
+ \sqlite-jdbc-3.21.0.1.jar
 Main-Class: io.mattw.youtube.commentsuite.FXMLSuite
 

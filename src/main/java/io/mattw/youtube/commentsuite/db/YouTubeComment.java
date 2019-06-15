@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.db;
 
+import com.google.api.client.util.ArrayMap;
 import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentThread;
 import io.mattw.youtube.commentsuite.FXMLSuite;
@@ -31,8 +32,8 @@ public class YouTubeComment extends YouTubeObject {
         this.replies = -1;
         this.isReply = true;
         this.parentId = item.getSnippet().getParentId();
-        if(item.getSnippet().getAuthorChannelId() != null && item.getSnippet().getAuthorChannelId() != null) {
-            this.channelId = item.getSnippet().getAuthorChannelId().toString();
+        if(item.getSnippet().getAuthorChannelId() != null) {
+            this.channelId = getChannelIdFromObject(item.getSnippet().getAuthorChannelId());
         } else {
             System.out.println("Null channel");
         }
@@ -49,8 +50,8 @@ public class YouTubeComment extends YouTubeObject {
         this.likes = tlc.getSnippet().getLikeCount();
         this.isReply = false;
         this.parentId = null;
-        if(tlc.getSnippet().getAuthorChannelId() != null && tlc.getSnippet().getAuthorChannelId() != null) {
-            this.channelId = tlc.getSnippet().getAuthorChannelId().toString();
+        if(tlc.getSnippet().getAuthorChannelId() != null) {
+            this.channelId = getChannelIdFromObject(tlc.getSnippet().getAuthorChannelId());
         } else {
            System.out.println("Null channel");
         }
@@ -90,9 +91,21 @@ public class YouTubeComment extends YouTubeObject {
      *
      * @return cleaned text
      */
-    public String getCleanText() {
+    public String getCleanText(boolean withNewLines) {
         return StringEscapeUtils.unescapeHtml4(text)
-                .replace("<br />", "\r\n")
+                .replace("<br />", withNewLines ? "\r\n" : " ")
                 .replaceAll("[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︠-︯]","");
+    }
+
+    /**
+     * For some reason this value returns as an ArrayMap? Cast and return correct value from it.
+     */
+    public String getChannelIdFromObject(Object authorChannelId) {
+        if(authorChannelId instanceof ArrayMap) {
+            ArrayMap<String,String> value = (ArrayMap) authorChannelId;
+
+            return value.get("value");
+        }
+        return authorChannelId.toString();
     }
 }

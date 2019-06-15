@@ -61,7 +61,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         author.setOnAction(ae -> browserUtil.open(channel.buildYouTubeLink()));
         author.setBorder(Border.EMPTY);
 
-        commentText.setText(comment.getCleanText());
+        commentText.setText(comment.getCleanText(false));
         commentText.setTextOverrun(OverrunStyle.ELLIPSIS);
 
         date.setText(comment.getDate().toString());

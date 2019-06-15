@@ -65,7 +65,7 @@ public class GroupItem extends YouTubeObject {
      * @param item PlaylistItemsList.Item
      */
     public GroupItem(PlaylistItem item) {
-        this(item.getId(), YType.PLAYLIST, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
+        this(item.getSnippet().getPlaylistId(), YType.PLAYLIST, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
                 item.getSnippet().getThumbnails().getMedium().getUrl(), item.getSnippet().getPublishedAt().getValue(), 0);
     }
 
@@ -164,7 +164,7 @@ public class GroupItem extends YouTubeObject {
             } else if(type == YType.PLAYLIST) {
                 PlaylistItemListResponse pl = youtube.playlistItems().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey())
-                        .setId(result)
+                        .setPlaylistId(result)
                         .execute();
 
                 if(!pl.getItems().isEmpty()) {

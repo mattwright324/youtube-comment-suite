@@ -184,7 +184,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
             author.setText(channel.getTitle());
             authorThumb.setImage(thumb);
-            commentText.setText(comment.getCleanText());
+            commentText.setText(comment.getCleanText(true));
 
             enableReplyMode(replyMode);
         });

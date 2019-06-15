@@ -7,3 +7,4 @@ commentsuite.sqlite3
 *.bak
 thumbs/
 target/
+*.sqlite3-journal
