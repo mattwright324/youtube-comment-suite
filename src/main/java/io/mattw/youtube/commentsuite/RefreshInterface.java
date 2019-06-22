@@ -9,7 +9,6 @@ import javafx.collections.ObservableList;
 /**
  * Interface for group refreshing.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public interface RefreshInterface {

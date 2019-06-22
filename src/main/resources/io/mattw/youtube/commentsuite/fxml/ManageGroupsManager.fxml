@@ -33,7 +33,7 @@
             <VBox spacing="10" maxWidth="400" prefWidth="400" HBox.hgrow="ALWAYS">
                 <HBox spacing="10">
                     <Button fx:id="btnAddItem" HBox.hgrow="ALWAYS" styleClass="btnSecondary" maxWidth="Infinity"
-                            text="Add Item" />
+                            text="Add Item(s)" />
                     <Button fx:id="btnRemoveItems" HBox.hgrow="ALWAYS" styleClass="btnDangerLight"  maxWidth="Infinity"
                             disable="true" text="Remove (0)" />
                     <Button fx:id="btnRemoveAll" HBox.hgrow="ALWAYS" styleClass="btnDanger"  maxWidth="Infinity"
@@ -168,12 +168,12 @@
 
     <!-- Overlay: Add Item -->
     <OverlayModal visible="false" fx:id="addItemModal">
-        <title><String fx:value="Add new item" /></title>
+        <title><String fx:value="Add new item(s)" /></title>
     </OverlayModal>
 
     <!-- Overlay: Remove Selected GroupItem(s) -->
     <OverlayModal visible="false" fx:id="removeItemModal">
-        <title><String fx:value="Remove selected group items" /></title>
+        <title><String fx:value="Remove selected group item(s)" /></title>
     </OverlayModal>
 
     <!-- Overlay: Remove All GroupItem(s) -->

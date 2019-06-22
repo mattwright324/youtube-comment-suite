@@ -4,6 +4,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+/**
+ * Helper methods for working with time.
+ */
 public class DateUtils {
 
     /**

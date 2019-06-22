@@ -33,7 +33,6 @@ import static javafx.application.Platform.runLater;
  * selected Group and GroupItem prior to opening the modal.
  *
  * @see SearchComments
- * @since 2018-12-30
  * @author mattwright324
  */
 public class SCVideoSelectModal extends VBox implements Cleanable {

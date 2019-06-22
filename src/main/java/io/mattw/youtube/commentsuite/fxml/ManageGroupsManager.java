@@ -1,6 +1,10 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.Group;
+import io.mattw.youtube.commentsuite.db.GroupItem;
+import io.mattw.youtube.commentsuite.db.GroupStats;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
@@ -16,21 +20,13 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.Group;
-import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.commentsuite.db.GroupStats;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -43,7 +39,6 @@ import static javafx.application.Platform.runLater;
  *
  * Loads template FXML and displays info from database.
  *
- * @since 2019-01-06
  * @author mattwright324
  */
 public class ManageGroupsManager extends StackPane implements ImageCache, Cleanable {

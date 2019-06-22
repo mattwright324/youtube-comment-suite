@@ -5,15 +5,14 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,6 +20,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
@@ -41,10 +42,15 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
     private YouTube youtube;
 
     private @FXML Label alertError;
-    private @FXML TextField link;
-    private @FXML Button btnClose, btnSubmit;
 
+    private @FXML TabPane tabPane;
+    private @FXML Tab tabSingular, tabBulk;
+
+    private @FXML TextField link;
     private @FXML Label link1, link2, link3, link4, link5;
+    private @FXML TextArea multiLink;
+
+    private @FXML Button btnClose, btnSubmit;
 
     private Group group;
 
@@ -76,29 +82,74 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
             btnSubmit.setOnAction(ae -> new Thread(() -> {
                 runLater(() -> btnSubmit.setDisable(true));
 
-                try {
-                    List<GroupItem> list = new ArrayList<>();
-                    list.add(new GroupItem(link.getText()));
+                Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
 
-                    if(!list.isEmpty()) {
-                        try {
-                            database.insertGroupItems(this.group, list);
-                            database.commit();
-                            runLater(() -> {
-                                itemAdded.setValue(itemAdded.getValue() + 1);
-                                group.reloadGroupItems();
-                                btnClose.fire();
-                            });
-                        } catch (SQLException e1) {
-                            runLater(() -> setError(e1.getClass().getSimpleName()));
+                if(selectedTab.equals(tabSingular)) {
+                    try {
+                        List<GroupItem> list = new ArrayList<>();
+                        list.add(new GroupItem(link.getText()));
+
+                        if(!list.isEmpty()) {
+                            try {
+                                database.insertGroupItems(this.group, list);
+                                database.commit();
+                                runLater(() -> {
+                                    itemAdded.setValue(itemAdded.getValue() + 1);
+                                    group.reloadGroupItems();
+                                    btnClose.fire();
+                                });
+                            } catch (SQLException e1) {
+                                runLater(() -> setError(e1.getClass().getSimpleName()));
+                            }
                         }
-                    }
-                } catch (IOException e) {
-                    String message = e.getMessage();
-                    
-                    runLater(() -> setError(message));
+                    } catch (IOException e) {
+                        String message = e.getMessage();
 
-                    logger.error("Failed to submit link", e);
+                        runLater(() -> setError(message));
+
+                        logger.error("Failed to submit link", e);
+                    }
+                } else if(selectedTab.equals(tabBulk)) {
+                    List<String> givenLinks = Stream.of(multiLink.getText().split("\n"))
+                            .map(String::trim)
+                            .filter(item -> StringUtils.isNotEmpty(item) && // not empty
+                                    item.toLowerCase().startsWith("http") && // is a URL
+                                    item.toLowerCase().contains("youtu")) // most likely a youtu.be / youtube.com link
+                            .collect(Collectors.toList());
+
+                    if(!givenLinks.isEmpty()) {
+                        List<GroupItem> list = new ArrayList<>();
+
+                        int failures = 0;
+
+                        for(String givenLink : givenLinks) {
+                            try {
+                                list.add(new GroupItem(givenLink));
+                            } catch (IOException e) {
+                                failures++;
+                            }
+                        }
+
+                        if(!list.isEmpty()) {
+                            try {
+                                database.insertGroupItems(this.group, list);
+                                database.commit();
+                                runLater(() -> {
+                                    itemAdded.setValue(itemAdded.getValue() + 1);
+                                    group.reloadGroupItems();
+                                    btnClose.fire();
+                                });
+                            } catch (SQLException e1) {
+                                failures++;
+                            }
+                        }
+                    } else {
+                        String message = "No valid links to submit (bulk).";
+
+                        runLater(() -> setError(message));
+
+                        logger.info(message);
+                    }
                 }
 
                 runLater(() -> btnSubmit.setDisable(false));
@@ -121,6 +172,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
         alertError.setVisible(false);
         alertError.setManaged(false);
         link.setText("");
+        multiLink.setText("");
     }
 
     public Button getBtnClose() {
