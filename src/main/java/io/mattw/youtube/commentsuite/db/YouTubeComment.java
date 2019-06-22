@@ -6,16 +6,13 @@ import com.google.api.services.youtube.model.CommentThread;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import org.apache.commons.text.StringEscapeUtils;
 
-import java.util.Date;
-
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class YouTubeComment extends YouTubeObject {
 
     private String text;
-    private Date date;
+    private long publishedAt;
     private String videoId;
     private String channelId = "";
     private long likes, replies;
@@ -26,7 +23,7 @@ public class YouTubeComment extends YouTubeObject {
         super(item.getId(), null, null, false);
         this.setTypeId(YType.COMMENT);
         this.text = item.getSnippet().getTextDisplay();
-        this.date = new Date(item.getSnippet().getPublishedAt().getValue());
+        this.publishedAt = item.getSnippet().getPublishedAt().getValue();
         this.videoId = videoId; // this.videoId = item.snippet.videoId;
         this.likes = item.getSnippet().getLikeCount();
         this.replies = -1;
@@ -46,7 +43,7 @@ public class YouTubeComment extends YouTubeObject {
         this.replies = item.getSnippet().getTotalReplyCount();
         Comment tlc = item.getSnippet().getTopLevelComment();
         this.text = tlc.getSnippet().getTextDisplay();
-        this.date = new Date(tlc.getSnippet().getPublishedAt().getValue());
+        this.publishedAt = tlc.getSnippet().getPublishedAt().getValue();
         this.likes = tlc.getSnippet().getLikeCount();
         this.isReply = false;
         this.parentId = null;
@@ -60,11 +57,11 @@ public class YouTubeComment extends YouTubeObject {
     /**
      * Used for database init.
      */
-    public YouTubeComment(String commentId, String text, long date, String videoId, String channelId, int likes, int replies, boolean isReply, String parentId) {
+    public YouTubeComment(String commentId, String text, long publishedAt, String videoId, String channelId, int likes, int replies, boolean isReply, String parentId) {
         super(commentId, null, null, false);
         this.setTypeId(YType.COMMENT);
         this.text = text;
-        this.date = new Date(date);
+        this.publishedAt = publishedAt;
         this.videoId = videoId;
         this.channelId = channelId;
         this.likes = likes;
@@ -74,7 +71,7 @@ public class YouTubeComment extends YouTubeObject {
     }
 
     public String getText() { return text; }
-    public Date getDate() { return date; }
+    public long getPublishedAt() { return publishedAt; }
     public String getVideoId() { return videoId; }
     public String getChannelId() { return channelId; }
     public YouTubeChannel getChannel() { return FXMLSuite.getDatabase().getChannel(channelId); }

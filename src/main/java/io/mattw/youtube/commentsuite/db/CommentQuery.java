@@ -6,14 +6,16 @@ import org.apache.logging.log4j.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * SQL query builder to query comments in database
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class CommentQuery {
@@ -25,15 +27,15 @@ public class CommentQuery {
     private int limit = 500;
     private String nameLike = "";
     private String commentLike = "";
-    private long before = Long.MAX_VALUE;
-    private long after = Long.MIN_VALUE;
+    private LocalDate before = LocalDate.MAX;
+    private LocalDate after = LocalDate.MIN;
 
     private int page = 1;
     private long totalResults = 0;
 
     private CommentDatabase database;
 
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     final private String[] order = {
             "comment_date DESC",
@@ -54,7 +56,7 @@ public class CommentQuery {
                         "limit=%s, nameLike=%s, commentLike=%s, before=%s, after=%s]",
                 page, group.getId(), String.valueOf(gitem), String.valueOf(videos),
                 order[orderBy], ctype, limit, nameLike, commentLike,
-                sdf.format(new Date(before)), sdf.format(new Date(after))));
+                formatter.format(before), formatter.format(after)));
 
         this.page = Math.abs(page);
 
@@ -78,8 +80,8 @@ public class CommentQuery {
         }
         map.put("cname", "%" + nameLike + "%");
         map.put("ctext", "%" + commentLike + "%");
-        map.put("dateafter",  after);
-        map.put("datebefore", before);
+        map.put("dateafter",  localDateToEpochMillis(after, false));
+        map.put("datebefore", localDateToEpochMillis(before, true));
         if(ctype != 0) {
             map.put("isreply", ctype == 2);
         }
@@ -133,6 +135,22 @@ public class CommentQuery {
         return items;
     }
 
+    /**
+     * Converts dateTime to Pacific Time (PDT) as it is where YouTube is headquartered.
+     *
+     * @param date LocalDate value
+     * @param midnight beginning of day (false) or end of day midnight (true)
+     * @return epoch millis of LocalDate in Pacific Time
+     */
+    private long localDateToEpochMillis(LocalDate date, boolean midnight) {
+        LocalDateTime dateTime = midnight ?
+                date.atTime(23, 59, 59) :
+                date.atTime(0, 0, 0);
+        return dateTime.atZone(ZoneId.of("America/Los_Angeles"))
+                .toInstant()
+                .toEpochMilli();
+    }
+
     public CommentQuery orderBy(int order) {
         this.orderBy = order;
         return this;
@@ -148,12 +166,12 @@ public class CommentQuery {
         return this;
     }
 
-    public CommentQuery before(long time) {
+    public CommentQuery before(LocalDate time) {
         this.before = time;
         return this;
     }
 
-    public CommentQuery after(long time) {
+    public CommentQuery after(LocalDate time) {
         this.after = time;
         return this;
     }

@@ -1,12 +1,5 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
@@ -14,13 +7,20 @@ import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
+import io.mattw.youtube.commentsuite.util.DateUtils;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +58,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
     private GroupItem groupItem;
     private YouTubeVideo selectedVideo;
     private Map<String,String> orderTypes = new LinkedHashMap<>();
-    private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
     public SCVideoSelectModal() {
         logger.debug("Initialize SCVideoSelectModal");
@@ -159,7 +159,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                     videoList.getItems().addAll(videos.stream()
                             .map(video -> {
                                 String subtitle = String.format("Published %s • %,d views • %,d comments",
-                                        sdf.format(new Date(video.getPublishedDate())),
+                                        formatter.format(DateUtils.epochMillisToDateTime(video.getPublishedDate())),
                                         video.getViews(),
                                         video.getCommentCount());
 

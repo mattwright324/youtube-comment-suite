@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Channel;
 import com.google.api.services.youtube.model.ChannelListResponse;
@@ -50,7 +51,7 @@ public class YouTubeAccount implements Serializable {
         CommentDatabase database = FXMLSuite.getDatabase();
         YouTube youtube = FXMLSuite.getYouTube();
 
-        logger.debug("Getting account data for [accessToken={}]", this.tokens.getAccessToken().substring(0,10)+"...");
+        logger.debug("Getting account data for [username={}]", getUsername());
 
         try {
             ChannelListResponse cl = youtube.channels().list("snippet")
@@ -73,6 +74,10 @@ public class YouTubeAccount implements Serializable {
                 } catch (SQLException e) {
                     logger.error("Unable to insert account channel into database.", e);
                 }
+            }
+        } catch(GoogleJsonResponseException e) {
+            if(e.getStatusCode() == 401) {
+                logger.warn("Tokens have expired for account [username={}]", getUsername());
             }
         } catch (IOException e) {
             logger.error("Failed to query for account channel info.", e);

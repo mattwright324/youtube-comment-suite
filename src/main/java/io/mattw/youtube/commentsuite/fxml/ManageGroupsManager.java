@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -25,6 +26,10 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -43,9 +48,11 @@ import static javafx.application.Platform.runLater;
  */
 public class ManageGroupsManager extends StackPane implements ImageCache, Cleanable {
 
-    private Logger logger = LogManager.getLogger(this.toString());
-    private Image edit = ImageLoader.PENCIL.getImage();
-    private Image close = ImageLoader.CLOSE.getImage();
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yy");
+
+    private final Logger logger = LogManager.getLogger(this.toString());
+    private final Image edit = ImageLoader.PENCIL.getImage();
+    private final Image close = ImageLoader.CLOSE.getImage();
 
     private ChangeListener<Font> fontListener;
     private Group group;
@@ -268,18 +275,19 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         GroupStats groupStats = database.getGroupStats(this.group);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yy");
-
         List<LineChart.Data<String,Number>> commentChartData = groupStats.getWeeklyCommentHistogram().entrySet().stream()
                 .map(entry -> {
-                    Date date = new Date(entry.getKey());
-                    Date endOfWeek = new Date(entry.getKey()+604800000);
+                    LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
+                    String beginningOfWeekStr = formatter.format(beginningOfWeek);
 
-                    LineChart.Data<String,Number> dataPoint = new LineChart.Data<>(sdf.format(date), entry.getValue());
+                    LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
+                    String endOfWeekStr = formatter.format(endOfWeek);
+
+                    LineChart.Data<String,Number> dataPoint =
+                            new LineChart.Data<>(beginningOfWeekStr, entry.getValue());
 
                     Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new comment(s)",
-                            sdf.format(date), sdf.format(endOfWeek),
-                            entry.getValue()));
+                            beginningOfWeekStr, endOfWeekStr, entry.getValue()));
 
                     StackPane node = new StackPane();
 
@@ -291,14 +299,17 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         List<LineChart.Data<String,Number>> videoChartData = groupStats.getWeeklyUploadHistogram().entrySet().stream()
                 .map(entry -> {
-                    Date date = new Date(entry.getKey());
-                    Date endOfWeek = new Date(entry.getKey()+604800000);
+                    LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
+                    String beginningOfWeekStr = formatter.format(beginningOfWeek);
 
-                    LineChart.Data<String,Number> dataPoint = new LineChart.Data<>(sdf.format(date), entry.getValue());
+                    LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
+                    String endOfWeekStr = formatter.format(endOfWeek);
+
+                    LineChart.Data<String,Number> dataPoint =
+                            new LineChart.Data<>(beginningOfWeekStr, entry.getValue());
 
                     Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new video(s)",
-                            sdf.format(date), sdf.format(endOfWeek),
-                            entry.getValue()));
+                            beginningOfWeekStr, endOfWeekStr, entry.getValue()));
 
                     StackPane node = new StackPane();
 

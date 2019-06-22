@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Hyperlink;
@@ -17,6 +18,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static javafx.application.Platform.runLater;
 
@@ -64,7 +68,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         commentText.setText(comment.getCleanText(false));
         commentText.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-        date.setText(comment.getDate().toString());
+        date.setText(DateUtils.epochMillisToDateTime(comment.getPublishedAt()).toString());
 
         if(comment.getReplyCount() > 0 || comment.isReply()) {
             viewTree.setManaged(true);
@@ -94,6 +98,8 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             reply.setVisible(!configData.getAccounts().isEmpty());
         });
     }
+
+
 
     YouTubeComment getComment() {
         return comment;

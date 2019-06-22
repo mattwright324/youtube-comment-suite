@@ -399,7 +399,7 @@ public class CommentDatabase implements Closeable {
                 ps.setString(1, ct.getYoutubeId());
                 ps.setString(2, ct.getChannelId());
                 ps.setString(3, ct.getVideoId());
-                ps.setLong(4, ct.getDate().getTime());
+                ps.setLong(4, ct.getPublishedAt());
                 ps.setString(5, ct.getText());
                 ps.setLong(6, ct.getLikes());
                 ps.setLong(7, ct.getReplyCount());

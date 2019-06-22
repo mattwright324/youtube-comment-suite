@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class SearchComments implements Initializable, ImageCache {
@@ -371,20 +370,7 @@ public class SearchComments implements Initializable, ImageCache {
         }
     }
 
-    /**
-     * Converts dateTime to Pacific Time (PDT) as it is where YouTube is headquartered.
-     *
-     * @param date LocalDate value
-     * @param midnight beginning of day (false) or end of day midnight (true)
-     * @return epoch millis of LocalDate in Pacific Time
-     */
-    private long localDateToEpochMillis(LocalDate date, boolean midnight) {
-        LocalDateTime dateTime = midnight ?
-                date.atTime(23, 59, 59) : date.atTime(0, 0, 0);
-        return dateTime.atZone(ZoneId.of("America/Los_Angeles"))
-                .toInstant()
-                .toEpochMilli();
-    }
+
 
     private int interpretPageValue(String value) {
         value = value.replaceAll("[^0-9]", "").trim();
@@ -458,11 +444,11 @@ public class SearchComments implements Initializable, ImageCache {
                     .orderBy(comboOrderBy.getSelectionModel().getSelectedIndex())
                     .textLike(commentLike.getText())
                     .nameLike(nameLike.getText())
-                    .before(localDateToEpochMillis(dateTo.getValue(), true))
-                    .after(localDateToEpochMillis(dateFrom.getValue(), false))
+                    .before(dateTo.getValue())
+                    .after(dateFrom.getValue())
                     .get(page, group, groupItem, Collections.singletonList(selectedVideo));
             logger.debug(String.format("Query completed [time=%s,comments=%s]",
-                    elapsedTime.getElapsedString(),
+                    elapsedTime.humanReadableFormat(),
                     lastResultsList.size()));
 
             setResultsList(lastResultsList, false);
