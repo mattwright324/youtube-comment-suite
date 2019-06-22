@@ -38,7 +38,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     private Group group;
     private ObservableList<String> errorList = FXCollections.observableArrayList();
-    private boolean softShutdown = false;
     private boolean hardShutdown = false;
     private boolean endedOnError = false;
     private BooleanProperty ended = new SimpleBooleanProperty(false);
@@ -177,7 +176,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             });
             startVideoParse();
             startBackgroundThreads();
-            shutdown();
             videoCommentsGroup.await();
             awaitBackgroundThreads();
             database.commit();
@@ -666,20 +664,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     }
 
     /**
-     * Soft shutdown, signalled when main thread is done and it is okay for background
-     * threads to die when their queues are empty.
-     */
-    public void shutdown() {
-        logger.debug("Signalling Soft Shutdown");
-        this.softShutdown = true;
-    }
-
-    /**
      * Hard (manual) shutdown, signalled by the user and abruptly ends the refresh as soon as it can.
      */
     public void hardShutdown() {
         logger.debug("Signalling Hard Shutdown");
-        this.softShutdown = true;
         this.hardShutdown = true;
     }
 
@@ -721,10 +709,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     public Boolean isEndedOnError() {
         return endedOnError;
-    }
-
-    public Boolean isShutdown() {
-        return softShutdown;
     }
 
     public Boolean isHardShutdown() {

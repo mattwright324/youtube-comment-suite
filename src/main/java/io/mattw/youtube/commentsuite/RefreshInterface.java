@@ -16,7 +16,6 @@ public interface RefreshInterface {
 
     void run();
     void appendError(String error);
-    void shutdown();
     void hardShutdown();
     boolean isAlive();
     void start();
@@ -32,6 +31,5 @@ public interface RefreshInterface {
     StringProperty elapsedTimeProperty();
     ObservableList<String> getObservableErrorList();
     Boolean isEndedOnError();
-    Boolean isShutdown();
     Boolean isHardShutdown();
 }
