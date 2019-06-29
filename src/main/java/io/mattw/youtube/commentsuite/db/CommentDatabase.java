@@ -22,7 +22,7 @@ public class CommentDatabase implements Closeable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private SQLiteConnection sqlite;
+    private Connection sqlite;
 
     private Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
     public ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
@@ -40,12 +40,12 @@ public class CommentDatabase implements Closeable {
 
     /**
      * Actual constructor.
-     * @param dbfile name of database file
+     * @param fileName name of database file
      * @throws SQLException failed to create database
      */
-    public CommentDatabase(String dbfile) throws SQLException {
-        logger.debug("Initialize Database [file={}]", dbfile);
-        sqlite = new SQLiteConnection("./", dbfile);
+    public CommentDatabase(String fileName) throws SQLException {
+        logger.debug("Initialize Database [file={}]", fileName);
+        sqlite = DriverManager.getConnection(String.format("jdbc:sqlite:%s", fileName));
         sqlite.setAutoCommit(false);
         this.create();
     }
@@ -446,7 +446,7 @@ public class CommentDatabase implements Closeable {
                 ps.setLong(9, video.getDislikes());
                 ps.setString(10, video.getDescription());
                 ps.setString(11, video.getThumbUrl());
-                ps.setInt(12, video.getHttpCode());
+                ps.setInt(12, video.getResponseCode());
                 ps.addBatch();
             }
             ps.executeBatch();

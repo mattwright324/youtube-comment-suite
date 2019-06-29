@@ -1,8 +1,11 @@
 package io.mattw.youtube.commentsuite.db;
 
 import com.google.api.services.youtube.model.Comment;
+import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.api.services.youtube.model.CommentThread;
+import com.google.api.services.youtube.model.CommentThreadSnippet;
 import io.mattw.youtube.commentsuite.FXMLSuite;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,48 +31,63 @@ public class YouTubeComment extends YouTubeObject {
     private YouTubeChannel author;
     private List<YouTubeComment> replies;
 
+    /**
+     * Constructor meant for replies.
+     */
     public YouTubeComment(Comment item, String videoId) {
         super(item.getId(), null, null);
         this.setTypeId(YType.COMMENT);
-        this.commentText = item.getSnippet().getTextDisplay();
-        this.publishedAt = item.getSnippet().getPublishedAt().getValue();
-        this.videoId = videoId; // this.videoId = item.snippet.videoId;
-        this.likes = item.getSnippet().getLikeCount();
-        this.replyCount = -1;
+
+        this.videoId = videoId;
         this.isReply = true;
-        this.parentId = item.getSnippet().getParentId();
+        this.replyCount = -1;
 
-        if (item.getSnippet().getAuthorChannelId() != null) {
-            this.channelId = getChannelIdFromObject(item.getSnippet().getAuthorChannelId());
-        } else {
-            logger.debug("Null channel {}", item);
-        }
-    }
+        CommentSnippet snippet = item.getSnippet();
+        this.commentText = snippet.getTextDisplay();
+        this.publishedAt = snippet.getPublishedAt().getValue();
+        this.likes = snippet.getLikeCount();
+        this.parentId = snippet.getParentId();
 
-    public YouTubeComment(CommentThread item) {
-        super(item.getId(), null, null);
-        this.setTypeId(YType.COMMENT);
-        this.videoId = item.getSnippet().getVideoId();
-        this.replyCount = item.getSnippet().getTotalReplyCount();
-        Comment tlc = item.getSnippet().getTopLevelComment();
-        this.commentText = tlc.getSnippet().getTextDisplay();
-        this.publishedAt = tlc.getSnippet().getPublishedAt().getValue();
-        this.likes = tlc.getSnippet().getLikeCount();
-        this.isReply = false;
-        this.parentId = null;
-        if (tlc.getSnippet().getAuthorChannelId() != null) {
-            this.channelId = getChannelIdFromObject(tlc.getSnippet().getAuthorChannelId());
+        if (snippet.getAuthorChannelId() != null) {
+            this.channelId = getChannelIdFromObject(snippet.getAuthorChannelId());
         } else {
-            logger.debug("Null channel {}", item);
+            logger.warn("There was no authorChannelId {}", ReflectionToStringBuilder.toString(item));
         }
     }
 
     /**
-     * Used for database init.
+     * Constructor mean for top-level comments.
+     */
+    public YouTubeComment(CommentThread item) {
+        super(item.getId(), null, null);
+        this.setTypeId(YType.COMMENT);
+
+        this.isReply = false;
+        this.parentId = null;
+
+        CommentThreadSnippet snippet = item.getSnippet();
+        this.videoId = snippet.getVideoId();
+        this.replyCount = snippet.getTotalReplyCount();
+
+        CommentSnippet tlcSnippet = snippet.getTopLevelComment().getSnippet();
+        this.commentText = tlcSnippet.getTextDisplay();
+        this.publishedAt = tlcSnippet.getPublishedAt().getValue();
+        this.likes = tlcSnippet.getLikeCount();
+
+        if (tlcSnippet.getAuthorChannelId() != null) {
+            this.channelId = getChannelIdFromObject(tlcSnippet.getAuthorChannelId());
+        } else {
+            logger.warn("There was no authorChannelId {}", ReflectionToStringBuilder.toString(item));
+        }
+    }
+
+    /**
+     * Constructor used for initialization from the database.
      */
     public YouTubeComment(String commentId, String text, long publishedAt, String videoId, String channelId, int likes, int replies, boolean isReply, String parentId) {
         super(commentId, null, null);
         this.setTypeId(YType.COMMENT);
+
         this.commentText = text;
         this.publishedAt = publishedAt;
         this.videoId = videoId;

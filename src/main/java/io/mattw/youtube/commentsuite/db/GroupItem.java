@@ -34,9 +34,11 @@ public class GroupItem extends YouTubeObject {
     public GroupItem(SearchResult item) {
         super(item.getId(), item.getSnippet().getTitle(),
                 item.getSnippet().getThumbnails().getMedium().getUrl());
+
         this.published = item.getSnippet().getPublishedAt().getValue();
         this.channelTitle = item.getSnippet().getChannelTitle();
         this.lastChecked = 0;
+
         if(item.getId().getVideoId() != null) setTypeId(YType.VIDEO);
         if(item.getId().getChannelId() != null) setTypeId(YType.CHANNEL);
         if(item.getId().getPlaylistId() != null) setTypeId(YType.PLAYLIST);

@@ -31,16 +31,26 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
         typeId = YType.UNKNOWN;
     }
 
-    public YouTubeObject(String youtubeId, String title, String thumbUrl) {
-        this();
-        this.id = youtubeId;
+    /**
+     * @param id id of the youtube video, playlist, channel
+     * @param title video title, playlist name, channel name
+     * @param thumbUrl url of thumbnail, profile picture
+     */
+    public YouTubeObject(String id, String title, String thumbUrl) {
+        this.id = id;
         this.title = title;
         this.thumbUrl = thumbUrl;
     }
 
-    public YouTubeObject(ResourceId youtubeId, String title, String thumbUrl) {
-        this();
-        this.id = getIdFromResource(youtubeId);
+    /**
+     * Constructor for SearchResult where search results could be of any type (video, channel, playlist)
+     *
+     * @param id resourceId from {@link com.google.api.services.youtube.model.SearchResult}
+     * @param title video title, playlist name, channel name
+     * @param thumbUrl url of thumbnail, profile picture
+     */
+    public YouTubeObject(ResourceId id, String title, String thumbUrl) {
+        this.id = getIdFromResource(id);
         this.title = title;
         this.thumbUrl = thumbUrl;
     }

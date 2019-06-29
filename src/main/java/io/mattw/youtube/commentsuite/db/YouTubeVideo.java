@@ -21,7 +21,7 @@ public class YouTubeVideo extends YouTubeObject {
     private long comments;
     private long likes;
     private long dislikes;
-    private int httpCode;
+    private int responseCode;
 
     // Field(s) used just for export to make things pretty.
     private YouTubeChannel author;
@@ -54,7 +54,7 @@ public class YouTubeVideo extends YouTubeObject {
                     .longValue();
 
             // When comments are disabled, this value will be null on the video.
-            // httpCode should also be 403 when when comment threads are grabbed during refresh.
+            // responseCode should also be 403 when when comment threads are grabbed during refresh.
             this.comments = Optional.ofNullable(stats.getCommentCount())
                                     .orElse(BigInteger.ZERO)
                                     .longValue();
@@ -64,9 +64,9 @@ public class YouTubeVideo extends YouTubeObject {
     }
 
     /**
-     * Used for database init.
+     * Constructor used for initialization from the database.
      */
-    public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long publishDate, long grabDate, long comments, long likes, long dislikes, long viewCount, int httpCode) {
+    public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long publishDate, long grabDate, long comments, long likes, long dislikes, long viewCount, int responseCode) {
         super(videoId, title, thumbUrl);
         setTypeId(YType.VIDEO);
 
@@ -78,7 +78,7 @@ public class YouTubeVideo extends YouTubeObject {
         this.likes = likes;
         this.dislikes = dislikes;
         this.viewCount = viewCount;
-        this.httpCode = httpCode;
+        this.responseCode = responseCode;
     }
 
     /**
@@ -126,8 +126,8 @@ public class YouTubeVideo extends YouTubeObject {
         return viewCount;
     }
 
-    public int getHttpCode() {
-        return httpCode;
+    public int getResponseCode() {
+        return responseCode;
     }
 
     public String toString() {

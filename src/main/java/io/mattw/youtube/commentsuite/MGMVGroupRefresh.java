@@ -285,6 +285,14 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                                 pageToken = ctl.getNextPageToken();
 
+                                try {
+                                    // Maybe comments were re-enabled if we got a 403 in the past.
+
+                                    database.updateVideoHttpCode(video.getId(), 200);
+                                } catch (SQLException sqle) {
+                                    logger.error("Failed to update video http response code", sqle);
+                                }
+
                                 if(!ctl.getItems().isEmpty()) {
                                     List<YouTubeComment> comments = ctl.getItems().stream()
                                             .map(YouTubeComment::new)
@@ -336,6 +344,14 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                     attempts++;
                                 } else if(ge.getStatusCode() == 403) {
                                     String message = String.format("Comments Disabled [videoId=%s]", video.getId());
+
+                                    appendError(message);
+                                    logger.warn(message, e);
+
+                                    break;
+                                } else {
+                                    String message = String.format("Other error received %s [videoId=%s]",
+                                            ge.getStatusCode(), video.getId());
 
                                     appendError(message);
                                     logger.warn(message, e);
