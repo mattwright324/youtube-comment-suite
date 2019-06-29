@@ -1,5 +1,11 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.ImageCache;
+import io.mattw.youtube.commentsuite.ImageLoader;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
+import io.mattw.youtube.commentsuite.db.YouTubeObject;
+import io.mattw.youtube.commentsuite.db.YouTubeVideo;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
@@ -7,12 +13,6 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import io.mattw.youtube.commentsuite.ImageCache;
-import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.commentsuite.db.YouTubeObject;
-import io.mattw.youtube.commentsuite.db.YouTubeVideo;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +21,6 @@ import java.io.IOException;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2019-01-05
  * @author mattwright324
  */
 public class MGMVYouTubeObjectItem extends HBox implements ImageCache {

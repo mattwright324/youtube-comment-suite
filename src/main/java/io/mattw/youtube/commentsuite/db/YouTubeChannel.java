@@ -5,34 +5,25 @@ import com.google.api.services.youtube.model.Comment;
 import org.apache.commons.text.StringEscapeUtils;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class YouTubeChannel extends YouTubeObject {
 
     public YouTubeChannel(Channel item) {
-        this(item, false);
-    }
-
-    public YouTubeChannel(Channel item, boolean fetchThumb) {
         super(item.getId(), StringEscapeUtils.unescapeHtml4(item.getSnippet().getTitle()),
-                item.getSnippet().getThumbnails().getDefault().getUrl(), fetchThumb);
+                item.getSnippet().getThumbnails().getDefault().getUrl());
         setTypeId(YType.CHANNEL);
     }
 
-    public YouTubeChannel(String channelId, String name, String thumbUrl, boolean fetchThumb) {
-        super(channelId, name, thumbUrl, fetchThumb);
+    public YouTubeChannel(String channelId, String name, String thumbUrl) {
+        super(channelId, name, thumbUrl);
         setTypeId(YType.CHANNEL);
     }
 
     public YouTubeChannel(Comment item) {
-        this(item, false);
-    }
-
-    public YouTubeChannel(Comment item, boolean fetchThumb) {
-        this(item.getSnippet().getAuthorChannelId().toString(),
+        this(getChannelIdFromObject(item.getSnippet().getAuthorChannelId()),
                 StringEscapeUtils.unescapeHtml4(item.getSnippet().getAuthorDisplayName()),
-                item.getSnippet().getAuthorProfileImageUrl(), fetchThumb);
+                item.getSnippet().getAuthorProfileImageUrl());
         setTypeId(YType.CHANNEL);
     }
 

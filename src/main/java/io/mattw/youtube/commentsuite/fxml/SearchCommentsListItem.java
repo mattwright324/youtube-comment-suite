@@ -1,6 +1,9 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
+import io.mattw.youtube.commentsuite.db.YouTubeComment;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -11,16 +14,10 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.HBox;
-import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.commentsuite.db.YouTubeComment;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 import static javafx.application.Platform.runLater;
 

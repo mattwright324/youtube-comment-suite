@@ -1,5 +1,10 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.ImageLoader;
+import io.mattw.youtube.commentsuite.MGMVGroupRefresh;
+import io.mattw.youtube.commentsuite.RefreshInterface;
+import io.mattw.youtube.commentsuite.db.Group;
+import io.mattw.youtube.commentsuite.util.ClipboardUtil;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -9,11 +14,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.MGMVGroupRefresh;
-import io.mattw.youtube.commentsuite.RefreshInterface;
-import io.mattw.youtube.commentsuite.db.Group;
-import io.mattw.youtube.commentsuite.util.ClipboardUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,7 +28,6 @@ import static javafx.application.Platform.runLater;
  * @see RefreshInterface
  * @see MGMVGroupRefresh
  * @see ManageGroupsManager
- * @since 2018-12-30
  * @author mattwright324
  */
 public class MGMVRefreshModal extends HBox {
@@ -60,7 +59,7 @@ public class MGMVRefreshModal extends HBox {
     private boolean expanded = false;
 
     public MGMVRefreshModal(Group group) {
-        logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
+        logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
 
         this.group = group;
 
@@ -95,7 +94,7 @@ public class MGMVRefreshModal extends HBox {
 
             btnStart.setOnAction(ae -> new Thread(() -> {
                 if(running) {
-                    logger.debug(String.format("Requesting group refresh stopped for group [id=%s,name=%s]", group.getId(), group.getName()));
+                    logger.debug("Requesting group refresh stopped for group [id={},name={}]", group.getId(), group.getName());
                     runLater(() -> {
                         btnStart.setDisable(true);
                         endStatus.setImage(ImageLoader.MINUS_CIRCLE.getImage());
@@ -108,7 +107,7 @@ public class MGMVRefreshModal extends HBox {
                     runLater(() -> btnClose.setDisable(false));
                 } else {
                     running = true;
-                    logger.debug(String.format("Starting group refresh for group [id=%s,name=%s]", group.getId(), group.getName()));
+                    logger.debug("Starting group refresh for group [id={},name={}]", group.getId(), group.getName());
                     runLater(() -> {
                         statusPane.setVisible(true);
                         statusPane.setManaged(true);

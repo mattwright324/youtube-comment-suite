@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  *
  * @param <T> LocationProvider

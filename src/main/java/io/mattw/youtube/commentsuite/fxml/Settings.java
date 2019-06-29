@@ -2,6 +2,8 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -11,8 +13,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class Settings implements Initializable {
@@ -95,7 +94,7 @@ public class Settings implements Initializable {
         webEngine.setJavaScriptEnabled(true);
         webEngine.titleProperty().addListener((o, ov, nv) -> {
             if(nv != null) {
-                logger.debug(String.format("YouTubeSignIn [loading-page=%s]", nv));
+                logger.debug("YouTubeSignIn [loading-page={}]", nv);
                 if(nv.contains("code=")) {
                     configData.refreshAccounts();
 
@@ -103,7 +102,7 @@ public class Settings implements Initializable {
                             .filter(query -> query.startsWith("Success code="))
                             .collect(Collectors.joining()).substring(13);
 
-                    logger.debug(String.format("YouTubeSignIn [returned-code=%s]", code));
+                    logger.debug("YouTubeSignIn [returned-code={}]", code);
                     try {
                         OAuth2Tokens tokens = oauth2.getAccessTokens(code);
                         oauth2.setTokens(tokens);
@@ -120,7 +119,7 @@ public class Settings implements Initializable {
                         config.save();
                     }
                 } else if(nv.contains("error=")) {
-                    logger.debug(String.format("YouTubeSignIn Failed [%s]", nv));
+                    logger.debug("YouTubeSignIn Failed [{}]", nv);
                 }
             }
         });

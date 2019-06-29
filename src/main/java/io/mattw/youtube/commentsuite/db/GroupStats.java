@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class GroupStats {

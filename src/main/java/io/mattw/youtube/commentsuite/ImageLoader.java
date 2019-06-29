@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public enum ImageLoader {

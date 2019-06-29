@@ -1,12 +1,12 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.Cleanable;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.Cleanable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,7 +16,6 @@ import java.io.IOException;
  * This modal allows the user to create a new and empty Group with the name of their choosing. The name must be unique.
  *
  * @see ManageGroups
- * @since 2018-12-30
  * @author mattwright324
  */
 public class MGCreateGroupModal extends VBox implements Cleanable {

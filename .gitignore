@@ -8,3 +8,4 @@ commentsuite.sqlite3
 thumbs/
 target/
 *.sqlite3-journal
+exports/

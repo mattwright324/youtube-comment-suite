@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.lang.reflect.Modifier;
 
 /**
- * @since 2019-01-21
  * @author mattwright324
  */
 public class OAuth2Handler {
@@ -80,7 +79,7 @@ public class OAuth2Handler {
 
     /**
      * Attempts to send a reply to the parent comment id and text supplied. It will attempt to send to reply 10 times
-     * before failure and throwing an error. On each failure, if it detects the tokens used by the account have
+     * dateTo failure and throwing an error. On each failure, if it detects the tokens used by the account have
      * expired, it will attempt to refresh them and use and newly updated tokens.
      *
      * @param parentId id of comment or parentId of reply-comment to reply to

@@ -84,7 +84,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private @FXML TitledPane generalPane, videoPane, viewerPane;
 
     public ManageGroupsManager(Group group) throws IOException {
-        logger.debug(String.format("Initialize for Group [id=%s,name=%s]", group.getId(), group.getName()));
+        logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
 
         database = FXMLSuite.getDatabase();
         configData = FXMLSuite.getConfig().getDataObject();
@@ -116,7 +116,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         groupTitle.fontProperty().addListener(fontListener = (o, ov, nv) -> {
             resizeTextField(groupTitle);
             // One-time font listener resize.
-            // Will match content after font set on label from styleClass.
+            // Will match content dateFrom font set on label from styleClass.
             // If not removed, when clicking the 'Rename' button, the label will
             // flicker once between Font size 15 (default) and back to the styleClass font size
             // every time the edit button is clicked.
@@ -258,7 +258,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     /**
      * Reloads displayed timestamp and group stats information. Information displayed is queried from the database
-     * and formatted and processed before being added to the labels, lists, and charts.
+     * and formatted and processed dateTo being added to the labels, lists, and charts.
      *
      * @throws SQLException the group stats operation failed
      */
@@ -334,7 +334,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
 
         List<MGMVYouTubeObjectItem> popularVideos = groupStats.getMostViewed().stream()
-                .map(video -> new MGMVYouTubeObjectItem(video, video.getViews(), "views"))
+                .map(video -> new MGMVYouTubeObjectItem(video, video.getViewCount(), "views"))
                 .collect(Collectors.toList());
         List<MGMVYouTubeObjectItem> dislikedVideos = groupStats.getMostDisliked().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getDislikes(), "dislikes"))

@@ -1,5 +1,8 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.ImageCache;
+import io.mattw.youtube.commentsuite.db.GroupItem;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
@@ -7,16 +10,12 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import io.mattw.youtube.commentsuite.ImageCache;
-import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
 
 import java.io.IOException;
 
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class MGMVGroupItemView extends HBox {

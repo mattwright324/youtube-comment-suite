@@ -2,7 +2,13 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.ImageCache;
+import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
+import io.mattw.youtube.commentsuite.util.ClipboardUtil;
+import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
@@ -18,12 +24,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.ImageCache;
-import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.commentsuite.util.ClipboardUtil;
-import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,8 +33,6 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -74,14 +72,15 @@ public class SearchComments implements Initializable, ImageCache {
     private @FXML ComboBox<Group> comboGroupSelect;
     private @FXML ComboBox<GroupItem> comboGroupItemSelect;
     private @FXML Hyperlink videoSelect;
-    private @FXML ComboBox<String> comboCommentType;
-    private @FXML ComboBox<String> comboOrderBy;
+    private @FXML ComboBox<CommentQuery.CommentsType> comboCommentType;
+    private @FXML ComboBox<CommentQuery.Order> comboOrderBy;
     private @FXML TextField nameLike, commentLike;
     private @FXML DatePicker dateFrom, dateTo;
-    private @FXML Button btnSearch, btnClear;
+    private @FXML Button btnSearch, btnClear, btnExport;
 
     private @FXML OverlayModal<SCVideoSelectModal> videoSelectModal;
     private @FXML OverlayModal<SCShowMoreModal> showMoreModal;
+    private @FXML OverlayModal<SCExportModal> exportModal;
 
     private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
     private SimpleBooleanProperty searchingProperty = new SimpleBooleanProperty(false);
@@ -91,7 +90,7 @@ public class SearchComments implements Initializable, ImageCache {
     private ChangeListener<Number> cl;
 
     private CommentDatabase database;
-    private CommentQuery query;
+    private CommentQuery newQuery;
     private List<YouTubeComment> lastResultsList;
     private SearchCommentsListItem actionComment;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
@@ -100,7 +99,6 @@ public class SearchComments implements Initializable, ImageCache {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         database = FXMLSuite.getDatabase();
-        query = database.commentQuery();
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
         comboGroupSelect.setItems(database.globalGroupList);
@@ -140,10 +138,9 @@ public class SearchComments implements Initializable, ImageCache {
         resultsPane.disableProperty().bind(searchingProperty);
         queryPane.disableProperty().bind(searchingProperty);
 
-        comboCommentType.getItems().addAll("Comments and Replies", "Comments Only", "Replies Only");
+        comboCommentType.getItems().addAll(CommentQuery.CommentsType.values());
         comboCommentType.getSelectionModel().select(0);
-        comboOrderBy.getItems().addAll("Most Recent", "Least Recent", "Most Likes", "Most Replies",
-                "Longest Comment", "Names (A to Z)", "Comments (A to Z)");
+        comboOrderBy.getItems().addAll(CommentQuery.Order.values());
         comboOrderBy.getSelectionModel().select(0);
 
         dateFrom.setValue(LocalDate.of(1970,1,1));
@@ -244,7 +241,7 @@ public class SearchComments implements Initializable, ImageCache {
             List<String> comments = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
-                    .map(YouTubeComment::getText)
+                    .map(YouTubeComment::getCommentText)
                     .collect(Collectors.toList());
 
             clipboardUtil.setClipboard(comments);
@@ -286,7 +283,7 @@ public class SearchComments implements Initializable, ImageCache {
 
             runLater(() -> {
                 Optional<SearchCommentsListItem> toSelect = resultsList.getItems().stream()
-                        .filter(scli -> scli.getComment().getYoutubeId().equals(actionComment.getComment().getYoutubeId()))
+                        .filter(scli -> scli.getComment().getId().equals(actionComment.getComment().getId()))
                         .findFirst();
 
                 SearchCommentsListItem scli = toSelect.orElse(null);
@@ -322,6 +319,16 @@ public class SearchComments implements Initializable, ImageCache {
         scShowMoreModal.replyModeProperty().addListener((o, ov, nv) -> runLater(() ->
             showMoreModal.getModalContainer().setMaxWidth(420 * (nv ? 2 : 1))
         ));
+
+        SCExportModal scExportModal = new SCExportModal();
+        exportModal.setContent(scExportModal);
+        exportModal.getModalContainer().setMaxWidth(exportModal.getModalContainer().getMaxWidth()*1.5);
+        scExportModal.getBtnClose().setOnAction(ae -> exportModal.setVisible(false));
+        btnExport.setOnAction(ae -> {
+            scExportModal.withQuery(newQuery);
+            scExportModal.cleanUp();
+            exportModal.setVisible(true);
+        });
     }
 
     private void checkUpdateThumbs(SearchCommentsListItem commentItem) {
@@ -348,7 +355,7 @@ public class SearchComments implements Initializable, ImageCache {
                 videoTitle.setText(v.getTitle());
                 videoLikes.setText(trunc(v.getLikes()));
                 videoDislikes.setText(trunc(v.getDislikes()));
-                videoViews.setText(String.format("%s views", trunc(v.getViews())));
+                videoViews.setText(String.format("%s views", trunc(v.getViewCount())));
                 videoDescription.setText(String.format("Published %s • %s",
                         sdf.format(v.getPublishedDate()),
                         StringEscapeUtils.unescapeHtml4(v.getDescription())));
@@ -369,8 +376,6 @@ public class SearchComments implements Initializable, ImageCache {
             logger.error("Failed to load YouTubeVideo", e);
         }
     }
-
-
 
     private int interpretPageValue(String value) {
         value = value.replaceAll("[^0-9]", "").trim();
@@ -394,20 +399,25 @@ public class SearchComments implements Initializable, ImageCache {
      * @param forced perform search regardless of page value equal to current page
      */
     private void submitPageValue(int page, boolean forced) {
-        logger.debug(String.format("Submit page value = %s", page));
+        logger.debug("Submit page value = {}", page);
         if(page < 1) {
             page = 1;
         } else if(page > maxPageProperty.getValue()) {
             page = maxPageProperty.getValue();
         }
+
+        if(page == 1) {
+            newQuery = new CommentQuery();
+        }
+
         final int newPage = page;
         runLater(() -> {
             pageValue.setEditable(false);
             pageValue.getStyleClass().add("clearTextField");
             pageValue.setText(String.valueOf(newPage));
             pageProperty.setValue(newPage);
-            if(newPage != query.getPage() || forced) {
-                logger.debug(String.format("Changing page %s -> %s", query.getPage(), newPage));
+            if(newPage != newQuery.getPageNum() || forced) {
+                logger.debug("Changing page {} -> {}", newQuery.getPageNum(), newPage);
                 new Thread(this::searchComments).start();
             }
         });
@@ -431,25 +441,42 @@ public class SearchComments implements Initializable, ImageCache {
         resultsList.getItems().forEach(SearchCommentsListItem::cleanUp);
 
         try {
-            int page = pageProperty.getValue();
-            Group group = comboGroupSelect.getSelectionModel().getSelectedItem();
-            GroupItem groupItem = comboGroupItemSelect.getSelectionModel().getSelectedItem();
-            groupItem = GroupItem.ALL_ITEMS.equals(groupItem.getYoutubeId()) ? null : groupItem;
+            int pageNum = pageProperty.getValue();
 
+            GroupItem selectedItem = comboGroupItemSelect.getValue();
             YouTubeVideo selectedVideo = videoSelectModal.getContent().getSelectedVideo();
 
             elapsedTime.setNow();
+            lastResultsList = newQuery.setGroup(comboGroupSelect.getValue())
+                    .setGroupItem(Optional.ofNullable(GroupItem.ALL_ITEMS.equals(selectedItem.getId()) ?
+                            null : selectedItem))
+                    .setVideos(Optional.ofNullable(selectedVideo != null ?
+                            Collections.singletonList(selectedVideo) : null))
+                    .setCommentsType(comboCommentType.getValue())
+                    .setOrder(comboOrderBy.getValue())
+                    .setNameLike(nameLike.getText())
+                    .setTextLike(commentLike.getText())
+                    .setDateFrom(dateFrom.getValue())
+                    .setDateTo(dateTo.getValue())
+                    .getByPage(pageNum - 1, 500);
+
+            /*Group group = comboGroupSelect.getSelectionModel().getSelectedItem();
+            GroupItem groupItem = comboGroupItemSelect.getSelectionModel().getSelectedItem();
+            groupItem = GroupItem.ALL_ITEMS.equals(groupItem.getId()) ? null : groupItem;
+
+            elapsedTime.setNow();
             lastResultsList = query
-                    .ctype(comboCommentType.getSelectionModel().getSelectedIndex())
+                    .ctype(comboCommentType.getSelectionModel().getSelectedIndex(), comboCommentType.getSelectionModel().getSelectedItem().getTitle())
                     .orderBy(comboOrderBy.getSelectionModel().getSelectedIndex())
-                    .textLike(commentLike.getText())
-                    .nameLike(nameLike.getText())
-                    .before(dateTo.getValue())
-                    .after(dateFrom.getValue())
-                    .get(page, group, groupItem, Collections.singletonList(selectedVideo));
-            logger.debug(String.format("Query completed [time=%s,comments=%s]",
+                    .textLike(commentLike.getCommentText())
+                    .nameLike(nameLike.getCommentText())
+                    .dateTo(dateTo.getValue())
+                    .dateFrom(dateFrom.getValue())
+                    .get(page, group, groupItem, Collections.singletonList(selectedVideo));*/
+
+            logger.debug("Query completed [time={},comments={}]",
                     elapsedTime.humanReadableFormat(),
-                    lastResultsList.size()));
+                    lastResultsList.size());
 
             setResultsList(lastResultsList, false);
         } catch (SQLException e) {
@@ -485,7 +512,9 @@ public class SearchComments implements Initializable, ImageCache {
         runLater(() -> {
             resultsList.getItems().clear();
             resultsList.getItems().addAll(commentListItems);
-            maxPageProperty.setValue(query.getPageCount());
+            maxPageProperty.setValue(newQuery.getPageCount());
+
+            btnExport.setDisable(newQuery.getTotalResults() == 0);
 
             paginationPane.setManaged(!treeMode);
             paginationPane.setVisible(!treeMode);
@@ -495,13 +524,13 @@ public class SearchComments implements Initializable, ImageCache {
 
             displayCount.setText(String.format("Showing %,d of %,d total",
                     comments.size(),
-                    query.getTotalResults()));
+                    newQuery.getTotalResults()));
 
             if(treeMode) {
                 resultsList.scrollTo(0);
 
                 Optional<SearchCommentsListItem> toSelect = resultsList.getItems().stream()
-                        .filter(scli -> scli.getComment().getYoutubeId().equals(actionComment.getComment().getYoutubeId()))
+                        .filter(scli -> scli.getComment().getId().equals(actionComment.getComment().getId()))
                         .findFirst();
 
                 resultsList.getSelectionModel().select(toSelect.orElse(null));
@@ -519,9 +548,9 @@ public class SearchComments implements Initializable, ImageCache {
 
         YouTubeComment comment = scli.getComment();
 
-        logger.debug(String.format("Showing more window for commment [videoId=%s,commentId=%s]",
+        logger.debug("Showing more window for commment [videoId={},commentId={}]",
                 comment.getVideoId(),
-                comment.getYoutubeId()));
+                comment.getId());
 
         checkUpdateThumbs(scli);
         commentModal(comment, false);
@@ -532,9 +561,9 @@ public class SearchComments implements Initializable, ImageCache {
 
         YouTubeComment comment = scli.getComment();
 
-        logger.debug(String.format("Showing reply window for commment [videoId=%s,commentId=%s]",
+        logger.debug("Showing reply window for commment [videoId={},commentId={}]",
                 comment.getVideoId(),
-                comment.getYoutubeId()));
+                comment.getId());
 
         checkUpdateThumbs(scli);
         commentModal(comment, true);
@@ -562,20 +591,20 @@ public class SearchComments implements Initializable, ImageCache {
 
         YouTubeComment comment = scli.getComment();
 
-        String parentId = comment.isReply() ? comment.getParentId() : comment.getYoutubeId();
+        String parentId = comment.isReply() ? comment.getParentId() : comment.getId();
 
-        logger.debug(String.format("Viewing comment reply tree [videoId=%s,commentId=%s,parentId=%s]",
+        logger.debug("Viewing comment reply tree [videoId={},commentId={},parentId={}]",
                 comment.getVideoId(),
-                comment.getYoutubeId(),
-                parentId));
+                comment.getId(),
+                parentId);
 
         try {
             List<YouTubeComment> comments = database.getCommentTree(parentId);
 
             setResultsList(comments, true);
         } catch (SQLException e) {
-            logger.debug(String.format("Failed to view comment tree [commentId=%s,parentId=%s]", comment.getYoutubeId(),
-                    parentId));
+            logger.debug("Failed to view comment tree [commentId={},parentId={}]", comment.getId(),
+                    parentId);
         } finally {
             runLater(() -> searchingProperty.setValue(false));
         }

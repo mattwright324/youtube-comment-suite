@@ -2,6 +2,10 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.ImageLoader;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.Group;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -10,10 +14,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.SelectionModel;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.Group;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +27,6 @@ import static javafx.application.Platform.runLater;
 /**
  * Manages group selection, creation, and content switching.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class ManageGroups implements Initializable {
@@ -120,7 +119,7 @@ public class ManageGroups implements Initializable {
             if(!name.isEmpty()) {
                 try {
                     Group g = database.createGroup(name);
-                    logger.debug(String.format("Created new group [id=%s,name=%s]", g.getId(), g.getName()));
+                    logger.debug("Created new group [id={},name={}]", g.getId(), g.getName());
                     runLater(() -> {
                         comboGroupSelect.getSelectionModel().select(g);
                         overlayModal.setDisable(false);

@@ -14,7 +14,6 @@ import java.io.FileWriter;
  *
  * Can take any object as long as it has fields that Gson is configured to read.
  *
- * @since 2018-12-30
  * @author mattwright324
  * @param <T> data object JSON (de)serialized
  */
@@ -29,7 +28,7 @@ public class ConfigFile<T> {
     private File file;
 
     public ConfigFile(String fileName, T defaultObject) {
-        logger.debug(String.format("Initialize ConfigFile<%s> [fileName=%s]", defaultObject.getClass().getSimpleName(), fileName));
+        logger.debug("Initialize ConfigFile<{}> [fileName={}]", defaultObject.getClass().getSimpleName(), fileName);
         this.defaultObject = defaultObject;
         this.dataObject = defaultObject;
         this.file = new File(fileName);

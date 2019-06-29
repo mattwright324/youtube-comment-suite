@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.ImageLoader;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -11,7 +12,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import io.mattw.youtube.commentsuite.ImageLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,7 +23,6 @@ import static javafx.application.Platform.runLater;
 /**
  * Controls the header: switching content and opening the settings view.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class Main implements Initializable {

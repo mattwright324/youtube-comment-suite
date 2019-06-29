@@ -6,7 +6,6 @@ import java.net.URL;
 /**
  * Attempts to open URLs on the system.
  *
- * @since 2016-08-10
  * @author mattwright324
  */
 public class BrowserUtil {

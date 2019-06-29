@@ -1,17 +1,17 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.YouTube;
+import io.mattw.youtube.commentsuite.Cleanable;
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.Group;
+import io.mattw.youtube.commentsuite.db.GroupItem;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.Cleanable;
-import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.Group;
-import io.mattw.youtube.commentsuite.db.GroupItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +31,6 @@ import static javafx.application.Platform.runLater;
  *
  * @see GroupItem#GroupItem(String)
  * @see ManageGroupsManager
- * @since 2018-12-30
  * @author mattwright324
  */
 public class MGMVAddItemModal extends VBox implements Cleanable {
@@ -115,6 +114,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             .filter(item -> StringUtils.isNotEmpty(item) && // not empty
                                     item.toLowerCase().startsWith("http") && // is a URL
                                     item.toLowerCase().contains("youtu")) // most likely a youtu.be / youtube.com link
+                            .distinct() // remove duplicates
                             .collect(Collectors.toList());
 
                     if(!givenLinks.isEmpty()) {
@@ -143,6 +143,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 failures++;
                             }
                         }
+
+                        logger.warn("Failed to parse or insert {} links for bulk add", failures);
                     } else {
                         String message = "No valid links to submit (bulk).";
 

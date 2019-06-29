@@ -3,6 +3,12 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.ImageLoader;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
+import io.mattw.youtube.commentsuite.util.ClipboardUtil;
+import io.mattw.youtube.commentsuite.util.EurekaProvider;
+import io.mattw.youtube.commentsuite.util.Location;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
@@ -13,12 +19,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.commentsuite.util.ClipboardUtil;
-import io.mattw.youtube.commentsuite.util.EurekaProvider;
-import io.mattw.youtube.commentsuite.util.Location;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class SearchYouTube implements Initializable {
@@ -155,9 +154,9 @@ public class SearchYouTube implements Initializable {
             pageToken = emptyToken;
             resultsList.getItems().clear();
             runLater(() -> searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total)));
-            logger.debug(String.format("Submit New Search [pageToken=%s,type=%s,text=%s,locText=%s,locRadius=%s,order=%s,result=%s]",
+            logger.debug("Submit New Search [pageToken={},type={},text={},locText={},locRadius={},order={},result={}]",
                     pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
-                    searchRadius.getValue(), searchOrder.getValue(), resultType.getValue()));
+                    searchRadius.getValue(), searchOrder.getValue(), resultType.getValue());
             new Thread(() ->
                 search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
                         searchRadius.getValue(), searchOrder.getValue(),
@@ -205,13 +204,13 @@ public class SearchYouTube implements Initializable {
 
             SearchListResponse sl;
             if(type.equals("Normal")) {
-                logger.debug(String.format("Normal Search [key=%s,part=snippet,text=%s,type=%s,order=%s,token=%s]",
-                        FXMLSuite.getYouTubeApiKey(),encodedText,searchType,order.toLowerCase(),pageToken));
+                logger.debug("Normal Search [key={},part=snippet,text={},type={},order={},token={}]",
+                        FXMLSuite.getYouTubeApiKey(),encodedText,searchType,order.toLowerCase(),pageToken);
 
                 sl = searchList.execute();
             } else {
-                logger.debug(String.format("Location Search [key=%s,part=snippet,text=%s,loc=%s,radius=%s,type=%s,order=%s,token=%s]",
-                        FXMLSuite.getYouTubeApiKey(),encodedText,locText,locRadius,searchType,order.toLowerCase(),pageToken));
+                logger.debug("Location Search [key={},part=snippet,text={},loc={},radius={},type={},order={},token={}]",
+                        FXMLSuite.getYouTubeApiKey(),encodedText,locText,locRadius,searchType,order.toLowerCase(),pageToken);
 
                 sl = searchList.setLocation(locText)
                         .setLocationRadius(locRadius)
@@ -221,12 +220,12 @@ public class SearchYouTube implements Initializable {
             this.pageToken = sl.getNextPageToken() == null ? emptyToken : sl.getNextPageToken();
             this.total = sl.getPageInfo().getTotalResults();
 
-            logger.debug(String.format("Search [videos=%s]", sl.getItems().size()));
+            logger.debug("Search [videos={}]", sl.getItems().size());
             for(SearchResult item : sl.getItems()) {
-                logger.debug(String.format("Video [id=%s,author=%s,title=%s]",
+                logger.debug("Video [id={},author={},title={}]",
                         item.getId(),
                         item.getSnippet().getChannelTitle(),
-                        item.getSnippet().getTitle()));
+                        item.getSnippet().getTitle());
                 SearchYouTubeListItem view = new SearchYouTubeListItem(item, number++);
                 runLater(() -> {
                     resultsList.getItems().add(view);

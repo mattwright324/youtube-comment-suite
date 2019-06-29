@@ -4,24 +4,28 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.db.*;
+import io.mattw.youtube.commentsuite.util.ElapsedTime;
+import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import io.mattw.youtube.commentsuite.util.Tuple;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ProgressBar;
-import io.mattw.youtube.commentsuite.util.ElapsedTime;
-import io.mattw.youtube.commentsuite.util.Tuple;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
@@ -76,57 +80,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     public MGMVGroupRefresh(Group group) {
         this.group = group;
-    }
-
-    /**
-     * Structure to make managing a group of threads running the same task in an ExecutorService easier.
-     */
-    public class ExecutorGroup {
-
-        private ExecutorService service;
-        private List<Future<?>> futures = new ArrayList<>();
-        private int threadCount;
-
-        /**
-         * Default constructor
-         * @param threadCount number of threads to create
-         */
-        public ExecutorGroup(int threadCount) {
-            this.threadCount = threadCount;
-
-            service = Executors.newFixedThreadPool(threadCount);
-        }
-
-        /**
-         * Submits the same runnable {@link ExecutorGroup#threadCount} times and shuts the service down.
-         * @param runnable stateless runnable object
-         */
-        public void submitAndShutdown(Runnable runnable) {
-            for(int i=0; i<threadCount; i++) {
-                futures.add(service.submit(runnable));
-            }
-
-            service.shutdown();
-        }
-
-        /**
-         * Waits for all threads to complete.
-         */
-        public void await() throws InterruptedException {
-            service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        }
-
-        /**
-         * Check if any threads are still working.
-         */
-        public boolean isStillWorking() {
-            for(Future<?> future : futures) {
-                if(!future.isDone()) {
-                    return true;
-                }
-            }
-            return false;
-        }
     }
 
 
@@ -186,7 +139,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             try {
                 database.commit();
             } catch (SQLException e2) {
-                appendError("Failed to commit after refresh failure.");
+                appendError("Failed to commit dateFrom refresh failure.");
             }
 
             appendError(e.getLocalizedMessage());
@@ -202,16 +155,15 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         }
         updateProgress();
         runLater(() -> ended.setValue(true));
-        logger.debug(String.format("Refresh End [progress=%s,elapsedTime=%s,newVideos=%s,totalVideos=%s,newComments=%s," +
-                "totalComments=%s,lastStep=%s]",
+        logger.debug("Refresh End [progress={},elapsedTime={},newVideos={},totalVideos={},newComments={}," +
+                "totalComments={},lastStep={}]",
                 progress.getValue(),
                 elapsedTime.getValue(),
                 newVideos.getValue(),
                 totalVideos.getValue(),
                 newComments.getValue(),
                 totalComments.getValue(),
-                statusStep.getValue()));
-        logger.debug("YouTube API Est. Used Quota this YCS session");
+                statusStep.getValue());
     }
 
     /**
@@ -224,18 +176,18 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             while(!gitemQueue.isEmpty()) {
                 GroupItem gitem = gitemQueue.poll();
                 if(gitem != null) {
-                    logger.debug(String.format("Grabbing Video for GroupItem[id=%s,type=%s,name=%s]",
-                            gitem.getYoutubeId(), gitem.getTypeId(), gitem.getTitle()));
+                    logger.debug("Grabbing Video for GroupItem[id={},type={},name={}]",
+                            gitem.getId(), gitem.getTypeId(), gitem.getTitle());
                     try {
                         database.updateGroupItemLastChecked(gitem);
 
                         if(gitem.getTypeId() == YType.CHANNEL || gitem.getTypeId() == YType.PLAYLIST) {
-                            String playlistId = gitem.getYoutubeId();
+                            String playlistId = gitem.getId();
                             if(gitem.getTypeId() == YType.CHANNEL) {
                                 ChannelListResponse cl = youtube.channels().list("contentDetails")
                                         .setKey(FXMLSuite.getYouTubeApiKey())
                                         .setMaxResults(50L)
-                                        .setId(gitem.getYoutubeId())
+                                        .setId(gitem.getId())
                                         .execute();
 
                                 List<Channel> items = cl.getItems();
@@ -266,7 +218,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                             .collect(Collectors.toList());
                                     videoIds.forEach(videoId ->
                                             gitemVideo.add(new CommentDatabase.GroupItemVideo(
-                                                    gitem.getYoutubeId(), videoId))
+                                                    gitem.getId(), videoId))
                                     );
                                     videoIdQueue.addAll(videoIds);
                                     incrLongProperty(newVideos, database.countVideosNotExisting(videoIds));
@@ -281,17 +233,17 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                         } else if(gitem.getTypeId() == YType.VIDEO) {
                             try {
                                 gitemVideo.add(new CommentDatabase.GroupItemVideo(
-                                        gitem.getYoutubeId(), gitem.getYoutubeId()));
+                                        gitem.getId(), gitem.getId()));
 
-                                videoIdQueue.put(gitem.getYoutubeId());
-                                if(database.doesVideoExist(gitem.getYoutubeId())) {
+                                videoIdQueue.put(gitem.getId());
+                                if(database.doesVideoExist(gitem.getId())) {
                                     incrLongProperty(newVideos, 1);
                                 }
                                 incrLongProperty(totalVideos, 1);
                             } catch (InterruptedException ignored) {}
                         }
                     } catch (SQLException | IOException e) {
-                        appendError(String.format("Failed GItem[id=%s]", gitem.getYoutubeId()));
+                        appendError(String.format("Failed GItem[id=%s]", gitem.getId()));
 
                         logger.error(e);
                     }
@@ -311,7 +263,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
      * Consumes YouTubeVideo objects in the queue.
      */
     private void startVideoParse() {
-        logger.debug(String.format("Starting Comment Grabbing [videos=%s]", videoQueue.size()));
+        logger.debug("Starting Comment Grabbing [videos={}]", videoQueue.size());
 
         videoCommentsGroup.submitAndShutdown(() -> {
             while(!videoQueue.isEmpty()) {
@@ -322,11 +274,11 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     String pageToken = "";
                     do {
                         try {
-                            logger.info(String.format("%s - %s", video.getYoutubeId(), video.getTitle()));
+                            logger.info("{} - {}", video.getId(), video.getTitle());
                             do {
                                 ctl = youtube.commentThreads().list("snippet")
                                         .setKey(FXMLSuite.getYouTubeApiKey())
-                                        .setVideoId(video.getYoutubeId())
+                                        .setVideoId(video.getId())
                                         .setMaxResults(50L)
                                         .setPageToken(pageToken)
                                         .execute();
@@ -347,7 +299,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                              * VideoId's are not included in comment thread / comments.list. Using tuple
                                              * to pair a comment thread id with the video it was found on.
                                              */
-                                            commentThreadQueue.add(new Tuple<>(c.getYoutubeId(), video.getYoutubeId()));
+                                            commentThreadQueue.add(new Tuple<>(c.getId(), video.getId()));
                                         }
                                     });
 
@@ -364,7 +316,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             break;
                         } catch (IOException e) {
                             String message = String.format("[%s/%s] %s [videoId=%s]", attempts, 5,
-                                    e.getClass().getSimpleName(), video.getYoutubeId());
+                                    e.getClass().getSimpleName(), video.getId());
 
                             attempts++;
                             appendError(message);
@@ -377,7 +329,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                 }
                 awaitMillis(500);
             }
-            logger.debug(String.format("Video Consumer [END] [leftInQueue=%s]", videoQueue.size()));
+            logger.debug("Video Consumer [END] [leftInQueue={}]", videoQueue.size());
         });
     }
 
@@ -410,20 +362,20 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                             List<YouTubeComment> replies = comments.stream()
                                     .map(item -> new YouTubeComment(item, tuple.getSecond()))
-                                    .filter(yc -> !"".equals(yc.getChannelId()) /* Filter out G+ comments. */)
+                                    .filter(yc -> StringUtils.isNotEmpty(yc.getChannelId())/* filter out G+ comments */)
                                     .collect(Collectors.toList());
                             commentQueue.addAll(replies);
 
                             List<YouTubeChannel> channels = cl.getItems().stream()
                                     .filter(distinctByKey(Comment::getId))
-                                    .map(item -> new YouTubeChannel(item, false))
+                                    .map(YouTubeChannel::new)
                                     .collect(Collectors.toList());
                             channelInsertQueue.addAll(channels);
 
                             awaitMillis(50);
                         } while (pageToken != null && !isHardShutdown());
                     } catch (IOException e) {
-                        logger.error(String.format("Couldn't grab commentThread[id=%s]", tuple.getFirst()), e);
+                        logger.error("Couldn't grab commentThread[id={}]", tuple.getFirst(), e);
                     }
                     incrVideoProgress();
                     updateProgress();
@@ -432,7 +384,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                 if(isHardShutdown()) break;
             }
-            logger.debug(String.format("CommentThread Consumer [END] [leftInQueue=%s]", commentThreadQueue.size()));
+            logger.debug("CommentThread Consumer [END] [leftInQueue={}]", commentThreadQueue.size());
         });
 
         logger.debug("Starting Comment/Reply Insert Threads");
@@ -440,7 +392,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             ElapsedTime elapsed = new ElapsedTime();
 
             List<YouTubeComment> comments = new ArrayList<>();
-            while(!commentQueue.isEmpty() || videoCommentsGroup.isStillWorking() || repliesGroup.isStillWorking()) {
+            while(!commentQueue.isEmpty() || videoCommentsGroup.isStillWorking() || repliesGroup.isStillWorking() || !comments.isEmpty()) {
                 YouTubeComment comment = commentQueue.poll();
                 if(comment != null) {
                     comments.add(comment);
@@ -450,10 +402,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                 if(comments.size() >= 1000 || (elapsed.getElapsed().toMillis() >= 1200 && !comments.isEmpty())) {
                     try {
-                        logger.trace(String.format("CommentConsumer[submitting=%s,leftInQueue=%s,inThreadQueue=%s]",
+                        logger.trace("CommentConsumer[submitting={},leftInQueue={},inThreadQueue={}]",
                                 comments.size(),
                                 commentQueue.size(),
-                                commentThreadQueue.size()));
+                                commentThreadQueue.size());
                         submitComments(comments);
 
                         elapsed.setNow();
@@ -472,56 +424,35 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     logger.error("Error on comment submit", e);
                 }
             }
-            logger.debug(String.format("Comment Consumer [END] [leftInQueue=%s]", commentThreadQueue.size()));
+            logger.debug("Comment Consumer [END] [leftInQueue={}]", commentThreadQueue.size());
         });
 
         logger.debug("Starting ChannelId Threads");
         channelIdGroup.submitAndShutdown(() -> {
             ElapsedTime elapsed = new ElapsedTime();
 
-            Set<String> channelIds = new HashSet<>();
-            while(!channelQueue.isEmpty() || videoCommentsGroup.isStillWorking() || repliesGroup.isStillWorking()) {
-                if(channelQueue.isEmpty()) {
-                    awaitMillis(5);
+            List<String> channelIds = new ArrayList<>();
+            while(!channelQueue.isEmpty() || videoCommentsGroup.isStillWorking() || repliesGroup.isStillWorking() || !channelIds.isEmpty()) {
+                String channelId = channelQueue.poll();
+                if(channelId != null && !channelIds.contains(channelId) && channelIds.size() < 50) {
+                    channelIds.add(channelId);
                 } else {
-                    channelIds.addAll(
-                            Stream.generate(channelQueue::poll)
-                                .limit(50)
-                                .collect(Collectors.toList()));
+                    awaitMillis(5);
                 }
 
-                if(channelIds.size() > 0 || (elapsed.getElapsed().toMillis() >= 500 && !channelIds.isEmpty())) {
-                    logger.trace(String.format("ChannelIdConsumer[submitting=%s,leftInQueue=%s]",
-                            channelIds.size(),
-                            channelQueue.size()));
-                    try {
-                        ChannelListResponse cl = youtube.channels().list("snippet")
-                                .setKey(FXMLSuite.getYouTubeApiKey())
-                                .setId(String.join(",", channelIds))
-                                .setMaxResults(50L)
-                                .execute();
-
-                        List<YouTubeChannel> channels = cl.getItems().stream().map(YouTubeChannel::new)
-                                .collect(Collectors.toList());
-
-                        channelInsertQueue.addAll(channels);
-
-                        elapsed.setNow();
-                        channelIds.clear();
-                    } catch (GoogleJsonResponseException e) {
-                        if(e.getStatusCode() == 400) {
-                            logger.warn(e.getDetails().getMessage());
-                            logger.warn("filter parameters [id={}]", String.join(",", channelIds));
-                        }
-                    } catch (IOException e) {
-                        logger.error("Error on channel grab", e);
-                    }
+                if(channelIds.size() == 50 || (elapsed.getElapsed().toMillis() >= 500 && !channelIds.isEmpty())) {
+                    threadChannelIdConsume(channelIds);
+                    elapsed.setNow();
                 }
 
                 if(isHardShutdown()) break;
             }
 
-            logger.debug(String.format("ChannelId Consumer [END] [leftInQueue=%s]", channelQueue.size()));
+            if(channelIds.isEmpty()) {
+                threadChannelIdConsume(channelIds);
+            }
+
+            logger.debug("ChannelId Consumer [END] [leftInQueue={}]", channelQueue.size());
         });
 
         logger.debug("Starting Channel Insert Threads");
@@ -529,7 +460,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             ElapsedTime elapsed = new ElapsedTime();
 
             List<YouTubeChannel> insert = new ArrayList<>();
-            while(!channelInsertQueue.isEmpty() || channelIdGroup.isStillWorking()) {
+            while(!channelInsertQueue.isEmpty() || channelIdGroup.isStillWorking() || !insert.isEmpty()) {
                 YouTubeChannel channel = channelInsertQueue.poll();
                 if(channel != null) {
                     insert.add(channel);
@@ -537,28 +468,72 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     awaitMillis(5);
                 }
 
+                // Interval insertion for more efficient work.
                 if(insert.size() >= 1000 || (elapsed.getElapsed().toMillis() >= 1200 && !insert.isEmpty())) {
-                    try {
-                        logger.trace(String.format("ChannelInsertConsumer[submitting=%s,leftInQueue=%s]",
-                                insert.size(),
-                                channelInsertQueue.size()));
-                        database.insertChannels(insert);
-                        elapsed.setNow();
-                        insert.clear();
-                    } catch (SQLException e) {
-                        logger.error("Error on channel submit", e);
-                    }
+                    threadInsertChannels(insert);
+                    elapsed.setNow();
                 }
 
                 if(isHardShutdown()) break;
             }
 
-            logger.debug(String.format("Channel Insert Consumer [END] [leftInQueue=%s]", channelInsertQueue.size()));
+            logger.debug("Channel Insert Consumer [END] [leftInQueue={}]", channelInsertQueue.size());
         });
     }
 
+    private void threadChannelIdConsume(List<String> channelIds) {
+        while(channelIds.size() > 50) {
+            String overflowId = channelIds.get(0);
+            channelIds.remove(0);
+
+            logger.trace("Removing overflow id and putting back in queue {}", overflowId);
+
+            channelQueue.add(overflowId);
+        }
+
+        logger.trace("ChannelId Consumer[submitting={},leftInQueue={}]",
+                channelIds.size(),
+                channelQueue.size());
+
+        try {
+            ChannelListResponse cl = youtube.channels().list("snippet")
+                    .setKey(FXMLSuite.getYouTubeApiKey())
+                    .setId(String.join(",", channelIds))
+                    .setMaxResults(50L)
+                    .execute();
+
+            List<YouTubeChannel> channels = cl.getItems().stream().map(YouTubeChannel::new)
+                    .collect(Collectors.toList());
+
+            channelInsertQueue.addAll(channels);
+            channelIds.clear();
+        } catch (GoogleJsonResponseException e) {
+            if(e.getStatusCode() == 400) {
+                logger.warn(e.getDetails().getMessage());
+                logger.warn("filter parameters [id={}]", String.join(",", channelIds));
+            } else {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            logger.error("Error on channel grab", e);
+        }
+    }
+
+    private void threadInsertChannels(List<YouTubeChannel> channels) {
+        try {
+            logger.trace("Channel Insert Consumer [submitting={},leftInQueue={}]",
+                    channels.size(),
+                    channelInsertQueue.size());
+
+            database.insertChannels(channels);
+            channels.clear();
+        } catch (SQLException e) {
+            logger.error("Error on channel submit", e);
+        }
+    }
+
     /**
-     * Await the background threads to finish before continuing.
+     * Await the background threads to finish dateTo continuing.
      * @throws InterruptedException executors/thread was interrupted
      */
     private void awaitBackgroundThreads() throws InterruptedException {
@@ -594,7 +569,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
      * @throws SQLException failed to insert to database
      */
     private void parseVideoIdsToObjects(List<String> videoIds) throws IOException, SQLException {
-        logger.debug(String.format("Grabbing Video Data [ids=%s]", videoIds.toString()));
+        logger.debug("Grabbing Video Data [ids={}]", videoIds.toString());
         YouTube.Videos.List yvl = youtube.videos().list("snippet,statistics")
                 .setKey(FXMLSuite.getYouTubeApiKey())
                 .setMaxResults(50L)
@@ -618,7 +593,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
      */
     private synchronized void submitComments(List<YouTubeComment> comments) throws SQLException {
         List<String> commentIds = comments.stream()
-                .map(YouTubeComment::getYoutubeId).collect(Collectors.toList());
+                .map(YouTubeComment::getId).collect(Collectors.toList());
         final long notYetExisting = database.countCommentsNotExisting(commentIds);
         final long totalInserting = comments.size();
         final long currentTotal = totalComments.getValue();

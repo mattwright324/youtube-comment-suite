@@ -30,7 +30,7 @@
                            text="mattwright324" />
                 <VBox alignment="CENTER" prefWidth="200">
                     <Label fx:id="videoViews" styleClass="noBorder, noPadding"
-                               text="8.6M views" />
+                               text="8.6M viewCount" />
                     <HBox alignment="CENTER" spacing="5">
                         <ImageView fx:id="likesIcon" fitHeight="20" fitWidth="20" />
                         <Label fx:id="videoLikes"
@@ -119,6 +119,9 @@
                 <Button fx:id="btnSearch" text="Search" prefWidth="140" styleClass="btnPrimary" />
                 <Button fx:id="btnClear" text="Clear Results" prefWidth="140" />
             </HBox>
+            <HBox spacing="10" alignment="CENTER">
+                <Button fx:id="btnExport" text="Export Results" prefWidth="140" styleClass="btnSecondary" disable="true" />
+            </HBox>
         </VBox>
     </HBox>
 
@@ -130,5 +133,10 @@
     <!-- Overlay: Reply / Show More -->
     <OverlayModal visible="false" fx:id="showMoreModal">
         <title><String fx:value="Comment View" /></title>
+    </OverlayModal>
+
+    <!-- Overlay: Export Comment Results -->
+    <OverlayModal visible="false" fx:id="exportModal">
+        <title><String fx:value="Export search results " /></title>
     </OverlayModal>
 </StackPane>

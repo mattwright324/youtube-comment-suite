@@ -1,47 +1,48 @@
 package io.mattw.youtube.commentsuite.db;
 
+import com.google.api.client.util.ArrayMap;
 import com.google.api.services.youtube.model.ResourceId;
-import javafx.scene.image.Image;
 import io.mattw.youtube.commentsuite.ImageCache;
+import javafx.scene.image.Image;
+
+import java.io.Serializable;
 
 /**
  * Similarities between GroupItem, YouTubeChannel, YouTubeComment, and YouTubeVideo.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
-public abstract class YouTubeObject implements ImageCache {
+public abstract class YouTubeObject implements ImageCache, Serializable {
 
-    private YType typeId;
-    private String youtubeId;
+    private String id;
     private String title;
     private String thumbUrl;
-    private boolean fetchThumb;
+
+    // Transient, we don't want this in export file.
+    private transient YType typeId;
 
     /**
      * This field differs from what's returned by  {@link #buildYouTubeLink()} because it is used solely by
      * {@link GroupItem} as part of field duplication.
      */
-    private String youTubeLink;
+    private transient String youTubeLink;
 
     public YouTubeObject() {
         typeId = YType.UNKNOWN;
     }
 
-    public YouTubeObject(String youtubeId, String title, String thumbUrl, boolean fetchThumb) {
+    public YouTubeObject(String youtubeId, String title, String thumbUrl) {
         this();
-        this.youtubeId = youtubeId;
+        this.id = youtubeId;
         this.title = title;
         this.thumbUrl = thumbUrl;
-        this.fetchThumb = fetchThumb;
     }
 
-    public YouTubeObject(ResourceId youtubeId, String title, String thumbUrl, boolean fetchThumb) {
+    public YouTubeObject(ResourceId youtubeId, String title, String thumbUrl) {
         this();
-        this.youtubeId = getId(youtubeId);
+        this.id = getIdFromResource(youtubeId);
         this.title = title;
         this.thumbUrl = thumbUrl;
-        this.fetchThumb = fetchThumb;
     }
 
     public YType getTypeId() {
@@ -52,12 +53,12 @@ public abstract class YouTubeObject implements ImageCache {
         this.typeId = typeId;
     }
 
-    public String getYoutubeId() {
-        return youtubeId;
+    public String getId() {
+        return id;
     }
 
-    public void setYoutubeId(String youtubeId) {
-        this.youtubeId = youtubeId;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getTitle() {
@@ -74,14 +75,6 @@ public abstract class YouTubeObject implements ImageCache {
 
     public void setThumbUrl(String thumbUrl) {
         this.thumbUrl = thumbUrl;
-    }
-
-    public boolean isFetchThumb() {
-        return fetchThumb;
-    }
-
-    public void setFetchThumb(boolean fetchThumb) {
-        this.fetchThumb = fetchThumb;
     }
 
     public String getYouTubeLink() {
@@ -118,25 +111,42 @@ public abstract class YouTubeObject implements ImageCache {
      */
     public String buildYouTubeLink() {
         switch(typeId){
-            case VIDEO:    return "https://youtu.be/" + youtubeId;
-            case CHANNEL:  return "https://www.youtube.com/channel/" + youtubeId;
-            case PLAYLIST: return "https://www.youtube.com/playlist?list=" + youtubeId;
+            case VIDEO:    return "https://youtu.be/" + id;
+            case CHANNEL:  return "https://www.youtube.com/channel/" + id;
+            case PLAYLIST: return "https://www.youtube.com/playlist?list=" + id;
             case COMMENT:  return "https://www.youtube.com/watch?v=" +
                             (this instanceof YouTubeComment ? ((YouTubeComment) this).getVideoId() +
-                            "&lc="+youtubeId : youtubeId);
-            default:       return "https://www.youtube.com/error/" + youtubeId;
+                            "&lc="+ id : id);
+            default:       return "https://www.youtube.com/error/" + id;
         }
     }
 
     public String toString() {
-        return getYoutubeId();
+        return getId();
     }
 
     public boolean equals(Object o) {
-        return o instanceof YouTubeObject && ((YouTubeObject) o).getYoutubeId() != null && ((YouTubeObject) o).getYoutubeId().equals(youtubeId);
+        return o instanceof YouTubeObject && ((YouTubeObject) o).getId() != null && ((YouTubeObject) o).getId().equals(id);
     }
 
-    public String getId(ResourceId resourceId) {
+    /**
+     * For some reason this value returns as an ArrayMap? Cast and return correct value from it.
+     *
+     * @return channelId
+     */
+    static String getChannelIdFromObject(Object authorChannelId) {
+        if(authorChannelId instanceof ArrayMap) {
+            ArrayMap<String,String> value = (ArrayMap) authorChannelId;
+
+            return value.get("value");
+        }
+        return authorChannelId.toString();
+    }
+
+    /**
+     * @return id of video, channel, or playlist
+     */
+    protected static String getIdFromResource(ResourceId resourceId) {
         if(resourceId.getVideoId() != null) {
             return resourceId.getVideoId();
         } else if(resourceId.getChannelId() != null) {

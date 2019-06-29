@@ -1,13 +1,13 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.Group;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.Group;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,11 +19,10 @@ import static javafx.application.Platform.runLater;
 /**
  * This modal allows the user to delete the entire Group of its ManageGroupsManager. This deletes only the Group
  * object from the database and does not clean up its GroupItems, Videos, Comments, or Channels unless the
- * vacuum option is selected before deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
+ * vacuum option is selected dateTo deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
  * if they did not select vacuum when deleting.
  *
  * @see ManageGroupsManager
- * @since 2018-12-30
  * @author mattwright324
  */
 public class MGMVDeleteGroupModal extends VBox {
@@ -56,10 +55,10 @@ public class MGMVDeleteGroupModal extends VBox {
                 });
 
                 try {
-                    logger.warn(String.format("Deleting Group[id=%s,name=%s]", group.getId(), group.getName()));
+                    logger.warn("Deleting Group[id={},name={}]", group.getId(), group.getName());
                     database.deleteGroup(this.group);
 
-                    logger.warn(String.format("Cleaning up after group delete [id=%s,name=%s]", group.getId(), group.getName()));
+                    logger.warn("Cleaning up dateFrom group delete [id={},name={}]", group.getId(), group.getName());
                     database.cleanUp();
                     database.commit();
                     if(doVacuum.isSelected()) {

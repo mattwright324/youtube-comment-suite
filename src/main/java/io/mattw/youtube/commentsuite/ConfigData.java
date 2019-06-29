@@ -11,7 +11,6 @@ import static javafx.application.Platform.runLater;
 
 /**
  * @author mattwright324
- * @since 2018-12-30
  */
 public class ConfigData implements Serializable {
 

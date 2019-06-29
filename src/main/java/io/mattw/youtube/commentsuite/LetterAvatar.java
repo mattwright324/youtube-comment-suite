@@ -14,7 +14,6 @@ import javafx.scene.text.TextAlignment;
 /**
  * Generates images with a character to mimic the style of default YouTube generated letter-avatars.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class LetterAvatar extends WritableImage {

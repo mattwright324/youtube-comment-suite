@@ -18,7 +18,6 @@ import java.util.Collections;
  * Combination of YouTubeChannel and OAuth2Tokens as sign-in.
  * Data stored in Config 'commentsuite.json'
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class YouTubeAccount implements Serializable {

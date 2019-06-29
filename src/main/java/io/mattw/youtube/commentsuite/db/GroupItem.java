@@ -22,7 +22,6 @@ public class GroupItem extends YouTubeObject {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public static String NO_ITEMS = "GI000";
     public static String ALL_ITEMS = "GI001";
 
     private String channelTitle;
@@ -34,7 +33,7 @@ public class GroupItem extends YouTubeObject {
      */
     public GroupItem(SearchResult item) {
         super(item.getId(), item.getSnippet().getTitle(),
-                item.getSnippet().getThumbnails().getMedium().getUrl(), true);
+                item.getSnippet().getThumbnails().getMedium().getUrl());
         this.published = item.getSnippet().getPublishedAt().getValue();
         this.channelTitle = item.getSnippet().getChannelTitle();
         this.lastChecked = 0;
@@ -77,14 +76,14 @@ public class GroupItem extends YouTubeObject {
      * Used for "All Items (#)" and "No items" display in the "Comment Search" and "Group Manager" ComboBoxes.
      */
     public GroupItem(String gitemId, String title) {
-        super(gitemId, title, null, false);
+        super(gitemId, title, null);
     }
 
     /**
      * Used by the database when querying for group items.
      */
     public GroupItem(String gitemId, YType typeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
-        super(gitemId, title, thumbUrl, true);
+        super(gitemId, title, thumbUrl);
         setTypeId(typeId);
         this.channelTitle = channelTitle;
         this.published = published;
@@ -189,10 +188,9 @@ public class GroupItem extends YouTubeObject {
      */
     private void duplicate(GroupItem groupItem) {
         setTypeId(groupItem.getTypeId());
-        setYoutubeId(groupItem.getYoutubeId());
+        setId(groupItem.getId());
         setTitle(groupItem.getTitle());
         setThumbUrl(groupItem.getThumbUrl());
-        setFetchThumb(groupItem.isFetchThumb());
         setYouTubeLink(groupItem.getYouTubeLink());
 
         setChannelTitle(groupItem.getChannelTitle());

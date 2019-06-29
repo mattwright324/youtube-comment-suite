@@ -147,7 +147,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                 String order = orderTypes.get(orderBy.getValue());
 
                 List<YouTubeVideo> videos;
-                if(groupItem.getYoutubeId().equals(GroupItem.ALL_ITEMS)) {
+                if(groupItem.getId().equals(GroupItem.ALL_ITEMS)) {
                     videos = database.getVideos(group, keywordText, order, 25);
                 } else {
                     videos = database.getVideos(groupItem, keywordText, order, 25);
@@ -159,7 +159,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                             .map(video -> {
                                 String subtitle = String.format("Published %s • %,d views • %,d comments",
                                         formatter.format(DateUtils.epochMillisToDateTime(video.getPublishedDate())),
-                                        video.getViews(),
+                                        video.getViewCount(),
                                         video.getCommentCount());
 
                                 return new MGMVYouTubeObjectItem(video, subtitle);

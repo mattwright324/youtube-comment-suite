@@ -2,6 +2,10 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.model.Comment;
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
+import io.mattw.youtube.commentsuite.db.YouTubeComment;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
@@ -10,10 +14,6 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.commentsuite.db.YouTubeComment;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,7 +29,6 @@ import static javafx.application.Platform.runLater;
  * if they exist.
  *
  * @see SearchComments
- * @since 2018-12-30
  * @author mattwright324
  */
 public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
@@ -121,7 +120,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                     oAuth2Handler.setTokens(comboAccountSelect.getValue().getTokens());
 
                     String parentId = loadedComment.isReply() ?
-                            loadedComment.getParentId() : loadedComment.getYoutubeId();
+                            loadedComment.getParentId() : loadedComment.getId();
 
                     Comment yourReply = oAuth2Handler.postReply(parentId, replyText.getText());
 

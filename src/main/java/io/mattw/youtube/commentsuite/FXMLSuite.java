@@ -5,15 +5,15 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.util.EurekaProvider;
+import io.mattw.youtube.commentsuite.util.Location;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.util.EurekaProvider;
-import io.mattw.youtube.commentsuite.util.Location;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,7 +24,6 @@ import java.sql.SQLException;
 /**
  * Application Window
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class FXMLSuite extends Application {

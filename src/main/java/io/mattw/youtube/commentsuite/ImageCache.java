@@ -2,8 +2,8 @@ package io.mattw.youtube.commentsuite;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import javafx.scene.image.Image;
 import io.mattw.youtube.commentsuite.db.YouTubeObject;
+import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Cache for images and letter avatars.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public interface ImageCache {
@@ -58,7 +57,7 @@ public interface ImageCache {
             String fileFormat = "jpg";
             File thumbFile = new File(String.format("./thumbs/%s.%s", id, fileFormat));
             if(configData.getArchiveThumbs() && !thumbFile.exists()) {
-                logger.debug(String.format("Archiving [id=%s]", id));
+                logger.debug("Archiving [id={}]", id);
                 try {
                     thumbFile.mkdirs();
                     thumbFile.createNewFile();
@@ -78,7 +77,7 @@ public interface ImageCache {
     }
 
     static Image findOrGetImage(YouTubeObject object) {
-        return findOrGetImage(object.getYoutubeId(), object.getThumbUrl());
+        return findOrGetImage(object.getId(), object.getThumbUrl());
     }
 
     static Image findOrGetImage(YouTubeAccount account) {
@@ -86,6 +85,6 @@ public interface ImageCache {
     }
 
     static boolean hasImageCached(YouTubeObject object) {
-        return thumbCache.getIfPresent(object.getYoutubeId()) != null;
+        return thumbCache.getIfPresent(object.getId()) != null;
     }
 }
