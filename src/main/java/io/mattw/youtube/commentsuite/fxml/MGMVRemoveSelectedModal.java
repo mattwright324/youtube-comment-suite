@@ -33,7 +33,7 @@ import static javafx.application.Platform.runLater;
  */
 public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(MGMVRemoveSelectedModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
     private YouTube youtube;

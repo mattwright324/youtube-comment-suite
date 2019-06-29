@@ -26,7 +26,8 @@ import static javafx.application.Platform.runLater;
  */
 public class SearchYouTubeListItem extends HBox {
 
-    private static Logger logger = LogManager.getLogger(SearchYouTubeListItem.class.getName());
+    private static final Logger logger = LogManager.getLogger();
+
     private static Image loading = ImageLoader.LOADING.getImage();
 
     private @FXML Label type;

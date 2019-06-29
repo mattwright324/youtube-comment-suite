@@ -26,7 +26,7 @@ import static javafx.application.Platform.runLater;
  */
 public class SearchCommentsListItem extends HBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(SearchCommentsListItem.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
     private @FXML ImageView thumbnail;
     private @FXML Hyperlink author;

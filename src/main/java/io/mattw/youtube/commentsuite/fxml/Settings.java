@@ -33,7 +33,7 @@ import static javafx.application.Platform.runLater;
  */
 public class Settings implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(Settings.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;

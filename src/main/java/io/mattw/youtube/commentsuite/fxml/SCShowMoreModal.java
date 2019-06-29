@@ -33,7 +33,7 @@ import static javafx.application.Platform.runLater;
  */
 public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
-    private static Logger logger = LogManager.getLogger(SCShowMoreModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private @FXML Label errorMsg;
     private @FXML TextArea commentText, replyText;

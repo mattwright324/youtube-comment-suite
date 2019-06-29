@@ -30,7 +30,7 @@ import static javafx.application.Platform.runLater;
  */
 public class SYAddToGroupModal extends VBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(SYAddToGroupModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private @FXML RadioButton addToExisting, addToNew;
     private @FXML ComboBox<Group> groupsList;

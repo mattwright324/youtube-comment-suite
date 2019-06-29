@@ -36,7 +36,7 @@ import static javafx.application.Platform.runLater;
  */
 public class SearchYouTube implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(SearchYouTube.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private Location<EurekaProvider, EurekaProvider.Location> location;
     private YouTube youtubeApi;

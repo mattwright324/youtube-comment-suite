@@ -25,7 +25,7 @@ import static javafx.application.Platform.runLater;
  */
 public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
 
-    private static Logger logger = LogManager.getLogger();
+    private static final Logger logger = LogManager.getLogger();
 
     private @FXML ImageView thumbnail;
     private @FXML Label title, subtitle;

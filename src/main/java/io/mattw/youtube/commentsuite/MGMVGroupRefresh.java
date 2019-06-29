@@ -38,7 +38,7 @@ import static javafx.application.Platform.runLater;
  */
 public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
-    private final Logger logger = LogManager.getLogger(getClass().getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private Group group;
     private ObservableList<String> errorList = FXCollections.observableArrayList();
@@ -287,7 +287,9 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                                 if(!ctl.getItems().isEmpty()) {
                                     List<YouTubeComment> comments = ctl.getItems().stream()
-                                            .map(YouTubeComment::new).collect(Collectors.toList());
+                                            .map(YouTubeComment::new)
+                                            .collect(Collectors.toList());
+
                                     comments.forEach(c -> {
                                         if(c.getReplyCount() > 0) {
                                             incrTotalProgress(1);
@@ -315,12 +317,39 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             } while (pageToken != null && !isHardShutdown());
                             break;
                         } catch (IOException e) {
-                            String message = String.format("[%s/%s] %s [videoId=%s]", attempts, 5,
-                                    e.getClass().getSimpleName(), video.getId());
+                            if(e instanceof GoogleJsonResponseException) {
+                                GoogleJsonResponseException ge = (GoogleJsonResponseException) e;
 
-                            attempts++;
-                            appendError(message);
-                            logger.warn(message, e);
+                                try {
+                                    database.updateVideoHttpCode(video.getId(), ge.getStatusCode());
+                                } catch (SQLException sqle) {
+                                    logger.error("Failed to update video http response code", sqle);
+                                }
+
+                                if(ge.getStatusCode() == 400) {
+                                    String message = String.format("[%s/%s] %s [videoId=%s]", attempts, maxAttempts,
+                                            e.getClass().getSimpleName(), video.getId());
+
+                                    appendError(message);
+                                    logger.warn(message, e);
+
+                                    attempts++;
+                                } else if(ge.getStatusCode() == 403) {
+                                    String message = String.format("Comments Disabled [videoId=%s]", video.getId());
+
+                                    appendError(message);
+                                    logger.warn(message, e);
+
+                                    break;
+                                }
+                            } else {
+                                String message = String.format("[%s/%s] %s [videoId=%s]", attempts, maxAttempts,
+                                        e.getClass().getSimpleName(), video.getId());
+
+                                attempts++;
+                                appendError(message);
+                                logger.warn(message, e);
+                            }
                         }
                     } while(attempts < maxAttempts && !isHardShutdown());
 

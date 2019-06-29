@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface ImageCache {
 
-    Logger logger = LogManager.getLogger(ImageCache.class.getSimpleName());
+    Logger logger = LogManager.getLogger();
 
     Cache<Object, Image> thumbCache = CacheBuilder.newBuilder()
             .maximumSize(500)

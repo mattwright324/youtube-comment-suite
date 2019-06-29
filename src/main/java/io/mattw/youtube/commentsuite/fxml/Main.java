@@ -27,7 +27,7 @@ import static javafx.application.Platform.runLater;
  */
 public class Main implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(Main.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private @FXML ImageView headerIcon;
     private @FXML ToggleGroup headerToggleGroup;

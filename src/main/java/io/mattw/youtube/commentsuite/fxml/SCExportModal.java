@@ -57,7 +57,8 @@ import static javafx.application.Platform.runLater;
  */
 public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
-    private static final Logger logger = LogManager.getLogger(SCExportModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
+
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH.mm.SS");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final JsonParser jsonParser = new JsonParser();

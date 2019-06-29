@@ -35,7 +35,7 @@ import static javafx.application.Platform.runLater;
  */
 public class MGMVAddItemModal extends VBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(MGMVAddItemModal.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
     private YouTube youtube;

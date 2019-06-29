@@ -1,6 +1,12 @@
 package io.mattw.youtube.commentsuite.db;
 
 import com.google.api.services.youtube.model.Video;
+import com.google.api.services.youtube.model.VideoSnippet;
+import com.google.api.services.youtube.model.VideoStatistics;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+
+import java.math.BigInteger;
+import java.util.Optional;
 
 /**
  * @author mattwright324
@@ -24,13 +30,36 @@ public class YouTubeVideo extends YouTubeObject {
         super(item.getId(), item.getSnippet().getTitle(), item.getSnippet().getThumbnails().getMedium().getUrl());
         setTypeId(YType.VIDEO);
 
-        this.channelId = item.getSnippet().getChannelId();
-        this.description = item.getSnippet().getDescription();
-        this.publishDate = item.getSnippet().getPublishedAt().getValue();
-        this.viewCount = item.getStatistics().getViewCount().longValue();
-        this.likes = item.getStatistics().getLikeCount().longValue();
-        this.dislikes = item.getStatistics().getDislikeCount().longValue();
-        this.comments = item.getStatistics().getCommentCount().longValue();
+        logger.debug(ReflectionToStringBuilder.toString(item));
+
+        if(item.getSnippet() != null) {
+            VideoSnippet snippet = item.getSnippet();
+
+            this.channelId = snippet.getChannelId();
+            this.description = snippet.getDescription();
+            this.publishDate = snippet.getPublishedAt().getValue();
+        }
+
+        if(item.getStatistics() != null) {
+            VideoStatistics stats = item.getStatistics();
+
+            this.viewCount = stats.getViewCount().longValue();
+
+            // Likes and dislikes may be disabled on the video
+            this.likes = Optional.ofNullable(stats.getLikeCount())
+                    .orElse(BigInteger.ZERO)
+                    .longValue();
+            this.dislikes = Optional.ofNullable(stats.getDislikeCount())
+                    .orElse(BigInteger.ZERO)
+                    .longValue();
+
+            // When comments are disabled, this value will be null on the video.
+            // httpCode should also be 403 when when comment threads are grabbed during refresh.
+            this.comments = Optional.ofNullable(stats.getCommentCount())
+                                    .orElse(BigInteger.ZERO)
+                                    .longValue();
+        }
+
         this.refreshedOnDate = System.currentTimeMillis();
     }
 

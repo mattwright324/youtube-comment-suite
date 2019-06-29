@@ -31,7 +31,8 @@ import static javafx.application.Platform.runLater;
  */
 public class ManageGroups implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(ManageGroups.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
+
     Cache<String, ManageGroupsManager> managerCache = CacheBuilder.newBuilder().build();
 
     private CommentDatabase database;

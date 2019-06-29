@@ -20,7 +20,7 @@ import java.io.IOException;
  */
 public class MGCreateGroupModal extends VBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(MGCreateGroupModal.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
     private @FXML Label errorMsg;
     private @FXML TextField nameField;

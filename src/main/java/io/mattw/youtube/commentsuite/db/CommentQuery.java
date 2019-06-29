@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  */
 public class CommentQuery implements Serializable {
 
-    private final transient Logger logger = LogManager.getLogger();
+    private static final transient Logger logger = LogManager.getLogger();
     private final transient CommentDatabase database;
 
     // We don't want these in export file.

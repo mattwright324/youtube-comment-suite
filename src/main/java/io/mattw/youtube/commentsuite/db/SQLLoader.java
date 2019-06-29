@@ -74,7 +74,7 @@ public enum SQLLoader {
     GET_COMMENT_STATS("dql_get_comment_stats.sql"),
     ;
 
-    private Logger logger = LogManager.getLogger(SQLLoader.class.getSimpleName());
+    private final Logger logger = LogManager.getLogger();
 
     private String basePath = "/io/mattw/youtube/commentsuite/db/sql/";
     private String fileName;

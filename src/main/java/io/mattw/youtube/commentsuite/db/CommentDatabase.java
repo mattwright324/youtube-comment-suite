@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class CommentDatabase implements Closeable {
 
-    private static Logger logger = LogManager.getLogger(CommentDatabase.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private SQLiteConnection sqlite;
 
@@ -569,13 +569,13 @@ public class CommentDatabase implements Closeable {
     /**
      * Updates http code for group refreshing.
      */
-    /*public void updateVideoHttpCode(String videoId, int httpCode) throws SQLException {
+    public void updateVideoHttpCode(String videoId, int httpCode) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.UPDATE_VIDEO_HTTPCODE.toString())) {
             ps.setInt(1, httpCode);
             ps.setString(2, videoId);
             ps.executeUpdate();
         }
-    }*/
+    }
 
     /**
      * Returns existing threads and reply counts for group refreshing.

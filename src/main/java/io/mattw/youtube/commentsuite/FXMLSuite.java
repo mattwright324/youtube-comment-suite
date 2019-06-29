@@ -28,7 +28,7 @@ import java.sql.SQLException;
  */
 public class FXMLSuite extends Application {
 
-    private static Logger logger = LogManager.getLogger(FXMLSuite.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private static Location location = new Location<EurekaProvider, EurekaProvider.Location>(
             new EurekaProvider(), EurekaProvider.Location.class);

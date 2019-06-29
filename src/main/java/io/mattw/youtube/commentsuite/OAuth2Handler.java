@@ -18,7 +18,7 @@ import java.lang.reflect.Modifier;
  */
 public class OAuth2Handler {
 
-    private Logger logger = LogManager.getLogger(this);
+    private static final Logger logger = LogManager.getLogger();
 
     private Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();
     private String clientId;
@@ -26,8 +26,6 @@ public class OAuth2Handler {
     private String redirectUri;
     private String authUrl;
     private OAuth2Tokens tokens;
-
-    OAuth2Handler() {}
 
     OAuth2Handler(String clientId, String clientSecret, String redirectUri) {
         this.clientId = clientId;

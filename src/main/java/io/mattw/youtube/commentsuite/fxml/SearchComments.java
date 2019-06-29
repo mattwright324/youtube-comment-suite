@@ -44,7 +44,7 @@ import static javafx.application.Platform.runLater;
  */
 public class SearchComments implements Initializable, ImageCache {
 
-    private static Logger logger = LogManager.getLogger(SearchComments.class);
+    private static final Logger logger = LogManager.getLogger();
 
     private Cache<Object, YouTubeVideo> videoCache = CacheBuilder.newBuilder()
             .maximumSize(500)

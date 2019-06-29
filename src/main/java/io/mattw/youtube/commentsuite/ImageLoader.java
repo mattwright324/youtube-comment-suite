@@ -44,7 +44,7 @@ public enum ImageLoader {
     YOUTUBE("youtube.png")
     ;
 
-    private Logger logger = LogManager.getLogger(ImageLoader.class.getSimpleName());
+    private final Logger logger = LogManager.getLogger();
 
     private String basePath = "/io/mattw/youtube/commentsuite/img";
     private Image image;

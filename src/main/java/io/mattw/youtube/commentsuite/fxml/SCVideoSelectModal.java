@@ -37,7 +37,7 @@ import static javafx.application.Platform.runLater;
  */
 public class SCVideoSelectModal extends VBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(SCVideoSelectModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private static final String ALL_VIDEOS = "All Videos";
 

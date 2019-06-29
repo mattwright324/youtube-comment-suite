@@ -32,7 +32,7 @@ import static javafx.application.Platform.runLater;
  */
 public class MGMVRefreshModal extends HBox {
 
-    private static Logger logger = LogManager.getLogger(MGMVRefreshModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private ClipboardUtil clipboard = new ClipboardUtil();
 

@@ -22,7 +22,7 @@ import java.util.Collections;
  */
 public class YouTubeAccount implements Serializable {
 
-    private transient Logger logger = LogManager.getLogger(this);
+    private static final transient Logger logger = LogManager.getLogger();
 
     private String username, channelId, thumbUrl;
     private OAuth2Tokens tokens;

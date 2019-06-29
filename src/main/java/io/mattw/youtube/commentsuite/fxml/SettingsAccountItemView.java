@@ -17,7 +17,7 @@ import java.io.IOException;
  */
 public class SettingsAccountItemView extends HBox implements ImageCache {
 
-    private static Logger logger = LogManager.getLogger(SettingsAccountItemView.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
     private @FXML ImageView accountThumb;
     private @FXML Label accountName;

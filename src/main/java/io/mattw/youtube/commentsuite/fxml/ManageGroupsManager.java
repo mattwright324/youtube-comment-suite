@@ -45,7 +45,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yy");
 
-    private final Logger logger = LogManager.getLogger(this.toString());
+    private static final Logger logger = LogManager.getLogger();
     private final Image edit = ImageLoader.PENCIL.getImage();
     private final Image close = ImageLoader.CLOSE.getImage();
 

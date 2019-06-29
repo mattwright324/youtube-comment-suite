@@ -27,7 +27,7 @@ import static javafx.application.Platform.runLater;
  */
 public class MGMVDeleteGroupModal extends VBox {
 
-    private static Logger logger = LogManager.getLogger(MGMVDeleteGroupModal.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
 

@@ -19,7 +19,7 @@ import java.io.FileWriter;
  */
 public class ConfigFile<T> {
 
-    private static Logger logger = LogManager.getLogger(ConfigFile.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private Gson gson = new Gson();
 
