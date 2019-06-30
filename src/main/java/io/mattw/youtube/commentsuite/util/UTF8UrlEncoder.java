@@ -5,7 +5,7 @@ import java.net.URLEncoder;
 
 /**
  * Helper to encode strings to UTF-8 and ignoring the UnsupportedEncodingException.
- *
+ * <p>
  * That exception should never ever be thrown, if it does, the world must be ending.
  *
  * @author mattwright324

@@ -28,23 +28,23 @@ import static javafx.application.Platform.runLater;
  * in its entirety. It also allows the user to reply to the comment with any of currently signed-into accounts
  * if they exist.
  *
- * @see SearchComments
  * @author mattwright324
+ * @see SearchComments
  */
 public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private @FXML Label errorMsg;
-    private @FXML TextArea commentText, replyText;
-    private @FXML TextField author;
-    private @FXML ImageView authorThumb, accountThumb;
-    private @FXML VBox replyPane;
-    private @FXML ComboBox<YouTubeAccount> comboAccountSelect;
-    private @FXML CheckBox openReply;
+    @FXML private Label errorMsg;
+    @FXML private TextArea commentText, replyText;
+    @FXML private TextField author;
+    @FXML private ImageView authorThumb, accountThumb;
+    @FXML private VBox replyPane;
+    @FXML private ComboBox<YouTubeAccount> comboAccountSelect;
+    @FXML private CheckBox openReply;
 
-    private @FXML Button btnClose;
-    private @FXML Button btnSubmit, btnReply;
+    @FXML private Button btnClose;
+    @FXML private Button btnSubmit, btnReply;
 
     private SimpleBooleanProperty replyMode = new SimpleBooleanProperty(false);
 
@@ -79,15 +79,15 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
             replyMode.addListener((o, ov, nv) -> {
                 btnSubmit.setText(replyMode.getValue() ? "Cancel Reply" : "Make Reply");
 
-                if(replyText.getText().trim().isEmpty()) {
-                    if(configData.getPrefixReplies()) {
+                if (replyText.getText().trim().isEmpty()) {
+                    if (configData.getPrefixReplies()) {
                         replyText.setText(String.format("@%s ", author.getText()));
                     }
                 }
             });
 
             comboAccountSelect.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
-                if(nv != null) {
+                if (nv != null) {
                     Image thumb = ImageCache.findOrGetImage(nv);
 
                     runLater(() -> accountThumb.setImage(thumb));
@@ -129,7 +129,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                     database.insertComments(Collections.singletonList(comment));
                     database.commit();
 
-                    if(openReply.isSelected()) {
+                    if (openReply.isSelected()) {
                         browserUtil.open(comment.buildYouTubeLink());
                     }
 
@@ -167,7 +167,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
     /**
      * Loads comment into modal.
      *
-     * @param comment comment to display
+     * @param comment   comment to display
      * @param replyMode show modal with reply elements enabled
      */
     public void loadComment(YouTubeComment comment, boolean replyMode) {

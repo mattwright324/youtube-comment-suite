@@ -41,35 +41,35 @@ public class Settings implements Initializable {
     private CommentDatabase database;
     private YouTube youtube;
 
-    private @FXML Pane settingsPane;
+    @FXML private Pane settingsPane;
 
-    private @FXML VBox vboxSignIn;
-    private @FXML Button btnExitSignIn;
+    @FXML private VBox vboxSignIn;
+    @FXML private Button btnExitSignIn;
 
-    private @FXML WebView webView;
-    private @FXML ProgressIndicator webViewLoading;
+    @FXML private WebView webView;
+    @FXML private ProgressIndicator webViewLoading;
 
-    private @FXML VBox vboxSettings;
-    private @FXML Button btnClose;
-    private @FXML ImageView closeIcon;
-    private @FXML CheckBox prefixReply;
-    private @FXML CheckBox autoLoadStats;
-    private @FXML CheckBox downloadThumbs;
-    private @FXML CheckBox customKey;
-    private @FXML TextField youtubeApiKey;
-    private @FXML Button btnAddAccount;
-    private @FXML ListView<SettingsAccountItemView> accountList;
+    @FXML private VBox vboxSettings;
+    @FXML private Button btnClose;
+    @FXML private ImageView closeIcon;
+    @FXML private CheckBox prefixReply;
+    @FXML private CheckBox autoLoadStats;
+    @FXML private CheckBox downloadThumbs;
+    @FXML private CheckBox customKey;
+    @FXML private TextField youtubeApiKey;
+    @FXML private Button btnAddAccount;
+    @FXML private ListView<SettingsAccountItemView> accountList;
 
-    private @FXML ProgressIndicator cleanProgress;
-    private @FXML Button btnClean;
-    private @FXML ProgressIndicator resetProgress;
-    private @FXML Button btnReset;
-    private @FXML ProgressIndicator removeProgress;
-    private @FXML Button btnRemoveThumbs;
+    @FXML private ProgressIndicator cleanProgress;
+    @FXML private Button btnClean;
+    @FXML private ProgressIndicator resetProgress;
+    @FXML private Button btnReset;
+    @FXML private ProgressIndicator removeProgress;
+    @FXML private Button btnRemoveThumbs;
 
-    private @FXML Hyperlink github;
-    private @FXML ImageView githubIcon;
-    private @FXML Button btnSave;
+    @FXML private Hyperlink github;
+    @FXML private ImageView githubIcon;
+    @FXML private Button btnSave;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -93,9 +93,9 @@ public class Settings implements Initializable {
         WebEngine webEngine = webView.getEngine();
         webEngine.setJavaScriptEnabled(true);
         webEngine.titleProperty().addListener((o, ov, nv) -> {
-            if(nv != null) {
+            if (nv != null) {
                 logger.debug("YouTubeSignIn [loading-page={}]", nv);
-                if(nv.contains("code=")) {
+                if (nv.contains("code=")) {
                     configData.refreshAccounts();
 
                     String code = Stream.of(nv.split("&"))
@@ -118,7 +118,7 @@ public class Settings implements Initializable {
                     } finally {
                         config.save();
                     }
-                } else if(nv.contains("error=")) {
+                } else if (nv.contains("error=")) {
                     logger.debug("YouTubeSignIn Failed [{}]", nv);
                 }
             }
@@ -132,7 +132,7 @@ public class Settings implements Initializable {
                     .stream()
                     .filter(Objects::nonNull)
                     .filter(account -> account.getChannelId() != null && account.getThumbUrl() != null
-                        && account.getUsername() != null)
+                            && account.getUsername() != null)
                     .map(SettingsAccountItemView::new)
                     .collect(Collectors.toList());
 
@@ -159,7 +159,7 @@ public class Settings implements Initializable {
             config.setDataObject(data);
             config.save();
 
-            if(customKey.isSelected()) {
+            if (customKey.isSelected()) {
                 FXMLSuite.setYoutubeApiKey(data.getYoutubeApiKey());
             } else {
                 FXMLSuite.setYoutubeApiKey(data.getDefaultApiKey());
@@ -174,7 +174,7 @@ public class Settings implements Initializable {
 
         githubIcon.setImage(ImageLoader.GITHUB.getImage());
 
-        btnAddAccount.setOnAction(ae -> runLater(() ->  {
+        btnAddAccount.setOnAction(ae -> runLater(() -> {
             vboxSignIn.setManaged(true);
             vboxSignIn.setVisible(true);
             vboxSettings.setDisable(true);
@@ -246,7 +246,7 @@ public class Settings implements Initializable {
     private void deleteDirectoryContents(String dir) {
         File file = new File(dir);
 
-        for(File f : file.listFiles()) {
+        for (File f : file.listFiles()) {
             f.delete();
         }
     }

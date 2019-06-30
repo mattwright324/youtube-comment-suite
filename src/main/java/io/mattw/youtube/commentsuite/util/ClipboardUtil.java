@@ -14,49 +14,53 @@ import java.util.stream.Collectors;
  */
 public class ClipboardUtil {
 
-	private Clipboard systemClipboard;
+    private Clipboard systemClipboard;
 
-	public ClipboardUtil() {}
+    public ClipboardUtil() {
+    }
 
-	private void initSystemClipboard() {
-		if(systemClipboard == null) {
-			systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-		}
-	}
+    private void initSystemClipboard() {
+        if (systemClipboard == null) {
+            systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        }
+    }
 
-	private void setSystemClipboard(Clipboard clipboard) {
-		this.systemClipboard = clipboard;
-	}
+    private void setSystemClipboard(Clipboard clipboard) {
+        this.systemClipboard = clipboard;
+    }
 
-	public String getClipboard() throws UnsupportedFlavorException, IOException {
+    public String getClipboard() throws UnsupportedFlavorException, IOException {
         return (String) systemClipboard.getData(DataFlavor.stringFlavor);
-	}
+    }
 
-	/**
-	 * Sets clipboard to string value.
-	 * @param string text to set clipboard as
-	 */
-	public void setClipboard(String string) {
-		initSystemClipboard();
-		StringSelection selection = new StringSelection(string);
-		systemClipboard.setContents(selection, selection);
-	}
+    /**
+     * Sets clipboard to string value.
+     *
+     * @param string text to set clipboard as
+     */
+    public void setClipboard(String string) {
+        initSystemClipboard();
+        StringSelection selection = new StringSelection(string);
+        systemClipboard.setContents(selection, selection);
+    }
 
-	/**
-	 * Converts list into a line.separator delimited string and sets to clipboard.
-	 * @param list list of objects converted to line separated toString()
-	 */
-	public void setClipboard(List<?> list) {
-		List<String> strList = list.stream().map(Object::toString).collect(Collectors.toList());
-		setClipboard(strList.stream().collect(Collectors.joining(System.getProperty("line.separator"))));
-	}
+    /**
+     * Converts list into a line.separator delimited string and sets to clipboard.
+     *
+     * @param list list of objects converted to line separated toString()
+     */
+    public void setClipboard(List<?> list) {
+        List<String> strList = list.stream().map(Object::toString).collect(Collectors.toList());
+        setClipboard(strList.stream().collect(Collectors.joining(System.getProperty("line.separator"))));
+    }
 
 
-	/**
-	 * Coverts object to string value and sets to clipboard.
-	 * @param object uses toString() for clipboard
-	 */
-	public void setClipboard(Object object) {
-		setClipboard(object.toString());
-	}
+    /**
+     * Coverts object to string value and sets to clipboard.
+     *
+     * @param object uses toString() for clipboard
+     */
+    public void setClipboard(Object object) {
+        setClipboard(object.toString());
+    }
 }

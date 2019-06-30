@@ -106,7 +106,8 @@ public class EurekaProvider implements LocationProvider {
             public String query_status_code;
             public String query_status_description;
 
-            public Status() {}
+            public Status() {
+            }
         }
     }
 }

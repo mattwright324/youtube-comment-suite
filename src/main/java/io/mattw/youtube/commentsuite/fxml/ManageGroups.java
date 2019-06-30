@@ -37,12 +37,12 @@ public class ManageGroups implements Initializable {
 
     private CommentDatabase database;
 
-    private @FXML OverlayModal<MGCreateGroupModal> overlayModal;
+    @FXML private OverlayModal<MGCreateGroupModal> overlayModal;
 
-    private @FXML ImageView plusIcon;
-    private @FXML ComboBox<Group> comboGroupSelect;
-    private @FXML Button btnCreateGroup;
-    private @FXML Pane content;
+    @FXML private ImageView plusIcon;
+    @FXML private ComboBox<Group> comboGroupSelect;
+    @FXML private Button btnCreateGroup;
+    @FXML private Pane content;
 
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize ManageGroups");
@@ -56,7 +56,7 @@ public class ManageGroups implements Initializable {
         plusIcon.setImage(ImageLoader.PLUS.getImage());
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
-        comboGroupSelect.setItems(database.globalGroupList);
+        comboGroupSelect.setItems(database.getGlobalGroupList());
         new Thread(() -> {
             try {
                 database.refreshGroups();
@@ -64,13 +64,13 @@ public class ManageGroups implements Initializable {
                 logger.error(e);
             }
         }).start();
-        comboGroupSelect.getItems().addListener((ListChangeListener<Group>)(c -> {
-            if(!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
+        comboGroupSelect.getItems().addListener((ListChangeListener<Group>) (c -> {
+            if (!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
                 selectionModel.select(0);
             }
         }));
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            if(nv != null) {
+            if (nv != null) {
                 ManageGroupsManager manager = managerCache.getIfPresent(nv.getId());
                 if (manager != null) {
                     runLater(() -> {
@@ -117,7 +117,7 @@ public class ManageGroups implements Initializable {
             logger.debug("Attempting to create group");
             runLater(() -> overlayModal.setDisable(true));
             String name = modal.getNameField().getText();
-            if(!name.isEmpty()) {
+            if (!name.isEmpty()) {
                 try {
                     Group g = database.createGroup(name);
                     logger.debug("Created new group [id={},name={}]", g.getId(), g.getName());

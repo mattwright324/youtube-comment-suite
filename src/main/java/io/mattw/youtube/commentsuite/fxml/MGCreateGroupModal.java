@@ -15,16 +15,16 @@ import java.io.IOException;
 /**
  * This modal allows the user to create a new and empty Group with the name of their choosing. The name must be unique.
  *
- * @see ManageGroups
  * @author mattwright324
+ * @see ManageGroups
  */
 public class MGCreateGroupModal extends VBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private @FXML Label errorMsg;
-    private @FXML TextField nameField;
-    private @FXML Button btnSubmit, btnClose;
+    @FXML private Label errorMsg;
+    @FXML private TextField nameField;
+    @FXML private Button btnSubmit, btnClose;
 
     public MGCreateGroupModal() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGCreateGroupModal.fxml"));
@@ -32,7 +32,9 @@ public class MGCreateGroupModal extends VBox implements Cleanable {
         loader.setRoot(this);
         try {
             loader.load();
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     public Label getErrorMsg() {

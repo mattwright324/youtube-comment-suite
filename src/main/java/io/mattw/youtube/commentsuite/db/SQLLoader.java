@@ -9,12 +9,12 @@ import java.io.InputStreamReader;
 
 /**
  * Loads various resource SQL scripts for definition, query, and manipulation.
- *
+ * <p>
  * Content of the resource scripts accessed by calling toString().
  * Content of SQL Scripts are a mixture of single statements, multiple statements, and statements that require:
- *  - Use in PreparedStatement (? chars)
- *  - Use in NamedParameterStatement (:params)
- *  - String replacement dateTo use in one of above (:order)
+ * - Use in PreparedStatement (? chars)
+ * - Use in NamedParameterStatement (:params)
+ * - String replacement dateTo use in one of above (:order)
  *
  * @author mattwright324
  */
@@ -85,9 +85,9 @@ public enum SQLLoader {
         try {
             String line;
             StringBuilder sb = new StringBuilder();
-            try(InputStreamReader isr = new InputStreamReader(getClass().getResource(basePath+fileName).openStream());
-                BufferedReader br = new BufferedReader(isr)) {
-                while((line = br.readLine()) != null) {
+            try (InputStreamReader isr = new InputStreamReader(getClass().getResource(basePath + fileName).openStream());
+                 BufferedReader br = new BufferedReader(isr)) {
+                while ((line = br.readLine()) != null) {
                     sb.append(line);
                     sb.append(' ');
                 }

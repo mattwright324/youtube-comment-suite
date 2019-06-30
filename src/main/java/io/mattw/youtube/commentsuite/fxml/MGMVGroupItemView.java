@@ -22,10 +22,10 @@ public class MGMVGroupItemView extends HBox {
 
     private GroupItem groupItem;
 
-    private @FXML ImageView icon;
-    private @FXML Label title;
-    private @FXML Label author;
-    private @FXML Label type;
+    @FXML private ImageView icon;
+    @FXML private Label title;
+    @FXML private Label author;
+    @FXML private Label type;
 
     private BrowserUtil browserUtil = new BrowserUtil();
 

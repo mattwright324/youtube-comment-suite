@@ -51,36 +51,36 @@ public class SearchComments implements Initializable, ImageCache {
             .expireAfterAccess(5, TimeUnit.MINUTES)
             .build();
 
-    private @FXML VBox contextPane, resultsPane, queryPane;
-    private @FXML ImageView videoThumb, authorThumb, toggleContextIcon, toggleQueryIcon;
-    private @FXML ImageView firstPageIcon, prevPageIcon, nextPageIcon, lastPageIcon;
-    private @FXML ImageView likesIcon, dislikesIcon;
-    private @FXML TextField videoTitle, author;
-    private @FXML Label toggleContext, toggleQuery;
-    private @FXML Label videoViews, videoLikes, videoDislikes;
-    private @FXML TextArea videoDescription;
+    @FXML private VBox contextPane, resultsPane, queryPane;
+    @FXML private ImageView videoThumb, authorThumb, toggleContextIcon, toggleQueryIcon;
+    @FXML private ImageView firstPageIcon, prevPageIcon, nextPageIcon, lastPageIcon;
+    @FXML private ImageView likesIcon, dislikesIcon;
+    @FXML private TextField videoTitle, author;
+    @FXML private Label toggleContext, toggleQuery;
+    @FXML private Label videoViews, videoLikes, videoDislikes;
+    @FXML private TextArea videoDescription;
 
-    private @FXML ImageView browserIcon;
-    private @FXML MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks;
-    private @FXML ListView<SearchCommentsListItem> resultsList;
-    private @FXML TextField pageValue;
-    private @FXML Label displayCount, lblMaxPage;
-    private @FXML Button btnFirst, btnPrev, btnNext, btnLast;
-    private @FXML Button btnBackToResults;
-    private @FXML HBox paginationPane, backToResultsPane;
+    @FXML private ImageView browserIcon;
+    @FXML private MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks;
+    @FXML private ListView<SearchCommentsListItem> resultsList;
+    @FXML private TextField pageValue;
+    @FXML private Label displayCount, lblMaxPage;
+    @FXML private Button btnFirst, btnPrev, btnNext, btnLast;
+    @FXML private Button btnBackToResults;
+    @FXML private HBox paginationPane, backToResultsPane;
 
-    private @FXML ComboBox<Group> comboGroupSelect;
-    private @FXML ComboBox<GroupItem> comboGroupItemSelect;
-    private @FXML Hyperlink videoSelect;
-    private @FXML ComboBox<CommentQuery.CommentsType> comboCommentType;
-    private @FXML ComboBox<CommentQuery.Order> comboOrderBy;
-    private @FXML TextField nameLike, commentLike;
-    private @FXML DatePicker dateFrom, dateTo;
-    private @FXML Button btnSearch, btnClear, btnExport;
+    @FXML private ComboBox<Group> comboGroupSelect;
+    @FXML private ComboBox<GroupItem> comboGroupItemSelect;
+    @FXML private Hyperlink videoSelect;
+    @FXML private ComboBox<CommentQuery.CommentsType> comboCommentType;
+    @FXML private ComboBox<CommentQuery.Order> comboOrderBy;
+    @FXML private TextField nameLike, commentLike;
+    @FXML private DatePicker dateFrom, dateTo;
+    @FXML private Button btnSearch, btnClear, btnExport;
 
-    private @FXML OverlayModal<SCVideoSelectModal> videoSelectModal;
-    private @FXML OverlayModal<SCShowMoreModal> showMoreModal;
-    private @FXML OverlayModal<SCExportModal> exportModal;
+    @FXML private OverlayModal<SCVideoSelectModal> videoSelectModal;
+    @FXML private OverlayModal<SCShowMoreModal> showMoreModal;
+    @FXML private OverlayModal<SCExportModal> exportModal;
 
     private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
     private SimpleBooleanProperty searchingProperty = new SimpleBooleanProperty(false);
@@ -101,19 +101,19 @@ public class SearchComments implements Initializable, ImageCache {
         database = FXMLSuite.getDatabase();
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
-        comboGroupSelect.setItems(database.globalGroupList);
-        comboGroupSelect.getItems().addListener((ListChangeListener<Group>)(c -> {
-            if(!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
+        comboGroupSelect.setItems(database.getGlobalGroupList());
+        comboGroupSelect.getItems().addListener((ListChangeListener<Group>) (c -> {
+            if (!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
                 runLater(() -> selectionModel.select(0));
             }
         }));
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            if(ov != null) {
+            if (ov != null) {
                 ov.itemsUpdatedProperty().removeListener(cl);
                 ov.itemsUpdatedProperty().unbind();
                 ov.nameProperty().unbind();
             }
-            if(nv != null) {
+            if (nv != null) {
                 nv.itemsUpdatedProperty().addListener(cl = (o1, ov2, nv3) -> {
                     List<GroupItem> groupItems = database.getGroupItems(nv);
                     GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
@@ -143,7 +143,7 @@ public class SearchComments implements Initializable, ImageCache {
         comboOrderBy.getItems().addAll(CommentQuery.Order.values());
         comboOrderBy.getSelectionModel().select(0);
 
-        dateFrom.setValue(LocalDate.of(1970,1,1));
+        dateFrom.setValue(LocalDate.of(1970, 1, 1));
         dateTo.setValue(LocalDate.now()); // midnight = .atTime(LocalDate.MAX);
 
         firstPageIcon.setImage(ImageLoader.ANGLE_DOUBLE_LEFT.getImage());
@@ -170,7 +170,7 @@ public class SearchComments implements Initializable, ImageCache {
             pageValue.getStyleClass().remove("clearTextField");
         }));
         pageValue.focusedProperty().addListener((o, ov, nv) -> {
-            if(!nv) {
+            if (!nv) {
                 runLater(() -> pageValue.getStyleClass().remove("clearTextField"));
                 int page = interpretPageValue(pageValue.getText());
                 submitPageValue(page);
@@ -182,7 +182,7 @@ public class SearchComments implements Initializable, ImageCache {
             submitPageValue(page);
         });
         pageValue.setOnKeyPressed(ke -> {
-            if(ke.getCode() == KeyCode.ENTER || ke.getCode() == KeyCode.SPACE) {
+            if (ke.getCode() == KeyCode.ENTER || ke.getCode() == KeyCode.SPACE) {
                 int page = interpretPageValue(pageValue.getText());
                 submitPageValue(page);
             }
@@ -214,7 +214,7 @@ public class SearchComments implements Initializable, ImageCache {
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         MultipleSelectionModel<SearchCommentsListItem> scSelection = resultsList.getSelectionModel();
         scSelection.selectedItemProperty().addListener((o, ov, nv) -> new Thread(() -> {
-            if(nv != null) {
+            if (nv != null) {
                 checkUpdateThumbs(nv);
             }
         }).start());
@@ -317,12 +317,12 @@ public class SearchComments implements Initializable, ImageCache {
         showMoreModal.setContent(scShowMoreModal);
         scShowMoreModal.getBtnClose().setOnAction(ae -> showMoreModal.setVisible(false));
         scShowMoreModal.replyModeProperty().addListener((o, ov, nv) -> runLater(() ->
-            showMoreModal.getModalContainer().setMaxWidth(420 * (nv ? 2 : 1))
+                showMoreModal.getModalContainer().setMaxWidth(420 * (nv ? 2 : 1))
         ));
 
         SCExportModal scExportModal = new SCExportModal();
         exportModal.setContent(scExportModal);
-        exportModal.getModalContainer().setMaxWidth(exportModal.getModalContainer().getMaxWidth()*1.5);
+        exportModal.getModalContainer().setMaxWidth(exportModal.getModalContainer().getMaxWidth() * 1.5);
         scExportModal.getBtnClose().setOnAction(ae -> exportModal.setVisible(false));
         btnExport.setOnAction(ae -> {
             scExportModal.withQuery(newQuery);
@@ -336,14 +336,14 @@ public class SearchComments implements Initializable, ImageCache {
 
         commentItem.loadProfileThumb();
 
-        for(SearchCommentsListItem scli : resultsList.getItems()) {
+        for (SearchCommentsListItem scli : resultsList.getItems()) {
             scli.checkProfileThumb();
         }
 
         try {
             String videoId = comment.getVideoId();
             YouTubeVideo video = videoCache.getIfPresent(videoId);
-            if(video == null) {
+            if (video == null) {
                 video = database.getVideo(videoId);
                 videoCache.put(videoId, video);
             }
@@ -379,7 +379,7 @@ public class SearchComments implements Initializable, ImageCache {
 
     private int interpretPageValue(String value) {
         value = value.replaceAll("[^0-9]", "").trim();
-        if(value.isEmpty()) {
+        if (value.isEmpty()) {
             value = "1";
         }
         return Integer.valueOf(value);
@@ -387,6 +387,7 @@ public class SearchComments implements Initializable, ImageCache {
 
     /**
      * Submits an unforced page search
+     *
      * @param page page value
      */
     private void submitPageValue(int page) {
@@ -395,18 +396,19 @@ public class SearchComments implements Initializable, ImageCache {
 
     /**
      * Validates submitted page value, updates properties, and performs comment search.
-     * @param page page value
+     *
+     * @param page   page value
      * @param forced perform search regardless of page value equal to current page
      */
     private void submitPageValue(int page, boolean forced) {
         logger.debug("Submit page value = {}", page);
-        if(page < 1) {
+        if (page < 1) {
             page = 1;
-        } else if(page > maxPageProperty.getValue()) {
+        } else if (page > maxPageProperty.getValue()) {
             page = maxPageProperty.getValue();
         }
 
-        if(page == 1) {
+        if (page == 1) {
             newQuery = new CommentQuery();
         }
 
@@ -416,7 +418,7 @@ public class SearchComments implements Initializable, ImageCache {
             pageValue.getStyleClass().add("clearTextField");
             pageValue.setText(String.valueOf(newPage));
             pageProperty.setValue(newPage);
-            if(newPage != newQuery.getPageNum() || forced) {
+            if (newPage != newQuery.getPageNum() || forced) {
                 logger.debug("Changing page {} -> {}", newQuery.getPageNum(), newPage);
                 new Thread(this::searchComments).start();
             }
@@ -432,7 +434,7 @@ public class SearchComments implements Initializable, ImageCache {
      * - name like (SQL wildcards accepted)
      * - comment like (SQL wildcards accepted)
      * - date range (from start to end)
-     *
+     * <p>
      * Displays results in the ListView
      */
     private void searchComments() {
@@ -491,7 +493,7 @@ public class SearchComments implements Initializable, ImageCache {
                 .map(yc -> {
                     try {
                         SearchCommentsListItem item = new SearchCommentsListItem(yc);
-                        if(treeMode) {
+                        if (treeMode) {
                             runLater(item::treeMode);
                         }
                         return item;
@@ -526,7 +528,7 @@ public class SearchComments implements Initializable, ImageCache {
                     comments.size(),
                     newQuery.getTotalResults()));
 
-            if(treeMode) {
+            if (treeMode) {
                 resultsList.scrollTo(0);
 
                 Optional<SearchCommentsListItem> toSelect = resultsList.getItems().stream()
@@ -620,10 +622,10 @@ public class SearchComments implements Initializable, ImageCache {
     public String trunc(double value) {
         char[] suffix = new char[]{'k', 'm', 'b', 't'};
         int pos = 0;
-        while(value > 1000) {
+        while (value > 1000) {
             value /= 1000;
             pos++;
         }
-        return String.format("%.1f%s", value, pos > 0 ? suffix[pos-1] : "");
+        return String.format("%.1f%s", value, pos > 0 ? suffix[pos - 1] : "");
     }
 }

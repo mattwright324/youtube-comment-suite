@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
  * Database entry for searched YouTube entries (Video, Channel, Playlist).
  * getYouTubeId() from YouTubeObject represents the GroupItem ID.
  *
- * @since 2018-12-30
  * @author mattwright324
+ * @since 2018-12-30
  */
 public class GroupItem extends YouTubeObject {
 
@@ -39,9 +39,9 @@ public class GroupItem extends YouTubeObject {
         this.channelTitle = item.getSnippet().getChannelTitle();
         this.lastChecked = 0;
 
-        if(item.getId().getVideoId() != null) setTypeId(YType.VIDEO);
-        if(item.getId().getChannelId() != null) setTypeId(YType.CHANNEL);
-        if(item.getId().getPlaylistId() != null) setTypeId(YType.PLAYLIST);
+        if (item.getId().getVideoId() != null) setTypeId(YType.VIDEO);
+        if (item.getId().getChannelId() != null) setTypeId(YType.CHANNEL);
+        if (item.getId().getPlaylistId() != null) setTypeId(YType.PLAYLIST);
     }
 
     /**
@@ -115,19 +115,19 @@ public class GroupItem extends YouTubeObject {
         YType type = YType.UNKNOWN;
         boolean channelUsername = false;
         String result = "";
-        if((m = video1.matcher(fullLink)).matches()) {
+        if ((m = video1.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.VIDEO;
-        } else if((m = video2.matcher(fullLink)).matches()) {
+        } else if ((m = video2.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.VIDEO;
-        } else if((m = playlist.matcher(fullLink)).matches()) {
+        } else if ((m = playlist.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.PLAYLIST;
-        } else if((m = channel1.matcher(fullLink)).matches()) {
+        } else if ((m = channel1.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.CHANNEL;
-        } else if((m = channel2.matcher(fullLink)).matches()) {
+        } else if ((m = channel2.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.CHANNEL;
             channelUsername = true;
@@ -135,25 +135,25 @@ public class GroupItem extends YouTubeObject {
 
         YouTube youtube = FXMLSuite.getYouTube();
 
-        if(result.isEmpty()) {
+        if (result.isEmpty()) {
             throw new IOException(String.format("Input did not match expected formats [fullLink=%s]", fullLink));
         } else {
-            if(type == YType.VIDEO) {
+            if (type == YType.VIDEO) {
                 VideoListResponse vl = youtube.videos().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey())
                         .setId(result)
                         .execute();
 
-                if(!vl.getItems().isEmpty()) {
+                if (!vl.getItems().isEmpty()) {
                     Video item = vl.getItems().get(0);
 
                     duplicate(new GroupItem(item));
                 }
-            } else if(type == YType.CHANNEL) {
+            } else if (type == YType.CHANNEL) {
                 YouTube.Channels.List cl = youtube.channels().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey());
 
-                if(!channelUsername) {
+                if (!channelUsername) {
                     cl = cl.setId(result);
                 } else {
                     cl = cl.setForUsername(result);
@@ -161,18 +161,18 @@ public class GroupItem extends YouTubeObject {
 
                 ChannelListResponse clr = cl.execute();
 
-                if(!clr.getItems().isEmpty()) {
+                if (!clr.getItems().isEmpty()) {
                     Channel item = clr.getItems().get(0);
 
                     duplicate(new GroupItem(item));
                 }
-            } else if(type == YType.PLAYLIST) {
+            } else if (type == YType.PLAYLIST) {
                 PlaylistListResponse pl = youtube.playlists().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey())
                         .setId(result)
                         .execute();
 
-                if(!pl.getItems().isEmpty()) {
+                if (!pl.getItems().isEmpty()) {
                     Playlist item = pl.getItems().get(0);
 
                     duplicate(new GroupItem(item));

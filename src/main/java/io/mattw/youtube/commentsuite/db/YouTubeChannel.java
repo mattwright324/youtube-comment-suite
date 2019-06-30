@@ -36,5 +36,7 @@ public class YouTubeChannel extends YouTubeObject {
         setTypeId(YType.CHANNEL);
     }
 
-    public String toString() { return getTitle(); }
+    public String toString() {
+        return getTitle();
+    }
 }

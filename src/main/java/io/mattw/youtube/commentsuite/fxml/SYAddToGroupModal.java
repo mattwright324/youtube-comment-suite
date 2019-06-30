@@ -25,20 +25,20 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to add selected items (Videos, Channels, Playlists) from the Search YouTube section to an
  * already existing group or create an entirely new group to add the selection to.
  *
- * @see SearchYouTube
  * @author mattwright324
+ * @see SearchYouTube
  */
 public class SYAddToGroupModal extends VBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private @FXML RadioButton addToExisting, addToNew;
-    private @FXML ComboBox<Group> groupsList;
-    private @FXML TextField groupName;
-    private @FXML Label lblAbout, lblWarn;
+    @FXML private RadioButton addToExisting, addToNew;
+    @FXML private ComboBox<Group> groupsList;
+    @FXML private TextField groupName;
+    @FXML private Label lblAbout, lblWarn;
 
-    private @FXML Button btnClose;
-    private @FXML Button btnSubmit;
+    @FXML private Button btnClose;
+    @FXML private Button btnSubmit;
 
     private CommentDatabase database;
 
@@ -58,15 +58,15 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
             loader.load();
 
             listView.getSelectionModel().getSelectedItems().addListener(
-                    (ListChangeListener<SearchYouTubeListItem>)(lcl) ->
-                runLater(() -> lblAbout.setText(String.format("%s item(s) selected", lcl.getList().size())))
+                    (ListChangeListener<SearchYouTubeListItem>) (lcl) ->
+                            runLater(() -> lblAbout.setText(String.format("%s item(s) selected", lcl.getList().size())))
             );
 
             groupsList.disableProperty().bind(addToNew.selectedProperty());
-            groupsList.setItems(database.globalGroupList);
-            groupsList.getItems().addListener((ListChangeListener<Group>)(c -> {
+            groupsList.setItems(database.getGlobalGroupList());
+            groupsList.getItems().addListener((ListChangeListener<Group>) (c -> {
                 SelectionModel<Group> selectionModel = groupsList.getSelectionModel();
-                if(!groupsList.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
+                if (!groupsList.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
                     runLater(() -> selectionModel.select(0));
                 }
             }));
@@ -78,19 +78,19 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
                 List<SearchYouTubeListItem> items = listView.getSelectionModel().getSelectedItems();
 
-                if(addToExisting.isSelected()) {
+                if (addToExisting.isSelected()) {
                     Group group = groupsList.getSelectionModel().getSelectedItem();
-                    if(group != null) {
+                    if (group != null) {
                         submitItemsToGroup(items, group);
                     } else {
                         logger.warn("Selected existing group was null.");
                         runLater(() -> setError("Selected group is null."));
                     }
-                } else if(addToNew.isSelected()) {
+                } else if (addToNew.isSelected()) {
                     try {
                         Group group = database.createGroup(groupName.getText());
 
-                        if(group != null) {
+                        if (group != null) {
                             submitItemsToGroup(items, group);
                         } else {
                             logger.warn("Created group was null.");
@@ -111,19 +111,21 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
     private void submitItemsToGroup(List<SearchYouTubeListItem> items, Group group) {
         List<GroupItem> list = items.stream()
                 .map(SearchYouTubeListItem::getYoutubeURL)
-                .map(link -> { try {
-                    return new GroupItem(link);
-                } catch (IOException e) {
-                    logger.error("Failed to parse to GroupItem", e);
+                .map(link -> {
+                    try {
+                        return new GroupItem(link);
+                    } catch (IOException e) {
+                        logger.error("Failed to parse to GroupItem", e);
 
-                    return null;
-                }})
+                        return null;
+                    }
+                })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         logger.debug("Group Items to add [list={}]", list.toString());
 
-        if(!list.isEmpty()) {
+        if (!list.isEmpty()) {
             try {
                 database.insertGroupItems(group, list);
                 database.commit();
@@ -174,7 +176,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
         btnSubmit.setDisable(false);
 
-        if(groupsList.getItems().isEmpty()) {
+        if (groupsList.getItems().isEmpty()) {
             addToNew.fire();
         } else {
             addToExisting.fire();

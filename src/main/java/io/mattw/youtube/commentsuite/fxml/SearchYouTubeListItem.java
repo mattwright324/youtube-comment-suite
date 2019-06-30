@@ -19,7 +19,7 @@ import static javafx.application.Platform.runLater;
 
 /**
  * Loads template FXML and displays info from SearchList.Item.
- *
+ * <p>
  * Searching occurs in the SearchYouTube.
  *
  * @author mattwright324
@@ -30,12 +30,12 @@ public class SearchYouTubeListItem extends HBox {
 
     private static Image loading = ImageLoader.LOADING.getImage();
 
-    private @FXML Label type;
-    private @FXML Label title;
-    private @FXML Label author;
-    private @FXML Label description;
-    private @FXML Label number;
-    private @FXML ImageView thumbnail;
+    @FXML private Label type;
+    @FXML private Label title;
+    @FXML private Label author;
+    @FXML private Label description;
+    @FXML private Label number;
+    @FXML private ImageView thumbnail;
 
     private SearchResult data;
     private String objectId;
@@ -54,13 +54,13 @@ public class SearchYouTubeListItem extends HBox {
         thumbnail.setFitWidth(thumbnail.getFitHeight() * loading.getWidth() / loading.getHeight());
         thumbnail.setImage(loading);
 
-        if((objectId = data.getId().getVideoId()) != null) {
+        if ((objectId = data.getId().getVideoId()) != null) {
             youtubeURL = String.format("https://youtu.be/%s", objectId);
             typeStr = "Video";
-        } else if((objectId = data.getId().getChannelId()) != null) {
+        } else if ((objectId = data.getId().getChannelId()) != null) {
             youtubeURL = String.format("https://www.youtube.com/channel/%s", objectId);
             typeStr = "Channel";
-        } else if((objectId = data.getId().getPlaylistId()) != null) {
+        } else if ((objectId = data.getId().getPlaylistId()) != null) {
             youtubeURL = String.format("https://www.youtube.com/playlist?list=%s", objectId);
             typeStr = "Playlist";
         } else {
@@ -70,7 +70,7 @@ public class SearchYouTubeListItem extends HBox {
 
         type.setText(typeStr);
 
-        if(data.getSnippet() != null) {
+        if (data.getSnippet() != null) {
             title.setText(data.getSnippet().getTitle());
             author.setText(data.getSnippet().getChannelTitle());
             description.setText(data.getSnippet().getDescription());
@@ -93,10 +93,16 @@ public class SearchYouTubeListItem extends HBox {
         }
     }
 
-    public String getYoutubeURL() { return this.youtubeURL; }
+    public String getYoutubeURL() {
+        return this.youtubeURL;
+    }
 
-    public String getObjectId() { return this.objectId; }
+    public String getObjectId() {
+        return this.objectId;
+    }
 
-    public SearchResult getData() { return this.data; }
+    public SearchResult getData() {
+        return this.data;
+    }
 
 }

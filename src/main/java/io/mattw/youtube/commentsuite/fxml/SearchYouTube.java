@@ -43,31 +43,31 @@ public class SearchYouTube implements Initializable {
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
 
-    private @FXML Pane form;
-    private @FXML ImageView searchIcon;
-    private @FXML ImageView geoIcon;
-    private @FXML ComboBox<String> searchType;
-    private @FXML TextField searchText;
-    private @FXML Button submit;
-    private @FXML HBox locationBox;
-    private @FXML TextField searchLocation;
-    private @FXML Button geolocate;
-    private @FXML ComboBox<String> searchRadius;
-    private @FXML ComboBox<String> searchOrder;
-    private @FXML ComboBox<String> resultType;
-    private @FXML ListView<SearchYouTubeListItem> resultsList;
-    private @FXML HBox bottom;
-    private @FXML Button btnAddToGroup;
-    private @FXML Button btnClear;
-    private @FXML Button btnNextPage;
-    private @FXML Label searchInfo;
+    @FXML private Pane form;
+    @FXML private ImageView searchIcon;
+    @FXML private ImageView geoIcon;
+    @FXML private ComboBox<String> searchType;
+    @FXML private TextField searchText;
+    @FXML private Button submit;
+    @FXML private HBox locationBox;
+    @FXML private TextField searchLocation;
+    @FXML private Button geolocate;
+    @FXML private ComboBox<String> searchRadius;
+    @FXML private ComboBox<String> searchOrder;
+    @FXML private ComboBox<String> resultType;
+    @FXML private ListView<SearchYouTubeListItem> resultsList;
+    @FXML private HBox bottom;
+    @FXML private Button btnAddToGroup;
+    @FXML private Button btnClear;
+    @FXML private Button btnNextPage;
+    @FXML private Label searchInfo;
 
-    private @FXML MenuItem menuCopyId;
-    private @FXML MenuItem menuOpenBrowser;
-    private @FXML MenuItem menuAddToGroup;
-    private @FXML MenuItem menuDeselectAll;
+    @FXML private MenuItem menuCopyId;
+    @FXML private MenuItem menuOpenBrowser;
+    @FXML private MenuItem menuAddToGroup;
+    @FXML private MenuItem menuDeselectAll;
 
-    private @FXML OverlayModal<SYAddToGroupModal> addToGroupModal;
+    @FXML private OverlayModal<SYAddToGroupModal> addToGroupModal;
 
     private int total = 0;
     private int number = 0;
@@ -105,7 +105,7 @@ public class SearchYouTube implements Initializable {
         });
         menuOpenBrowser.setOnAction(ae -> {
             List<SearchYouTubeListItem> list = selectionModel.getSelectedItems();
-            for(SearchYouTubeListItem view : list) {
+            for (SearchYouTubeListItem view : list) {
                 browserUtil.open(view.getYoutubeURL());
             }
         });
@@ -113,7 +113,7 @@ public class SearchYouTube implements Initializable {
         menuDeselectAll.setOnAction(ae -> selectionModel.clearSelection());
 
         btnAddToGroup.disableProperty().bind(selectionModel.selectedIndexProperty().isEqualTo(-1));
-        selectionModel.getSelectedItems().addListener((ListChangeListener)(c -> {
+        selectionModel.getSelectedItems().addListener((ListChangeListener) (c -> {
             int items = selectionModel.getSelectedItems().size();
             runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", items)));
         }));
@@ -129,7 +129,7 @@ public class SearchYouTube implements Initializable {
             try {
                 EurekaProvider.Location myLocation = this.location.getMyLocation();
 
-                String coordinates = myLocation.geolocation_data.latitude+","+myLocation.geolocation_data.longitude;
+                String coordinates = myLocation.geolocation_data.latitude + "," + myLocation.geolocation_data.longitude;
 
                 runLater(() -> searchLocation.setText(coordinates));
             } catch (IOException e) {
@@ -142,9 +142,9 @@ public class SearchYouTube implements Initializable {
         form.disableProperty().bind(searching);
 
         form.setOnKeyPressed(ke -> {
-            if(ke.getCode() == KeyCode.ENTER) {
+            if (ke.getCode() == KeyCode.ENTER) {
                 runLater(() ->
-                    submit.fire()
+                        submit.fire()
                 );
             }
         });
@@ -158,17 +158,17 @@ public class SearchYouTube implements Initializable {
                     pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
                     searchRadius.getValue(), searchOrder.getValue(), resultType.getValue());
             new Thread(() ->
-                search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
-                        searchRadius.getValue(), searchOrder.getValue(),
-                        resultType.getSelectionModel().getSelectedIndex())
+                    search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
+                            searchRadius.getValue(), searchOrder.getValue(),
+                            resultType.getSelectionModel().getSelectedIndex())
             ).start();
         });
         btnNextPage.setOnAction(ae ->
-            new Thread(() ->
-                search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
-                        searchRadius.getValue(), searchOrder.getValue(),
-                        resultType.getSelectionModel().getSelectedIndex())
-            ).start()
+                new Thread(() ->
+                        search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
+                                searchRadius.getValue(), searchOrder.getValue(),
+                                resultType.getSelectionModel().getSelectedIndex())
+                ).start()
         );
 
         SYAddToGroupModal syAddToGroupModal = new SYAddToGroupModal(resultsList);
@@ -190,7 +190,7 @@ public class SearchYouTube implements Initializable {
             String encodedText = URLEncoder.encode(text, "UTF-8");
             String searchType = types[resultType];
 
-            if(pageToken.equals(emptyToken)) {
+            if (pageToken.equals(emptyToken)) {
                 pageToken = "";
             }
 
@@ -203,14 +203,14 @@ public class SearchYouTube implements Initializable {
                     .setOrder(order.toLowerCase());
 
             SearchListResponse sl;
-            if(type.equals("Normal")) {
+            if (type.equals("Normal")) {
                 logger.debug("Normal Search [key={},part=snippet,text={},type={},order={},token={}]",
-                        FXMLSuite.getYouTubeApiKey(),encodedText,searchType,order.toLowerCase(),pageToken);
+                        FXMLSuite.getYouTubeApiKey(), encodedText, searchType, order.toLowerCase(), pageToken);
 
                 sl = searchList.execute();
             } else {
                 logger.debug("Location Search [key={},part=snippet,text={},loc={},radius={},type={},order={},token={}]",
-                        FXMLSuite.getYouTubeApiKey(),encodedText,locText,locRadius,searchType,order.toLowerCase(),pageToken);
+                        FXMLSuite.getYouTubeApiKey(), encodedText, locText, locRadius, searchType, order.toLowerCase(), pageToken);
 
                 sl = searchList.setLocation(locText)
                         .setLocationRadius(locRadius)
@@ -221,7 +221,7 @@ public class SearchYouTube implements Initializable {
             this.total = sl.getPageInfo().getTotalResults();
 
             logger.debug("Search [videos={}]", sl.getItems().size());
-            for(SearchResult item : sl.getItems()) {
+            for (SearchResult item : sl.getItems()) {
                 logger.debug("Video [id={},author={},title={}]",
                         item.getId(),
                         item.getSnippet().getChannelTitle(),
@@ -237,7 +237,7 @@ public class SearchYouTube implements Initializable {
             e.printStackTrace();
         }
         runLater(() -> {
-            if(this.pageToken != null && !this.pageToken.equals(emptyToken)) {
+            if (this.pageToken != null && !this.pageToken.equals(emptyToken)) {
                 btnNextPage.setDisable(false);
             }
             searching.setValue(false);

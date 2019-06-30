@@ -32,7 +32,7 @@ public interface ImageCache {
     }
 
     static Image toLetterAvatar(String s) {
-        if(s == null || s.isEmpty()) {
+        if (s == null || s.isEmpty()) {
             return toLetterAvatar(" ");
         } else {
             return toLetterAvatar(s.charAt(0));
@@ -41,7 +41,7 @@ public interface ImageCache {
 
     static Image toLetterAvatar(char letter) {
         Image image = thumbCache.getIfPresent(letter);
-        if(image == null) {
+        if (image == null) {
             image = new LetterAvatar(letter);
             thumbCache.put(letter, image);
         }
@@ -53,10 +53,10 @@ public interface ImageCache {
         ConfigData configData = config.getDataObject();
 
         Image image = thumbCache.getIfPresent(id);
-        if(image == null) {
+        if (image == null) {
             String fileFormat = "jpg";
             File thumbFile = new File(String.format("./thumbs/%s.%s", id, fileFormat));
-            if(configData.getArchiveThumbs() && !thumbFile.exists()) {
+            if (configData.getArchiveThumbs() && !thumbFile.exists()) {
                 logger.debug("Archiving [id={}]", id);
                 try {
                     thumbFile.mkdirs();
@@ -66,7 +66,7 @@ public interface ImageCache {
                     logger.error("Failed to archive image.", e);
                 }
             }
-            if(thumbFile.exists()) {
+            if (thumbFile.exists()) {
                 image = new Image(String.format("file:///%s", thumbFile.getAbsolutePath()));
             } else {
                 image = new Image(imageUrl);

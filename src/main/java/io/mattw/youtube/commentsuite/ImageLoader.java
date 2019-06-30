@@ -41,8 +41,7 @@ public enum ImageLoader {
     TOGGLE_QUERY("toggleQuery.png"),
     VIDEO("video.png"),
     VIDEO_PLACEHOLDER("videoPlaceholder.png"),
-    YOUTUBE("youtube.png")
-    ;
+    YOUTUBE("youtube.png");
 
     private final Logger logger = LogManager.getLogger();
 
@@ -54,7 +53,7 @@ public enum ImageLoader {
             image = new Image(getClass().getResource(String.format("%s/%s", basePath, fileName)).toExternalForm());
         } catch (Exception e) {
             image = ImageCache.toLetterAvatar('X');
-            logger.error("Failed to load resource image: "+fileName, e);
+            logger.error("Failed to load resource image: " + fileName, e);
         }
     }
 

@@ -7,7 +7,6 @@ import com.google.gson.stream.JsonWriter;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
-import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import javafx.beans.property.BooleanProperty;
@@ -18,7 +17,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,18 +40,18 @@ import static javafx.application.Platform.runLater;
 
 /**
  * This modal allows the full export of all comments in a query to the specified format
- *
+ * <p>
  * exports/
- *      yyyy.MM.dd HH.mm.SS/
- *          searchSettings.json
- *          videoId1-meta.json
- *          videoId1-comments.json
- *          videoId2-meta.json
- *          videoId2-comments.json
- *          ...
+ * yyyy.MM.dd HH.mm.SS/
+ * searchSettings.json
+ * videoId1-meta.json
+ * videoId1-comments.json
+ * videoId2-meta.json
+ * videoId2-comments.json
+ * ...
  *
- * @see SearchComments
  * @author mattwright324
+ * @see SearchComments
  */
 public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
@@ -70,13 +68,13 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
     private static final File exportsFolder = new File("exports/");
     private static final String searchSettingsFileName = "searchSettings.json";
 
-    private @FXML Label errorMsg;
+    @FXML private Label errorMsg;
 
-    private @FXML RadioButton radioCondensed, radioFlattened;
-    private @FXML TextArea exportModeExample;
+    @FXML private RadioButton radioCondensed, radioFlattened;
+    @FXML private TextArea exportModeExample;
 
-    private @FXML Button btnClose;
-    private @FXML Button btnSubmit;
+    @FXML private Button btnClose;
+    @FXML private Button btnSubmit;
 
     private SimpleBooleanProperty replyMode = new SimpleBooleanProperty(false);
 
@@ -109,11 +107,11 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                 new Thread(() -> {
                     LocalDateTime now = LocalDateTime.now();
 
-                    File thisExportFolder = new File(exportsFolder, formatter.format(now)+"/");
+                    File thisExportFolder = new File(exportsFolder, formatter.format(now) + "/");
                     thisExportFolder.mkdirs();
                     File searchSettings = new File(thisExportFolder, searchSettingsFileName);
 
-                    try(FileWriter writer = new FileWriter(searchSettings)) {
+                    try (FileWriter writer = new FileWriter(searchSettings)) {
                         logger.debug("Writing file {}", searchSettings.getName());
 
                         gson.toJson(commentQuery, writer);
@@ -133,13 +131,13 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                         ExecutorGroup exportGroup = new ExecutorGroup(5);
                         exportGroup.submitAndShutdown(() -> {
                             String videoId;
-                            while(!videoIdQueue.isEmpty()) {
+                            while (!videoIdQueue.isEmpty()) {
                                 videoId = videoIdQueue.poll();
 
                                 File videoFile = new File(thisExportFolder, String.format("%s-meta.json", videoId));
 
                                 YouTubeVideo video = null;
-                                try(FileWriter writer = new FileWriter(videoFile)) {
+                                try (FileWriter writer = new FileWriter(videoFile)) {
                                     video = database.getVideo(videoId);
                                     video.setAuthor(database.getChannel(video.getChannelId()));
 
@@ -158,38 +156,38 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                     runLater(() -> setError("Error during export, check logs."));
                                 }
 
-                                if(video != null) {
+                                if (video != null) {
                                     File commentsFile = new File(thisExportFolder, String.format("%s-comments.json", videoId));
                                     List<YouTubeVideo> videoList = Collections.singletonList(video);
 
                                     CommentQuery.CommentsType typeBefore = commentQuery.getCommentsType();
                                     Optional<List<YouTubeVideo>> listBefore = commentQuery.getVideos();
 
-                                    if(!flattenedMode && typeBefore == CommentQuery.CommentsType.ALL) {
+                                    if (!flattenedMode && typeBefore == CommentQuery.CommentsType.ALL) {
                                         // When condensed, we want base comments to be first.
                                         // We'll grab replies later if the replyCount > 0
                                         commentQuery.setCommentsType(CommentQuery.CommentsType.COMMENTS_ONLY);
                                     }
 
-                                    try(FileWriter writer = new FileWriter(commentsFile);
-                                        JsonWriter jsonWriter = new JsonWriter(writer)) {
+                                    try (FileWriter writer = new FileWriter(commentsFile);
+                                         JsonWriter jsonWriter = new JsonWriter(writer)) {
                                         logger.debug("Writing file {}", commentsFile.getName());
 
                                         jsonWriter.beginArray();
 
-                                        try(NamedParameterStatement namedParamStatement = commentQuery
+                                        try (NamedParameterStatement namedParamStatement = commentQuery
                                                 .setVideos(Optional.ofNullable(videoList))
                                                 .toStatement();
-                                            ResultSet resultSet = namedParamStatement.executeQuery()) {
+                                             ResultSet resultSet = namedParamStatement.executeQuery()) {
 
                                             // starting with flattened mode (easier)
-                                            while(resultSet.next()) {
+                                            while (resultSet.next()) {
                                                 YouTubeComment comment = database.resultSetToComment(resultSet);
                                                 comment.setAuthor(database.getChannel(comment.getChannelId()));
 
-                                                if(!flattenedMode && comment.getReplyCount() > 0 && !comment.isReply()) {
+                                                if (!flattenedMode && comment.getReplyCount() > 0 && !comment.isReply()) {
                                                     List<YouTubeComment> replyList = database.getCommentTree(comment.getId());
-                                                    for(YouTubeComment reply : replyList) {
+                                                    for (YouTubeComment reply : replyList) {
                                                         reply.setAuthor(database.getChannel(reply.getChannelId()));
                                                     }
 
@@ -257,7 +255,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
             radioCondensed.setDisable(!condensable);
 
-            if(!condensable) {
+            if (!condensable) {
                 radioFlattened.fire();
             }
         });

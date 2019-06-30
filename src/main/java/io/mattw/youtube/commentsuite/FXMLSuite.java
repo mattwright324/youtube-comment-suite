@@ -45,7 +45,7 @@ public class FXMLSuite extends Application {
     public void start(Stage stage) {
         try {
             NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            youtube =  new YouTube.Builder(httpTransport, JSON_FACTORY, null)
+            youtube = new YouTube.Builder(httpTransport, JSON_FACTORY, null)
                     .setApplicationName("YouTube Comment Suite")
                     .build();
 
@@ -96,7 +96,7 @@ public class FXMLSuite extends Application {
     //}
 
     //public static YouTubeData3 getYoutubeApiForAccounts() {
-     //   return youtubeApiForAccounts;
+    //   return youtubeApiForAccounts;
     //}
 
     public static YouTube getYouTube() {

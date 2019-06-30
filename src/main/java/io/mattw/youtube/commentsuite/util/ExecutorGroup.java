@@ -20,6 +20,7 @@ public class ExecutorGroup {
 
     /**
      * Default constructor
+     *
      * @param threadCount number of threads to create
      */
     public ExecutorGroup(int threadCount) {
@@ -30,10 +31,11 @@ public class ExecutorGroup {
 
     /**
      * Submits the same runnable {@link ExecutorGroup#threadCount} times and shuts the service down.
+     *
      * @param runnable stateless runnable object
      */
     public void submitAndShutdown(Runnable runnable) {
-        for(int i=0; i<threadCount; i++) {
+        for (int i = 0; i < threadCount; i++) {
             futures.add(service.submit(runnable));
         }
 
@@ -51,8 +53,8 @@ public class ExecutorGroup {
      * Check if any threads are still working.
      */
     public boolean isStillWorking() {
-        for(Future<?> future : futures) {
-            if(!future.isDone()) {
+        for (Future<?> future : futures) {
+            if (!future.isDone()) {
                 return true;
             }
         }

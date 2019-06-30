@@ -11,10 +11,9 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * @author mattwright324
- *
  * @param <T> LocationProvider
  * @param <K> return data object
+ * @author mattwright324
  */
 public class Location<T extends LocationProvider, K> {
 
@@ -40,6 +39,7 @@ public class Location<T extends LocationProvider, K> {
 
     /**
      * Using the Amazon checkip service, returns your external address.
+     *
      * @return your external ip address
      * @throws IOException failed to connect to web or checkip.amazonaws.com
      */

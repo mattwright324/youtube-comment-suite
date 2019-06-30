@@ -25,10 +25,10 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to start a group refresh. The group refresh will use the YouTube API to download
  * videos under the GroupItems of the Group in the ManageGroupsManager.
  *
+ * @author mattwright324
  * @see RefreshInterface
  * @see MGMVGroupRefresh
  * @see ManageGroupsManager
- * @author mattwright324
  */
 public class MGMVRefreshModal extends HBox {
 
@@ -36,20 +36,20 @@ public class MGMVRefreshModal extends HBox {
 
     private ClipboardUtil clipboard = new ClipboardUtil();
 
-    private @FXML Label alert;
-    private @FXML Label statusStep;
-    private @FXML Button btnClose;
-    private @FXML Button btnStart;
-    private @FXML ProgressBar progressBar;
-    private @FXML VBox statusPane;
+    @FXML private Label alert;
+    @FXML private Label statusStep;
+    @FXML private Button btnClose;
+    @FXML private Button btnStart;
+    @FXML private ProgressBar progressBar;
+    @FXML private VBox statusPane;
 
-    private @FXML HBox warningsPane;
-    private @FXML Label warnings, elapsedTime, newVideos, newComments, totalVideos, totalComments;
-    private @FXML ImageView expandIcon;
-    private @FXML ListView<String> errorList;
-    private @FXML Hyperlink expand;
-    private @FXML ImageView endStatus;
-    private @FXML ProgressIndicator statusIndicator;
+    @FXML private HBox warningsPane;
+    @FXML private Label warnings, elapsedTime, newVideos, newComments, totalVideos, totalComments;
+    @FXML private ImageView expandIcon;
+    @FXML private ListView<String> errorList;
+    @FXML private Hyperlink expand;
+    @FXML private ImageView endStatus;
+    @FXML private ProgressIndicator statusIndicator;
 
     private Group group;
     private RefreshInterface refreshThread;
@@ -74,7 +74,7 @@ public class MGMVRefreshModal extends HBox {
             expand.setOnAction(ae -> {
                 expanded = !expanded;
                 runLater(() -> {
-                    if(expanded) {
+                    if (expanded) {
                         expandIcon.setImage(ImageLoader.ANGLE_LEFT.getImage());
                         errorList.setManaged(true);
                         errorList.setVisible(true);
@@ -87,21 +87,24 @@ public class MGMVRefreshModal extends HBox {
             });
 
             errorList.setOnKeyPressed(ke -> {
-                if(ke.getCode() == KeyCode.C && ke.isControlDown()) {
+                if (ke.getCode() == KeyCode.C && ke.isControlDown()) {
                     clipboard.setClipboard(errorList.getItems());
                 }
             });
 
             btnStart.setOnAction(ae -> new Thread(() -> {
-                if(running) {
+                if (running) {
                     logger.debug("Requesting group refresh stopped for group [id={},name={}]", group.getId(), group.getName());
                     runLater(() -> {
                         btnStart.setDisable(true);
                         endStatus.setImage(ImageLoader.MINUS_CIRCLE.getImage());
                     });
                     refreshThread.hardShutdown();
-                    while(refreshThread.isAlive()) {
-                        try { Thread.sleep(97); } catch (Exception ignored) {}
+                    while (refreshThread.isAlive()) {
+                        try {
+                            Thread.sleep(97);
+                        } catch (Exception ignored) {
+                        }
                     }
                     running = false;
                     runLater(() -> btnClose.setDisable(false));
@@ -119,11 +122,11 @@ public class MGMVRefreshModal extends HBox {
 
                     refreshThread = new MGMVGroupRefresh(group);
                     runLater(() -> {
-                        refreshThread.getObservableErrorList().addListener((ListChangeListener<String>)(lcl) -> runLater(() -> {
+                        refreshThread.getObservableErrorList().addListener((ListChangeListener<String>) (lcl) -> runLater(() -> {
                             int items = lcl.getList().size();
                             warningsPane.setManaged(items > 0);
                             warningsPane.setVisible(items > 0);
-                            warnings.setText(items+" message(s)");
+                            warnings.setText(items + " message(s)");
                         }));
                         errorList.setItems(refreshThread.getObservableErrorList());
                         elapsedTime.textProperty().bind(refreshThread.elapsedTimeProperty());
@@ -158,7 +161,9 @@ public class MGMVRefreshModal extends HBox {
                     });
                 }
             }).start());
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     /**
@@ -169,7 +174,7 @@ public class MGMVRefreshModal extends HBox {
         running = false;
         hasBeenStarted = false;
         runLater(() -> {
-            if(expanded) {
+            if (expanded) {
                 expand.fire();
             }
             endStatus.setManaged(false);
@@ -192,11 +197,17 @@ public class MGMVRefreshModal extends HBox {
         });
     }
 
-    public Button getBtnClose() { return btnClose; }
+    public Button getBtnClose() {
+        return btnClose;
+    }
 
-    public Button getBtnStart() { return btnStart; }
+    public Button getBtnStart() {
+        return btnStart;
+    }
 
-    public ListView<String> getErrorList() { return errorList; }
+    public ListView<String> getErrorList() {
+        return errorList;
+    }
 
     public boolean isHasBeenStarted() {
         return hasBeenStarted;

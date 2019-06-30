@@ -60,20 +60,20 @@ public class CommentQuery implements Serializable {
         queryParams.clear();
 
         String videoSubquery;
-        if(videos.isPresent() && !videos.get().isEmpty()) {
+        if (videos.isPresent() && !videos.get().isEmpty()) {
             List<YouTubeVideo> videoList = videos.get();
 
             List<String> videoIds = new ArrayList<>();
-            for(int i = 0; i < videoList.size(); i++) {
-                videoIds.add(":v"+i);
+            for (int i = 0; i < videoList.size(); i++) {
+                videoIds.add(":v" + i);
 
-                queryParams.put("v"+i,videoList.get(i).getId());
+                queryParams.put("v" + i, videoList.get(i).getId());
             }
             videoSubquery = String.join(",", videoIds);
         } else {
             videoSubquery = "SELECT video_id FROM videos JOIN gitem_video USING (video_id) JOIN group_gitem USING (gitem_id) ";
 
-            if(groupItem.isPresent()) {
+            if (groupItem.isPresent()) {
                 videoSubquery += "WHERE gitem_id = :gitemId";
 
                 queryParams.put("gitemId", groupItem.get().getId());
@@ -88,17 +88,17 @@ public class CommentQuery implements Serializable {
         queryLines.add("SELECT * FROM comments");
         queryLines.add("LEFT JOIN channels USING (channel_id)");
         queryLines.add("WHERE comments.video_id IN (:videoSubquery)".replace(":videoSubquery", videoSubquery));
-        if(StringUtils.isNotEmpty(nameLike)) {
+        if (StringUtils.isNotEmpty(nameLike)) {
             queryLines.add("AND channels.channel_name LIKE :nameLike");
 
             queryParams.put("nameLike", '%' + nameLike + '%');
         }
-        if(StringUtils.isNotEmpty(textLike)) {
+        if (StringUtils.isNotEmpty(textLike)) {
             queryLines.add("AND comments.comment_text LIKE :textLike");
 
             queryParams.put("textLike", '%' + textLike + '%');
         }
-        if(commentsType != CommentsType.ALL) {
+        if (commentsType != CommentsType.ALL) {
             queryLines.add("AND is_reply = :isReply");
 
             queryParams.put("isReply", commentsType == CommentsType.REPLIES_ONLY);
@@ -116,7 +116,7 @@ public class CommentQuery implements Serializable {
     /**
      * Converts dateTime to Pacific Time (PDT) as it is where YouTube is headquartered.
      *
-     * @param date LocalDate value
+     * @param date     LocalDate value
      * @param midnight beginning of day (false) or end of day midnight (true)
      * @return epoch millis of LocalDate in Pacific Time
      */
@@ -139,15 +139,15 @@ public class CommentQuery implements Serializable {
 
         NamedParameterStatement namedParamStatement = new NamedParameterStatement(database.getConnection(), queryString);
 
-        for(String key : queryParams.keySet()) {
+        for (String key : queryParams.keySet()) {
             Object value = queryParams.get(key);
-            if(value instanceof Integer) {
+            if (value instanceof Integer) {
                 namedParamStatement.setInt(key, ((Integer) value));
-            } else if(value instanceof Long) {
+            } else if (value instanceof Long) {
                 namedParamStatement.setLong(key, ((Long) value));
-            } else if(value instanceof String) {
+            } else if (value instanceof String) {
                 namedParamStatement.setString(key, ((String) value));
-            } else if(value instanceof Boolean) {
+            } else if (value instanceof Boolean) {
                 namedParamStatement.setInt(key, ((Boolean) value) ? 1 : 0);
             } else {
                 namedParamStatement.setObject(key, value);
@@ -158,7 +158,7 @@ public class CommentQuery implements Serializable {
     }
 
     /**
-     * @param page page starting of index 0
+     * @param page     page starting of index 0
      * @param pageSize number of comments to return
      */
     public List<YouTubeComment> getByPage(int page, int pageSize) throws SQLException {
@@ -168,8 +168,8 @@ public class CommentQuery implements Serializable {
 
         totalResults = 0;
 
-        try(NamedParameterStatement statement = toStatement();
-            ResultSet resultSet = statement.executeQuery()) {
+        try (NamedParameterStatement statement = toStatement();
+             ResultSet resultSet = statement.executeQuery()) {
 
             int indexStart = pageSize * page;
             int indexEnd = indexStart + pageSize;
@@ -177,8 +177,8 @@ public class CommentQuery implements Serializable {
 
             logger.trace("Searching Comments [indexStart={},indexEnd={}]", indexStart, indexEnd);
 
-            while(resultSet.next()) {
-                if(index >= indexStart && index < indexEnd) {
+            while (resultSet.next()) {
+                if (index >= indexStart && index < indexEnd) {
                     database.checkChannel(resultSet);
 
                     comments.add(database.resultSetToComment(resultSet));
@@ -194,7 +194,7 @@ public class CommentQuery implements Serializable {
 
     /**
      * Returns a list of unique videoIds relevant to a search for export.
-     *
+     * <p>
      * {@link io.mattw.youtube.commentsuite.fxml.SCExportModal}
      */
     public Set<String> getUniqueVideoIds() throws SQLException {
@@ -202,14 +202,14 @@ public class CommentQuery implements Serializable {
 
         Set<String> items = new HashSet<>();
 
-        if(videos.isPresent()) {
+        if (videos.isPresent()) {
             items.addAll(videos.get()
                     .stream()
                     .filter(Objects::nonNull)
                     .map(YouTubeVideo::getId)
                     .collect(Collectors.toList()));
         } else {
-            if(groupItem.isPresent()) {
+            if (groupItem.isPresent()) {
                 items.addAll(database.getVideoIds(groupItem.get()));
             } else {
                 items.addAll(database.getVideoIds(group));
@@ -226,7 +226,7 @@ public class CommentQuery implements Serializable {
     }
 
     public CommentQuery setGroupItem(Optional<GroupItem> groupItem) {
-        if(groupItem.isPresent()) {
+        if (groupItem.isPresent()) {
             GroupItem item = groupItem.get();
 
             this.withGroupItem = String.format("%s / %s", item.getId(), item.getTitle());
@@ -292,10 +292,10 @@ public class CommentQuery implements Serializable {
     }
 
     public CommentQuery setVideos(Optional<List<YouTubeVideo>> videos) {
-        if(videos.isPresent()) {
+        if (videos.isPresent()) {
             this.withVideos = videos.get().stream()
-                .map(YouTubeVideo::getId)
-                .collect(Collectors.joining(","));
+                    .map(YouTubeVideo::getId)
+                    .collect(Collectors.joining(","));
         } else {
             this.withVideos = "All Video(s)";
         }

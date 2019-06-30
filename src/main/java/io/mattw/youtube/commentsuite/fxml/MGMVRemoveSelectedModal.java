@@ -28,8 +28,8 @@ import static javafx.application.Platform.runLater;
 /**
  * This modal allows the user to remove selected GroupItems from the Group of its ManageGroupsManager.
  *
- * @see ManageGroupsManager
  * @author mattwright324
+ * @see ManageGroupsManager
  */
 public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
 
@@ -38,10 +38,10 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
     private CommentDatabase database;
     private YouTube youtube;
 
-    private @FXML Label alertError;
-    private @FXML TextField link;
-    private @FXML Button btnClose;
-    private @FXML Button btnSubmit;
+    @FXML private Label alertError;
+    @FXML private TextField link;
+    @FXML private Button btnClose;
+    @FXML private Button btnSubmit;
 
     private Group group;
     private MultipleSelectionModel<MGMVGroupItemView> selectionModel;
@@ -66,7 +66,7 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
             btnSubmit.setOnAction(ae -> new Thread(() -> {
                 runLater(() -> btnSubmit.setDisable(true));
 
-                if(selectionModel.isEmpty()) {
+                if (selectionModel.isEmpty()) {
                     runLater(() -> setError("The selection is empty."));
                 } else {
                     try {
@@ -88,7 +88,9 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
                 }
 
             }).start());
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     public void setError(String message) {

@@ -24,7 +24,8 @@ public class ConfigData implements Serializable {
     private List<YouTubeAccount> accounts = new ArrayList<>();
     private String youtubeApiKey = defaultApiKey;
 
-    public ConfigData() {}
+    public ConfigData() {
+    }
 
     public String getDefaultApiKey() {
         return defaultApiKey;

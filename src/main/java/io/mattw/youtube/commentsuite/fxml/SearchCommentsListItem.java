@@ -28,13 +28,13 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private @FXML ImageView thumbnail;
-    private @FXML Hyperlink author;
-    private @FXML Label commentText;
-    private @FXML Label date;
-    private @FXML Label type;
-    private @FXML Label likes;
-    private @FXML Hyperlink showMore, viewTree, reply;
+    @FXML private ImageView thumbnail;
+    @FXML private Hyperlink author;
+    @FXML private Label commentText;
+    @FXML private Label date;
+    @FXML private Label type;
+    @FXML private Label likes;
+    @FXML private Hyperlink showMore, viewTree, reply;
 
     private YouTubeComment comment;
     private YouTubeChannel channel;
@@ -66,20 +66,20 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
 
         date.setText(DateUtils.epochMillisToDateTime(comment.getPublishedAt()).toString());
 
-        if(comment.getReplyCount() > 0 || comment.isReply()) {
+        if (comment.getReplyCount() > 0 || comment.isReply()) {
             viewTree.setManaged(true);
             viewTree.setVisible(true);
-            if(!comment.isReply()) {
+            if (!comment.isReply()) {
                 viewTree.setText(String.format("View Thread (%,d)", comment.getReplyCount()));
             }
         }
 
-        if(comment.isReply()) {
+        if (comment.isReply()) {
             type.setText("Reply");
             this.getStyleClass().add("reply");
         }
 
-        if(comment.getLikes() > 0) {
+        if (comment.getLikes() > 0) {
             likes.setText(String.format("+%,d", comment.getLikes()));
         } else {
             likes.setVisible(false);
@@ -94,7 +94,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             reply.setVisible(!configData.getAccounts().isEmpty());
         });
     }
-
 
 
     YouTubeComment getComment() {
@@ -131,7 +130,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
      * Checks if profile thumb loaded and loads if present.
      */
     void checkProfileThumb() {
-        if(ImageCache.hasImageCached(channel)) {
+        if (ImageCache.hasImageCached(channel)) {
             loadProfileThumb();
         }
     }

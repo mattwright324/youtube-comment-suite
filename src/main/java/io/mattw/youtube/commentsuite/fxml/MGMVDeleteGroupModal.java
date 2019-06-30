@@ -22,8 +22,8 @@ import static javafx.application.Platform.runLater;
  * vacuum option is selected dateTo deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
  * if they did not select vacuum when deleting.
  *
- * @see ManageGroupsManager
  * @author mattwright324
+ * @see ManageGroupsManager
  */
 public class MGMVDeleteGroupModal extends VBox {
 
@@ -31,9 +31,9 @@ public class MGMVDeleteGroupModal extends VBox {
 
     private CommentDatabase database;
 
-    private @FXML CheckBox doVacuum;
-    private @FXML Button btnClose;
-    private @FXML Button btnDelete;
+    @FXML private CheckBox doVacuum;
+    @FXML private Button btnClose;
+    @FXML private Button btnDelete;
 
     private Group group;
 
@@ -61,7 +61,7 @@ public class MGMVDeleteGroupModal extends VBox {
                     logger.warn("Cleaning up dateFrom group delete [id={},name={}]", group.getId(), group.getName());
                     database.cleanUp();
                     database.commit();
-                    if(doVacuum.isSelected()) {
+                    if (doVacuum.isSelected()) {
                         database.vacuum();
                     }
                     database.refreshGroups();
@@ -73,7 +73,9 @@ public class MGMVDeleteGroupModal extends VBox {
                     btnClose.setDisable(false);
                 });
             }).start());
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     public Button getBtnClose() {

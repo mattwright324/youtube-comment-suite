@@ -10,7 +10,8 @@ import java.net.URL;
  */
 public class BrowserUtil {
 
-    public BrowserUtil() {}
+    public BrowserUtil() {
+    }
 
     public void open(URL url) {
         open(url.toString());
@@ -25,7 +26,7 @@ public class BrowserUtil {
                 desktop.browse(url.toURI());
             } else {
                 Runtime runtime = Runtime.getRuntime();
-                runtime.exec("xdg-open "+url.getPath());
+                runtime.exec("xdg-open " + url.getPath());
             }
         } catch (Throwable e2) {
             e2.printStackTrace();

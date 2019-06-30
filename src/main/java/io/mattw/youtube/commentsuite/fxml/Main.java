@@ -29,30 +29,30 @@ public class Main implements Initializable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private @FXML ImageView headerIcon;
-    private @FXML ToggleGroup headerToggleGroup;
-    private @FXML ToggleButton btnSearchComments;
-    private @FXML ToggleButton btnManageGroups;
-    private @FXML ToggleButton btnSearchYoutube;
-    private @FXML StackPane content;
+    @FXML private ImageView headerIcon;
+    @FXML private ToggleGroup headerToggleGroup;
+    @FXML private ToggleButton btnSearchComments;
+    @FXML private ToggleButton btnManageGroups;
+    @FXML private ToggleButton btnSearchYoutube;
+    @FXML private StackPane content;
 
-    private @FXML Button btnSettings;
-    private @FXML ImageView settingsIcon;
+    @FXML private Button btnSettings;
+    @FXML private ImageView settingsIcon;
 
-    private @FXML Pane searchComments;
-    private @FXML Pane manageGroups;
-    private @FXML Pane searchYoutube;
-    private @FXML Pane settings;
+    @FXML private Pane searchComments;
+    @FXML private Pane manageGroups;
+    @FXML private Pane searchYoutube;
+    @FXML private Pane settings;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize Main");
 
         headerToggleGroup.getToggles().addListener((ListChangeListener<Toggle>) c -> {
-            while(c.next()) {
-                for(final Toggle addedToggle : c.getAddedSubList()) {
+            while (c.next()) {
+                for (final Toggle addedToggle : c.getAddedSubList()) {
                     ((ToggleButton) addedToggle).addEventFilter(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
-                        if(addedToggle.equals(headerToggleGroup.getSelectedToggle()))
+                        if (addedToggle.equals(headerToggleGroup.getSelectedToggle()))
                             mouseEvent.consume();
                     });
                 }

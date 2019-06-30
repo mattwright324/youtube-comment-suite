@@ -14,21 +14,34 @@ import javafx.collections.ObservableList;
 public interface RefreshInterface {
 
     void run();
+
     void appendError(String error);
+
     void hardShutdown();
+
     boolean isAlive();
+
     void start();
 
     LongProperty newVideosProperty();
+
     LongProperty totalVideosProperty();
+
     LongProperty newCommentsProperty();
+
     LongProperty totalCommentsProperty();
 
     BooleanProperty endedProperty();
+
     DoubleProperty progressProperty();
+
     StringProperty statusStepProperty();
+
     StringProperty elapsedTimeProperty();
+
     ObservableList<String> getObservableErrorList();
+
     Boolean isEndedOnError();
+
     Boolean isHardShutdown();
 }

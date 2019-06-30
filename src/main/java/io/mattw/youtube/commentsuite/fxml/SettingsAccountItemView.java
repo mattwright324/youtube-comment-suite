@@ -19,9 +19,9 @@ public class SettingsAccountItemView extends HBox implements ImageCache {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private @FXML ImageView accountThumb;
-    private @FXML Label accountName;
-    private @FXML Button btnRemove;
+    @FXML private ImageView accountThumb;
+    @FXML private Label accountName;
+    @FXML private Button btnRemove;
 
     private ConfigFile<ConfigData> configFile;
     private ConfigData configData;
@@ -45,6 +45,8 @@ public class SettingsAccountItemView extends HBox implements ImageCache {
             accountName.setText(account.getUsername());
 
             btnRemove.setOnAction(ae -> configData.removeAccount(account));
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 }

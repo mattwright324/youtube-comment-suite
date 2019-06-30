@@ -27,7 +27,8 @@ public class GroupStats {
     private Map<YouTubeChannel, Long> mostActiveViewers = new LinkedHashMap<>();
     private Map<Long, Long> weeklyCommentHistogram = new LinkedHashMap<>();
 
-    public GroupStats() {}
+    public GroupStats() {
+    }
 
     public long getTotalViews() {
         return totalViews;

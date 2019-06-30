@@ -29,9 +29,9 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to add a GroupItem to the Group of the ManageGroupsManager with a YouTube link.
  * The YouTube link can be any of a video, channel, or playlist and should match the example formats to be accepted.
  *
+ * @author mattwright324
  * @see GroupItem#GroupItem(String)
  * @see ManageGroupsManager
- * @author mattwright324
  */
 public class MGMVAddItemModal extends VBox implements Cleanable {
 
@@ -40,16 +40,16 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
     private CommentDatabase database;
     private YouTube youtube;
 
-    private @FXML Label alertError;
+    @FXML private Label alertError;
 
-    private @FXML TabPane tabPane;
-    private @FXML Tab tabSingular, tabBulk;
+    @FXML private TabPane tabPane;
+    @FXML private Tab tabSingular, tabBulk;
 
-    private @FXML TextField link;
-    private @FXML Label link1, link2, link3, link4, link5;
-    private @FXML TextArea multiLink;
+    @FXML private TextField link;
+    @FXML private Label link1, link2, link3, link4, link5;
+    @FXML private TextArea multiLink;
 
-    private @FXML Button btnClose, btnSubmit;
+    @FXML private Button btnClose, btnSubmit;
 
     private Group group;
 
@@ -68,10 +68,10 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
             loader.load();
 
             Label[] links = {link1, link2, link3, link4, link5};
-            for(Label l : links) {
+            for (Label l : links) {
                 l.setOnMouseClicked(me -> {
                     Object src = me.getSource();
-                    if(src instanceof Label) {
+                    if (src instanceof Label) {
                         Label label = (Label) src;
                         runLater(() -> link.setText(label.getText()));
                     }
@@ -83,12 +83,12 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
                 Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
 
-                if(selectedTab.equals(tabSingular)) {
+                if (selectedTab.equals(tabSingular)) {
                     try {
                         List<GroupItem> list = new ArrayList<>();
                         list.add(new GroupItem(link.getText()));
 
-                        if(!list.isEmpty()) {
+                        if (!list.isEmpty()) {
                             try {
                                 database.insertGroupItems(this.group, list);
                                 database.commit();
@@ -108,7 +108,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
                         logger.error("Failed to submit link", e);
                     }
-                } else if(selectedTab.equals(tabBulk)) {
+                } else if (selectedTab.equals(tabBulk)) {
                     List<String> givenLinks = Stream.of(multiLink.getText().split("\n"))
                             .map(String::trim)
                             .filter(item -> StringUtils.isNotEmpty(item) && // not empty
@@ -117,12 +117,12 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             .distinct() // remove duplicates
                             .collect(Collectors.toList());
 
-                    if(!givenLinks.isEmpty()) {
+                    if (!givenLinks.isEmpty()) {
                         List<GroupItem> list = new ArrayList<>();
 
                         int failures = 0;
 
-                        for(String givenLink : givenLinks) {
+                        for (String givenLink : givenLinks) {
                             try {
                                 list.add(new GroupItem(givenLink));
                             } catch (IOException e) {
@@ -130,7 +130,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             }
                         }
 
-                        if(!list.isEmpty()) {
+                        if (!list.isEmpty()) {
                             try {
                                 database.insertGroupItems(this.group, list);
                                 database.commit();
@@ -156,7 +156,9 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
                 runLater(() -> btnSubmit.setDisable(false));
             }).start());
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     public void setError(String message) {

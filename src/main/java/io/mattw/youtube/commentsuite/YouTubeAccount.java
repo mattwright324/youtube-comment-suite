@@ -43,7 +43,7 @@ public class YouTubeAccount implements Serializable {
     /**
      * Using the OAuth2Tokens passed in, query the YouTube API to get the "mine"
      * channel for those tokens.
-     *
+     * <p>
      * Pushes the channel to the database.
      */
     void updateData() {
@@ -62,7 +62,7 @@ public class YouTubeAccount implements Serializable {
 
             this.channelId = cli.getId();
 
-            if(cli.getSnippet() != null) {
+            if (cli.getSnippet() != null) {
                 this.username = cli.getSnippet().getTitle();
                 this.thumbUrl = cli.getSnippet().getThumbnails().getMedium().getUrl();
 
@@ -74,8 +74,8 @@ public class YouTubeAccount implements Serializable {
                     logger.error("Unable to insert account channel into database.", e);
                 }
             }
-        } catch(GoogleJsonResponseException e) {
-            if(e.getStatusCode() == 401) {
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
                 logger.warn("Tokens have expired for account [username={}]", getUsername());
             }
         } catch (IOException e) {

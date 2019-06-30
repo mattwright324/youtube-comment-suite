@@ -11,11 +11,11 @@ import java.io.FileWriter;
 
 /**
  * Saves and loads a data object to the specified JSON file.
- *
+ * <p>
  * Can take any object as long as it has fields that Gson is configured to read.
  *
- * @author mattwright324
  * @param <T> data object JSON (de)serialized
+ * @author mattwright324
  */
 public class ConfigFile<T> {
 
@@ -32,7 +32,7 @@ public class ConfigFile<T> {
         this.defaultObject = defaultObject;
         this.dataObject = defaultObject;
         this.file = new File(fileName);
-        if(!file.exists()) {
+        if (!file.exists()) {
             save();
         } else {
             load();
@@ -41,15 +41,15 @@ public class ConfigFile<T> {
 
     public void load() {
         logger.debug("Loading Config File");
-        try(FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr)) {
+        try (FileReader fr = new FileReader(file);
+             BufferedReader br = new BufferedReader(fr)) {
             String line;
             StringBuilder data = new StringBuilder();
             while ((line = br.readLine()) != null) {
                 data.append(line);
             }
             this.dataObject = (T) gson.fromJson(data.toString(), defaultObject.getClass());
-            if(this.dataObject == null) {
+            if (this.dataObject == null) {
                 logger.debug("Parsed config file returned null. Using default config data.");
                 this.dataObject = defaultObject;
             }
@@ -62,7 +62,7 @@ public class ConfigFile<T> {
 
     public void save() {
         logger.debug("Saving Config File");
-        try(FileWriter fw = new FileWriter(file)) {
+        try (FileWriter fw = new FileWriter(file)) {
             fw.write(gson.toJson(dataObject));
         } catch (Exception e) {
             logger.error(e);

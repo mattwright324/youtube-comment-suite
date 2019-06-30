@@ -32,7 +32,7 @@ public class YouTubeVideo extends YouTubeObject {
 
         logger.debug(ReflectionToStringBuilder.toString(item));
 
-        if(item.getSnippet() != null) {
+        if (item.getSnippet() != null) {
             VideoSnippet snippet = item.getSnippet();
 
             this.channelId = snippet.getChannelId();
@@ -40,7 +40,7 @@ public class YouTubeVideo extends YouTubeObject {
             this.publishDate = snippet.getPublishedAt().getValue();
         }
 
-        if(item.getStatistics() != null) {
+        if (item.getStatistics() != null) {
             VideoStatistics stats = item.getStatistics();
 
             this.viewCount = stats.getViewCount().longValue();
@@ -56,8 +56,8 @@ public class YouTubeVideo extends YouTubeObject {
             // When comments are disabled, this value will be null on the video.
             // responseCode should also be 403 when when comment threads are grabbed during refresh.
             this.comments = Optional.ofNullable(stats.getCommentCount())
-                                    .orElse(BigInteger.ZERO)
-                                    .longValue();
+                    .orElse(BigInteger.ZERO)
+                    .longValue();
         }
 
         this.refreshedOnDate = System.currentTimeMillis();

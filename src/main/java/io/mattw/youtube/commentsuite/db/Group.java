@@ -40,7 +40,7 @@ public class Group {
     private String generateId() {
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
-            md5.update(StandardCharsets.UTF_8.encode(String.valueOf(System.nanoTime())+this.name));
+            md5.update(StandardCharsets.UTF_8.encode(String.valueOf(System.nanoTime()) + this.name));
             return String.format("%032x", new BigInteger(1, md5.digest()));
         } catch (Exception e) {
             e.printStackTrace();
@@ -48,13 +48,29 @@ public class Group {
         }
     }
 
-    public String getId() { return groupId; }
+    public String getId() {
+        return groupId;
+    }
 
-    public String getName() { return name.getValue(); }
-    protected void setName(String name) { this.name.setValue(name); }
-    public SimpleStringProperty nameProperty() { return name; }
-    public SimpleIntegerProperty itemsUpdatedProperty() { return itemsUpdated; }
-    public void incrementItemsUpdated() { itemsUpdated.setValue(itemsUpdated.getValue()+1); }
+    public String getName() {
+        return name.getValue();
+    }
+
+    protected void setName(String name) {
+        this.name.setValue(name);
+    }
+
+    public SimpleStringProperty nameProperty() {
+        return name;
+    }
+
+    public SimpleIntegerProperty itemsUpdatedProperty() {
+        return itemsUpdated;
+    }
+
+    public void incrementItemsUpdated() {
+        itemsUpdated.setValue(itemsUpdated.getValue() + 1);
+    }
 
     public void reloadGroupItems() {
         groupItems.clear();
@@ -62,9 +78,19 @@ public class Group {
         incrementItemsUpdated();
     }
 
-    public List<GroupItem> getGroupItems() { return groupItems; }
+    public List<GroupItem> getGroupItems() {
+        return groupItems;
+    }
 
-    public String toString() { return name.getValue(); }
-    public int hashCode() { return groupId.hashCode(); }
-    public boolean equals(Object o) { return o instanceof Group && o.hashCode() == hashCode(); }
+    public String toString() {
+        return name.getValue();
+    }
+
+    public int hashCode() {
+        return groupId.hashCode();
+    }
+
+    public boolean equals(Object o) {
+        return o instanceof Group && o.hashCode() == hashCode();
+    }
 }

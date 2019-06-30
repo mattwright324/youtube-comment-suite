@@ -80,7 +80,7 @@ public class OAuth2Handler {
      * dateTo failure and throwing an error. On each failure, if it detects the tokens used by the account have
      * expired, it will attempt to refresh them and use and newly updated tokens.
      *
-     * @param parentId id of comment or parentId of reply-comment to reply to
+     * @param parentId     id of comment or parentId of reply-comment to reply to
      * @param textOriginal text to reply to the comment with
      * @throws IOException failed to reply
      */
@@ -109,7 +109,7 @@ public class OAuth2Handler {
             }
 
             attempt++;
-        } while(attempt < 10);
+        } while (attempt < 10);
 
         throw new IOException("Could not reply and failed to refresh tokens.");
     }
