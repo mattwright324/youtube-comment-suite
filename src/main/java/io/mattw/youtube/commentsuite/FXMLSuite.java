@@ -46,7 +46,7 @@ public class FXMLSuite extends Application {
         try {
             NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
             youtube = new YouTube.Builder(httpTransport, JSON_FACTORY, null)
-                    .setApplicationName("YouTube Comment Suite")
+                    .setApplicationName("youtube-comment-suite")
                     .build();
 
             // System.setProperty("glass.win.uiScale", "100%");

@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
@@ -18,14 +19,12 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -51,10 +50,22 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private DoubleProperty progress = new SimpleDoubleProperty(0.0);
     private StringProperty statusStep = new SimpleStringProperty("Preparing");
     private StringProperty elapsedTime = new SimpleStringProperty("0 ms");
+
+    // Observables for modal to bind to
     private LongProperty newVideos = new SimpleLongProperty(0);
     private LongProperty totalVideos = new SimpleLongProperty(0);
     private LongProperty newComments = new SimpleLongProperty(0);
     private LongProperty totalComments = new SimpleLongProperty(0);
+    private LongProperty newViewers = new SimpleLongProperty(0);
+    private LongProperty totalViewers = new SimpleLongProperty(0);
+
+    // Thread safe
+    private AtomicLong atomicNewVideos = new AtomicLong(0);
+    private AtomicLong atomicTotalVideos = new AtomicLong(0);
+    private AtomicLong atomicNewComments = new AtomicLong(0);
+    private AtomicLong atomicTotalComments = new AtomicLong(0);
+    private AtomicLong atomicNewViewers = new AtomicLong(0);
+    private ConcurrentHashMap<String,String> totalViewersHashMap = new ConcurrentHashMap<>();
 
     private final int maxAttempts = 5;
     private Double videoProgress = 0.0;
@@ -73,7 +84,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<YouTubeVideo> videoQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<Tuple<String, String>> commentThreadQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<YouTubeComment> commentQueue = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<YouTubeComment> commentInsertQueue = new LinkedBlockingQueue<>();
     private List<CommentDatabase.GroupItemVideo> gitemVideo = new ArrayList<>();
     private LinkedBlockingQueue<String> channelQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<YouTubeChannel> channelInsertQueue = new LinkedBlockingQueue<>();
@@ -159,13 +170,15 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         updateProgress();
         runLater(() -> ended.setValue(true));
         logger.debug("Refresh End [progress={},elapsedTime={},newVideos={},totalVideos={},newComments={}," +
-                        "totalComments={},lastStep={}]",
+                        "totalComments={},newViewers={},totalViewers={},lastStep={}]",
                 progress.getValue(),
                 elapsedTime.getValue(),
-                newVideos.getValue(),
-                totalVideos.getValue(),
-                newComments.getValue(),
-                totalComments.getValue(),
+                atomicNewVideos.get(),
+                atomicTotalVideos.get(),
+                atomicNewComments.get(),
+                atomicTotalComments.get(),
+                atomicNewViewers.get(),
+                totalViewersHashMap.size(),
                 statusStep.getValue());
     }
 
@@ -240,10 +253,11 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                         gitem.getId(), gitem.getId()));
 
                                 videoIdQueue.put(gitem.getId());
+
                                 if (database.doesVideoExist(gitem.getId())) {
-                                    incrLongProperty(newVideos, 1);
+                                    setLongPropertyValue(newVideos, atomicNewVideos.incrementAndGet());
                                 }
-                                incrLongProperty(totalVideos, 1);
+                                setLongPropertyValue(totalVideos, atomicTotalVideos.incrementAndGet());
                             } catch (InterruptedException ignored) {
                             }
                         }
@@ -274,6 +288,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             while (!videoQueue.isEmpty()) {
                 YouTubeVideo video = videoQueue.poll();
                 if (video != null) {
+                    int debugTotal = 0;
+
                     int attempts = 0;
                     CommentThreadListResponse ctl;
                     String pageToken = "";
@@ -301,7 +317,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                 if (!ctl.getItems().isEmpty()) {
                                     List<YouTubeComment> comments = ctl.getItems().stream()
                                             .map(YouTubeComment::new)
+                                            .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId())/* filter out G+ comments */)
                                             .collect(Collectors.toList());
+
+                                    debugTotal += comments.size();
 
                                     comments.forEach(c -> {
                                         if (c.getReplyCount() > 0) {
@@ -318,7 +337,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                         }
                                     });
 
-                                    commentQueue.addAll(comments);
+                                    commentInsertQueue.addAll(comments);
 
                                     channelQueue.addAll(comments.stream()
                                             .map(YouTubeComment::getChannelId)
@@ -328,6 +347,10 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                                 awaitMillis(50);
                             } while (pageToken != null && !isHardShutdown());
+
+                            logger.info("Breaking out of attempts loop [videoId={},attempts={},pageToken={},hardShutdown={}]",
+                                    video.getId(), attempts, pageToken,hardShutdown);
+
                             break;
                         } catch (IOException e) {
                             if (e instanceof GoogleJsonResponseException) {
@@ -339,9 +362,13 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                     logger.error("Failed to update video http response code", sqle);
                                 }
 
+                                GoogleJsonError.ErrorInfo firstError = ge.getDetails()
+                                        .getErrors()
+                                        .get(0);
+
                                 if (ge.getStatusCode() == 400) {
-                                    String message = String.format("[%s/%s] %s [videoId=%s]", attempts, maxAttempts,
-                                            e.getClass().getSimpleName(), video.getId());
+                                    String message = String.format("[%s/%s] %s %s [videoId=%s]", attempts, maxAttempts,
+                                            ge.getStatusCode(), firstError.getReason(), video.getId());
 
                                     appendError(message);
                                     logger.warn(message, e);
@@ -355,8 +382,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                                     break;
                                 } else {
-                                    String message = String.format("Other error received %s [videoId=%s]",
-                                            ge.getStatusCode(), video.getId());
+                                    String message = String.format("Error %s %s [videoId=%s]",
+                                            ge.getStatusCode(), firstError.getReason(), video.getId());
 
                                     appendError(message);
                                     logger.warn(message, e);
@@ -373,6 +400,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             }
                         }
                     } while (attempts < maxAttempts && !isHardShutdown());
+
+                    logger.debug("af0ZmGa772e - {} - {} grabbed base vs {} reported", video.getId(), debugTotal, video.getCommentCount());
 
                     incrVideoProgress();
                     updateProgress();
@@ -414,7 +443,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                     .map(item -> new YouTubeComment(item, tuple.getSecond()))
                                     .filter(yc -> StringUtils.isNotEmpty(yc.getChannelId())/* filter out G+ comments */)
                                     .collect(Collectors.toList());
-                            commentQueue.addAll(replies);
+                            commentInsertQueue.addAll(replies);
 
                             List<YouTubeChannel> channels = cl.getItems().stream()
                                     .filter(distinctByKey(Comment::getId))
@@ -442,19 +471,19 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             ElapsedTime elapsed = new ElapsedTime();
 
             List<YouTubeComment> comments = new ArrayList<>();
-            while (!commentQueue.isEmpty() || videoCommentsGroup.isStillWorking() || repliesGroup.isStillWorking() || !comments.isEmpty()) {
-                YouTubeComment comment = commentQueue.poll();
+            while (!commentInsertQueue.isEmpty() || videoCommentsGroup.isStillWorking() || repliesGroup.isStillWorking() || !comments.isEmpty()) {
+                YouTubeComment comment = commentInsertQueue.poll();
                 if (comment != null) {
                     comments.add(comment);
-                } else {
-                    awaitMillis(5);
                 }
+
+                awaitMillis(5);
 
                 if (comments.size() >= 1000 || (elapsed.getElapsed().toMillis() >= 1200 && !comments.isEmpty())) {
                     try {
                         logger.trace("CommentConsumer[submitting={},leftInQueue={},inThreadQueue={}]",
                                 comments.size(),
-                                commentQueue.size(),
+                                commentInsertQueue.size(),
                                 commentThreadQueue.size());
                         submitComments(comments);
 
@@ -486,9 +515,9 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                 String channelId = channelQueue.poll();
                 if (channelId != null && !channelIds.contains(channelId) && channelIds.size() < 50) {
                     channelIds.add(channelId);
-                } else {
-                    awaitMillis(5);
                 }
+
+                awaitMillis(5);
 
                 if (channelIds.size() == 50 || (elapsed.getElapsed().toMillis() >= 500 && !channelIds.isEmpty())) {
                     threadChannelIdConsume(channelIds);
@@ -514,9 +543,9 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                 YouTubeChannel channel = channelInsertQueue.poll();
                 if (channel != null) {
                     insert.add(channel);
-                } else {
-                    awaitMillis(5);
                 }
+
+                awaitMillis(5);
 
                 // Interval insertion for more efficient work.
                 if (insert.size() >= 1000 || (elapsed.getElapsed().toMillis() >= 1200 && !insert.isEmpty())) {
@@ -532,15 +561,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     }
 
     private void threadChannelIdConsume(List<String> channelIds) {
-        while (channelIds.size() > 50) {
-            String overflowId = channelIds.get(0);
-            channelIds.remove(0);
-
-            logger.trace("Removing overflow id and putting back in queue {}", overflowId);
-
-            channelQueue.add(overflowId);
-        }
-
         logger.trace("ChannelId Consumer[submitting={},leftInQueue={}]",
                 channelIds.size(),
                 channelQueue.size());
@@ -574,6 +594,23 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             logger.trace("Channel Insert Consumer [submitting={},leftInQueue={}]",
                     channels.size(),
                     channelInsertQueue.size());
+
+            List<String> channelIds = channels.stream()
+                    .map(YouTubeChannel::getId)
+                    .collect(Collectors.toList());
+
+            for(String channelId : channelIds) {
+                // We can't just simply count totals. Many people comment more than once.
+                totalViewersHashMap.put(channelId, StringUtils.EMPTY);
+            }
+
+            // Update numbers
+            long notYetExisting = database.countChannelsNotExisting(channelIds);
+
+            setLongPropertyValue(newViewers, atomicNewComments.addAndGet(notYetExisting));
+            setLongPropertyValue(totalViewers, totalViewersHashMap.size());
+
+            updateProgress();
 
             database.insertChannels(channels);
             channels.clear();
@@ -646,14 +683,19 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
      */
     private synchronized void submitComments(List<YouTubeComment> comments) throws SQLException {
         List<String> commentIds = comments.stream()
-                .map(YouTubeComment::getId).collect(Collectors.toList());
-        final long notYetExisting = database.countCommentsNotExisting(commentIds);
-        final long totalInserting = comments.size();
-        final long currentTotal = totalComments.getValue();
-        incrLongProperty(newComments, notYetExisting);
-        setLongPropertyValue(totalComments, currentTotal + totalInserting);
-        database.insertComments(comments);
+                .map(YouTubeComment::getId)
+                .collect(Collectors.toList());
+
+        // Update numbers
+        long notYetExisting = database.countCommentsNotExisting(commentIds);
+
+        setLongPropertyValue(newComments, atomicNewComments.addAndGet(notYetExisting));
+        setLongPropertyValue(totalComments, atomicTotalComments.addAndGet(comments.size()));
+
         updateProgress();
+
+        // Actually insert now
+        database.insertComments(comments);
     }
 
     private void awaitMillis(long millis) {
@@ -714,6 +756,14 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     public LongProperty totalCommentsProperty() {
         return totalComments;
+    }
+
+    public LongProperty newViewersProperty() {
+        return newViewers;
+    }
+
+    public LongProperty totalViewersProperty() {
+        return totalViewers;
     }
 
     public BooleanProperty endedProperty() {

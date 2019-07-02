@@ -44,7 +44,7 @@ public class MGMVRefreshModal extends HBox {
     @FXML private VBox statusPane;
 
     @FXML private HBox warningsPane;
-    @FXML private Label warnings, elapsedTime, newVideos, newComments, totalVideos, totalComments;
+    @FXML private Label warnings, elapsedTime, newVideos, totalVideos, newComments, totalComments, newViewers, totalViewers;
     @FXML private ImageView expandIcon;
     @FXML private ListView<String> errorList;
     @FXML private Hyperlink expand;
@@ -132,15 +132,23 @@ public class MGMVRefreshModal extends HBox {
                         elapsedTime.textProperty().bind(refreshThread.elapsedTimeProperty());
                         progressBar.progressProperty().bind(refreshThread.progressProperty());
                         statusStep.textProperty().bind(refreshThread.statusStepProperty());
+
                         newVideos.textProperty().bind(Bindings.format("%,d", refreshThread.newVideosProperty()));
                         totalVideos.textProperty().bind(
                                 Bindings.concat("of ")
                                         .concat(Bindings.format("%,d", refreshThread.totalVideosProperty()))
                                         .concat(" total"));
+
                         newComments.textProperty().bind(Bindings.format("%,d", refreshThread.newCommentsProperty()));
                         totalComments.textProperty().bind(
                                 Bindings.concat("of ")
                                         .concat(Bindings.format("%,d", refreshThread.totalCommentsProperty()))
+                                        .concat(" total"));
+
+                        newViewers.textProperty().bind(Bindings.format("%,d", refreshThread.newViewersProperty()));
+                        totalViewers.textProperty().bind(
+                                Bindings.concat("of ")
+                                        .concat(Bindings.format("%,d", refreshThread.totalViewersProperty()))
                                         .concat(" total"));
                     });
                     refreshThread.start();

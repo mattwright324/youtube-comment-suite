@@ -15,6 +15,7 @@ public class GroupStats {
     private long totalLikes = 0;
     private long totalDislikes = 0;
     private long totalComments = 0;
+    private long uniqueViewers = 0;
     private List<YouTubeVideo> mostCommented = new ArrayList<>();
     private List<YouTubeVideo> mostDisliked = new ArrayList<>();
     private List<YouTubeVideo> mostViewed = new ArrayList<>();
@@ -68,6 +69,15 @@ public class GroupStats {
 
     public void setTotalComments(long totalComments) {
         this.totalComments = totalComments;
+    }
+
+    public long getUniqueViewers() {
+        return uniqueViewers;
+    }
+
+    public GroupStats setUniqueViewers(long uniqueViewers) {
+        this.uniqueViewers = uniqueViewers;
+        return this;
     }
 
     public List<YouTubeVideo> getMostCommented() {

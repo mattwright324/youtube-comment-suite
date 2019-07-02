@@ -744,6 +744,14 @@ public class CommentDatabase implements Closeable {
                 }
             }
         }
+        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_UNIQUE_VIEWERS_BY_GROUP.toString())) {
+            ps.setString(1, group.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    stats.setUniqueViewers(rs.getLong("unique_viewers"));
+                }
+            }
+        }
         stats.setMostViewed(this.getMostPopularVideos(group, 10));
         stats.setMostDisliked(this.getMostDislikedVideos(group, 10));
         stats.setMostCommented(this.getMostCommentedVideos(group, 10));

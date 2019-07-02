@@ -65,6 +65,9 @@
                                            styleClass="bold"/>
                                     <Label text="..." fx:id="totalLikes" style="-fx-text-fill:cornflowerblue"
                                            GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                                    <Label text="Unique Viewers" GridPane.columnIndex="1" GridPane.rowIndex="3"
+                                           styleClass="bold"/>
+                                    <Label text="..." fx:id="totalViewers" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
                                 </GridPane>
 
                                 <LineChart fx:id="videosLineChart" minHeight="250" maxHeight="300" title="Videos By Week"

@@ -31,6 +31,10 @@ public interface RefreshInterface {
 
     LongProperty totalCommentsProperty();
 
+    LongProperty newViewersProperty();
+
+    LongProperty totalViewersProperty();
+
     BooleanProperty endedProperty();
 
     DoubleProperty progressProperty();

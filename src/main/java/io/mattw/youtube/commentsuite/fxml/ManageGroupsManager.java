@@ -75,7 +75,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     @FXML private LineChart<String, Number> commentsLineChart, videosLineChart;
     private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
-    @FXML private Label totalComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+    @FXML private Label totalComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
             likeDislikeRatio, normalizedRatio;
     @FXML private ListView<MGMVYouTubeObjectItem> popularVideosList, dislikedVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
@@ -357,6 +357,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             commentsLineChartData.getData().addAll(commentChartData);
             totalComments.setText(String.format("%,d", groupStats.getTotalComments()));
             totalLikes.setText(String.format("+%,d", groupStats.getTotalCommentLikes()));
+            totalViewers.setText(String.format("%,d", groupStats.getUniqueViewers()));
 
             videosLineChartData.getData().addAll(videoChartData);
             totalVideos.setText(String.format("%,d", groupStats.getTotalVideos()));

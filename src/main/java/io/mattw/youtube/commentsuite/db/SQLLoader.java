@@ -72,6 +72,7 @@ public enum SQLLoader {
     GET_GROUP_DISABLED_VIDEOS("dql_get_group_disabled_videos.sql"),
     GET_VIDEO_STATS("dql_get_video_stats.sql"),
     GET_COMMENT_STATS("dql_get_comment_stats.sql"),
+    GET_UNIQUE_VIEWERS_BY_GROUP("dql_get_unique_viewers_by_group.sql"),
     ;
 
     private final Logger logger = LogManager.getLogger();
