@@ -90,7 +90,7 @@ public class SearchComments implements Initializable, ImageCache {
     private ChangeListener<Number> cl;
 
     private CommentDatabase database;
-    private CommentQuery newQuery;
+    private CommentQuery commentQuery;
     private List<YouTubeComment> lastResultsList;
     private SearchCommentsListItem actionComment;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
@@ -99,6 +99,7 @@ public class SearchComments implements Initializable, ImageCache {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         database = FXMLSuite.getDatabase();
+        commentQuery = database.commentQuery();
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
         comboGroupSelect.setItems(database.getGlobalGroupList());
@@ -325,7 +326,7 @@ public class SearchComments implements Initializable, ImageCache {
         exportModal.getModalContainer().setMaxWidth(exportModal.getModalContainer().getMaxWidth() * 1.5);
         scExportModal.getBtnClose().setOnAction(ae -> exportModal.setVisible(false));
         btnExport.setOnAction(ae -> {
-            scExportModal.withQuery(newQuery);
+            scExportModal.withQuery(commentQuery);
             scExportModal.cleanUp();
             exportModal.setVisible(true);
         });
@@ -378,7 +379,7 @@ public class SearchComments implements Initializable, ImageCache {
     }
 
     private int interpretPageValue(String value) {
-        value = value.replaceAll("[^0-9]", "").trim();
+        value = value.replaceAll("[^\\d]", "").trim();
         if (value.isEmpty()) {
             value = "1";
         }
@@ -401,15 +402,20 @@ public class SearchComments implements Initializable, ImageCache {
      * @param forced perform search regardless of page value equal to current page
      */
     private void submitPageValue(int page, boolean forced) {
-        logger.debug("Submit page value = {}", page);
         if (page < 1) {
             page = 1;
         } else if (page > maxPageProperty.getValue()) {
             page = maxPageProperty.getValue();
         }
 
-        if (page == 1) {
-            newQuery = new CommentQuery();
+        logger.debug("Attempting comment search [submittedPage={},queryPage={}]", page, commentQuery.getPageNum());
+
+        if (page-1 != commentQuery.getPageNum() || forced) {
+            logger.debug("Changing page {} -> {}", commentQuery.getPageNum(), page-1);
+
+            new Thread(this::searchComments).start();
+        } else {
+            logger.debug("Didn't do search");
         }
 
         final int newPage = page;
@@ -418,10 +424,6 @@ public class SearchComments implements Initializable, ImageCache {
             pageValue.getStyleClass().add("clearTextField");
             pageValue.setText(String.valueOf(newPage));
             pageProperty.setValue(newPage);
-            if (newPage != newQuery.getPageNum() || forced) {
-                logger.debug("Changing page {} -> {}", newQuery.getPageNum(), newPage);
-                new Thread(this::searchComments).start();
-            }
         });
     }
 
@@ -449,7 +451,7 @@ public class SearchComments implements Initializable, ImageCache {
             YouTubeVideo selectedVideo = videoSelectModal.getContent().getSelectedVideo();
 
             elapsedTime.setNow();
-            lastResultsList = newQuery.setGroup(comboGroupSelect.getValue())
+            lastResultsList = commentQuery.setGroup(comboGroupSelect.getValue())
                     .setGroupItem(Optional.ofNullable(GroupItem.ALL_ITEMS.equals(selectedItem.getId()) ?
                             null : selectedItem))
                     .setVideos(Optional.ofNullable(selectedVideo != null ?
@@ -460,21 +462,7 @@ public class SearchComments implements Initializable, ImageCache {
                     .setTextLike(commentLike.getText())
                     .setDateFrom(dateFrom.getValue())
                     .setDateTo(dateTo.getValue())
-                    .getByPage(pageNum - 1, 500);
-
-            /*Group group = comboGroupSelect.getSelectionModel().getSelectedItem();
-            GroupItem groupItem = comboGroupItemSelect.getSelectionModel().getSelectedItem();
-            groupItem = GroupItem.ALL_ITEMS.equals(groupItem.getId()) ? null : groupItem;
-
-            elapsedTime.setNow();
-            lastResultsList = query
-                    .ctype(comboCommentType.getSelectionModel().getSelectedIndex(), comboCommentType.getSelectionModel().getSelectedItem().getTitle())
-                    .orderBy(comboOrderBy.getSelectionModel().getSelectedIndex())
-                    .textLike(commentLike.getCommentText())
-                    .nameLike(nameLike.getCommentText())
-                    .dateTo(dateTo.getValue())
-                    .dateFrom(dateFrom.getValue())
-                    .get(page, group, groupItem, Collections.singletonList(selectedVideo));*/
+                    .getByPage(pageNum-1, 500); // 1 in app = 0 in query
 
             logger.debug("Query completed [time={},comments={}]",
                     elapsedTime.humanReadableFormat(),
@@ -514,9 +502,9 @@ public class SearchComments implements Initializable, ImageCache {
         runLater(() -> {
             resultsList.getItems().clear();
             resultsList.getItems().addAll(commentListItems);
-            maxPageProperty.setValue(newQuery.getPageCount());
+            maxPageProperty.setValue(commentQuery.getPageCount());
 
-            btnExport.setDisable(newQuery.getTotalResults() == 0);
+            btnExport.setDisable(commentQuery.getTotalResults() == 0);
 
             paginationPane.setManaged(!treeMode);
             paginationPane.setVisible(!treeMode);
@@ -526,7 +514,7 @@ public class SearchComments implements Initializable, ImageCache {
 
             displayCount.setText(String.format("Showing %,d of %,d total",
                     comments.size(),
-                    newQuery.getTotalResults()));
+                    commentQuery.getTotalResults()));
 
             if (treeMode) {
                 resultsList.scrollTo(0);

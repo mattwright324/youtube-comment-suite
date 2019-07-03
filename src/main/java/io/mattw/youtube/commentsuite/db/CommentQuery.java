@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-import io.mattw.youtube.commentsuite.FXMLSuite;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,7 +28,7 @@ public class CommentQuery implements Serializable {
     private transient Optional<GroupItem> groupItem = Optional.empty();
     private transient Optional<List<YouTubeVideo>> videos = Optional.empty();
     private transient int pageSize = 500;
-    private transient int pageNum = 1;
+    private transient int pageNum = 0;
     private transient Map<String, Object> queryParams = new HashMap<>();
 
     // Formatted values for export file.
@@ -45,8 +44,8 @@ public class CommentQuery implements Serializable {
 
     private long totalResults;
 
-    public CommentQuery() {
-        database = FXMLSuite.getDatabase();
+    public CommentQuery(CommentDatabase database) {
+        this.database = database;
     }
 
     /**
@@ -165,6 +164,8 @@ public class CommentQuery implements Serializable {
         List<YouTubeComment> comments = new ArrayList<>();
 
         logger.debug("Searching Comments [page={},pageSize={}] {}", page, pageSize, queryParams);
+
+        setPageNum(page);
 
         totalResults = 0;
 

@@ -693,7 +693,7 @@ public class CommentDatabase implements Closeable {
     }
 
     public CommentQuery commentQuery() {
-        return new CommentQuery();
+        return new CommentQuery(this);
     }
 
     /**
