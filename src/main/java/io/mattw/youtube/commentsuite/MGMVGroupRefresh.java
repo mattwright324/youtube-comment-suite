@@ -347,10 +347,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
                                 awaitMillis(50);
                             } while (pageToken != null && !isHardShutdown());
-
-                            logger.info("Breaking out of attempts loop [videoId={},attempts={},pageToken={},hardShutdown={}]",
-                                    video.getId(), attempts, pageToken,hardShutdown);
-
                             break;
                         } catch (IOException e) {
                             if (e instanceof GoogleJsonResponseException) {
@@ -400,8 +396,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             }
                         }
                     } while (attempts < maxAttempts && !isHardShutdown());
-
-                    logger.debug("af0ZmGa772e - {} - {} grabbed base vs {} reported", video.getId(), debugTotal, video.getCommentCount());
 
                     incrVideoProgress();
                     updateProgress();
@@ -599,15 +593,18 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     .map(YouTubeChannel::getId)
                     .collect(Collectors.toList());
 
+            // Update numbers
+            final long notYetExisting = database.countChannelsNotExisting(channelIds
+                    .stream()
+                    .filter(id -> !totalViewersHashMap.containsKey(id))
+                    .collect(Collectors.toList()));
+
             for(String channelId : channelIds) {
                 // We can't just simply count totals. Many people comment more than once.
                 totalViewersHashMap.put(channelId, StringUtils.EMPTY);
             }
 
-            // Update numbers
-            long notYetExisting = database.countChannelsNotExisting(channelIds);
-
-            setLongPropertyValue(newViewers, atomicNewComments.addAndGet(notYetExisting));
+            setLongPropertyValue(newViewers, atomicNewViewers.addAndGet(notYetExisting));
             setLongPropertyValue(totalViewers, totalViewersHashMap.size());
 
             updateProgress();
@@ -681,13 +678,13 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
      * @param comments list of YouTubeComments
      * @throws SQLException failed to insert to database
      */
-    private synchronized void submitComments(List<YouTubeComment> comments) throws SQLException {
+    private void submitComments(List<YouTubeComment> comments) throws SQLException {
         List<String> commentIds = comments.stream()
                 .map(YouTubeComment::getId)
                 .collect(Collectors.toList());
 
         // Update numbers
-        long notYetExisting = database.countCommentsNotExisting(commentIds);
+        final long notYetExisting = database.countCommentsNotExisting(commentIds);
 
         setLongPropertyValue(newComments, atomicNewComments.addAndGet(notYetExisting));
         setLongPropertyValue(totalComments, atomicTotalComments.addAndGet(comments.size()));
