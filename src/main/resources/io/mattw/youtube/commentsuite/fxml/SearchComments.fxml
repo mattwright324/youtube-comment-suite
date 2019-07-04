@@ -30,7 +30,7 @@
                            text="mattwright324" />
                 <VBox alignment="CENTER" prefWidth="200">
                     <Label fx:id="videoViews" styleClass="noBorder, noPadding"
-                               text="8.6M viewCount" />
+                               text="8.6M views" />
                     <HBox alignment="CENTER" spacing="5">
                         <ImageView fx:id="likesIcon" fitHeight="20" fitWidth="20" />
                         <Label fx:id="videoLikes"
