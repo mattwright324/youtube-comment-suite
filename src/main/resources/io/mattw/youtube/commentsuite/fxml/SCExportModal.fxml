@@ -75,6 +75,7 @@
     </TabPane>
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
+        <Button fx:id="btnStop" styleClass="btnDanger" text="Stop" visible="false" managed="false" />
         <Button fx:id="btnSubmit" styleClass="btnPrimary" text="Export to JSON" />
     </HBox>
 </fx:root>

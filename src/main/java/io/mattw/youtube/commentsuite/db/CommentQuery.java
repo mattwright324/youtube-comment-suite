@@ -166,6 +166,7 @@ public class CommentQuery implements Serializable {
         logger.debug("Searching Comments [page={},pageSize={}] {}", page, pageSize, queryParams);
 
         setPageNum(page);
+        setPageSize(pageSize);
 
         totalResults = 0;
 
@@ -220,10 +221,18 @@ public class CommentQuery implements Serializable {
         return items;
     }
 
+    public Group getGroup() {
+        return group;
+    }
+
     public CommentQuery setGroup(Group group) {
         this.withGroup = String.format("%s / %s", group.getId(), group.getName());
         this.group = group;
         return this;
+    }
+
+    public Optional<GroupItem> getGroupItem() {
+        return groupItem;
     }
 
     public CommentQuery setGroupItem(Optional<GroupItem> groupItem) {
@@ -238,33 +247,12 @@ public class CommentQuery implements Serializable {
         return this;
     }
 
+    public int getPageSize() {
+        return pageSize;
+    }
+
     public CommentQuery setPageSize(int pageSize) {
         this.pageSize = pageSize;
-        return this;
-    }
-
-    public CommentQuery setOrder(Order order) {
-        this.order = order;
-        return this;
-    }
-
-    public CommentQuery setNameLike(String nameLike) {
-        this.nameLike = nameLike;
-        return this;
-    }
-
-    public CommentQuery setTextLike(String textLike) {
-        this.textLike = textLike;
-        return this;
-    }
-
-    public CommentQuery setDateFrom(LocalDate dateFrom) {
-        this.dateFrom = dateFrom;
-        return this;
-    }
-
-    public CommentQuery setDateTo(LocalDate dateTo) {
-        this.dateTo = dateTo;
         return this;
     }
 
@@ -272,20 +260,45 @@ public class CommentQuery implements Serializable {
         return order;
     }
 
+    public CommentQuery setOrder(Order order) {
+        this.order = order;
+        return this;
+    }
+
     public String getNameLike() {
         return nameLike;
+    }
+
+    public CommentQuery setNameLike(String nameLike) {
+        this.nameLike = nameLike;
+        return this;
     }
 
     public String getTextLike() {
         return textLike;
     }
 
+    public CommentQuery setTextLike(String textLike) {
+        this.textLike = textLike;
+        return this;
+    }
+
     public LocalDate getDateFrom() {
         return dateFrom;
     }
 
+    public CommentQuery setDateFrom(LocalDate dateFrom) {
+        this.dateFrom = dateFrom;
+        return this;
+    }
+
     public LocalDate getDateTo() {
         return dateTo;
+    }
+
+    public CommentQuery setDateTo(LocalDate dateTo) {
+        this.dateTo = dateTo;
+        return this;
     }
 
     public Optional<List<YouTubeVideo>> getVideos() {

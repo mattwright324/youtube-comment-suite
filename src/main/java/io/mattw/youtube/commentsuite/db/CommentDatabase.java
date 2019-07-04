@@ -401,7 +401,7 @@ public class CommentDatabase implements Closeable {
                 ps.setString(1, ct.getId());
                 ps.setString(2, ct.getChannelId());
                 ps.setString(3, ct.getVideoId());
-                ps.setLong(4, ct.getPublishedAt());
+                ps.setLong(4, ct.getPublished());
                 ps.setString(5, ct.getCommentText());
                 ps.setLong(6, ct.getLikes());
                 ps.setLong(7, ct.getReplyCount());
@@ -441,7 +441,7 @@ public class CommentDatabase implements Closeable {
             for (YouTubeVideo video : items) {
                 ps.setString(1, video.getId());
                 ps.setString(2, video.getChannelId());
-                ps.setLong(3, video.getRefreshedOnDate());
+                ps.setLong(3, video.getRefreshedOn());
                 ps.setLong(4, video.getPublishedDate());
                 ps.setString(5, video.getTitle());
                 ps.setLong(6, video.getCommentCount());
@@ -555,7 +555,7 @@ public class CommentDatabase implements Closeable {
     /*public void updateVideos(List<YouTubeVideo> items) throws SQLException {
         try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.UPDATE_VIDEO.toString())) {
             for(YouTubeVideo video : items) {
-                ps.setLong(1, video.getRefreshedOnDate());
+                ps.setLong(1, video.getRefreshedOn());
                 ps.setString(2, video.getTitle());
                 ps.setLong(3, video.getCommentCount());
                 ps.setLong(4, video.getViewCount());

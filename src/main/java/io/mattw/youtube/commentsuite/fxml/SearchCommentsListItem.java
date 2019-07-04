@@ -64,7 +64,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         commentText.setText(comment.getCleanText(false));
         commentText.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-        date.setText(DateUtils.epochMillisToDateTime(comment.getPublishedAt()).toString());
+        date.setText(DateUtils.epochMillisToDateTime(comment.getPublished()).toString());
 
         if (comment.getReplyCount() > 0 || comment.isReply()) {
             viewTree.setManaged(true);

@@ -57,7 +57,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH.mm.SS");
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH.mm.ss");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final JsonParser jsonParser = new JsonParser();
     private static final String prettyFlattenedExample = gson.toJson(jsonParser.parse(
@@ -74,12 +74,13 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
     @FXML private TextArea exportModeExample;
 
     @FXML private Button btnClose;
+    @FXML private Button btnStop;
     @FXML private Button btnSubmit;
-
-    private SimpleBooleanProperty replyMode = new SimpleBooleanProperty(false);
 
     private CommentQuery commentQuery;
     private CommentDatabase database;
+
+    private boolean quitExport = false;
 
     public SCExportModal() {
         logger.debug("Initialize SCExportModal");
@@ -99,8 +100,25 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
             radioFlattened.fire();
 
+            btnStop.setOnAction(ae -> {
+                quitExport = true;
+
+                runLater(() -> {
+                    btnStop.setDisable(true);
+                });
+            });
+
             btnSubmit.setOnAction(ae -> {
-                runLater(() -> btnSubmit.setDisable(true));
+                runLater(() -> {
+                    btnSubmit.setVisible(false);
+                    btnSubmit.setManaged(false);
+
+                    btnStop.setVisible(true);
+                    btnStop.setManaged(true);
+
+                    btnClose.setVisible(false);
+                    btnClose.setManaged(false);
+                });
 
                 final boolean flattenedMode = radioFlattened.isSelected();
 
@@ -128,10 +146,10 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                         LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>(uniqueVideoIds);
 
                         // Threads to speed up export a bit, condensed still will take a long time.
-                        ExecutorGroup exportGroup = new ExecutorGroup(5);
+                        ExecutorGroup exportGroup = new ExecutorGroup(10);
                         exportGroup.submitAndShutdown(() -> {
                             String videoId;
-                            while (!videoIdQueue.isEmpty()) {
+                            while (!videoIdQueue.isEmpty() && !quitExport) {
                                 videoId = videoIdQueue.poll();
 
                                 File videoFile = new File(thisExportFolder, String.format("%s-meta.json", videoId));
@@ -140,6 +158,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                 try (FileWriter writer = new FileWriter(videoFile)) {
                                     video = database.getVideo(videoId);
                                     video.setAuthor(database.getChannel(video.getChannelId()));
+                                    video.prepForExport();
 
                                     logger.debug("Writing file {}", videoFile.getName());
 
@@ -160,13 +179,23 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                     File commentsFile = new File(thisExportFolder, String.format("%s-comments.json", videoId));
                                     List<YouTubeVideo> videoList = Collections.singletonList(video);
 
-                                    CommentQuery.CommentsType typeBefore = commentQuery.getCommentsType();
-                                    Optional<List<YouTubeVideo>> listBefore = commentQuery.getVideos();
+                                    // Duplicate a new query object because it isn't threadsafe.
+                                    // ExecutorGroup should make export faster
+                                    CommentQuery localQuery = database.commentQuery()
+                                            .setGroup(commentQuery.getGroup())
+                                            .setGroupItem(commentQuery.getGroupItem())
+                                            .setCommentsType(commentQuery.getCommentsType())
+                                            .setVideos(commentQuery.getVideos())
+                                            .setNameLike(commentQuery.getNameLike())
+                                            .setOrder(commentQuery.getOrder())
+                                            .setTextLike(commentQuery.getTextLike())
+                                            .setDateFrom(commentQuery.getDateFrom())
+                                            .setDateTo(commentQuery.getDateTo());
 
-                                    if (!flattenedMode && typeBefore == CommentQuery.CommentsType.ALL) {
+                                    if (!flattenedMode && commentQuery.getCommentsType() == CommentQuery.CommentsType.ALL) {
                                         // When condensed, we want base comments to be first.
                                         // We'll grab replies later if the replyCount > 0
-                                        commentQuery.setCommentsType(CommentQuery.CommentsType.COMMENTS_ONLY);
+                                        localQuery.setCommentsType(CommentQuery.CommentsType.COMMENTS_ONLY);
                                     }
 
                                     try (FileWriter writer = new FileWriter(commentsFile);
@@ -175,15 +204,16 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
                                         jsonWriter.beginArray();
 
-                                        try (NamedParameterStatement namedParamStatement = commentQuery
+                                        try (NamedParameterStatement namedParamStatement = localQuery
                                                 .setVideos(Optional.ofNullable(videoList))
                                                 .toStatement();
                                              ResultSet resultSet = namedParamStatement.executeQuery()) {
 
                                             // starting with flattened mode (easier)
-                                            while (resultSet.next()) {
+                                            while (resultSet.next() && !quitExport) {
                                                 YouTubeComment comment = database.resultSetToComment(resultSet);
                                                 comment.setAuthor(database.getChannel(comment.getChannelId()));
+                                                comment.prepForExport();
 
                                                 if (!flattenedMode && comment.getReplyCount() > 0 && !comment.isReply()) {
                                                     List<YouTubeComment> replyList = database.getCommentTree(comment.getId());
@@ -206,11 +236,6 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                         runLater(() -> setError("Error during export, check logs."));
                                     } catch (IOException e) {
                                         logger.error("Failed to write json file", e);
-                                    } finally {
-                                        // Reset fields we hijacked for export process
-                                        commentQuery
-                                                .setCommentsType(typeBefore)
-                                                .setVideos(listBefore);
                                     }
                                 }
                             }
@@ -227,7 +252,17 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                     } catch (IOException e) {
                         logger.warn("Failed to open export folder");
                     } finally {
-                        btnClose.fire();
+                        runLater(() -> {
+                            btnStop.setVisible(false);
+                            btnStop.setManaged(false);
+
+                            btnClose.setVisible(true);
+                            btnClose.setManaged(true);
+
+                            if(!quitExport) {
+                                btnClose.fire();
+                            }
+                        });
                     }
                 }).start();
             });
@@ -261,14 +296,6 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
         });
     }
 
-    public void enableReplyMode(boolean enable) {
-        replyMode.setValue(enable);
-    }
-
-    public BooleanProperty replyModeProperty() {
-        return replyMode;
-    }
-
     public Button getBtnClose() {
         return btnClose;
     }
@@ -279,11 +306,16 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
     @Override
     public void cleanUp() {
-        enableReplyMode(false);
-
         errorMsg.setVisible(false);
         errorMsg.setManaged(false);
 
-        btnSubmit.setDisable(false);
+        btnSubmit.setVisible(true);
+        btnSubmit.setManaged(true);
+
+        btnStop.setVisible(false);
+        btnStop.setManaged(false);
+
+        btnClose.setVisible(true);
+        btnClose.setManaged(true);
     }
 }

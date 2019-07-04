@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite.db;
 import com.google.api.services.youtube.model.Video;
 import com.google.api.services.youtube.model.VideoSnippet;
 import com.google.api.services.youtube.model.VideoStatistics;
+import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,8 +19,10 @@ public class YouTubeVideo extends YouTubeObject {
 
     private String channelId;
     private String description;
-    private long publishDate;
-    private long refreshedOnDate;
+    private transient long published;
+    private String publishDate;
+    private transient long refreshedOn;
+    private String refreshedOnDate;
     private long viewCount;
     private long comments;
     private long likes;
@@ -38,7 +41,7 @@ public class YouTubeVideo extends YouTubeObject {
 
             this.channelId = snippet.getChannelId();
             this.description = snippet.getDescription();
-            this.publishDate = snippet.getPublishedAt().getValue();
+            this.published = snippet.getPublishedAt().getValue();
         }
 
         if (item.getStatistics() != null) {
@@ -61,25 +64,30 @@ public class YouTubeVideo extends YouTubeObject {
                     .longValue();
         }
 
-        this.refreshedOnDate = System.currentTimeMillis();
+        this.refreshedOn = System.currentTimeMillis();
     }
 
     /**
      * Constructor used for initialization from the database.
      */
-    public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long publishDate, long grabDate, long comments, long likes, long dislikes, long viewCount, int responseCode) {
+    public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long published, long grabDate, long comments, long likes, long dislikes, long viewCount, int responseCode) {
         super(videoId, title, thumbUrl);
         setTypeId(YType.VIDEO);
 
         this.channelId = channelId;
         this.description = description;
-        this.publishDate = publishDate;
-        this.refreshedOnDate = grabDate;
+        this.published = published;
+        this.refreshedOn = grabDate;
         this.comments = comments;
         this.likes = likes;
         this.dislikes = dislikes;
         this.viewCount = viewCount;
         this.responseCode = responseCode;
+    }
+
+    public void prepForExport() {
+        publishDate = DateUtils.epochMillisToDateTime(published).toString();
+        refreshedOnDate = DateUtils.epochMillisToDateTime(refreshedOn).toString();
     }
 
     /**
@@ -109,18 +117,18 @@ public class YouTubeVideo extends YouTubeObject {
      * @return date video was published in epoch millis
      */
     public long getPublishedDate() {
-        return publishDate;
+        return published;
     }
 
     /**
      * @return date refreshed on in epoch millis
      */
-    public long getRefreshedOnDate() {
-        return refreshedOnDate;
+    public long getRefreshedOn() {
+        return refreshedOn;
     }
 
-    public void setRefreshedOnDate(long epochMillis) {
-        this.refreshedOnDate = epochMillis;
+    public void setRefreshedOn(long epochMillis) {
+        this.refreshedOn = epochMillis;
     }
 
     /**
