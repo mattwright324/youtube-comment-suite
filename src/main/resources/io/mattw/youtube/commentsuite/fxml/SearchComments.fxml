@@ -119,6 +119,9 @@
                 <Button fx:id="btnSearch" text="Search" prefWidth="140" styleClass="btnPrimary" />
                 <Button fx:id="btnClear" text="Clear Results" prefWidth="140" />
             </HBox>
+            <HBox spacing="10" alignment="CENTER">
+                <Button fx:id="btnExport" text="Export Results" prefWidth="140" styleClass="btnSecondary" disable="true" />
+            </HBox>
         </VBox>
     </HBox>
 
@@ -130,5 +133,10 @@
     <!-- Overlay: Reply / Show More -->
     <OverlayModal visible="false" fx:id="showMoreModal">
         <title><String fx:value="Comment View" /></title>
+    </OverlayModal>
+
+    <!-- Overlay: Export Comment Results -->
+    <OverlayModal visible="false" fx:id="exportModal">
+        <title><String fx:value="Export search results " /></title>
     </OverlayModal>
 </StackPane>

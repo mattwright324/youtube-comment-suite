@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.ImageLoader;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -11,7 +12,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import io.mattw.youtube.commentsuite.ImageLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,37 +23,36 @@ import static javafx.application.Platform.runLater;
 /**
  * Controls the header: switching content and opening the settings view.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class Main implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(Main.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
-    private @FXML ImageView headerIcon;
-    private @FXML ToggleGroup headerToggleGroup;
-    private @FXML ToggleButton btnSearchComments;
-    private @FXML ToggleButton btnManageGroups;
-    private @FXML ToggleButton btnSearchYoutube;
-    private @FXML StackPane content;
+    @FXML private ImageView headerIcon;
+    @FXML private ToggleGroup headerToggleGroup;
+    @FXML private ToggleButton btnSearchComments;
+    @FXML private ToggleButton btnManageGroups;
+    @FXML private ToggleButton btnSearchYoutube;
+    @FXML private StackPane content;
 
-    private @FXML Button btnSettings;
-    private @FXML ImageView settingsIcon;
+    @FXML private Button btnSettings;
+    @FXML private ImageView settingsIcon;
 
-    private @FXML Pane searchComments;
-    private @FXML Pane manageGroups;
-    private @FXML Pane searchYoutube;
-    private @FXML Pane settings;
+    @FXML private Pane searchComments;
+    @FXML private Pane manageGroups;
+    @FXML private Pane searchYoutube;
+    @FXML private Pane settings;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize Main");
 
         headerToggleGroup.getToggles().addListener((ListChangeListener<Toggle>) c -> {
-            while(c.next()) {
-                for(final Toggle addedToggle : c.getAddedSubList()) {
+            while (c.next()) {
+                for (final Toggle addedToggle : c.getAddedSubList()) {
                     ((ToggleButton) addedToggle).addEventFilter(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
-                        if(addedToggle.equals(headerToggleGroup.getSelectedToggle()))
+                        if (addedToggle.equals(headerToggleGroup.getSelectedToggle()))
                             mouseEvent.consume();
                     });
                 }

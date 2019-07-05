@@ -1,10 +1,11 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.Channel;
+import com.google.api.services.youtube.model.ChannelListResponse;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.datav3.Parts;
-import io.mattw.youtube.datav3.YouTubeData3;
-import io.mattw.youtube.datav3.entrypoints.ChannelsList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,20 +18,22 @@ import java.util.Collections;
  * Combination of YouTubeChannel and OAuth2Tokens as sign-in.
  * Data stored in Config 'commentsuite.json'
  *
- * @since 2018-12-30
+ * TODO: Update tokens on app start each time?
+ * Currently only refreshing tokens when they are most needed, when posting a reply.
+ * - {@link OAuth2Handler#postReply(String, String)}
+ *
  * @author mattwright324
  */
 public class YouTubeAccount implements Serializable {
 
-    private transient Logger logger = LogManager.getLogger(this);
+    private static final transient Logger logger = LogManager.getLogger();
 
     private String username, channelId, thumbUrl;
     private OAuth2Tokens tokens;
 
-    /**
-     * Default constructor.
-     */
-    public YouTubeAccount() {}
+    public YouTubeAccount() {
+        // default constructor
+    }
 
     /**
      * Only used with "YouTube Account Sign-in," otherwise initialized by Gson & Config.
@@ -44,29 +47,28 @@ public class YouTubeAccount implements Serializable {
     /**
      * Using the OAuth2Tokens passed in, query the YouTube API to get the "mine"
      * channel for those tokens.
-     *
+     * <p>
      * Pushes the channel to the database.
      */
     void updateData() {
         CommentDatabase database = FXMLSuite.getDatabase();
-        YouTubeData3 youtube = FXMLSuite.getYoutubeApiForAccounts();
+        YouTube youtube = FXMLSuite.getYouTube();
 
-        logger.debug("Getting account data for [accessToken={}]", this.tokens.getAccessToken().substring(0,10)+"...");
-
-        String oldAccessToken = youtube.getProfileAccessToken();
-        String newAccessToken = getTokens().getAccessToken();
-
-        youtube.setProfileAccessToken(newAccessToken);
+        logger.debug("Getting account data for [username={}]", getUsername());
 
         try {
-            ChannelsList cl = ((ChannelsList) youtube.channelsList().part(Parts.SNIPPET)).getMine("");
-            ChannelsList.Item cli = cl.getItems()[0];
+            ChannelListResponse cl = youtube.channels().list("snippet")
+                    .setOauthToken(getTokens().getAccessToken())
+                    .setMine(true)
+                    .execute();
+
+            Channel cli = cl.getItems().get(0);
 
             this.channelId = cli.getId();
 
-            if(cli.hasSnippet()) {
+            if (cli.getSnippet() != null) {
                 this.username = cli.getSnippet().getTitle();
-                this.thumbUrl = cli.getSnippet().getThumbnails().getMedium().getURL().toString();
+                this.thumbUrl = cli.getSnippet().getThumbnails().getMedium().getUrl();
 
                 try {
                     YouTubeChannel channel = new YouTubeChannel(cli);
@@ -76,12 +78,14 @@ public class YouTubeAccount implements Serializable {
                     logger.error("Unable to insert account channel into database.", e);
                 }
             }
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                logger.warn("Tokens have expired for account [username={}]", getUsername());
+            } else {
+                logger.error("An unexpected error occurred.", e);
+            }
         } catch (IOException e) {
             logger.error("Failed to query for account channel info.", e);
-        } finally {
-            if(oldAccessToken == null || oldAccessToken.trim().isEmpty()) {
-                youtube.setProfileAccessToken(newAccessToken);
-            }
         }
     }
 

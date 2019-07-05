@@ -11,7 +11,6 @@ import static javafx.application.Platform.runLater;
 
 /**
  * @author mattwright324
- * @since 2018-12-30
  */
 public class ConfigData implements Serializable {
 
@@ -25,7 +24,8 @@ public class ConfigData implements Serializable {
     private List<YouTubeAccount> accounts = new ArrayList<>();
     private String youtubeApiKey = defaultApiKey;
 
-    public ConfigData() {}
+    public ConfigData() {
+    }
 
     public String getDefaultApiKey() {
         return defaultApiKey;
@@ -44,12 +44,7 @@ public class ConfigData implements Serializable {
     }
 
     public void refreshAccounts() {
-        accounts.forEach(acc -> {
-            FXMLSuite.getYoutubeApiForAccounts()
-                    .setProfileAccessToken(acc.getTokens().getAccessToken());
-
-            acc.updateData();
-        });
+        accounts.forEach(YouTubeAccount::updateData);
     }
 
     public void addAccount(YouTubeAccount account) {

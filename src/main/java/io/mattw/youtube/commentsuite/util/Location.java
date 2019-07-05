@@ -11,17 +11,15 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * @since 2018-12-30
- * @author mattwright324
- *
  * @param <T> LocationProvider
  * @param <K> return data object
+ * @author mattwright324
  */
 public class Location<T extends LocationProvider, K> {
 
     public static String UA_W10_CHROME70 = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36";
 
-    private Logger logger = LogManager.getLogger(this);
+    private static final Logger logger = LogManager.getLogger();
 
     private Gson gson = new Gson();
     private T locationProvider;
@@ -41,6 +39,7 @@ public class Location<T extends LocationProvider, K> {
 
     /**
      * Using the Amazon checkip service, returns your external address.
+     *
      * @return your external ip address
      * @throws IOException failed to connect to web or checkip.amazonaws.com
      */

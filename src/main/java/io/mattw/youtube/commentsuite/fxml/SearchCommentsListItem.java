@@ -1,6 +1,10 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
+import io.mattw.youtube.commentsuite.db.YouTubeComment;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
+import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Hyperlink;
@@ -10,9 +14,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.HBox;
-import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.commentsuite.db.YouTubeComment;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,20 +22,19 @@ import java.io.IOException;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class SearchCommentsListItem extends HBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(SearchCommentsListItem.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
-    private @FXML ImageView thumbnail;
-    private @FXML Hyperlink author;
-    private @FXML Label commentText;
-    private @FXML Label date;
-    private @FXML Label type;
-    private @FXML Label likes;
-    private @FXML Hyperlink showMore, viewTree, reply;
+    @FXML private ImageView thumbnail;
+    @FXML private Hyperlink author;
+    @FXML private Label commentText;
+    @FXML private Label date;
+    @FXML private Label type;
+    @FXML private Label likes;
+    @FXML private Hyperlink showMore, viewTree, reply;
 
     private YouTubeComment comment;
     private YouTubeChannel channel;
@@ -61,25 +61,25 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         author.setOnAction(ae -> browserUtil.open(channel.buildYouTubeLink()));
         author.setBorder(Border.EMPTY);
 
-        commentText.setText(comment.getCleanText());
+        commentText.setText(comment.getCleanText(false));
         commentText.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-        date.setText(comment.getDate().toString());
+        date.setText(DateUtils.epochMillisToDateTime(comment.getPublished()).toString());
 
-        if(comment.getReplyCount() > 0 || comment.isReply()) {
+        if (comment.getReplyCount() > 0 || comment.isReply()) {
             viewTree.setManaged(true);
             viewTree.setVisible(true);
-            if(!comment.isReply()) {
+            if (!comment.isReply()) {
                 viewTree.setText(String.format("View Thread (%,d)", comment.getReplyCount()));
             }
         }
 
-        if(comment.isReply()) {
+        if (comment.isReply()) {
             type.setText("Reply");
             this.getStyleClass().add("reply");
         }
 
-        if(comment.getLikes() > 0) {
+        if (comment.getLikes() > 0) {
             likes.setText(String.format("+%,d", comment.getLikes()));
         } else {
             likes.setVisible(false);
@@ -94,6 +94,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             reply.setVisible(!configData.getAccounts().isEmpty());
         });
     }
+
 
     YouTubeComment getComment() {
         return comment;
@@ -129,7 +130,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
      * Checks if profile thumb loaded and loads if present.
      */
     void checkProfileThumb() {
-        if(ImageCache.hasImageCached(channel)) {
+        if (ImageCache.hasImageCached(channel)) {
             loadProfileThumb();
         }
     }

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @since 2018-12-30
  * @link https://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html?page=2
  */
 public class NamedParameterStatement implements AutoCloseable {
@@ -19,6 +18,7 @@ public class NamedParameterStatement implements AutoCloseable {
     /**
      * Creates a NamedParameterStatement.  Wraps a call to
      * c.{@link Connection#prepareStatement(java.lang.String) prepareStatement}.
+     *
      * @param connection the database connection
      * @param query      the parameterized query
      * @throws SQLException if the statement could not be created
@@ -33,6 +33,7 @@ public class NamedParameterStatement implements AutoCloseable {
      * Parses a query with named parameters.  The parameter-index mappings are put into the map, and the
      * parsed query is returned.  DO NOT CALL FROM CLIENT CODE.  This method is non-private so JUnit code can
      * test it.
+     *
      * @param query    query to parse
      * @param paramMap map to hold parameter-index mappings
      * @return the parsed query
@@ -44,32 +45,32 @@ public class NamedParameterStatement implements AutoCloseable {
         boolean inDoubleQuote = false;
         int index = 1;
 
-        for(int i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             char c = query.charAt(i);
-            if(inSingleQuote) {
-                if(c == '\'') {
+            if (inSingleQuote) {
+                if (c == '\'') {
                     inSingleQuote = false;
                 }
-            } else if(inDoubleQuote) {
-                if(c == '"') {
+            } else if (inDoubleQuote) {
+                if (c == '"') {
                     inDoubleQuote = false;
                 }
             } else {
-                if(c == '\'') {
+                if (c == '\'') {
                     inSingleQuote = true;
-                } else if(c == '"') {
+                } else if (c == '"') {
                     inDoubleQuote = true;
-                } else if(c == ':' && i + 1 < length && Character.isJavaIdentifierStart(query.charAt(i+1))) {
+                } else if (c == ':' && i + 1 < length && Character.isJavaIdentifierStart(query.charAt(i + 1))) {
                     int j = i + 2;
-                    while(j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
+                    while (j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
                         j++;
                     }
-                    String name = query.substring(i+1,j);
+                    String name = query.substring(i + 1, j);
                     c = '?'; // replace the parameter with a question mark
                     i += name.length(); // skip past the end if the parameter
 
                     List indexList = (List) paramMap.get(name);
-                    if(indexList == null) {
+                    if (indexList == null) {
                         indexList = new LinkedList();
                         paramMap.put(name, indexList);
                     }
@@ -100,13 +101,14 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Returns the indexes for a parameter.
+     *
      * @param name parameter name
      * @return parameter indexes
      * @throws IllegalArgumentException if the parameter does not exist
      */
     private int[] getIndexes(String name) {
         int[] indexes = (int[]) indexMap.get(name);
-        if(indexes == null) {
+        if (indexes == null) {
             throw new IllegalArgumentException("Parameter not found: " + name);
         }
         return indexes;
@@ -115,9 +117,10 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Sets a parameter.
+     *
      * @param name  parameter name
      * @param value parameter value
-     * @throws SQLException if an error occurred
+     * @throws SQLException             if an error occurred
      * @throws IllegalArgumentException if the parameter does not exist
      * @see PreparedStatement#setObject(int, java.lang.Object)
      */
@@ -131,9 +134,10 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Sets a parameter.
+     *
      * @param name  parameter name
      * @param value parameter value
-     * @throws SQLException if an error occurred
+     * @throws SQLException             if an error occurred
      * @throws IllegalArgumentException if the parameter does not exist
      * @see PreparedStatement#setString(int, java.lang.String)
      */
@@ -147,9 +151,10 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Sets a parameter.
+     *
      * @param name  parameter name
      * @param value parameter value
-     * @throws SQLException if an error occurred
+     * @throws SQLException             if an error occurred
      * @throws IllegalArgumentException if the parameter does not exist
      * @see PreparedStatement#setInt(int, int)
      */
@@ -163,9 +168,10 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Sets a parameter.
+     *
      * @param name  parameter name
      * @param value parameter value
-     * @throws SQLException if an error occurred
+     * @throws SQLException             if an error occurred
      * @throws IllegalArgumentException if the parameter does not exist
      * @see PreparedStatement#setInt(int, int)
      */
@@ -179,9 +185,10 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Sets a parameter.
+     *
      * @param name  parameter name
      * @param value parameter value
-     * @throws SQLException if an error occurred
+     * @throws SQLException             if an error occurred
      * @throws IllegalArgumentException if the parameter does not exist
      * @see PreparedStatement#setTimestamp(int, java.sql.Timestamp)
      */
@@ -195,6 +202,7 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Returns the underlying statement.
+     *
      * @return the statement
      */
     public PreparedStatement getStatement() {
@@ -204,6 +212,7 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Executes the statement.
+     *
      * @return true if the first result is a {@link}
      * @throws SQLException if an error occurred
      * @see PreparedStatement#execute()
@@ -215,6 +224,7 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Executes the statement, which must be a query.
+     *
      * @return the query results
      * @throws SQLException if an error occurred
      * @see PreparedStatement#executeQuery()
@@ -226,8 +236,9 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Executes the statement, which must be an SQL INSERT, UPDATE or DELETE
-     statement;
+     * statement;
      * or an SQL statement that returns nothing, such as a DDL statement.
+     *
      * @return number of rows affected
      * @throws SQLException if an error occurred
      * @see PreparedStatement#executeUpdate()
@@ -239,6 +250,7 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Closes the statement.
+     *
      * @throws SQLException if an error occurred
      * @see Statement#close()
      */
@@ -249,6 +261,7 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Adds the current set of parameters as a batch entry.
+     *
      * @throws SQLException if something went wrong
      */
     public void addBatch() throws SQLException {
@@ -258,8 +271,9 @@ public class NamedParameterStatement implements AutoCloseable {
 
     /**
      * Executes all of the batched statements.
-     *
+     * <p>
      * See {@link Statement#executeBatch()} for details.
+     *
      * @return update counts for each statement
      * @throws SQLException if something went wrong
      */

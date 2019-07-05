@@ -1,13 +1,13 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.Group;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.Group;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,19 +22,18 @@ import static javafx.application.Platform.runLater;
  * vacuum option is selected before deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
  * if they did not select vacuum when deleting.
  *
- * @see ManageGroupsManager
- * @since 2018-12-30
  * @author mattwright324
+ * @see ManageGroupsManager
  */
 public class MGMVDeleteGroupModal extends VBox {
 
-    private static Logger logger = LogManager.getLogger(MGMVDeleteGroupModal.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
 
-    private @FXML CheckBox doVacuum;
-    private @FXML Button btnClose;
-    private @FXML Button btnDelete;
+    @FXML private CheckBox doVacuum;
+    @FXML private Button btnClose;
+    @FXML private Button btnDelete;
 
     private Group group;
 
@@ -56,13 +55,13 @@ public class MGMVDeleteGroupModal extends VBox {
                 });
 
                 try {
-                    logger.warn(String.format("Deleting Group[id=%s,name=%s]", group.getId(), group.getName()));
+                    logger.warn("Deleting Group[id={},name={}]", group.getId(), group.getName());
                     database.deleteGroup(this.group);
 
-                    logger.warn(String.format("Cleaning up after group delete [id=%s,name=%s]", group.getId(), group.getName()));
+                    logger.warn("Cleaning up after group delete [id={},name={}]", group.getId(), group.getName());
                     database.cleanUp();
                     database.commit();
-                    if(doVacuum.isSelected()) {
+                    if (doVacuum.isSelected()) {
                         database.vacuum();
                     }
                     database.refreshGroups();
@@ -74,7 +73,9 @@ public class MGMVDeleteGroupModal extends VBox {
                     btnClose.setDisable(false);
                 });
             }).start());
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     public Button getBtnClose() {

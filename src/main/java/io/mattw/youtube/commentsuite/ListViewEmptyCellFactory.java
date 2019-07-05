@@ -8,10 +8,9 @@ import javafx.scene.layout.Region;
 /**
  * Modifies the height of empty "dummy" cells in a ListView.
  * Option to display tooltip on all cells to find preferred dummy cell height.
- *
+ * <p>
  * https://stackoverflow.com/a/46261347/2650847
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class ListViewEmptyCellFactory<T extends Node> extends ListCell<T> {
@@ -37,7 +36,7 @@ public class ListViewEmptyCellFactory<T extends Node> extends ListCell<T> {
     protected void updateItem(T item, boolean empty) {
         super.updateItem(item, empty);
         setTooltip(tooltipHeight ? tool : null);
-        if(empty) {
+        if (empty) {
             setPrefHeight(height);
             setGraphic(null);
         } else {

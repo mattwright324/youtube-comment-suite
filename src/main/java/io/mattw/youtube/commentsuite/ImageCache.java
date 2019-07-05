@@ -2,8 +2,8 @@ package io.mattw.youtube.commentsuite;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import javafx.scene.image.Image;
 import io.mattw.youtube.commentsuite.db.YouTubeObject;
+import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,12 +16,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * Cache for images and letter avatars.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public interface ImageCache {
 
-    Logger logger = LogManager.getLogger(ImageCache.class.getSimpleName());
+    Logger logger = LogManager.getLogger();
 
     Cache<Object, Image> thumbCache = CacheBuilder.newBuilder()
             .maximumSize(500)
@@ -33,7 +32,7 @@ public interface ImageCache {
     }
 
     static Image toLetterAvatar(String s) {
-        if(s == null || s.isEmpty()) {
+        if (s == null || s.isEmpty()) {
             return toLetterAvatar(" ");
         } else {
             return toLetterAvatar(s.charAt(0));
@@ -42,7 +41,7 @@ public interface ImageCache {
 
     static Image toLetterAvatar(char letter) {
         Image image = thumbCache.getIfPresent(letter);
-        if(image == null) {
+        if (image == null) {
             image = new LetterAvatar(letter);
             thumbCache.put(letter, image);
         }
@@ -54,11 +53,11 @@ public interface ImageCache {
         ConfigData configData = config.getDataObject();
 
         Image image = thumbCache.getIfPresent(id);
-        if(image == null) {
+        if (image == null) {
             String fileFormat = "jpg";
             File thumbFile = new File(String.format("./thumbs/%s.%s", id, fileFormat));
-            if(configData.getArchiveThumbs() && !thumbFile.exists()) {
-                logger.debug(String.format("Archiving [id=%s]", id));
+            if (configData.getArchiveThumbs() && !thumbFile.exists()) {
+                logger.debug("Archiving [id={}]", id);
                 try {
                     thumbFile.mkdirs();
                     thumbFile.createNewFile();
@@ -67,7 +66,7 @@ public interface ImageCache {
                     logger.error("Failed to archive image.", e);
                 }
             }
-            if(thumbFile.exists()) {
+            if (thumbFile.exists()) {
                 image = new Image(String.format("file:///%s", thumbFile.getAbsolutePath()));
             } else {
                 image = new Image(imageUrl);
@@ -78,7 +77,7 @@ public interface ImageCache {
     }
 
     static Image findOrGetImage(YouTubeObject object) {
-        return findOrGetImage(object.getYoutubeId(), object.getThumbUrl());
+        return findOrGetImage(object.getId(), object.getThumbUrl());
     }
 
     static Image findOrGetImage(YouTubeAccount account) {
@@ -86,6 +85,6 @@ public interface ImageCache {
     }
 
     static boolean hasImageCached(YouTubeObject object) {
-        return thumbCache.getIfPresent(object.getYoutubeId()) != null;
+        return thumbCache.getIfPresent(object.getId()) != null;
     }
 }

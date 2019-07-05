@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public enum ImageLoader {
@@ -42,10 +41,9 @@ public enum ImageLoader {
     TOGGLE_QUERY("toggleQuery.png"),
     VIDEO("video.png"),
     VIDEO_PLACEHOLDER("videoPlaceholder.png"),
-    YOUTUBE("youtube.png")
-    ;
+    YOUTUBE("youtube.png");
 
-    private Logger logger = LogManager.getLogger(ImageLoader.class.getSimpleName());
+    private final Logger logger = LogManager.getLogger();
 
     private String basePath = "/io/mattw/youtube/commentsuite/img";
     private Image image;
@@ -55,7 +53,7 @@ public enum ImageLoader {
             image = new Image(getClass().getResource(String.format("%s/%s", basePath, fileName)).toExternalForm());
         } catch (Exception e) {
             image = ImageCache.toLetterAvatar('X');
-            logger.error("Failed to load resource image: "+fileName, e);
+            logger.error("Failed to load resource image: " + fileName, e);
         }
     }
 

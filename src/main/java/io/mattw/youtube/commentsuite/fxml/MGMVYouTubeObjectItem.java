@@ -1,5 +1,11 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.ImageCache;
+import io.mattw.youtube.commentsuite.ImageLoader;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
+import io.mattw.youtube.commentsuite.db.YouTubeObject;
+import io.mattw.youtube.commentsuite.db.YouTubeVideo;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
@@ -7,12 +13,6 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import io.mattw.youtube.commentsuite.ImageCache;
-import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.commentsuite.db.YouTubeObject;
-import io.mattw.youtube.commentsuite.db.YouTubeVideo;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,15 +21,14 @@ import java.io.IOException;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2019-01-05
  * @author mattwright324
  */
 public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
 
-    private static Logger logger = LogManager.getLogger();
+    private static final Logger logger = LogManager.getLogger();
 
-    private @FXML ImageView thumbnail;
-    private @FXML Label title, subtitle;
+    @FXML private ImageView thumbnail;
+    @FXML private Label title, subtitle;
 
     private YouTubeObject object;
     private Long value;
@@ -82,7 +81,7 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
             thumbnail.setCursor(Cursor.HAND);
             thumbnail.setOnMouseClicked(me -> browserUtil.open(object.buildYouTubeLink()));
 
-            if(isVideo) {
+            if (isVideo) {
                 thumbnail.setFitWidth(89);
             } else {
                 thumbnail.setFitWidth(50);
@@ -97,10 +96,10 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
             title.setText(object.getTitle());
 
             subtitle.setText(justSubtitle ? subtitleText :
-                        (commentsDisabled ? String.format("%s", subtitleSuffix) :
-                                String.format("%,d %s", value, subtitleSuffix)));
+                    (commentsDisabled ? String.format("%s", subtitleSuffix) :
+                            String.format("%,d %s", value, subtitleSuffix)));
 
-            if(commentsDisabled) {
+            if (commentsDisabled) {
                 subtitle.setStyle("-fx-text-fill:orangered");
             }
         } catch (IOException e) {

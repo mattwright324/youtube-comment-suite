@@ -14,7 +14,6 @@ import javafx.scene.text.TextAlignment;
 /**
  * Generates images with a character to mimic the style of default YouTube generated letter-avatars.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class LetterAvatar extends WritableImage {
@@ -42,6 +41,7 @@ public class LetterAvatar extends WritableImage {
 
     /**
      * Returns a new image rescaled to a new width and height.
+     *
      * @param scale width and height of new image
      */
     public Image rescaleTo(int scale) {
@@ -67,10 +67,10 @@ public class LetterAvatar extends WritableImage {
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
         gc.setFill(Color.TRANSPARENT);
-        gc.fillRect(0,0, scale, scale);
+        gc.fillRect(0, 0, scale, scale);
 
         gc.setFill(background);
-        gc.fillRect(0,0, scale, scale);
+        gc.fillRect(0, 0, scale, scale);
 
         gc.setFill(Color.WHITE);
         gc.setTextAlign(TextAlignment.CENTER);

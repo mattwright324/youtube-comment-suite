@@ -1,6 +1,11 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.model.Comment;
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
+import io.mattw.youtube.commentsuite.db.YouTubeComment;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
@@ -9,11 +14,6 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.YouTubeChannel;
-import io.mattw.youtube.commentsuite.db.YouTubeComment;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.datav3.entrypoints.CommentsList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,24 +28,23 @@ import static javafx.application.Platform.runLater;
  * in its entirety. It also allows the user to reply to the comment with any of currently signed-into accounts
  * if they exist.
  *
- * @see SearchComments
- * @since 2018-12-30
  * @author mattwright324
+ * @see SearchComments
  */
 public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
-    private static Logger logger = LogManager.getLogger(SCShowMoreModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
-    private @FXML Label errorMsg;
-    private @FXML TextArea commentText, replyText;
-    private @FXML TextField author;
-    private @FXML ImageView authorThumb, accountThumb;
-    private @FXML VBox replyPane;
-    private @FXML ComboBox<YouTubeAccount> comboAccountSelect;
-    private @FXML CheckBox openReply;
+    @FXML private Label errorMsg;
+    @FXML private TextArea commentText, replyText;
+    @FXML private TextField author;
+    @FXML private ImageView authorThumb, accountThumb;
+    @FXML private VBox replyPane;
+    @FXML private ComboBox<YouTubeAccount> comboAccountSelect;
+    @FXML private CheckBox openReply;
 
-    private @FXML Button btnClose;
-    private @FXML Button btnSubmit, btnReply;
+    @FXML private Button btnClose;
+    @FXML private Button btnSubmit, btnReply;
 
     private SimpleBooleanProperty replyMode = new SimpleBooleanProperty(false);
 
@@ -77,19 +76,18 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
             btnSubmit.setOnAction(ae -> runLater(() -> enableReplyMode(!replyMode.getValue())));
 
-            // TODO: Account selection, sending replies
             replyMode.addListener((o, ov, nv) -> {
                 btnSubmit.setText(replyMode.getValue() ? "Cancel Reply" : "Make Reply");
 
-                if(replyText.getText().trim().isEmpty()) {
-                    if(configData.getPrefixReplies()) {
-                        replyText.setText(String.format("+%s ", author.getText()));
+                if (replyText.getText().trim().isEmpty()) {
+                    if (configData.getPrefixReplies()) {
+                        replyText.setText(String.format("@%s ", author.getText()));
                     }
                 }
             });
 
             comboAccountSelect.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
-                if(nv != null) {
+                if (nv != null) {
                     Image thumb = ImageCache.findOrGetImage(nv);
 
                     runLater(() -> accountThumb.setImage(thumb));
@@ -104,10 +102,14 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                 comboAccountSelect.getSelectionModel().select(0);
             }));
 
-            btnReply.disableProperty().bind(replyText.textProperty().length().greaterThan(0)
-                    .and(comboAccountSelect.getSelectionModel().selectedIndexProperty().greaterThan(-1))
-                    .and(replyPane.visibleProperty().not())
-                    .or(replyText.disabledProperty()));
+            btnReply.visibleProperty().bind(btnReply.managedProperty());
+            btnReply.managedProperty().bind(replyPane.visibleProperty());
+            btnReply.disableProperty().bind(
+                    replyText.textProperty().isEmpty()
+                            .or(comboAccountSelect.getSelectionModel()
+                                    .selectedIndexProperty().isEqualTo(-1))
+            );
+
             btnReply.setOnAction(ae -> new Thread(() -> {
                 runLater(() -> {
                     replyText.setDisable(true);
@@ -118,16 +120,21 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                     oAuth2Handler.setTokens(comboAccountSelect.getValue().getTokens());
 
                     String parentId = loadedComment.isReply() ?
-                            loadedComment.getParentId() : loadedComment.getYoutubeId();
+                            loadedComment.getParentId() : loadedComment.getId();
 
-                    CommentsList.Item yourReply = oAuth2Handler.postReply(parentId, replyText.getText());
+                    Comment yourReply = oAuth2Handler.postReply(parentId, replyText.getText());
 
                     YouTubeComment comment = new YouTubeComment(yourReply, loadedComment.getVideoId());
+
+                    // Update tokens on reply in case we have refreshed them.
+                    // TODO: Better way to refresh tokens on YouTubeAccount and update config?
+                    comboAccountSelect.getValue().setTokens(oAuth2Handler.getTokens());
+                    config.save();
 
                     database.insertComments(Collections.singletonList(comment));
                     database.commit();
 
-                    if(openReply.isSelected()) {
+                    if (openReply.isSelected()) {
                         browserUtil.open(comment.buildYouTubeLink());
                     }
 
@@ -165,7 +172,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
     /**
      * Loads comment into modal.
      *
-     * @param comment comment to display
+     * @param comment   comment to display
      * @param replyMode show modal with reply elements enabled
      */
     public void loadComment(YouTubeComment comment, boolean replyMode) {
@@ -180,7 +187,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
             author.setText(channel.getTitle());
             authorThumb.setImage(thumb);
-            commentText.setText(comment.getCleanText());
+            commentText.setText(comment.getCleanText(true));
 
             enableReplyMode(replyMode);
         });

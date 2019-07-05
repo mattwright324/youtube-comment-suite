@@ -1,12 +1,5 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
@@ -14,13 +7,20 @@ import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
+import io.mattw.youtube.commentsuite.util.DateUtils;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,33 +32,32 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to select a specific video for comment searching that are within the currently
  * selected Group and GroupItem prior to opening the modal.
  *
- * @see SearchComments
- * @since 2018-12-30
  * @author mattwright324
+ * @see SearchComments
  */
 public class SCVideoSelectModal extends VBox implements Cleanable {
 
-    private static Logger logger = LogManager.getLogger(SCVideoSelectModal.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private static final String ALL_VIDEOS = "All Videos";
 
     private CommentDatabase database;
 
-    private @FXML Label lblSelection, errorMsg;
-    private @FXML Button btnSearch;
-    private @FXML TextField keywords;
-    private @FXML ComboBox<String> orderBy;
-    private @FXML ListView<MGMVYouTubeObjectItem> videoList;
-    private @FXML ImageView btnReset;
-    private @FXML Button btnClose, btnSubmit;
+    @FXML private Label lblSelection, errorMsg;
+    @FXML private Button btnSearch;
+    @FXML private TextField keywords;
+    @FXML private ComboBox<String> orderBy;
+    @FXML private ListView<MGMVYouTubeObjectItem> videoList;
+    @FXML private ImageView btnReset;
+    @FXML private Button btnClose, btnSubmit;
 
     private StringProperty valueProperty = new SimpleStringProperty();
 
     private Group group;
     private GroupItem groupItem;
     private YouTubeVideo selectedVideo;
-    private Map<String,String> orderTypes = new LinkedHashMap<>();
-    private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+    private Map<String, String> orderTypes = new LinkedHashMap<>();
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
     public SCVideoSelectModal() {
         logger.debug("Initialize SCVideoSelectModal");
@@ -94,7 +93,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
             setValueProperty(ALL_VIDEOS);
 
             videoList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
-                if(nv != null) {
+                if (nv != null) {
                     selectedVideo = (YouTubeVideo) nv.getObject();
 
                     runLater(() -> {
@@ -105,7 +104,9 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                 }
 
             });
-        } catch (IOException e) { logger.error("An error occurred loading the SCVideoSelectModal", e); }
+        } catch (IOException e) {
+            logger.error("An error occurred loading the SCVideoSelectModal", e);
+        }
     }
 
     public Button getBtnClose() {
@@ -121,7 +122,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
     }
 
     void loadWith(Group group, GroupItem groupItem) {
-        if(this.group != group || this.groupItem != groupItem) {
+        if (this.group != group || this.groupItem != groupItem) {
             this.group = group;
             this.groupItem = groupItem;
             reset();
@@ -148,7 +149,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                 String order = orderTypes.get(orderBy.getValue());
 
                 List<YouTubeVideo> videos;
-                if(groupItem.getYoutubeId().equals(GroupItem.ALL_ITEMS)) {
+                if (groupItem.getId().equals(GroupItem.ALL_ITEMS)) {
                     videos = database.getVideos(group, keywordText, order, 25);
                 } else {
                     videos = database.getVideos(groupItem, keywordText, order, 25);
@@ -159,8 +160,8 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                     videoList.getItems().addAll(videos.stream()
                             .map(video -> {
                                 String subtitle = String.format("Published %s • %,d views • %,d comments",
-                                        sdf.format(new Date(video.getPublishedDate())),
-                                        video.getViews(),
+                                        formatter.format(DateUtils.epochMillisToDateTime(video.getPublishedDate())),
+                                        video.getViewCount(),
                                         video.getCommentCount());
 
                                 return new MGMVYouTubeObjectItem(video, subtitle);

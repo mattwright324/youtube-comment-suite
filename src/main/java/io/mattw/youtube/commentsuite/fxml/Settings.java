@@ -1,6 +1,9 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -10,9 +13,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.datav3.YouTubeData3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,48 +29,47 @@ import java.util.stream.Stream;
 import static javafx.application.Platform.runLater;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class Settings implements Initializable {
 
-    private static Logger logger = LogManager.getLogger(Settings.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;
     private OAuth2Handler oauth2;
     private CommentDatabase database;
-    private YouTubeData3 youtube, youtubeForAccounts;
+    private YouTube youtube;
 
-    private @FXML Pane settingsPane;
+    @FXML private Pane settingsPane;
 
-    private @FXML VBox vboxSignIn;
-    private @FXML Button btnExitSignIn;
+    @FXML private VBox vboxSignIn;
+    @FXML private Button btnExitSignIn;
 
-    private @FXML WebView webView;
-    private @FXML ProgressIndicator webViewLoading;
+    @FXML private WebView webView;
+    @FXML private ProgressIndicator webViewLoading;
 
-    private @FXML VBox vboxSettings;
-    private @FXML Button btnClose;
-    private @FXML ImageView closeIcon;
-    private @FXML CheckBox prefixReply;
-    private @FXML CheckBox autoLoadStats;
-    private @FXML CheckBox downloadThumbs;
-    private @FXML CheckBox customKey;
-    private @FXML TextField youtubeApiKey;
-    private @FXML Button btnAddAccount;
-    private @FXML ListView<SettingsAccountItemView> accountList;
+    @FXML private VBox vboxSettings;
+    @FXML private Button btnClose;
+    @FXML private ImageView closeIcon;
+    @FXML private CheckBox prefixReply;
+    @FXML private CheckBox autoLoadStats;
+    @FXML private CheckBox downloadThumbs;
+    @FXML private CheckBox customKey;
+    @FXML private TextField youtubeApiKey;
+    @FXML private Button btnAddAccount;
+    @FXML private ListView<SettingsAccountItemView> accountList;
 
-    private @FXML ProgressIndicator cleanProgress;
-    private @FXML Button btnClean;
-    private @FXML ProgressIndicator resetProgress;
-    private @FXML Button btnReset;
-    private @FXML ProgressIndicator removeProgress;
-    private @FXML Button btnRemoveThumbs;
+    @FXML private ProgressIndicator cleanProgress;
+    @FXML private Button btnClean;
+    @FXML private ProgressIndicator resetProgress;
+    @FXML private Button btnReset;
+    @FXML private ProgressIndicator removeProgress;
+    @FXML private Button btnRemoveThumbs;
 
-    private @FXML Hyperlink github;
-    private @FXML ImageView githubIcon;
-    private @FXML Button btnSave;
+    @FXML private Hyperlink github;
+    @FXML private ImageView githubIcon;
+    @FXML private Button btnSave;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -79,8 +78,7 @@ public class Settings implements Initializable {
         oauth2 = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYoutubeApi();
-        youtubeForAccounts = FXMLSuite.getYoutubeApiForAccounts();
+        youtube = FXMLSuite.getYouTube();
 
         ConfigData configData = config.getDataObject();
         configData.refreshAccounts();
@@ -95,16 +93,16 @@ public class Settings implements Initializable {
         WebEngine webEngine = webView.getEngine();
         webEngine.setJavaScriptEnabled(true);
         webEngine.titleProperty().addListener((o, ov, nv) -> {
-            if(nv != null) {
-                logger.debug(String.format("YouTubeSignIn [loading-page=%s]", nv));
-                if(nv.contains("code=")) {
+            if (nv != null) {
+                logger.debug("YouTubeSignIn [loading-page={}]", nv);
+                if (nv.contains("code=")) {
                     configData.refreshAccounts();
 
                     String code = Stream.of(nv.split("&"))
                             .filter(query -> query.startsWith("Success code="))
                             .collect(Collectors.joining()).substring(13);
 
-                    logger.debug(String.format("YouTubeSignIn [returned-code=%s]", code));
+                    logger.debug("YouTubeSignIn [returned-code={}]", code);
                     try {
                         OAuth2Tokens tokens = oauth2.getAccessTokens(code);
                         oauth2.setTokens(tokens);
@@ -120,8 +118,8 @@ public class Settings implements Initializable {
                     } finally {
                         config.save();
                     }
-                } else if(nv.contains("error=")) {
-                    logger.debug(String.format("YouTubeSignIn Failed [%s]", nv));
+                } else if (nv.contains("error=")) {
+                    logger.debug("YouTubeSignIn Failed [{}]", nv);
                 }
             }
         });
@@ -134,7 +132,7 @@ public class Settings implements Initializable {
                     .stream()
                     .filter(Objects::nonNull)
                     .filter(account -> account.getChannelId() != null && account.getThumbUrl() != null
-                        && account.getUsername() != null)
+                            && account.getUsername() != null)
                     .map(SettingsAccountItemView::new)
                     .collect(Collectors.toList());
 
@@ -161,12 +159,10 @@ public class Settings implements Initializable {
             config.setDataObject(data);
             config.save();
 
-            if(customKey.isSelected()) {
-                youtube.setDataApiKey(data.getYoutubeApiKey());
-                youtubeForAccounts.setDataApiKey(data.getYoutubeApiKey());
+            if (customKey.isSelected()) {
+                FXMLSuite.setYoutubeApiKey(data.getYoutubeApiKey());
             } else {
-                youtube.setDataApiKey(data.getDefaultApiKey());
-                youtubeForAccounts.setDataApiKey(data.getDefaultApiKey());
+                FXMLSuite.setYoutubeApiKey(data.getDefaultApiKey());
             }
 
             logger.debug("Closing Settings");
@@ -178,7 +174,7 @@ public class Settings implements Initializable {
 
         githubIcon.setImage(ImageLoader.GITHUB.getImage());
 
-        btnAddAccount.setOnAction(ae -> runLater(() ->  {
+        btnAddAccount.setOnAction(ae -> runLater(() -> {
             vboxSignIn.setManaged(true);
             vboxSignIn.setVisible(true);
             vboxSettings.setDisable(true);
@@ -230,7 +226,6 @@ public class Settings implements Initializable {
             });
         }).start());
 
-        // TODO: Remove thumb files functionality
         btnRemoveThumbs.setOnAction(ae -> new Thread(() -> {
             runLater(() -> {
                 btnRemoveThumbs.setDisable(true);
@@ -251,7 +246,7 @@ public class Settings implements Initializable {
     private void deleteDirectoryContents(String dir) {
         File file = new File(dir);
 
-        for(File f : file.listFiles()) {
+        for (File f : file.listFiles()) {
             f.delete();
         }
     }

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class GroupStats {
@@ -16,6 +15,7 @@ public class GroupStats {
     private long totalLikes = 0;
     private long totalDislikes = 0;
     private long totalComments = 0;
+    private long uniqueViewers = 0;
     private List<YouTubeVideo> mostCommented = new ArrayList<>();
     private List<YouTubeVideo> mostDisliked = new ArrayList<>();
     private List<YouTubeVideo> mostViewed = new ArrayList<>();
@@ -28,7 +28,8 @@ public class GroupStats {
     private Map<YouTubeChannel, Long> mostActiveViewers = new LinkedHashMap<>();
     private Map<Long, Long> weeklyCommentHistogram = new LinkedHashMap<>();
 
-    public GroupStats() {}
+    public GroupStats() {
+    }
 
     public long getTotalViews() {
         return totalViews;
@@ -68,6 +69,15 @@ public class GroupStats {
 
     public void setTotalComments(long totalComments) {
         this.totalComments = totalComments;
+    }
+
+    public long getUniqueViewers() {
+        return uniqueViewers;
+    }
+
+    public GroupStats setUniqueViewers(long uniqueViewers) {
+        this.uniqueViewers = uniqueViewers;
+        return this;
     }
 
     public List<YouTubeVideo> getMostCommented() {

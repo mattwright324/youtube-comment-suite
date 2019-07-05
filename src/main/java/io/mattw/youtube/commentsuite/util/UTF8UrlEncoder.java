@@ -5,10 +5,9 @@ import java.net.URLEncoder;
 
 /**
  * Helper to encode strings to UTF-8 and ignoring the UnsupportedEncodingException.
- *
+ * <p>
  * That exception should never ever be thrown, if it does, the world must be ending.
  *
- * @since 2018-12-30
  * @author mattwright324
  */
 public class UTF8UrlEncoder {

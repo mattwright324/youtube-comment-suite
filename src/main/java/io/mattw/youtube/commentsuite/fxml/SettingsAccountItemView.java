@@ -13,16 +13,15 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 
 /**
- * @since 2018-12-30
  * @author mattwright324
  */
 public class SettingsAccountItemView extends HBox implements ImageCache {
 
-    private static Logger logger = LogManager.getLogger(SettingsAccountItemView.class.getName());
+    private static final Logger logger = LogManager.getLogger();
 
-    private @FXML ImageView accountThumb;
-    private @FXML Label accountName;
-    private @FXML Button btnRemove;
+    @FXML private ImageView accountThumb;
+    @FXML private Label accountName;
+    @FXML private Button btnRemove;
 
     private ConfigFile<ConfigData> configFile;
     private ConfigData configData;
@@ -46,6 +45,8 @@ public class SettingsAccountItemView extends HBox implements ImageCache {
             accountName.setText(account.getUsername());
 
             btnRemove.setOnAction(ae -> configData.removeAccount(account));
-        } catch (IOException e) { logger.error(e); }
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 }

@@ -11,16 +11,15 @@ import java.io.FileWriter;
 
 /**
  * Saves and loads a data object to the specified JSON file.
- *
+ * <p>
  * Can take any object as long as it has fields that Gson is configured to read.
  *
- * @since 2018-12-30
- * @author mattwright324
  * @param <T> data object JSON (de)serialized
+ * @author mattwright324
  */
 public class ConfigFile<T> {
 
-    private static Logger logger = LogManager.getLogger(ConfigFile.class.getSimpleName());
+    private static final Logger logger = LogManager.getLogger();
 
     private Gson gson = new Gson();
 
@@ -29,11 +28,11 @@ public class ConfigFile<T> {
     private File file;
 
     public ConfigFile(String fileName, T defaultObject) {
-        logger.debug(String.format("Initialize ConfigFile<%s> [fileName=%s]", defaultObject.getClass().getSimpleName(), fileName));
+        logger.debug("Initialize ConfigFile<{}> [fileName={}]", defaultObject.getClass().getSimpleName(), fileName);
         this.defaultObject = defaultObject;
         this.dataObject = defaultObject;
         this.file = new File(fileName);
-        if(!file.exists()) {
+        if (!file.exists()) {
             save();
         } else {
             load();
@@ -42,15 +41,15 @@ public class ConfigFile<T> {
 
     public void load() {
         logger.debug("Loading Config File");
-        try(FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr)) {
+        try (FileReader fr = new FileReader(file);
+             BufferedReader br = new BufferedReader(fr)) {
             String line;
             StringBuilder data = new StringBuilder();
             while ((line = br.readLine()) != null) {
                 data.append(line);
             }
             this.dataObject = (T) gson.fromJson(data.toString(), defaultObject.getClass());
-            if(this.dataObject == null) {
+            if (this.dataObject == null) {
                 logger.debug("Parsed config file returned null. Using default config data.");
                 this.dataObject = defaultObject;
             }
@@ -63,7 +62,7 @@ public class ConfigFile<T> {
 
     public void save() {
         logger.debug("Saving Config File");
-        try(FileWriter fw = new FileWriter(file)) {
+        try (FileWriter fw = new FileWriter(file)) {
             fw.write(gson.toJson(dataObject));
         } catch (Exception e) {
             logger.error(e);
