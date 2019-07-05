@@ -327,8 +327,8 @@ public class SearchComments implements Initializable, ImageCache {
         exportModal.getModalContainer().setMaxWidth(exportModal.getModalContainer().getMaxWidth() * 1.5);
         scExportModal.getBtnClose().setOnAction(ae -> exportModal.setVisible(false));
         btnExport.setOnAction(ae -> {
-            scExportModal.withQuery(commentQuery);
             scExportModal.cleanUp();
+            scExportModal.withQuery(commentQuery);
             exportModal.setVisible(true);
         });
     }

@@ -11,6 +11,7 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ProgressBar?>
 <fx:root type="VBox"
          xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml"
@@ -20,17 +21,15 @@
     </fx:define>
     <TabPane>
         <Tab text="Export" closable="false">
-            <VBox spacing="10">
+            <VBox spacing="5">
                 <padding>
                     <Insets topRightBottomLeft="10"/>
                 </padding>
                 <fx:include fx:id="errorMsg" source="AlertLabel.fxml" styleClass="alertWarning" alignment="CENTER"
                             VBox.vgrow="ALWAYS"
                             text="Warning: Condensed mode may take a very long time."/>
+                <ProgressBar fx:id="exportProgress" visible="false" managed="false" maxWidth="Infinity" VBox.vgrow="ALWAYS" />
                 <HBox spacing="10">
-                    <padding>
-                        <Insets top="10"/>
-                    </padding>
                     <VBox spacing="10" minWidth="120">
                         <Label text="Export mode:" styleClass="bold"/>
                         <RadioButton fx:id="radioFlattened" text="Flattened" toggleGroup="$toggleGroup"/>

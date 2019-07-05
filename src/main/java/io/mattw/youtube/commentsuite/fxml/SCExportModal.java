@@ -9,14 +9,12 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static javafx.application.Platform.runLater;
 
@@ -73,12 +72,17 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
     @FXML private RadioButton radioCondensed, radioFlattened;
     @FXML private TextArea exportModeExample;
 
+    @FXML private ProgressBar exportProgress;
+
     @FXML private Button btnClose;
     @FXML private Button btnStop;
     @FXML private Button btnSubmit;
 
     private CommentQuery commentQuery;
     private CommentDatabase database;
+
+    private AtomicLong atomicVideoProgress = new AtomicLong(0);
+    private long totalVideos = 0;
 
     private boolean quitExport = false;
 
@@ -111,17 +115,24 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                     btnSubmit.setVisible(false);
                     btnSubmit.setManaged(false);
 
+                    exportProgress.setVisible(true);
+                    exportProgress.setManaged(true);
+
+                    radioFlattened.setDisable(true);
+                    radioCondensed.setDisable(true);
+
                     btnStop.setVisible(true);
                     btnStop.setManaged(true);
 
-                    btnClose.setVisible(false);
-                    btnClose.setManaged(false);
+                    btnClose.setDisable(true);
                 });
 
                 final boolean flattenedMode = radioFlattened.isSelected();
 
                 new Thread(() -> {
                     LocalDateTime now = LocalDateTime.now();
+
+                    atomicVideoProgress.set(0);
 
                     File thisExportFolder = new File(exportsFolder, formatter.format(now) + "/");
                     thisExportFolder.mkdirs();
@@ -141,6 +152,8 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
                     try {
                         Set<String> uniqueVideoIds = commentQuery.getUniqueVideoIds();
+                        totalVideos = uniqueVideoIds.size();
+
                         LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>(uniqueVideoIds);
 
                         // Threads to speed up export a bit, condensed still will take a long time.
@@ -235,6 +248,12 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                     } catch (IOException e) {
                                         logger.error("Failed to write json file", e);
                                     }
+
+                                    final double progress = atomicVideoProgress.incrementAndGet() / (double) totalVideos;
+                                    runLater(() -> {
+                                        logger.debug("videos={}, total={}, progress={}", atomicVideoProgress.get(), totalVideos, progress);
+                                        exportProgress.setProgress(progress);
+                                    });
                                 }
                             }
                         });
@@ -254,8 +273,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                             btnStop.setVisible(false);
                             btnStop.setManaged(false);
 
-                            btnClose.setVisible(true);
-                            btnClose.setManaged(true);
+                            btnClose.setDisable(false);
 
                             if(!quitExport) {
                                 btnClose.fire();
@@ -310,10 +328,18 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
         btnSubmit.setVisible(true);
         btnSubmit.setManaged(true);
 
+        exportProgress.setVisible(false);
+        exportProgress.setManaged(false);
+        exportProgress.setProgress(0.0);
+
+        radioFlattened.setDisable(false);
+        radioCondensed.setDisable(false);
+
         btnStop.setVisible(false);
         btnStop.setManaged(false);
 
-        btnClose.setVisible(true);
-        btnClose.setManaged(true);
+        btnClose.setDisable(false);
+
+        quitExport = false;
     }
 }
