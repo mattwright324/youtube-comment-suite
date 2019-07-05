@@ -126,6 +126,11 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
                     YouTubeComment comment = new YouTubeComment(yourReply, loadedComment.getVideoId());
 
+                    // Update tokens on reply in case we have refreshed them.
+                    // TODO: Better way to refresh tokens on YouTubeAccount and update config?
+                    comboAccountSelect.getValue().setTokens(oAuth2Handler.getTokens());
+                    config.save();
+
                     database.insertComments(Collections.singletonList(comment));
                     database.commit();
 

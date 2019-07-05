@@ -8,6 +8,7 @@ import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.ClipboardUtil;
+import io.mattw.youtube.commentsuite.util.DateUtils;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -31,8 +32,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -82,7 +83,7 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private OverlayModal<SCShowMoreModal> showMoreModal;
     @FXML private OverlayModal<SCExportModal> exportModal;
 
-    private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private SimpleBooleanProperty searchingProperty = new SimpleBooleanProperty(false);
     private SimpleIntegerProperty pageProperty = new SimpleIntegerProperty();
     private SimpleIntegerProperty maxPageProperty = new SimpleIntegerProperty();
@@ -358,7 +359,7 @@ public class SearchComments implements Initializable, ImageCache {
                 videoDislikes.setText(trunc(v.getDislikes()));
                 videoViews.setText(String.format("%s views", trunc(v.getViewCount())));
                 videoDescription.setText(String.format("Published %s • %s",
-                        sdf.format(v.getPublishedDate()),
+                        formatter.format(DateUtils.epochMillisToDateTime(v.getPublishedDate())),
                         StringEscapeUtils.unescapeHtml4(v.getDescription())));
 
                 videoThumb.setCursor(Cursor.HAND);

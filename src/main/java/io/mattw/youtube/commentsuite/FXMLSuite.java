@@ -33,7 +33,6 @@ public class FXMLSuite extends Application {
     private static Location location = new Location<EurekaProvider, EurekaProvider.Location>(
             new EurekaProvider(), EurekaProvider.Location.class);
     private static ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
-    //private static YouTubeData3 youtubeApi, youtubeApiForAccounts;
     private static OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com",
             "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
     private static CommentDatabase database;
@@ -50,8 +49,6 @@ public class FXMLSuite extends Application {
                     .build();
 
             // System.setProperty("glass.win.uiScale", "100%");
-            //youtubeApi = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
-            //youtubeApiForAccounts = new YouTubeData3(config.getDataObject().getYoutubeApiKey());
             youtubeApiKey = config.getDataObject().getYoutubeApiKey();
 
             database = new CommentDatabase("commentsuite.sqlite3");
@@ -90,14 +87,6 @@ public class FXMLSuite extends Application {
     public static ConfigFile<ConfigData> getConfig() {
         return config;
     }
-
-    //public static YouTubeData3 getYoutubeApi() {
-    //    return youtubeApi;
-    //}
-
-    //public static YouTubeData3 getYoutubeApiForAccounts() {
-    //   return youtubeApiForAccounts;
-    //}
 
     public static YouTube getYouTube() {
         return youtube;

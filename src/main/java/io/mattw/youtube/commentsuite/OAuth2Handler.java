@@ -76,8 +76,8 @@ public class OAuth2Handler {
     }
 
     /**
-     * Attempts to send a reply to the parent comment id and text supplied. It will attempt to send to reply 10 times
-     * dateTo failure and throwing an error. On each failure, if it detects the tokens used by the account have
+     * Attempts to send a reply to the parent comment id and text supplied. It will attempt to send to reply 5 times
+     * after failure and throwing an error. On each failure, if it detects the tokens used by the account have
      * expired, it will attempt to refresh them and use and newly updated tokens.
      *
      * @param parentId     id of comment or parentId of reply-comment to reply to
@@ -100,6 +100,8 @@ public class OAuth2Handler {
                         .setOauthToken(tokens.getAccessToken())
                         .execute();
 
+                logger.debug("Successfully replied [id={}]", result.getId());
+
                 return result;
             } catch (IOException e) {
                 logger.warn("Failed on comment reply, {}", e.getLocalizedMessage());
@@ -109,7 +111,7 @@ public class OAuth2Handler {
             }
 
             attempt++;
-        } while (attempt < 10);
+        } while (attempt < 5);
 
         throw new IOException("Could not reply and failed to refresh tokens.");
     }

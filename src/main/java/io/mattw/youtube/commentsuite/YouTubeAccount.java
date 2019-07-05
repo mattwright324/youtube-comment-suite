@@ -18,6 +18,10 @@ import java.util.Collections;
  * Combination of YouTubeChannel and OAuth2Tokens as sign-in.
  * Data stored in Config 'commentsuite.json'
  *
+ * TODO: Update tokens on app start each time?
+ * Currently only refreshing tokens when they are most needed, when posting a reply.
+ * - {@link OAuth2Handler#postReply(String, String)}
+ *
  * @author mattwright324
  */
 public class YouTubeAccount implements Serializable {
@@ -77,6 +81,8 @@ public class YouTubeAccount implements Serializable {
         } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 401) {
                 logger.warn("Tokens have expired for account [username={}]", getUsername());
+            } else {
+                logger.error("An unexpected error occurred.", e);
             }
         } catch (IOException e) {
             logger.error("Failed to query for account channel info.", e);

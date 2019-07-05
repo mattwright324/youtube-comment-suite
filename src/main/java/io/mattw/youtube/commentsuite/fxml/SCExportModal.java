@@ -103,9 +103,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
             btnStop.setOnAction(ae -> {
                 quitExport = true;
 
-                runLater(() -> {
-                    btnStop.setDisable(true);
-                });
+                runLater(() -> btnStop.setDisable(true));
             });
 
             btnSubmit.setOnAction(ae -> {

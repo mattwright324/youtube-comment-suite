@@ -18,7 +18,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -71,7 +72,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private Double videoProgress = 0.0;
     private Double totalProgress = 0.0;
     private ElapsedTime elapsedTimer = new ElapsedTime();
-    private SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
 
     private ExecutorGroup gitemGroup = new ExecutorGroup(1);
     private ExecutorGroup videoCommentsGroup = new ExecutorGroup(10);
@@ -727,7 +728,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     }
 
     public void appendError(String error) {
-        String time = sdf.format(new Date());
+        final String time = formatter.format(LocalDateTime.now());
         runLater(() -> errorList.add(0, String.format("%s - %s", time, error)));
     }
 
