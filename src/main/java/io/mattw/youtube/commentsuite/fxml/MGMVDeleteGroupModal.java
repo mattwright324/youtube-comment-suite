@@ -19,7 +19,7 @@ import static javafx.application.Platform.runLater;
 /**
  * This modal allows the user to delete the entire Group of its ManageGroupsManager. This deletes only the Group
  * object from the database and does not clean up its GroupItems, Videos, Comments, or Channels unless the
- * vacuum option is selected dateTo deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
+ * vacuum option is selected before deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
  * if they did not select vacuum when deleting.
  *
  * @author mattwright324
@@ -58,7 +58,7 @@ public class MGMVDeleteGroupModal extends VBox {
                     logger.warn("Deleting Group[id={},name={}]", group.getId(), group.getName());
                     database.deleteGroup(this.group);
 
-                    logger.warn("Cleaning up dateFrom group delete [id={},name={}]", group.getId(), group.getName());
+                    logger.warn("Cleaning up after group delete [id={},name={}]", group.getId(), group.getName());
                     database.cleanUp();
                     database.commit();
                     if (doVacuum.isSelected()) {

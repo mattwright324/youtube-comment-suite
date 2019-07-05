@@ -14,7 +14,7 @@ import java.io.InputStreamReader;
  * Content of SQL Scripts are a mixture of single statements, multiple statements, and statements that require:
  * - Use in PreparedStatement (? chars)
  * - Use in NamedParameterStatement (:params)
- * - String replacement dateTo use in one of above (:order)
+ * - String replacement before use in one of above (:order)
  *
  * @author mattwright324
  */

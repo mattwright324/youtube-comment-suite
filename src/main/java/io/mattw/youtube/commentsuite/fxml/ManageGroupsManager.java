@@ -258,7 +258,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     /**
      * Reloads displayed timestamp and group stats information. Information displayed is queried from the database
-     * and formatted and processed dateTo being added to the labels, lists, and charts.
+     * and formatted and processed before being added to the labels, lists, and charts.
      *
      * @throws SQLException the group stats operation failed
      */

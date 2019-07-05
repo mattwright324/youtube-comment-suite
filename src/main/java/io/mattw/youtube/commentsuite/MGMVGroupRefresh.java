@@ -154,7 +154,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             try {
                 database.commit();
             } catch (SQLException e2) {
-                appendError("Failed to commit dateFrom refresh failure.");
+                appendError("Failed to commit after refresh failure.");
             }
 
             appendError(e.getLocalizedMessage());
@@ -289,8 +289,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             while (!videoQueue.isEmpty()) {
                 YouTubeVideo video = videoQueue.poll();
                 if (video != null) {
-                    int debugTotal = 0;
-
                     int attempts = 0;
                     CommentThreadListResponse ctl;
                     String pageToken = "";
@@ -320,8 +318,6 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                             .map(YouTubeComment::new)
                                             .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId())/* filter out G+ comments */)
                                             .collect(Collectors.toList());
-
-                                    debugTotal += comments.size();
 
                                     comments.forEach(c -> {
                                         if (c.getReplyCount() > 0) {
@@ -618,7 +614,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     }
 
     /**
-     * Await the background threads to finish dateTo continuing.
+     * Await the background threads to finish before continuing.
      *
      * @throws InterruptedException executors/thread was interrupted
      */
