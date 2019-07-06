@@ -8,6 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +18,6 @@ import java.util.regex.Pattern;
  * getYouTubeId() from YouTubeObject represents the GroupItem ID.
  *
  * @author mattwright324
- * @since 2018-12-30
  */
 public class GroupItem extends YouTubeObject {
 
@@ -27,6 +28,9 @@ public class GroupItem extends YouTubeObject {
     private String channelTitle;
     private long published;
     private long lastChecked;
+
+    private YouTube youtube;
+    private CommentDatabase database;
 
     /**
      * Used for converting selected search items for inserting into database.
@@ -105,6 +109,9 @@ public class GroupItem extends YouTubeObject {
     private void ofLink(String fullLink) throws IOException {
         logger.debug("Matching link to type [fullLink={}]", fullLink);
 
+        youtube = FXMLSuite.getYouTube();
+        database = FXMLSuite.getDatabase();
+
         Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
         Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
         Pattern playlist = Pattern.compile("(?:http[s]?://www.youtube.com/playlist\\?list=)([\\w_\\-]+)");
@@ -148,6 +155,8 @@ public class GroupItem extends YouTubeObject {
                     Video item = vl.getItems().get(0);
 
                     duplicate(new GroupItem(item));
+
+                    checkForNewChannel(item.getSnippet().getChannelId());
                 }
             } else if (type == YType.CHANNEL) {
                 YouTube.Channels.List cl = youtube.channels().list("snippet")
@@ -165,6 +174,8 @@ public class GroupItem extends YouTubeObject {
                     Channel item = clr.getItems().get(0);
 
                     duplicate(new GroupItem(item));
+
+                    checkForNewChannel(item.getId());
                 }
             } else if (type == YType.PLAYLIST) {
                 PlaylistListResponse pl = youtube.playlists().list("snippet")
@@ -176,9 +187,33 @@ public class GroupItem extends YouTubeObject {
                     Playlist item = pl.getItems().get(0);
 
                     duplicate(new GroupItem(item));
+
+                    checkForNewChannel(item.getSnippet().getChannelId());
                 }
             } else {
                 throw new IOException("Unexpected result, link was not of type ");
+            }
+        }
+    }
+
+    /**
+     * Makes sure the channel associated with this GroupItem is in the database.
+     */
+    private void checkForNewChannel(String channelId) {
+        if(!database.doesChannelExist(channelId)) {
+            try {
+                ChannelListResponse clr = youtube.channels().list("snippet")
+                        .setKey(FXMLSuite.getYouTubeApiKey())
+                        .setId(channelId)
+                        .execute();
+
+                YouTubeChannel channel = new YouTubeChannel(clr.getItems().get(0));
+
+                database.insertChannels(Collections.singletonList(channel));
+            } catch (IOException e) {
+                logger.error("Failed to get channel [id={}]", channelId);
+            } catch (SQLException e) {
+                logger.error("Failed to insert new channel [id={}]", channelId);
             }
         }
     }

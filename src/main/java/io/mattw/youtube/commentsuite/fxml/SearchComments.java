@@ -333,6 +333,9 @@ public class SearchComments implements Initializable, ImageCache {
         });
     }
 
+    /**
+     * Load video context and comment author profiles on comment interaction: on selection, show more, reply, view thread
+     */
     private void checkUpdateThumbs(SearchCommentsListItem commentItem) {
         YouTubeComment comment = commentItem.getComment();
 
@@ -353,7 +356,6 @@ public class SearchComments implements Initializable, ImageCache {
             final YouTubeVideo v = video;
             final YouTubeChannel va = database.getChannel(video.getChannelId());
             runLater(() -> {
-                author.setText(va.getTitle());
                 videoTitle.setText(v.getTitle());
                 videoLikes.setText(trunc(v.getLikes()));
                 videoDislikes.setText(trunc(v.getDislikes()));
@@ -364,8 +366,19 @@ public class SearchComments implements Initializable, ImageCache {
 
                 videoThumb.setCursor(Cursor.HAND);
                 videoThumb.setOnMouseClicked(me -> browserUtil.open(v.buildYouTubeLink()));
-                authorThumb.setCursor(Cursor.HAND);
-                authorThumb.setOnMouseClicked(me -> browserUtil.open(va.buildYouTubeLink()));
+
+                if(va != null) {
+                    author.setText(va.getTitle());
+                    authorThumb.setCursor(Cursor.HAND);
+                    authorThumb.setOnMouseClicked(me -> browserUtil.open(va.buildYouTubeLink()));
+                } else {
+                    author.setText("Error: Null Channel");
+                    authorThumb.setCursor(Cursor.DEFAULT);
+                    authorThumb.setOnMouseClicked(null);
+
+                    logger.error("Channel for video was null [id={}]", v.getChannelId());
+                }
+
             });
 
             Image vthumb = ImageCache.findOrGetImage(video);
@@ -379,6 +392,9 @@ public class SearchComments implements Initializable, ImageCache {
         }
     }
 
+    /**
+     * Validation of page number input.
+     */
     private int interpretPageValue(String value) {
         value = value.replaceAll("[^\\d]", "").trim();
         if (value.isEmpty()) {

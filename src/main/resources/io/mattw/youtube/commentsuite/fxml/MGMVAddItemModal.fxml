@@ -18,7 +18,7 @@
                 <padding>
                     <Insets topRightBottomLeft="10"/>
                 </padding>
-                <TextField fx:id="link" promptText="https://youtu.be/dQw4w9WgXcQ"/>
+                <TextField fx:id="link" promptText="https://youtu.be/6Z7REEnwKOQ"/>
                 <fx:include source="AlertLabel.fxml" styleClass="alertSuccess"
                             alignment="CENTER"
                             text="Click examples below to fill text field. "/>
@@ -28,33 +28,33 @@
                     </columnConstraints>
                     <Label text="Video #1" styleClass="bold, font14"
                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                    <Label text="https://youtu.be/dQw4w9WgXcQ" styleClass="font14, addItemExample"
+                    <Label text="https://youtu.be/6Z7REEnwKOQ" styleClass="font14, addItemExample"
                            fx:id="link1"
                            GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
                     <Label text="Video #2" styleClass="bold, font14"
                            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <Label text="https://www.youtube.com/watch?v=dQw4w9WgXcQ" styleClass="font14, addItemExample"
+                    <Label text="https://www.youtube.com/watch?v=6Z7REEnwKOQ" styleClass="font14, addItemExample"
                            fx:id="link2"
                            GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
                     <Label text="Playlist" styleClass="bold, font14"
                            GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                    <Label text="https://www.youtube.com/playlist?list=PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc"
+                    <Label text="https://www.youtube.com/playlist?list=PL05ED679DD1E1DB17"
                            styleClass="font14, addItemExample"
                            fx:id="link3"
                            GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
                     <Label text="Channel #1" styleClass="bold, font14"
                            GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-                    <Label text="https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw"
+                    <Label text="https://www.youtube.com/channel/UCe_3CoEeinvPMze2u_aENBg"
                            styleClass="font14, addItemExample"
                            fx:id="link4"
                            GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
                     <Label text="Channel #2" styleClass="bold, font14"
                            GridPane.columnIndex="0" GridPane.rowIndex="4"/>
-                    <Label text="https://www.youtube.com/user/RickAstleyVEVO" styleClass="font14, addItemExample"
+                    <Label text="https://www.youtube.com/user/oceanexplorergov" styleClass="font14, addItemExample"
                            fx:id="link5"
                            GridPane.columnIndex="1" GridPane.rowIndex="4"/>
                 </GridPane>

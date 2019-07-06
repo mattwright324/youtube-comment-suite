@@ -6,6 +6,7 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
@@ -85,8 +86,10 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
                 if (selectedTab.equals(tabSingular)) {
                     try {
+                        GroupItem newItem = new GroupItem(link.getText());
+
                         List<GroupItem> list = new ArrayList<>();
-                        list.add(new GroupItem(link.getText()));
+                        list.add(newItem);
 
                         if (!list.isEmpty()) {
                             try {
@@ -124,7 +127,9 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
                         for (String givenLink : givenLinks) {
                             try {
-                                list.add(new GroupItem(givenLink));
+                                GroupItem newItem = new GroupItem(givenLink);
+
+                                list.add(newItem);
                             } catch (IOException e) {
                                 failures++;
                             }
@@ -159,6 +164,11 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
         } catch (IOException e) {
             logger.error(e);
         }
+    }
+
+    public void checkItemChannel(GroupItem item) {
+        YouTubeChannel channel = database.getChannel(item.getId());
+
     }
 
     public void setError(String message) {
