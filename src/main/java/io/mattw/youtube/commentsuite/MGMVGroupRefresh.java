@@ -289,6 +289,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             while (!videoQueue.isEmpty()) {
                 YouTubeVideo video = videoQueue.poll();
                 if (video != null) {
+                    channelQueue.add(video.getChannelId());
+
                     int attempts = 0;
                     CommentThreadListResponse ctl;
                     String pageToken = "";

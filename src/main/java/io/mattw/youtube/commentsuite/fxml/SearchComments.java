@@ -353,39 +353,40 @@ public class SearchComments implements Initializable, ImageCache {
                 videoCache.put(videoId, video);
             }
 
-            final YouTubeVideo v = video;
-            final YouTubeChannel va = database.getChannel(video.getChannelId());
+            final YouTubeVideo fVideo = video;
+            final Image fVideoThumb = ImageCache.findOrGetImage(video);
             runLater(() -> {
-                videoTitle.setText(v.getTitle());
-                videoLikes.setText(trunc(v.getLikes()));
-                videoDislikes.setText(trunc(v.getDislikes()));
-                videoViews.setText(String.format("%s views", trunc(v.getViewCount())));
+                videoTitle.setText(fVideo.getTitle());
+                videoLikes.setText(trunc(fVideo.getLikes()));
+                videoDislikes.setText(trunc(fVideo.getDislikes()));
+                videoViews.setText(String.format("%s views", trunc(fVideo.getViewCount())));
                 videoDescription.setText(String.format("Published %s • %s",
-                        formatter.format(DateUtils.epochMillisToDateTime(v.getPublishedDate())),
-                        StringEscapeUtils.unescapeHtml4(v.getDescription())));
+                        formatter.format(DateUtils.epochMillisToDateTime(fVideo.getPublishedDate())),
+                        StringEscapeUtils.unescapeHtml4(fVideo.getDescription())));
 
                 videoThumb.setCursor(Cursor.HAND);
-                videoThumb.setOnMouseClicked(me -> browserUtil.open(v.buildYouTubeLink()));
+                videoThumb.setOnMouseClicked(me -> browserUtil.open(fVideo.buildYouTubeLink()));
+                videoThumb.setImage(fVideoThumb);
+            });
 
-                if(va != null) {
-                    author.setText(va.getTitle());
+
+            final YouTubeChannel fVideoAuthor = database.getChannel(video.getChannelId());
+            final Image fAuthorThumb = fVideoAuthor != null ?
+                    ImageCache.findOrGetImage(fVideoAuthor) : ImageCache.toLetterAvatar(' ');
+            runLater(() -> {
+                if(fVideoAuthor != null) {
+                    author.setText(fVideoAuthor.getTitle());
                     authorThumb.setCursor(Cursor.HAND);
-                    authorThumb.setOnMouseClicked(me -> browserUtil.open(va.buildYouTubeLink()));
+                    authorThumb.setOnMouseClicked(me -> browserUtil.open(fVideoAuthor.buildYouTubeLink()));
+                    authorThumb.setImage(fAuthorThumb);
                 } else {
                     author.setText("Error: Null Channel");
                     authorThumb.setCursor(Cursor.DEFAULT);
                     authorThumb.setOnMouseClicked(null);
+                    authorThumb.setImage(fAuthorThumb);
 
-                    logger.error("Channel for video was null [id={}]", v.getChannelId());
+                    logger.error("Channel for video was null [id={}]", fVideo.getChannelId());
                 }
-
-            });
-
-            Image vthumb = ImageCache.findOrGetImage(video);
-            Image athumb = ImageCache.findOrGetImage(va);
-            runLater(() -> {
-                videoThumb.setImage(vthumb);
-                authorThumb.setImage(athumb);
             });
         } catch (SQLException e) {
             logger.error("Failed to load YouTubeVideo", e);
