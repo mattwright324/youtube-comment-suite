@@ -25,10 +25,13 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -266,7 +269,15 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         runLater(() -> btnReload.setDisable(true));
 
         cleanUp();
-        updateLastRefreshed();
+
+        new Timer().schedule(
+            new TimerTask() {
+                @Override
+                public void run() {
+                    updateLastRefreshed();
+                }
+            }, 0, Duration.ofSeconds(30).toMillis()
+        );
 
         GroupStats groupStats = database.getGroupStats(this.group);
 
@@ -404,34 +415,29 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     private void updateLastRefreshed() {
         long timestamp = database.getLastChecked(this.group);
-        runLater(() -> refreshStatus.setText(timestamp == Long.MAX_VALUE ? "Never refreshed." : timeSince(timestamp)));
+
+        final String formattedTimestamp =
+                timestamp == Long.MAX_VALUE ?
+                        "Never refreshed." : timeSince(timestamp);
+
+        runLater(() -> refreshStatus.setText(formattedTimestamp));
     }
 
     private String timeSince(long timestamp) {
-        long diff = System.currentTimeMillis() - timestamp;
-        long temp = diff;
-        long ms = temp % 1000;
-        temp /= 1000;
-        long s = temp % 60;
-        temp /= 60;
-        long m = temp % 60;
-        temp /= 60;
-        long h = temp % 24;
-        temp /= 24;
-        long d = temp;
-        temp /= 7;
-        long w = temp;
+        LocalDateTime dateTime = DateUtils.epochMillisToDateTime(timestamp);
 
-        if (diff < 1000 * 60) {
+        Duration diff = Duration.between(dateTime, LocalDateTime.now());
+
+        if(diff.minusSeconds(60).isNegative()) {
             return "just now";
-        } else if (diff < 1000 * 60 * 60) {
-            return String.format("%s minute(s) ago", m);
-        } else if (diff < 1000 * 60 * 60 * 24) {
-            return String.format("%s hour(s) ago", h);
-        } else if (diff < 1000 * 60 * 60 * 24 * 7) {
-            return String.format("%s day(s)ago", d);
+        } else if(diff.minusMinutes(60).isNegative()) {
+            return String.format("%s minute(s) ago", diff.toMinutes());
+        } else if(diff.minusHours(24).isNegative()) {
+            return String.format("%s hour(s) ago", diff.toHours());
+        } else if(diff.minusDays(7).isNegative()) {
+            return String.format("%s day(s) ago", diff.toDays());
         } else {
-            return String.format("%s week(s) ago", w);
+            return String.format("%s week(s) ago", diff.toDays() / 7);
         }
     }
 

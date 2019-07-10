@@ -9,5 +9,7 @@ package io.mattw.youtube.commentsuite;
  * @author mattwright324
  */
 public interface Cleanable {
+
     void cleanUp();
+
 }

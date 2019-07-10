@@ -46,8 +46,11 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
     @FXML private TabPane tabPane;
     @FXML private Tab tabSingular, tabBulk;
 
+    @FXML private VBox singularPane;
     @FXML private TextField link;
     @FXML private Label link1, link2, link3, link4, link5;
+
+    @FXML private VBox bulkPane;
     @FXML private TextArea multiLink;
 
     @FXML private Button btnClose, btnSubmit;
@@ -67,6 +70,9 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
         loader.setRoot(this);
         try {
             loader.load();
+
+            bulkPane.maxHeightProperty().bind(singularPane.heightProperty());
+            multiLink.maxHeightProperty().bind(singularPane.heightProperty());
 
             Label[] links = {link1, link2, link3, link4, link5};
             for (Label l : links) {
@@ -164,11 +170,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
         } catch (IOException e) {
             logger.error(e);
         }
-    }
-
-    public void checkItemChannel(GroupItem item) {
-        YouTubeChannel channel = database.getChannel(item.getId());
-
     }
 
     public void setError(String message) {

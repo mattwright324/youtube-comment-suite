@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite.db;
 import com.google.api.services.youtube.model.Video;
 import com.google.api.services.youtube.model.VideoSnippet;
 import com.google.api.services.youtube.model.VideoStatistics;
+import io.mattw.youtube.commentsuite.Exportable;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +14,7 @@ import java.util.Optional;
 /**
  * @author mattwright324
  */
-public class YouTubeVideo extends YouTubeObject {
+public class YouTubeVideo extends YouTubeObject implements Exportable {
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -32,6 +33,11 @@ public class YouTubeVideo extends YouTubeObject {
     // Field(s) used just for export to make things pretty.
     private YouTubeChannel author;
 
+    /**
+     * Used for refreshing
+     *
+     * @param item YouTube video object with snippet and statistics parts present
+     */
     public YouTubeVideo(Video item) {
         super(item.getId(), item.getSnippet().getTitle(), item.getSnippet().getThumbnails().getMedium().getUrl());
         setTypeId(YType.VIDEO);
@@ -42,6 +48,8 @@ public class YouTubeVideo extends YouTubeObject {
             this.channelId = snippet.getChannelId();
             this.description = snippet.getDescription();
             this.published = snippet.getPublishedAt().getValue();
+        } else {
+            logger.warn("Video snippet is null");
         }
 
         if (item.getStatistics() != null) {
@@ -62,6 +70,8 @@ public class YouTubeVideo extends YouTubeObject {
             this.comments = Optional.ofNullable(stats.getCommentCount())
                     .orElse(BigInteger.ZERO)
                     .longValue();
+        } else {
+            logger.warn("Video statistics is null");
         }
 
         this.refreshedOn = System.currentTimeMillis();
@@ -85,6 +95,7 @@ public class YouTubeVideo extends YouTubeObject {
         this.responseCode = responseCode;
     }
 
+    @Override
     public void prepForExport() {
         publishDate = DateUtils.epochMillisToDateTime(published).toString();
         refreshedOnDate = DateUtils.epochMillisToDateTime(refreshedOn).toString();

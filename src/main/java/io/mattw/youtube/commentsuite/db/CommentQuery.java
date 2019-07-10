@@ -1,5 +1,7 @@
 package io.mattw.youtube.commentsuite.db;
 
+import io.mattw.youtube.commentsuite.Exportable;
+import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
  *
  * @author mattwright324
  */
-public class CommentQuery implements Serializable {
+public class CommentQuery implements Serializable, Exportable {
 
     private static final transient Logger logger = LogManager.getLogger();
     private final transient CommentDatabase database;
@@ -32,7 +34,10 @@ public class CommentQuery implements Serializable {
     private transient Map<String, Object> queryParams = new HashMap<>();
 
     // Formatted values for export file.
-    private String withGroup, withGroupItem, withVideos;
+    private String withGroup;
+    private String groupLastRefreshed;
+    private String withGroupItem;
+    private String withVideos;
 
     // Search params
     private Order order;
@@ -226,7 +231,6 @@ public class CommentQuery implements Serializable {
     }
 
     public CommentQuery setGroup(Group group) {
-        this.withGroup = String.format("%s / %s", group.getId(), group.getName());
         this.group = group;
         return this;
     }
@@ -236,13 +240,6 @@ public class CommentQuery implements Serializable {
     }
 
     public CommentQuery setGroupItem(Optional<GroupItem> groupItem) {
-        if (groupItem.isPresent()) {
-            GroupItem item = groupItem.get();
-
-            this.withGroupItem = String.format("%s / %s", item.getId(), item.getTitle());
-        } else {
-            this.withGroupItem = "All Item(s)";
-        }
         this.groupItem = groupItem;
         return this;
     }
@@ -306,13 +303,6 @@ public class CommentQuery implements Serializable {
     }
 
     public CommentQuery setVideos(Optional<List<YouTubeVideo>> videos) {
-        if (videos.isPresent()) {
-            this.withVideos = videos.get().stream()
-                    .map(YouTubeVideo::getId)
-                    .collect(Collectors.joining(","));
-        } else {
-            this.withVideos = "All Video(s)";
-        }
         this.videos = videos;
         return this;
     }
@@ -341,6 +331,35 @@ public class CommentQuery implements Serializable {
     public CommentQuery setPageNum(int pageNum) {
         this.pageNum = pageNum;
         return this;
+    }
+
+    @Override
+    public void prepForExport() {
+        if(group != null) {
+            this.withGroup = String.format("%s / %s", group.getId(), group.getName());
+
+            long lastRefreshed = database.getLastChecked(this.getGroup());
+
+            this.groupLastRefreshed =
+                    lastRefreshed == Long.MAX_VALUE ?
+                            "Never refreshed" : DateUtils.epochMillisToDateTime(lastRefreshed).toString();
+        }
+
+        if (groupItem.isPresent()) {
+            GroupItem item = groupItem.get();
+
+            this.withGroupItem = String.format("%s / %s", item.getId(), item.getTitle());
+        } else {
+            this.withGroupItem = "All Item(s)";
+        }
+
+        if (videos.isPresent()) {
+            this.withVideos = videos.get().stream()
+                    .map(YouTubeVideo::getId)
+                    .collect(Collectors.joining(","));
+        } else {
+            this.withVideos = "All Video(s)";
+        }
     }
 
     public enum Order {

@@ -7,7 +7,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
 /**
- * Interface for group refreshing.
+ * Common interface for group refreshing.
  *
  * @author mattwright324
  */

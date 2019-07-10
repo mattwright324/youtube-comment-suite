@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -69,10 +70,13 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
     @FXML private Label errorMsg;
 
+    @FXML private VBox exportPane;
     @FXML private RadioButton radioCondensed, radioFlattened;
     @FXML private TextArea exportModeExample;
 
     @FXML private ProgressBar exportProgress;
+
+    @FXML private ScrollPane helpScrollPane;
 
     @FXML private Button btnClose;
     @FXML private Button btnStop;
@@ -98,6 +102,8 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
             loader.load();
 
             cleanUp();
+
+            helpScrollPane.prefViewportHeightProperty().bind(exportPane.heightProperty());
 
             radioFlattened.setOnAction(ae -> runLater(() -> exportModeExample.setText(prettyFlattenedExample)));
             radioCondensed.setOnAction(ae -> runLater(() -> exportModeExample.setText(prettyCondensedExample)));
@@ -140,6 +146,8 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
                     try (FileWriter writer = new FileWriter(searchSettings)) {
                         logger.debug("Writing file {}", searchSettings.getName());
+
+                        commentQuery.prepForExport();
 
                         gson.toJson(commentQuery, writer);
 

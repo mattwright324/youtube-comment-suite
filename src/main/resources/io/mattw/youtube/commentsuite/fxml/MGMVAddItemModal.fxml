@@ -14,9 +14,9 @@
                 text="An issue occured." />
     <TabPane fx:id="tabPane">
         <Tab fx:id="tabSingular" text="Singular" closable="false">
-            <VBox spacing="10">
+            <VBox fx:id="singularPane" spacing="10">
                 <padding>
-                    <Insets topRightBottomLeft="10"/>
+                    <Insets top="10" />
                 </padding>
                 <TextField fx:id="link" promptText="https://youtu.be/6Z7REEnwKOQ"/>
                 <fx:include source="AlertLabel.fxml" styleClass="alertSuccess"
@@ -61,11 +61,11 @@
             </VBox>
         </Tab>
         <Tab fx:id="tabBulk" text="Bulk" closable="false">
-            <VBox spacing="10">
+            <VBox fx:id="bulkPane" spacing="10">
                 <padding>
-                    <Insets topRightBottomLeft="10"/>
+                    <Insets top="10" />
                 </padding>
-                <TextArea fx:id="multiLink" prefRowCount="9" wrapText="true"
+                <TextArea fx:id="multiLink" prefRowCount="99" wrapText="true"
                           promptText="Line separated list. Ignores duplicate links and filters bad links."/>
 
             </VBox>

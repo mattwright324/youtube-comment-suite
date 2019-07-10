@@ -21,9 +21,9 @@
     </fx:define>
     <TabPane>
         <Tab text="Export" closable="false">
-            <VBox spacing="5">
+            <VBox fx:id="exportPane" spacing="5">
                 <padding>
-                    <Insets topRightBottomLeft="10"/>
+                    <Insets top="10" />
                 </padding>
                 <fx:include fx:id="errorMsg" source="AlertLabel.fxml" styleClass="alertWarning" alignment="CENTER"
                             VBox.vgrow="ALWAYS"
@@ -45,10 +45,10 @@
             </VBox>
         </Tab>
         <Tab text="Help" closable="false">
-            <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="230">
-                <VBox fx:id="helpPane" spacing="10">
+            <ScrollPane fx:id="helpScrollPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="230" styleClass="noBorder">
+                <VBox spacing="10">
                     <padding>
-                        <Insets topRightBottomLeft="10"/>
+                        <Insets top="10" />
                     </padding>
                     <Label styleClass="font18" text="How it works"/>
 

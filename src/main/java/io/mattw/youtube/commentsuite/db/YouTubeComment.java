@@ -4,6 +4,7 @@ import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadSnippet;
+import io.mattw.youtube.commentsuite.Exportable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -16,7 +17,7 @@ import java.util.List;
 /**
  * @author mattwright324
  */
-public class YouTubeComment extends YouTubeObject {
+public class YouTubeComment extends YouTubeObject implements Exportable {
 
     public static final Logger logger = LogManager.getLogger();
 
@@ -100,6 +101,7 @@ public class YouTubeComment extends YouTubeObject {
         this.parentId = parentId;
     }
 
+    @Override
     public void prepForExport() {
         commentDate = DateUtils.epochMillisToDateTime(published).toString();
     }
