@@ -7,7 +7,7 @@
 YouTube Comment Suite lets you aggregate YouTube comments from numerous videos, playlists, and channels for archiving, general search, and showing activity. 
 Achieve the functionality of the *Community > Comments* tool that is provided to YouTube creators and more.
 
-![Examples](https://i.imgur.com/J8UP1Gp.png)
+![Examples](https://i.imgur.com/s742FqW.png)
 
 * Want to see how often a keyword/topic comes up?
 * Have a question that may have been answered in the thousands of comments and videos?
@@ -18,6 +18,7 @@ Achieve the functionality of the *Community > Comments* tool that is provided to
 * Cross-platform using Java 8 and JavaFX
 * Include multiple channels, playlists, and videos in a single group.
 * Search for comments by video, type, username, keyword, length, and date.
+* Export search results to handier and more consumable JSON format.
 * Display stats about videos: publishes per week, most popular, most disliked, most commented, and disabled.
 * Display stats about comments: posts per week, most active posters, most popular posters.
 * Option to save thumbnails and profiles for archival and offline viewing.
@@ -28,7 +29,9 @@ Achieve the functionality of the *Community > Comments* tool that is provided to
 [![GitHub Releases](https://img.shields.io/badge/downloads-releases-brightgreen.svg?maxAge=60&style=flat-square)](https://github.com/mattwright324/youtube-comment-suite/releases)
 
 ### Windows
-Extract the latest release zip file and run `youtube-comment-suite.jar`. 
+Extract the latest release zip file and run `youtube-comment-suite.jar`.
+
+* Be sure that you have Java 8 installed, if not you can get it [here from Oracle](https://www.java.com/en/download/).
 
 ### Linux / Ubuntu
 Extract the latest release zip file into its own folder. Before you can run the jar file, the version of Java installed may cause issue. Run `java -version` in the command line.

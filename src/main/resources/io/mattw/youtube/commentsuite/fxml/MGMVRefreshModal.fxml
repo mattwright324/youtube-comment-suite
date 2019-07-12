@@ -54,7 +54,6 @@
                             text="0 message(s)" />
                 <Hyperlink fx:id="expand" graphic="$expandIcon" maxHeight="30" />
             </HBox>
-
         </VBox>
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
@@ -62,6 +61,6 @@
         </HBox>
     </VBox>
     <ListView fx:id="errorList" visible="false" managed="false"
-              minWidth="250" maxHeight="200"
+              minWidth="250"
               styleClass="font12" />
 </fx:root>

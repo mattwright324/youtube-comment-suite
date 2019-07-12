@@ -71,6 +71,9 @@ public class MGMVRefreshModal extends HBox {
 
             expandIcon.setImage(ImageLoader.ANGLE_RIGHT.getImage());
 
+            errorList.prefHeightProperty().bind(statusPane.heightProperty());
+            errorList.maxHeightProperty().bind(statusPane.heightProperty());
+
             expand.setOnAction(ae -> {
                 expanded = !expanded;
                 runLater(() -> {

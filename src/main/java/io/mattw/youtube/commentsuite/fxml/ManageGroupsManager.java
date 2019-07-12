@@ -6,6 +6,7 @@ import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.db.GroupStats;
 import io.mattw.youtube.commentsuite.util.DateUtils;
+import io.mattw.youtube.commentsuite.util.FXUtils;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -115,11 +116,12 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         groupTitle.setMinWidth(Region.USE_PREF_SIZE);
         groupTitle.setMaxWidth(Region.USE_PREF_SIZE);
-        groupTitle.textProperty().addListener((ov, prevText, currText) -> resizeTextField(groupTitle));
+        groupTitle.textProperty().addListener((ov, prevText, currText) -> FXUtils.adjustTextFieldWidthByContent(groupTitle));
         groupTitle.fontProperty().addListener(fontListener = (o, ov, nv) -> {
-            resizeTextField(groupTitle);
+            FXUtils.adjustTextFieldWidthByContent(groupTitle);
+
             // One-time font listener resize.
-            // Will match content dateFrom font set on label from styleClass.
+            // Will match content after font set on label from styleClass.
             // If not removed, when clicking the 'Rename' button, the label will
             // flicker once between Font size 15 (default) and back to the styleClass font size
             // every time the edit button is clicked.
@@ -458,23 +460,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         }).start();
     }
 
-    /**
-     * Modifies a TextField's preferred width based on it's text content
-     *
-     * @param field TextField element
-     * @link https://stackoverflow.com/a/25643696/2650847
-     */
-    private void resizeTextField(TextField field) {
-        runLater(() -> {
-            Text text = new Text(field.getText());
-            text.setFont(field.getFont());
-            double width = text.getLayoutBounds().getWidth()
-                    + field.getPadding().getLeft() + field.getPadding().getRight()
-                    + 3d;
-            field.setPrefWidth(width);
-            field.positionCaret(field.getCaretPosition());
-        });
-    }
+
+
 
     /**
      * Cleans up the statistics area, removing all data, disables the accordion panes.

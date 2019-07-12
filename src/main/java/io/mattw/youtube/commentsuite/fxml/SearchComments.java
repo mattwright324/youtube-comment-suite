@@ -6,10 +6,7 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.commentsuite.util.ClipboardUtil;
-import io.mattw.youtube.commentsuite.util.DateUtils;
-import io.mattw.youtube.commentsuite.util.ElapsedTime;
+import io.mattw.youtube.commentsuite.util.*;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
@@ -24,7 +21,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,6 +81,8 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private OverlayModal<SCVideoSelectModal> videoSelectModal;
     @FXML private OverlayModal<SCShowMoreModal> showMoreModal;
     @FXML private OverlayModal<SCExportModal> exportModal;
+
+    private ChangeListener<Font> fontListener;
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private SimpleBooleanProperty searchingProperty = new SimpleBooleanProperty(false);
@@ -188,6 +189,19 @@ public class SearchComments implements Initializable, ImageCache {
                 int page = interpretPageValue(pageValue.getText());
                 submitPageValue(page);
             }
+        });
+        pageValue.setMinWidth(Region.USE_PREF_SIZE);
+        pageValue.setMaxWidth(Region.USE_PREF_SIZE);
+        pageValue.textProperty().addListener((ov, prevText, currText) -> FXUtils.adjustTextFieldWidthByContent(pageValue));
+        pageValue.fontProperty().addListener(fontListener = (o, ov, nv) -> {
+            FXUtils.adjustTextFieldWidthByContent(pageValue);
+
+            // One-time font listener resize.
+            // Will match content after font set on label from styleClass.
+            // If not removed, when clicking the 'Rename' button, the label will
+            // flicker once between Font size 15 (default) and back to the styleClass font size
+            // every time the edit button is clicked.
+            pageValue.fontProperty().removeListener(fontListener);
         });
 
         maxPageProperty.addListener((o, ov, nv) ->
@@ -443,6 +457,8 @@ public class SearchComments implements Initializable, ImageCache {
             pageValue.setText(String.valueOf(newPage));
             pageProperty.setValue(newPage);
         });
+
+        FXUtils.adjustTextFieldWidthByContent(pageValue);
     }
 
     /**

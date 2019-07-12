@@ -65,8 +65,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private AtomicLong atomicTotalVideos = new AtomicLong(0);
     private AtomicLong atomicNewComments = new AtomicLong(0);
     private AtomicLong atomicTotalComments = new AtomicLong(0);
-    private AtomicLong atomicNewViewers = new AtomicLong(0);
-    private ConcurrentHashMap<String,String> totalViewersHashMap = new ConcurrentHashMap<>();
+    private Set<String> concurrentTotalViewerSet = ConcurrentHashMap.newKeySet();
+    private Set<String> concurrentNewViewerSet = ConcurrentHashMap.newKeySet();
 
     private final int maxAttempts = 5;
     private Double videoProgress = 0.0;
@@ -178,8 +178,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                 atomicTotalVideos.get(),
                 atomicNewComments.get(),
                 atomicTotalComments.get(),
-                atomicNewViewers.get(),
-                totalViewersHashMap.size(),
+                concurrentNewViewerSet.size(),
+                concurrentTotalViewerSet.size(),
                 statusStep.getValue());
     }
 
@@ -592,19 +592,17 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     .map(YouTubeChannel::getId)
                     .collect(Collectors.toList());
 
-            // Update numbers
-            final long notYetExisting = database.countChannelsNotExisting(channelIds
+            Set<String> notYetExisting = database.findChannelsNotExisting(channelIds)
                     .stream()
-                    .filter(id -> !totalViewersHashMap.containsKey(id))
-                    .collect(Collectors.toList()));
+                    .filter(id -> !concurrentTotalViewerSet.contains(id))
+                    .collect(Collectors.toSet());
 
-            for(String channelId : channelIds) {
-                // We can't just simply count totals. Many people comment more than once.
-                totalViewersHashMap.put(channelId, StringUtils.EMPTY);
-            }
+            // We can't just simply count totals. Many people comment more than once.
+            concurrentNewViewerSet.addAll(notYetExisting);
+            setLongPropertyValue(newViewers, concurrentNewViewerSet.size());
 
-            setLongPropertyValue(newViewers, atomicNewViewers.addAndGet(notYetExisting));
-            setLongPropertyValue(totalViewers, totalViewersHashMap.size());
+            concurrentTotalViewerSet.addAll(channelIds);
+            setLongPropertyValue(totalViewers, concurrentTotalViewerSet.size());
 
             updateProgress();
 

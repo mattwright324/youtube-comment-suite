@@ -221,6 +221,18 @@ public class CommentDatabase implements Closeable {
         return notExists;
     }
 
+    public Collection<String> findChannelsNotExisting(Collection<String> channelIds) {
+        Set<String> idList = new HashSet<>();
+
+        for (String id : channelIds) {
+            if(!doesChannelExist(id)) {
+                idList.add(id);
+            }
+        }
+
+        return idList;
+    }
+
     public boolean doesVideoExist(String videoId) {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DOES_VIDEO_EXIST.toString())) {
             ps.setString(1, videoId);
