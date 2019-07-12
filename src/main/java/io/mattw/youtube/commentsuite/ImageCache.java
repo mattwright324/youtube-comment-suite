@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -21,6 +22,9 @@ import java.util.concurrent.TimeUnit;
 public interface ImageCache {
 
     Logger logger = LogManager.getLogger();
+
+    File thumbsDir = new File("thumbs/");
+    String thumbFormat = "jpg";
 
     Cache<Object, Image> thumbCache = CacheBuilder.newBuilder()
             .maximumSize(500)
@@ -54,16 +58,19 @@ public interface ImageCache {
 
         Image image = thumbCache.getIfPresent(id);
         if (image == null) {
-            String fileFormat = "jpg";
-            File thumbFile = new File(String.format("./thumbs/%s.%s", id, fileFormat));
+            File thumbFile = new File(thumbsDir, String.format("%s.%s", id, thumbFormat));
             if (configData.getArchiveThumbs() && !thumbFile.exists()) {
+                thumbsDir.mkdir();
+
                 logger.debug("Archiving [id={}]", id);
                 try {
-                    thumbFile.mkdirs();
+                    BufferedImage bufferedImage = ImageIO.read(new URL(imageUrl));
+
                     thumbFile.createNewFile();
-                    ImageIO.write(ImageIO.read(new URL(imageUrl)), fileFormat, thumbFile);
+
+                    ImageIO.write(bufferedImage, thumbFormat, thumbFile);
                 } catch (IOException e) {
-                    logger.error("Failed to archive image.", e);
+                    logger.error("Failed to archive image [id={}]", id, e);
                 }
             }
             if (thumbFile.exists()) {
@@ -71,7 +78,10 @@ public interface ImageCache {
             } else {
                 image = new Image(imageUrl);
             }
-            thumbCache.put(id, image);
+
+            if(!image.isError()) {
+                thumbCache.put(id, image);
+            }
         }
         return image;
     }
