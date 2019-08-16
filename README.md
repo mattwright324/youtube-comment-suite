@@ -33,11 +33,11 @@ Extract the latest release zip file and run `youtube-comment-suite.jar`.
 
 * Be sure that you have Java 8 installed, if not you can get it [here from Oracle](https://www.java.com/en/download/).
 
-### Linux / Ubuntu
+### Linux / Ubuntu 19
 Extract the latest release zip file into its own folder. Before you can run the jar file, the version of Java installed may cause issue. Run `java -version` in the command line.
 
-* If no Java is currently installed you can install OpenJDK and JavaFX by running `sudo apt-get install default-jre openjfx`.
-* If your version of Java is `OpenJDK` you will have to install JavaFX which is not included. Use the command `sudo apt-get install openjfx`. 
+* If no Java is currently installed you can install OpenJDK and JavaFX by running `sudo apt-get install openjdk-8-jre-headless`.
+* If your version of Java is `OpenJDK` you will have to install JavaFX which is not included. Follow [this answer to installed openjfx 8](https://askubuntu.com/a/1163546/526249). Previously, `openjfx` worked but now that installs openjfx 11 and is incompatible with jdk-8.
 * If your version of Java is `OracleJDK`, JavaFX is included and you are good to go!
 
 ## Getting Started
