@@ -10,7 +10,7 @@
          spacing="10">
     <HBox spacing="10">
         <Button fx:id="btnSearch" text="Search" />
-        <TextField fx:id="keywords" promptText="Keywords..." HBox.hgrow="ALWAYS"/>
+        <TextField fx:id="keywords" promptText="Keywords or specific video id" HBox.hgrow="ALWAYS"/>
         <ComboBox fx:id="orderBy" />
     </HBox>
     <HBox styleClass="alertPrimary">
