@@ -661,7 +661,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         VideoListResponse vl = yvl.execute();
         if (!vl.getItems().isEmpty()) {
             List<YouTubeVideo> videos = vl.getItems().stream()
-                    .map(YouTubeVideo::new).collect(Collectors.toList());
+                    .map(YouTubeVideo::new)
+                    .collect(Collectors.toList());
             videoQueue.addAll(videos);
             database.insertVideos(videos);
         }

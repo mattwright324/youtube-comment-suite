@@ -22,9 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -144,7 +143,9 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                     thisExportFolder.mkdirs();
                     File searchSettings = new File(thisExportFolder, searchSettingsFileName);
 
-                    try (FileWriter writer = new FileWriter(searchSettings)) {
+                    try (FileOutputStream fos = new FileOutputStream(searchSettings);
+                         OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+
                         logger.debug("Writing file {}", searchSettings.getName());
 
                         commentQuery.prepForExport();

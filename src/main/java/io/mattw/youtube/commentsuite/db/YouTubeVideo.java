@@ -55,7 +55,9 @@ public class YouTubeVideo extends YouTubeObject implements Exportable {
         if (item.getStatistics() != null) {
             VideoStatistics stats = item.getStatistics();
 
-            this.viewCount = stats.getViewCount().longValue();
+            this.viewCount = Optional.ofNullable(stats.getViewCount())
+                    .orElse(BigInteger.ZERO)
+                    .longValue();
 
             // Likes and dislikes may be disabled on the video
             this.likes = Optional.ofNullable(stats.getLikeCount())
