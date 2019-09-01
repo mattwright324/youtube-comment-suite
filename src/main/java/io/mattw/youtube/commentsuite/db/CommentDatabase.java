@@ -544,7 +544,8 @@ public class CommentDatabase implements Closeable {
                 .replace(":order", order))) {
             ps.setString(1, gitem.getId());
             ps.setString(2, "%" + keyword + "%");
-            ps.setInt(3, limit);
+            ps.setString(3, keyword);
+            ps.setInt(4, limit);
 
             return resultSetToVideoList(ps);
         }
@@ -555,7 +556,8 @@ public class CommentDatabase implements Closeable {
                 .replace(":order", order))) {
             ps.setString(1, group.getId());
             ps.setString(2, "%" + keyword + "%");
-            ps.setInt(3, limit);
+            ps.setString(3, keyword);
+            ps.setInt(4, limit);
 
             return resultSetToVideoList(ps);
         }

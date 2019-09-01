@@ -150,9 +150,9 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
 
                 List<YouTubeVideo> videos;
                 if (groupItem.getId().equals(GroupItem.ALL_ITEMS)) {
-                    videos = database.getVideos(group, keywordText, order, 25);
+                    videos = database.getVideos(group, keywordText, order, 50);
                 } else {
-                    videos = database.getVideos(groupItem, keywordText, order, 25);
+                    videos = database.getVideos(groupItem, keywordText, order, 50);
                 }
 
                 runLater(() -> {
