@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
@@ -37,7 +38,16 @@ public class MGMVGroupItemView extends HBox {
         loader.setRoot(this);
         try {
             loader.load();
-            icon.setImage(groupItem.getDefaultThumb());
+
+            if (ConfigData.FAST_GROUP_ADD_THUMB_PLACEHOLDER.equals(groupItem.getThumbUrl())) {
+                icon.setManaged(false);
+                icon.setVisible(false);
+            } else {
+                icon.setImage(groupItem.getDefaultThumb());
+                icon.setManaged(true);
+                icon.setVisible(true);
+            }
+
             title.setText(groupItem.getTitle());
             author.setText(groupItem.getChannelTitle());
             type.setText(groupItem.getTypeName());

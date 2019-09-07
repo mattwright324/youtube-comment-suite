@@ -29,13 +29,13 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.lang.Math.min;
+import static java.util.stream.Collectors.toMap;
 import static javafx.application.Platform.runLater;
 
 /**
@@ -185,7 +185,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             }
         }).start());
 
-        if (configData.getAutoLoadStats()) {
+        if (configData.isAutoLoadStats()) {
             btnReload.fire();
         }
 
@@ -450,18 +450,28 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         new Thread(() -> {
             logger.debug("[Load] Grabbing GroupItems");
             List<GroupItem> groupItems = database.getGroupItems(this.group);
-            List<MGMVGroupItemView> groupItemViews = groupItems.stream()
-                    .map(MGMVGroupItemView::new).collect(Collectors.toList());
             logger.debug("[Load] Found " + groupItems.size() + " GroupItem(s)");
-            runLater(() -> {
-                groupItemList.getItems().clear();
-                groupItemList.getItems().addAll(groupItemViews);
-            });
+
+            runLater(() -> groupItemList.getItems().clear());
+
+            Map<Integer, List<GroupItem>> partitioned = partition(groupItems, 1000);
+            for(int key : partitioned.keySet()) {
+                List<MGMVGroupItemView> groupItemViews = partitioned.get(key).stream()
+                        .map(MGMVGroupItemView::new)
+                        .collect(Collectors.toList());
+
+                runLater(() -> groupItemList.getItems().addAll(groupItemViews));
+            }
         }).start();
     }
 
-
-
+    private <T> Map<Integer, List<T>> partition(List<T> list, int pageSize) {
+        return IntStream.iterate(0, i -> i + pageSize)
+                .limit((list.size() + pageSize - 1) / pageSize)
+                .boxed()
+                .collect(toMap(i -> i / pageSize,
+                        i -> list.subList(i, min(i + pageSize, list.size()))));
+    }
 
     /**
      * Cleans up the statistics area, removing all data, disables the accordion panes.

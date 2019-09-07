@@ -4,4 +4,5 @@ WHERE video_id IN (
     JOIN group_gitem USING (gitem_id)
     WHERE group_id = ?
 ) AND http_code = 403
-ORDER BY publish_date DESC;
+ORDER BY publish_date DESC
+LIMIT ?;

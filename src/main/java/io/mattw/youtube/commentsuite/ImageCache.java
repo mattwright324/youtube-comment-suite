@@ -6,6 +6,7 @@ import io.mattw.youtube.commentsuite.db.YouTubeObject;
 import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sun.security.krb5.Config;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -56,10 +57,14 @@ public interface ImageCache {
         ConfigFile<ConfigData> config = FXMLSuite.getConfig();
         ConfigData configData = config.getDataObject();
 
+        if (ConfigData.FAST_GROUP_ADD_THUMB_PLACEHOLDER.equals(imageUrl)) {
+            return null;
+        }
+
         Image image = thumbCache.getIfPresent(id);
         if (image == null) {
             File thumbFile = new File(thumbsDir, String.format("%s.%s", id, thumbFormat));
-            if (configData.getArchiveThumbs() && !thumbFile.exists()) {
+            if (configData.isArchiveThumbs() && !thumbFile.exists()) {
                 thumbsDir.mkdir();
 
                 logger.debug("Archiving [id={}]", id);

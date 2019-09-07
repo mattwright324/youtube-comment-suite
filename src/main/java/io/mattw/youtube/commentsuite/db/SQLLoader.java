@@ -36,7 +36,7 @@ public enum SQLLoader {
     DELETE_GROUP("dml_delete_group.sql"),
     CREATE_GITEM("dml_create_gitem.sql"),
     CREATE_GROUP_GITEM("dml_create_group_gitem.sql"),
-    UPDATE_GITEM_LAST_CHECKED("dml_update_gitem_last_checked.sql"),
+    UPDATE_GITEM("dml_update_gitem.sql"),
     DELETE_GROUP_GITEM("dml_delete_group_gitem.sql"),
     UPDATE_VIDEO("dml_update_video.sql"),
     UPDATE_VIDEO_HTTPCODE("dml_update_video_httpcode.sql"),

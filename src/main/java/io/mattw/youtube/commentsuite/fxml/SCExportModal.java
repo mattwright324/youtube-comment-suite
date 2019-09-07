@@ -166,7 +166,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                         LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>(uniqueVideoIds);
 
                         // Threads to speed up export a bit, condensed still will take a long time.
-                        ExecutorGroup exportGroup = new ExecutorGroup(10);
+                        ExecutorGroup exportGroup = new ExecutorGroup(15);
                         exportGroup.submitAndShutdown(() -> {
                             String videoId;
                             while (!videoIdQueue.isEmpty() && !quitExport) {
