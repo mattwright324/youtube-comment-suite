@@ -128,7 +128,7 @@
                                 <Label text="Most Commented Videos (top 10)" styleClass="font18" />
                                 <ListView fx:id="commentedVideosList" minHeight="300" maxHeight="300" />
 
-                                <Label text="Comments Disabled (all)" styleClass="font18" />
+                                <Label text="Comments Disabled (up to 25)" styleClass="font18" />
                                 <ListView fx:id="disabledVideosList" minHeight="300" maxHeight="300" />
                             </VBox>
                         </ScrollPane>

@@ -55,6 +55,7 @@ public class Settings implements Initializable {
     @FXML private CheckBox prefixReply;
     @FXML private CheckBox autoLoadStats;
     @FXML private CheckBox downloadThumbs;
+    @FXML private CheckBox fastGroupAdd;
     @FXML private CheckBox customKey;
     @FXML private TextField youtubeApiKey;
     @FXML private Button btnAddAccount;
@@ -82,10 +83,11 @@ public class Settings implements Initializable {
 
         ConfigData configData = config.getDataObject();
         configData.refreshAccounts();
-        autoLoadStats.setSelected(configData.getAutoLoadStats());
-        prefixReply.setSelected(configData.getPrefixReplies());
-        downloadThumbs.setSelected(configData.getArchiveThumbs());
-        customKey.setSelected(configData.usingCustomApiKey());
+        autoLoadStats.setSelected(configData.isAutoLoadStats());
+        prefixReply.setSelected(configData.isPrefixReplies());
+        downloadThumbs.setSelected(configData.isArchiveThumbs());
+        fastGroupAdd.setSelected(configData.isFastGroupAdd());
+        customKey.setSelected(configData.isCustomApiKey());
         youtubeApiKey.setText(configData.getYoutubeApiKey());
 
         CookieManager cm = new CookieManager();
@@ -153,6 +155,7 @@ public class Settings implements Initializable {
             data.setAutoLoadStats(autoLoadStats.isSelected());
             data.setPrefixReplies(prefixReply.isSelected());
             data.setArchiveThumbs(downloadThumbs.isSelected());
+            data.setFastGroupAdd(fastGroupAdd.isSelected());
             data.setCustomApiKey(customKey.isSelected());
             data.setYoutubeApiKey(youtubeApiKey.getText());
 

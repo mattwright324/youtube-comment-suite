@@ -74,7 +74,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private ElapsedTime elapsedTimer = new ElapsedTime();
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
 
-    private ExecutorGroup gitemGroup = new ExecutorGroup(1);
+    private ExecutorGroup gitemGroup = new ExecutorGroup(10);
     private ExecutorGroup videoCommentsGroup = new ExecutorGroup(10);
     private ExecutorGroup repliesGroup = new ExecutorGroup(20);
     private ExecutorGroup commentInsertGroup = new ExecutorGroup(2);
@@ -92,6 +92,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     private YouTube youtube = FXMLSuite.getYouTube();
     private CommentDatabase database = FXMLSuite.getDatabase();
+    private ConfigData configData = FXMLSuite.getConfig().getDataObject();
 
     public MGMVGroupRefresh(Group group) {
         this.group = group;
@@ -197,7 +198,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     logger.debug("Grabbing Video for GroupItem[id={},type={},name={}]",
                             gitem.getId(), gitem.getTypeId(), gitem.getTitle());
                     try {
-                        database.updateGroupItemLastChecked(gitem);
+                        updateGroupItem(gitem);
 
                         if (gitem.getTypeId() == YType.CHANNEL || gitem.getTypeId() == YType.PLAYLIST) {
                             String playlistId = gitem.getId();
@@ -259,8 +260,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                     setLongPropertyValue(newVideos, atomicNewVideos.incrementAndGet());
                                 }
                                 setLongPropertyValue(totalVideos, atomicTotalVideos.incrementAndGet());
-                            } catch (InterruptedException ignored) {
-                            }
+                            } catch (InterruptedException ignored) {}
                         }
                     } catch (SQLException | IOException e) {
                         appendError(String.format("Failed GItem[id=%s]", gitem.getId()));
@@ -272,6 +272,14 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             logger.debug("Ending Gitem-Video Thread");
         });
         gitemGroup.await();
+    }
+
+    private void updateGroupItem(GroupItem gitem) throws SQLException {
+        if (configData.isFastGroupAdd()) {
+            gitem.setThumbUrl(ConfigData.FAST_GROUP_ADD_THUMB_PLACEHOLDER);
+        }
+
+        database.updateGroupItem(gitem);
     }
 
     private <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
@@ -661,7 +669,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         VideoListResponse vl = yvl.execute();
         if (!vl.getItems().isEmpty()) {
             List<YouTubeVideo> videos = vl.getItems().stream()
-                    .map(YouTubeVideo::new).collect(Collectors.toList());
+                    .map(YouTubeVideo::new)
+                    .collect(Collectors.toList());
             videoQueue.addAll(videos);
             database.insertVideos(videos);
         }

@@ -17,14 +17,18 @@ public class ConfigData implements Serializable {
     private transient String defaultApiKey = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
     private transient SimpleIntegerProperty accountListChanged = new SimpleIntegerProperty(0);
 
+    public static final transient String FAST_GROUP_ADD_THUMB_PLACEHOLDER = "~";
+
     private boolean autoLoadStats = true;
     private boolean prefixReplies = true;
     private boolean archiveThumbs = false;
+    private boolean fastGroupAdd = false;
     private boolean customApiKey = false;
     private List<YouTubeAccount> accounts = new ArrayList<>();
     private String youtubeApiKey = defaultApiKey;
 
     public ConfigData() {
+        // empty constructor
     }
 
     public String getDefaultApiKey() {
@@ -68,31 +72,7 @@ public class ConfigData implements Serializable {
         runLater(() -> accountListChanged.setValue(accountListChanged.getValue() + 1));
     }
 
-    public boolean usingCustomApiKey() {
-        return customApiKey;
-    }
-
-    public void setCustomApiKey(boolean customApiKey) {
-        this.customApiKey = customApiKey;
-    }
-
-    public boolean getArchiveThumbs() {
-        return archiveThumbs;
-    }
-
-    public void setArchiveThumbs(boolean archiveThumbs) {
-        this.archiveThumbs = archiveThumbs;
-    }
-
-    public boolean getPrefixReplies() {
-        return prefixReplies;
-    }
-
-    public void setPrefixReplies(boolean prefixReplies) {
-        this.prefixReplies = prefixReplies;
-    }
-
-    public boolean getAutoLoadStats() {
+    public boolean isAutoLoadStats() {
         return autoLoadStats;
     }
 
@@ -100,4 +80,35 @@ public class ConfigData implements Serializable {
         this.autoLoadStats = autoLoadStats;
     }
 
+    public boolean isPrefixReplies() {
+        return prefixReplies;
+    }
+
+    public void setPrefixReplies(boolean prefixReplies) {
+        this.prefixReplies = prefixReplies;
+    }
+
+    public boolean isArchiveThumbs() {
+        return archiveThumbs;
+    }
+
+    public void setArchiveThumbs(boolean archiveThumbs) {
+        this.archiveThumbs = archiveThumbs;
+    }
+
+    public boolean isFastGroupAdd() {
+        return fastGroupAdd;
+    }
+
+    public void setFastGroupAdd(boolean fastGroupAdd) {
+        this.fastGroupAdd = fastGroupAdd;
+    }
+
+    public boolean isCustomApiKey() {
+        return customApiKey;
+    }
+
+    public void setCustomApiKey(boolean customApiKey) {
+        this.customApiKey = customApiKey;
+    }
 }

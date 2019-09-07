@@ -380,10 +380,14 @@ public class CommentDatabase implements Closeable {
     /**
      * Updates gitem_list with set lastChecked values.
      */
-    public void updateGroupItemLastChecked(GroupItem item) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.UPDATE_GITEM_LAST_CHECKED.toString())) {
-            ps.setLong(1, System.currentTimeMillis());
-            ps.setString(2, item.getId());
+    public void updateGroupItem(GroupItem item) throws SQLException {
+        try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.UPDATE_GITEM.toString())) {
+            ps.setString(1, item.getTitle());
+            ps.setString(2, item.getChannelTitle());
+            ps.setLong(3, item.getPublished());
+            ps.setLong(4, System.currentTimeMillis());
+            ps.setString(5, item.getThumbUrl());
+            ps.setString(6, item.getId());
             ps.executeUpdate();
         }
     }
@@ -544,7 +548,8 @@ public class CommentDatabase implements Closeable {
                 .replace(":order", order))) {
             ps.setString(1, gitem.getId());
             ps.setString(2, "%" + keyword + "%");
-            ps.setInt(3, limit);
+            ps.setString(3, keyword);
+            ps.setInt(4, limit);
 
             return resultSetToVideoList(ps);
         }
@@ -555,7 +560,8 @@ public class CommentDatabase implements Closeable {
                 .replace(":order", order))) {
             ps.setString(1, group.getId());
             ps.setString(2, "%" + keyword + "%");
-            ps.setInt(3, limit);
+            ps.setString(3, keyword);
+            ps.setInt(4, limit);
 
             return resultSetToVideoList(ps);
         }
@@ -767,7 +773,7 @@ public class CommentDatabase implements Closeable {
         stats.setMostViewed(this.getMostPopularVideos(group, 10));
         stats.setMostDisliked(this.getMostDislikedVideos(group, 10));
         stats.setMostCommented(this.getMostCommentedVideos(group, 10));
-        stats.setCommentsDisabled(this.getDisabledVideos(group));
+        stats.setCommentsDisabled(this.getDisabledVideos(group, 25));
         stats.setWeeklyUploadHistogram(this.getWeekByWeekVideoHistogram(group));
 
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENT_STATS.toString())) {
@@ -854,9 +860,10 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    private List<YouTubeVideo> getDisabledVideos(Group group) throws SQLException {
+    private List<YouTubeVideo> getDisabledVideos(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_DISABLED_VIDEOS.toString())) {
             ps.setString(1, group.getId());
+            ps.setInt(2, limit);
             return resultSetToVideoList(ps);
         }
     }

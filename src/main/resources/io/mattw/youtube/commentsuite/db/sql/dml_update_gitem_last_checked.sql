@@ -1,1 +1,0 @@
-UPDATE gitem_list SET last_checked = ? WHERE gitem_id = ?;

@@ -3,7 +3,9 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
+import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.FXMLSuite;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +26,8 @@ public class GroupItem extends YouTubeObject {
     private static final Logger logger = LogManager.getLogger();
 
     public static String ALL_ITEMS = "GI001";
+
+    private ConfigData configData;
 
     private String channelTitle;
     private long published;
@@ -109,6 +113,8 @@ public class GroupItem extends YouTubeObject {
     private void ofLink(String fullLink) throws IOException {
         logger.debug("Matching link to type [fullLink={}]", fullLink);
 
+        configData = FXMLSuite.getConfig().getDataObject();
+
         youtube = FXMLSuite.getYouTube();
         database = FXMLSuite.getDatabase();
 
@@ -140,8 +146,24 @@ public class GroupItem extends YouTubeObject {
             channelUsername = true;
         }
 
-        YouTube youtube = FXMLSuite.getYouTube();
+        if (configData.isFastGroupAdd()) {
+            if (channelUsername) {
+                throw new IOException("Channel usernames are not accepted when using fast group add.");
+            }
 
+            setId(result);
+            setTitle(result);
+            setTypeId(type);
+            setChannelTitle(StringUtils.EMPTY);
+            setThumbUrl(ConfigData.FAST_GROUP_ADD_THUMB_PLACEHOLDER);
+            setPublished(0);
+            setLastChecked(0);
+
+            return;
+        }
+
+
+        YouTube youtube = FXMLSuite.getYouTube();
         if (result.isEmpty()) {
             throw new IOException(String.format("Input did not match expected formats [fullLink=%s]", fullLink));
         } else {
@@ -191,7 +213,7 @@ public class GroupItem extends YouTubeObject {
                     checkForNewChannel(item.getSnippet().getChannelId());
                 }
             } else {
-                throw new IOException("Unexpected result, link was not of type ");
+                throw new IOException("Unexpected result, link was not in an expected format.");
             }
         }
     }
@@ -233,7 +255,6 @@ public class GroupItem extends YouTubeObject {
         setChannelTitle(groupItem.getChannelTitle());
         setLastChecked(groupItem.getLastChecked());
         setPublished(groupItem.getPublished());
-
     }
 
     public String getChannelTitle() {

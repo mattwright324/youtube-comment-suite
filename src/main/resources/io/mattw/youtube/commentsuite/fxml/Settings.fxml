@@ -52,6 +52,7 @@
                     <CheckBox fx:id="prefixReply" text="Prefix @Username when replying to comments." selected="true" />
                     <CheckBox fx:id="autoLoadStats" text="Auto-load group details in group manager." selected="true" />
                     <CheckBox fx:id="downloadThumbs" text="Download images when loaded (Offline/Archival)."/>
+                    <CheckBox fx:id="fastGroupAdd" text="Enable fast adding items to group." />
                     <CheckBox fx:id="customKey" text="Custom YouTube API key:"/>
                     <TextField fx:id="youtubeApiKey" disable="true" text="AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ" />
                     <Label />
@@ -93,7 +94,7 @@
 
                     <Label text="About" styleClass="sectionTitle, bold" maxWidth="Infinity" />
                     <Label text="MIT License. Copyright © 2019 Matthew Wright." />
-                    <Label text="This release version: v1.4.1" />
+                    <Label text="This release version: v1.4.2" />
                     <Hyperlink fx:id="github" text="mattwright324/youtube-comment-suite" graphic="$githubIcon" />
                     <Label />
                 </VBox>

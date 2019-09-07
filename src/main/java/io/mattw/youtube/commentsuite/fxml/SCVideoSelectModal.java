@@ -14,6 +14,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -87,6 +88,12 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
 
             btnSearch.setOnAction(ae -> updateVideoList());
 
+            keywords.setOnKeyReleased(ke -> {
+                if (ke.getCode() == KeyCode.ENTER) {
+                    updateVideoList();
+                }
+            });
+
             orderBy.getItems().addAll(orderTypes.keySet());
             orderBy.getSelectionModel().select(0);
 
@@ -150,9 +157,9 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
 
                 List<YouTubeVideo> videos;
                 if (groupItem.getId().equals(GroupItem.ALL_ITEMS)) {
-                    videos = database.getVideos(group, keywordText, order, 25);
+                    videos = database.getVideos(group, keywordText, order, 50);
                 } else {
-                    videos = database.getVideos(groupItem, keywordText, order, 25);
+                    videos = database.getVideos(groupItem, keywordText, order, 50);
                 }
 
                 runLater(() -> {
