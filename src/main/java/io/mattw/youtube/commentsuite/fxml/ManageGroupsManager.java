@@ -232,7 +232,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             addItemModal.setVisible(true);
         }));
         mgmvAddItem.getBtnClose().setOnAction(ae -> addItemModal.setVisible(false));
-        mgmvAddItem.itemAddedProperty().addListener((o, ov, nv) -> reloadGroupItems());
 
         /*
           Remove Selected GroupItems Modal
