@@ -93,14 +93,16 @@ public class CommentQuery implements Serializable, Exportable {
         queryLines.add("LEFT JOIN channels USING (channel_id)");
         queryLines.add("WHERE comments.video_id IN (:videoSubquery)".replace(":videoSubquery", videoSubquery));
         if (StringUtils.isNotEmpty(nameLike)) {
-            queryLines.add("AND channels.channel_name LIKE :nameLike");
+            queryLines.add("AND (channels.channel_name LIKE :nameLike OR channels.channel_id = :channelId)");
 
             queryParams.put("nameLike", '%' + nameLike + '%');
+            queryParams.put("channelId", nameLike);
         }
         if (StringUtils.isNotEmpty(textLike)) {
-            queryLines.add("AND comments.comment_text LIKE :textLike");
+            queryLines.add("AND (comments.comment_text LIKE :textLike OR comments.comment_id = :commentId)");
 
             queryParams.put("textLike", '%' + textLike + '%');
+            queryParams.put("commentId", textLike);
         }
         if (commentsType != CommentsType.ALL) {
             queryLines.add("AND is_reply = :isReply");

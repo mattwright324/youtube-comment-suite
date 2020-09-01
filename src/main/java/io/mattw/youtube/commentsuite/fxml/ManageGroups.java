@@ -103,13 +103,16 @@ public class ManageGroups implements Initializable {
         /*
          * Logic for Create Group popup.
          */
-
         MGCreateGroupModal modal = new MGCreateGroupModal();
         overlayModal.setContent(modal);
         btnCreateGroup.setOnAction(ae -> runLater(() -> {
             modal.cleanUp();
             overlayModal.setVisible(true);
         }));
+        overlayModal.visibleProperty().addListener((cl) -> {
+            modal.getBtnClose().setCancelButton(overlayModal.isVisible());
+            modal.getBtnSubmit().setDefaultButton(overlayModal.isVisible());
+        });
         modal.getBtnClose().setOnAction(ae -> runLater(() ->
                 overlayModal.setVisible(false))
         );

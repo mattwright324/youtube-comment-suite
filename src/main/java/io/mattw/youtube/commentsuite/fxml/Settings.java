@@ -57,6 +57,7 @@ public class Settings implements Initializable {
     @FXML private CheckBox downloadThumbs;
     @FXML private CheckBox fastGroupAdd;
     @FXML private CheckBox customKey;
+    @FXML private CheckBox filterDuplicatesOnCopy;
     @FXML private TextField youtubeApiKey;
     @FXML private Button btnAddAccount;
     @FXML private ListView<SettingsAccountItemView> accountList;
@@ -89,6 +90,7 @@ public class Settings implements Initializable {
         fastGroupAdd.setSelected(configData.isFastGroupAdd());
         customKey.setSelected(configData.isCustomApiKey());
         youtubeApiKey.setText(configData.getYoutubeApiKey());
+        filterDuplicatesOnCopy.setSelected(configData.isFilterDuplicatesOnCopy());
 
         CookieManager cm = new CookieManager();
         CookieHandler.setDefault(cm);
@@ -158,6 +160,7 @@ public class Settings implements Initializable {
             data.setFastGroupAdd(fastGroupAdd.isSelected());
             data.setCustomApiKey(customKey.isSelected());
             data.setYoutubeApiKey(youtubeApiKey.getText());
+            data.setFilterDuplicatesOnCopy(filterDuplicatesOnCopy.isSelected());
 
             config.setDataObject(data);
             config.save();

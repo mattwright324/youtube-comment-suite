@@ -28,6 +28,8 @@ public class OverlayModal<T extends Pane> extends StackPane {
         loader.setController(this);
         loader.setRoot(this);
         loader.load();
+
+        this.managedProperty().bindBidirectional(this.visibleProperty());
     }
 
     public String getTitle() {

@@ -58,10 +58,9 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH.mm.ss");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static final JsonParser jsonParser = new JsonParser();
-    private static final String prettyFlattenedExample = gson.toJson(jsonParser.parse(
+    private static final String prettyFlattenedExample = gson.toJson(JsonParser.parseString(
             "[{\"type\":\"comment\"},{\"type\":\"comment\"},{\"type\":\"reply\"},{\"type\":\"reply\"},{\"type\":\"comment\"}]"));
-    private static final String prettyCondensedExample = gson.toJson(jsonParser.parse(
+    private static final String prettyCondensedExample = gson.toJson(JsonParser.parseString(
             "[{\"type\":\"comment\"},{\"type\":\"comment\", replies:[{\"type\":\"reply\"},{\"type\":\"reply\"}]},{\"type\":\"comment\"}]"));
 
     private static final File exportsFolder = new File("exports/");
@@ -239,6 +238,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                                     List<YouTubeComment> replyList = database.getCommentTree(comment.getId());
                                                     for (YouTubeComment reply : replyList) {
                                                         reply.setAuthor(database.getChannel(reply.getChannelId()));
+                                                        reply.prepForExport();
                                                     }
 
                                                     comment.setReplies(replyList);
