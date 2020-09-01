@@ -59,8 +59,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private CommentDatabase database;
     private ConfigData configData;
 
-    @FXML private VBox mainContent;
-
     @FXML private OverlayModal<MGMVRefreshModal> refreshModal;
     @FXML private OverlayModal<MGMVDeleteGroupModal> deleteModal;
     @FXML private OverlayModal<MGMVAddItemModal> addItemModal;
@@ -89,12 +87,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     @FXML private Accordion accordion;
     @FXML private TitledPane generalPane, videoPane, viewerPane;
 
-    private StackPane thisPane;
-
     public ManageGroupsManager(Group group) throws IOException {
         logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
-
-        thisPane = this;
 
         database = FXMLSuite.getDatabase();
         configData = FXMLSuite.getConfig().getDataObject();
