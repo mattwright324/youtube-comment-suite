@@ -6,7 +6,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.util.EurekaProvider;
+import io.mattw.youtube.commentsuite.util.IpApiProvider;
 import io.mattw.youtube.commentsuite.util.Location;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -30,8 +30,8 @@ public class FXMLSuite extends Application {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private static Location location = new Location<EurekaProvider, EurekaProvider.Location>(
-            new EurekaProvider(), EurekaProvider.Location.class);
+    private static Location location = new Location<IpApiProvider, IpApiProvider.Location>(
+            new IpApiProvider(), IpApiProvider.Location.class);
     private static ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
     private static OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com",
             "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");

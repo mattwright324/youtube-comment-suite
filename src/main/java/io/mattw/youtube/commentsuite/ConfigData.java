@@ -24,6 +24,7 @@ public class ConfigData implements Serializable {
     private boolean archiveThumbs = false;
     private boolean fastGroupAdd = false;
     private boolean customApiKey = false;
+    private boolean filterDuplicatesOnCopy = true;
     private List<YouTubeAccount> accounts = new ArrayList<>();
     private String youtubeApiKey = defaultApiKey;
 
@@ -111,4 +112,13 @@ public class ConfigData implements Serializable {
     public void setCustomApiKey(boolean customApiKey) {
         this.customApiKey = customApiKey;
     }
+
+    public boolean isFilterDuplicatesOnCopy() {
+        return filterDuplicatesOnCopy;
+    }
+
+    public void setFilterDuplicatesOnCopy(boolean filterDuplicatesOnCopy) {
+        this.filterDuplicatesOnCopy = filterDuplicatesOnCopy;
+    }
+
 }

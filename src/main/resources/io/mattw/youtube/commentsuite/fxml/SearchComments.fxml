@@ -63,6 +63,8 @@
                             <MenuItem fx:id="copyChannelLinks" text="Copy Channel Link(s)" />
                             <MenuItem fx:id="copyVideoLinks" text="Copy Video Link(s)" />
                             <MenuItem fx:id="copyCommentLinks" text="Copy Comment Link(s)" />
+                            <MenuItem fx:id="copyCommentIds" text="Copy Comment Id(s)" />
+                            <MenuItem fx:id="copyChannelIds" text="Copy Channel Id(s)" />
                         </items>
                     </ContextMenu>
                 </contextMenu>
@@ -104,10 +106,10 @@
                 <ComboBox fx:id="comboOrderBy" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
                 <Label text="Name like" styleClass="font16" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-                <TextField fx:id="nameLike" promptText="Username contains..." GridPane.rowIndex="2" GridPane.columnIndex="1" />
+                <TextField fx:id="nameLike" promptText="Username contains or id..." GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
                 <Label text="Text like" styleClass="font16" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-                <TextField fx:id="commentLike" promptText="Comment contains..." GridPane.rowIndex="3" GridPane.columnIndex="1" />
+                <TextField fx:id="commentLike" promptText="Comment contains or id..." GridPane.rowIndex="3" GridPane.columnIndex="1" />
 
                 <Label text="Date from" styleClass="font16" GridPane.rowIndex="4" GridPane.columnIndex="0" />
                 <DatePicker fx:id="dateFrom" GridPane.rowIndex="4" GridPane.columnIndex="1" />

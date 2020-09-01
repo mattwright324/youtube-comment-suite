@@ -29,7 +29,7 @@ Achieve the functionality of the *Community > Comments* tool that is provided to
 [![GitHub Releases](https://img.shields.io/badge/downloads-releases-brightgreen.svg?maxAge=60&style=flat-square)](https://github.com/mattwright324/youtube-comment-suite/releases)
 
 ### Windows
-Extract the latest release zip file and run `youtube-comment-suite.jar`.
+Extract the latest release zip file and run `youtube-comment-suite-v#.#.#.jar`. 
 
 * Be sure that you have Java 8 installed, if not you can get it [here from Oracle](https://www.java.com/en/download/).
 
@@ -37,6 +37,11 @@ Extract the latest release zip file and run `youtube-comment-suite.jar`.
 Instructions on how to get this running in Ubuntu 16, 17, 18, 19, or 20 can be found in the wiki here:
 
 * [Installation - Ubuntu 16 17 18 19 20](https://github.com/mattwright324/youtube-comment-suite/wiki/Installation---Ubuntu-16-17-18-19-20)
+
+### Extracting the zip
+When extracting the latest release zip, be sure to include the `lib` folder alongside the jar otherwise it will not run.
+
+Simply extracting all zip contents to a folder will do this.
 
 ## Getting Started
 

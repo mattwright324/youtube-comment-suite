@@ -5,10 +5,7 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.util.BrowserUtil;
-import io.mattw.youtube.commentsuite.util.ClipboardUtil;
-import io.mattw.youtube.commentsuite.util.EurekaProvider;
-import io.mattw.youtube.commentsuite.util.Location;
+import io.mattw.youtube.commentsuite.util.*;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
@@ -38,7 +35,7 @@ public class SearchYouTube implements Initializable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private Location<EurekaProvider, EurekaProvider.Location> location;
+    private Location<IpApiProvider, IpApiProvider.Location> location;
     private YouTube youtubeApi;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
@@ -127,9 +124,9 @@ public class SearchYouTube implements Initializable {
         geolocate.setOnAction(ae -> new Thread(() -> {
             geolocate.setDisable(true);
             try {
-                EurekaProvider.Location myLocation = this.location.getMyLocation();
+                IpApiProvider.Location myLocation = this.location.getMyLocation();
 
-                String coordinates = myLocation.geolocation_data.latitude + "," + myLocation.geolocation_data.longitude;
+                String coordinates = myLocation.lat + "," + myLocation.lon;
 
                 runLater(() -> searchLocation.setText(coordinates));
             } catch (IOException e) {
@@ -176,6 +173,10 @@ public class SearchYouTube implements Initializable {
         syAddToGroupModal.getBtnClose().setOnAction(ae -> {
             addToGroupModal.setVisible(false);
             addToGroupModal.setManaged(false);
+        });
+        addToGroupModal.visibleProperty().addListener((cl) -> {
+            syAddToGroupModal.getBtnClose().setCancelButton(addToGroupModal.isVisible());
+            syAddToGroupModal.getBtnSubmit().setDefaultButton(addToGroupModal.isVisible());
         });
         btnAddToGroup.setOnAction(ae -> {
             syAddToGroupModal.cleanUp();

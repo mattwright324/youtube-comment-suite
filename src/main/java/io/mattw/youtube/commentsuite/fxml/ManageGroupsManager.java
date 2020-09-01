@@ -19,8 +19,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import javafx.scene.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -198,6 +198,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvRefresh.reset();
             refreshModal.setVisible(true);
         }));
+        refreshModal.visibleProperty().addListener((cl) -> {
+            mgmvRefresh.getBtnClose().setCancelButton(refreshModal.isVisible());
+            mgmvRefresh.getBtnStart().setDefaultButton(refreshModal.isVisible());
+        });
         mgmvRefresh.getBtnClose().setOnAction(ae -> {
             refreshModal.setVisible(false);
             updateLastRefreshed();
@@ -219,8 +223,16 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal(group);
         deleteModal.setContent(mgmvDelete);
         deleteModal.setDividerClass("dividerDanger");
-        btnDelete.setOnAction(ae -> runLater(() -> deleteModal.setVisible(true)));
-        mgmvDelete.getBtnClose().setOnAction(ae -> deleteModal.setVisible(false));
+        btnDelete.setOnAction(ae -> runLater(() -> {
+            deleteModal.setVisible(true);
+        }));
+        deleteModal.visibleProperty().addListener((cl) -> {
+            mgmvDelete.getBtnClose().setCancelButton(deleteModal.isVisible());
+            mgmvDelete.getBtnDelete().setDefaultButton(deleteModal.isVisible());
+        });
+        mgmvDelete.getBtnClose().setOnAction(ae -> {
+            deleteModal.setVisible(false);
+        });
 
         /*
           Add Item Modal
@@ -231,6 +243,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvAddItem.cleanUp();
             addItemModal.setVisible(true);
         }));
+        addItemModal.visibleProperty().addListener((cl) -> {
+            mgmvAddItem.getBtnClose().setCancelButton(addItemModal.isVisible());
+            mgmvAddItem.getBtnSubmit().setDefaultButton(addItemModal.isVisible());
+        });
         mgmvAddItem.getBtnClose().setOnAction(ae -> addItemModal.setVisible(false));
 
         /*
@@ -243,6 +259,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvRemoveSelected.cleanUp();
             removeItemModal.setVisible(true);
         }));
+        removeItemModal.visibleProperty().addListener((cl) -> {
+            mgmvRemoveSelected.getBtnClose().setCancelButton(removeItemModal.isVisible());
+            mgmvRemoveSelected.getBtnSubmit().setDefaultButton(removeItemModal.isVisible());
+        });
         mgmvRemoveSelected.getBtnClose().setOnAction(ae -> removeItemModal.setVisible(false));
         mgmvRemoveSelected.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
 
@@ -256,6 +276,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvRemoveAll.cleanUp();
             removeAllModal.setVisible(true);
         }));
+        removeAllModal.visibleProperty().addListener((cl) -> {
+            mgmvRemoveAll.getBtnClose().setCancelButton(removeAllModal.isVisible());
+            mgmvRemoveAll.getBtnSubmit().setDefaultButton(removeAllModal.isVisible());
+        });
         mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
         mgmvRemoveAll.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
     }

@@ -6,7 +6,6 @@ import io.mattw.youtube.commentsuite.db.YouTubeObject;
 import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sun.security.krb5.Config;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

@@ -2,6 +2,7 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
@@ -36,6 +37,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
@@ -61,7 +63,7 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private TextArea videoDescription;
 
     @FXML private ImageView browserIcon;
-    @FXML private MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks;
+    @FXML private MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks, copyCommentIds, copyChannelIds;
     @FXML private ListView<SearchCommentsListItem> resultsList;
     @FXML private TextField pageValue;
     @FXML private Label displayCount, lblMaxPage;
@@ -97,11 +99,13 @@ public class SearchComments implements Initializable, ImageCache {
     private SearchCommentsListItem actionComment;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
+    private ConfigData configData;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         database = FXMLSuite.getDatabase();
         commentQuery = database.commentQuery();
+        configData = FXMLSuite.getConfig().getDataObject();
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
         comboGroupSelect.setItems(database.getGlobalGroupList());
@@ -243,55 +247,86 @@ public class SearchComments implements Initializable, ImageCache {
             browserUtil.open(link);
         });
         copyNames.setOnAction(ae -> {
-            List<String> uniqueNames = scSelection.getSelectedItems()
+            Stream<String> toCopy = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
                     .map(YouTubeComment::getChannel)
-                    .map(YouTubeChannel::getTitle)
-                    .distinct()
-                    .collect(Collectors.toList());
+                    .map(YouTubeChannel::getTitle);
 
-            clipboardUtil.setClipboard(uniqueNames);
+            if (configData.isFilterDuplicatesOnCopy()) {
+                toCopy = toCopy.distinct();
+            }
+
+            clipboardUtil.setClipboard(toCopy.collect(Collectors.toList()));
         });
         copyComments.setOnAction(ae -> {
-            List<String> comments = scSelection.getSelectedItems()
+            Stream<String> toCopy = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
-                    .map(YouTubeComment::getCommentText)
-                    .collect(Collectors.toList());
+                    .map(YouTubeComment::getCommentText);
 
-            clipboardUtil.setClipboard(comments);
+            clipboardUtil.setClipboard(toCopy.collect(Collectors.toList()));
         });
         copyChannelLinks.setOnAction(ae -> {
-            List<String> uniqueChannelLinks = scSelection.getSelectedItems()
+            Stream<String> toCopy = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
                     .map(YouTubeComment::getChannel)
-                    .map(YouTubeChannel::buildYouTubeLink)
-                    .distinct()
-                    .collect(Collectors.toList());
+                    .map(YouTubeChannel::buildYouTubeLink);
 
-            clipboardUtil.setClipboard(uniqueChannelLinks);
+            if (configData.isFilterDuplicatesOnCopy()) {
+                toCopy = toCopy.distinct();
+            }
+
+            clipboardUtil.setClipboard(toCopy.collect(Collectors.toList()));
         });
         copyCommentLinks.setOnAction(ae -> {
-            List<String> uniqueCommentLinks = scSelection.getSelectedItems()
+            Stream<String> toCopy = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
-                    .map(YouTubeComment::buildYouTubeLink)
-                    .distinct()
-                    .collect(Collectors.toList());
+                    .map(YouTubeComment::buildYouTubeLink);
 
-            clipboardUtil.setClipboard(uniqueCommentLinks);
+            if (configData.isFilterDuplicatesOnCopy()) {
+                toCopy = toCopy.distinct();
+            }
+
+            clipboardUtil.setClipboard(toCopy.collect(Collectors.toList()));
         });
         copyVideoLinks.setOnAction(ae -> {
-            List<String> uniqueVideoLinks = scSelection.getSelectedItems()
+            Stream<String> toCopy = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
-                    .map(c -> String.format("https://youtu.be/%s", c.getVideoId()))
-                    .distinct()
-                    .collect(Collectors.toList());
+                    .map(c -> String.format("https://youtu.be/%s", c.getVideoId()));
 
-            clipboardUtil.setClipboard(uniqueVideoLinks);
+            if (configData.isFilterDuplicatesOnCopy()) {
+                toCopy = toCopy.distinct();
+            }
+
+            clipboardUtil.setClipboard(toCopy.collect(Collectors.toList()));
+        });
+        copyCommentIds.setOnAction(ae -> {
+            Stream<String> toCopy = scSelection.getSelectedItems()
+                    .stream()
+                    .map(SearchCommentsListItem::getComment)
+                    .map(YouTubeComment::getId);
+
+            if (configData.isFilterDuplicatesOnCopy()) {
+                toCopy = toCopy.distinct();
+            }
+
+            clipboardUtil.setClipboard(toCopy.collect(Collectors.toList()));
+        });
+        copyChannelIds.setOnAction(ae -> {
+            Stream<String> toCopy = scSelection.getSelectedItems()
+                    .stream()
+                    .map(SearchCommentsListItem::getComment)
+                    .map(YouTubeComment::getChannelId);
+
+            if (configData.isFilterDuplicatesOnCopy()) {
+                toCopy = toCopy.distinct();
+            }
+
+            clipboardUtil.setClipboard(toCopy.collect(Collectors.toList()));
         });
 
         btnBackToResults.setOnAction(ae -> {
@@ -324,6 +359,10 @@ public class SearchComments implements Initializable, ImageCache {
             scVideoSelectModal.cleanUp();
             videoSelectModal.setVisible(true);
         }));
+        videoSelectModal.visibleProperty().addListener((cl) -> {
+            scVideoSelectModal.getBtnSubmit().setCancelButton(videoSelectModal.isVisible());
+            scVideoSelectModal.getBtnSubmit().setDefaultButton(videoSelectModal.isVisible());
+        });
         scVideoSelectModal.getBtnClose().setOnAction(ae -> videoSelectModal.setVisible(false));
         scVideoSelectModal.getBtnSubmit().setOnAction(ae -> videoSelectModal.setVisible(false));
         comboGroupSelect.valueProperty().addListener((o, ov, nv) -> scVideoSelectModal.reset());
@@ -344,6 +383,10 @@ public class SearchComments implements Initializable, ImageCache {
             scExportModal.cleanUp();
             scExportModal.withQuery(commentQuery);
             exportModal.setVisible(true);
+        });
+        exportModal.visibleProperty().addListener((cl) -> {
+            scExportModal.getBtnClose().setCancelButton(exportModal.isVisible());
+            scExportModal.getBtnSubmit().setDefaultButton(exportModal.isVisible());
         });
     }
 
@@ -415,7 +458,7 @@ public class SearchComments implements Initializable, ImageCache {
         if (value.isEmpty()) {
             value = "1";
         }
-        return Integer.valueOf(value);
+        return Integer.parseInt(value);
     }
 
     /**
