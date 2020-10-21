@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.model.Comment;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
@@ -50,16 +51,19 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
     private YouTubeComment loadedComment;
 
-    private CommentDatabase database;
+//    private CommentDatabase database;
     private BrowserUtil browserUtil = new BrowserUtil();
     private OAuth2Handler oAuth2Handler;
     private ConfigFile<ConfigData> config;
     private ConfigData configData;
 
+    @Inject
+    CommentDatabase database;
+
     public SCShowMoreModal() {
         logger.debug("Initialize SCShowMoreModal");
 
-        database = FXMLSuite.getDatabase();
+//        database = FXMLSuite.getDatabase();
         oAuth2Handler = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
         configData = config.getDataObject();

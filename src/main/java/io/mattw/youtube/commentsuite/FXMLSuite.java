@@ -1,11 +1,10 @@
 package io.mattw.youtube.commentsuite;
 
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.guice.GuiceModule;
 import io.mattw.youtube.commentsuite.util.IpApiProvider;
 import io.mattw.youtube.commentsuite.util.Location;
 import javafx.application.Application;
@@ -18,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 
 /**
@@ -35,48 +33,49 @@ public class FXMLSuite extends Application {
     private static ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
     private static OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com",
             "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
-    private static CommentDatabase database;
+    //private static CommentDatabase database;
 
-    private static YouTube youtube;
-    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    //private static YouTube youtube;
     private static String youtubeApiKey = "";
 
     public void start(Stage stage) {
         try {
-            NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            youtube = new YouTube.Builder(httpTransport, JSON_FACTORY, null)
-                    .setApplicationName("youtube-comment-suite")
-                    .build();
+            //youtube = new YouTube.Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), null)
+            //        .setApplicationName("youtube-comment-suite")
+            //        .build();
 
             // System.setProperty("glass.win.uiScale", "100%");
             youtubeApiKey = config.getDataObject().getYoutubeApiKey();
 
-            database = new CommentDatabase("commentsuite.sqlite3");
+            //database = new CommentDatabase("commentsuite.sqlite3");
 
-            Parent parent = FXMLLoader.load(getClass().getResource("/io/mattw/youtube/commentsuite/fxml/Main.fxml"));
+            Injector injector = Guice.createInjector(new GuiceModule());
+            FXMLLoader loader = injector.getInstance(FXMLLoader.class);
+
+            String resource = "io/mattw/youtube/commentsuite/fxml/Main.fxml";
+            loader.setLocation(getClass().getResource("/" + resource));
+            Parent parent = loader.load(ClassLoader.getSystemResourceAsStream(resource));
 
             Scene scene = new Scene(parent);
             scene.getStylesheets().add("SuiteStyles.css");
-            stage.setTitle("YouTube Comment Suite");
             stage.setScene(scene);
+            stage.setTitle("YouTube Comment Suite");
             stage.getIcons().add(ImageLoader.YCS_ICON.getImage());
             stage.setOnCloseRequest(we -> {
-                //logger.debug("Closing - [totalSpentQuota={} units]", youtubeApi.getTotalSpentCost());
-
-                try {
-                    database.commit();
+                /*try {
+                    //database.commit();
 
                     logger.debug("Closing - Closing DB Connection");
-                    database.close();
+                    //database.close();
                 } catch (SQLException | IOException e) {
                     logger.error(e);
-                }
+                }*/
                 logger.debug("Closing - Exiting Application");
                 Platform.exit();
                 System.exit(0);
             });
             stage.show();
-        } catch (IOException | SQLException | GeneralSecurityException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             logger.error(e);
             Platform.exit();
@@ -88,8 +87,9 @@ public class FXMLSuite extends Application {
         return config;
     }
 
+    @Deprecated
     public static YouTube getYouTube() {
-        return youtube;
+        return null;
     }
 
     public static String getYouTubeApiKey() {
@@ -104,8 +104,9 @@ public class FXMLSuite extends Application {
         return oauth2;
     }
 
+    @Deprecated
     public static CommentDatabase getDatabase() {
-        return database;
+        return null;
     }
 
     public static Location getLocation() {

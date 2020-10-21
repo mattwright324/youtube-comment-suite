@@ -2,6 +2,7 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
@@ -93,7 +94,7 @@ public class SearchComments implements Initializable, ImageCache {
     private ElapsedTime elapsedTime = new ElapsedTime();
     private ChangeListener<Number> cl;
 
-    private CommentDatabase database;
+//    private CommentDatabase database;
     private CommentQuery commentQuery;
     private List<YouTubeComment> lastResultsList;
     private SearchCommentsListItem actionComment;
@@ -101,9 +102,12 @@ public class SearchComments implements Initializable, ImageCache {
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigData configData;
 
+    @Inject
+    CommentDatabase database;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        database = FXMLSuite.getDatabase();
+//        database = FXMLSuite.getDatabase();
         commentQuery = database.commentQuery();
         configData = FXMLSuite.getConfig().getDataObject();
 

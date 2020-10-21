@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
@@ -40,16 +41,19 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
     @FXML private Button btnClose;
     @FXML private Button btnSubmit;
 
-    private CommentDatabase database;
+//    private CommentDatabase database;
 
     private ListView<SearchYouTubeListItem> listView;
+
+    @Inject
+    CommentDatabase database;
 
     public SYAddToGroupModal(ListView<SearchYouTubeListItem> listView) {
         this.listView = listView;
 
         logger.debug("Initialize SYAddToGroupModal");
 
-        database = FXMLSuite.getDatabase();
+//        database = FXMLSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SYAddToGroupModal.fxml"));
         loader.setController(this);

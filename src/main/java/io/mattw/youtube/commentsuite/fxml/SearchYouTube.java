@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.util.*;
@@ -36,7 +37,7 @@ public class SearchYouTube implements Initializable {
     private static final Logger logger = LogManager.getLogger();
 
     private Location<IpApiProvider, IpApiProvider.Location> location;
-    private YouTube youtubeApi;
+    //private YouTube youtubeApi;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
 
@@ -75,11 +76,14 @@ public class SearchYouTube implements Initializable {
     private SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
     private String[] types = {"all", "video", "playlist", "channel"};
 
+    @Inject
+    YouTube youtubeApi;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize SearchYouTube");
 
-        youtubeApi = FXMLSuite.getYouTube();
+        //youtubeApi = FXMLSuite.getYouTube();
         this.location = FXMLSuite.getLocation();
 
         MultipleSelectionModel selectionModel = resultsList.getSelectionModel();

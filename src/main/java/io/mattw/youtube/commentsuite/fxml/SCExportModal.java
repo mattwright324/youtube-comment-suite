@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonWriter;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
@@ -81,17 +82,20 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
     @FXML private Button btnSubmit;
 
     private CommentQuery commentQuery;
-    private CommentDatabase database;
+//    private CommentDatabase database;
 
     private AtomicLong atomicVideoProgress = new AtomicLong(0);
     private long totalVideos = 0;
 
     private boolean quitExport = false;
 
+    @Inject
+    CommentDatabase database;
+
     public SCExportModal() {
         logger.debug("Initialize SCExportModal");
 
-        database = FXMLSuite.getDatabase();
+//        database = FXMLSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SCExportModal.fxml"));
         loader.setController(this);

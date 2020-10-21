@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.YouTube;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
@@ -38,8 +39,8 @@ public class Settings implements Initializable {
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;
     private OAuth2Handler oauth2;
-    private CommentDatabase database;
-    private YouTube youtube;
+//    private CommentDatabase database;
+    //private YouTube youtube;
 
     @FXML private Pane settingsPane;
 
@@ -73,17 +74,22 @@ public class Settings implements Initializable {
     @FXML private ImageView githubIcon;
     @FXML private Button btnSave;
 
+    @Inject
+    YouTube youtube;
+    @Inject
+    CommentDatabase database;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize Settings");
 
         oauth2 = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
-        database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
+//        database = FXMLSuite.getDatabase();
+//        youtube = FXMLSuite.getYouTube();
 
         ConfigData configData = config.getDataObject();
-        configData.refreshAccounts();
+        // configData.refreshAccounts();
         autoLoadStats.setSelected(configData.isAutoLoadStats());
         prefixReply.setSelected(configData.isPrefixReplies());
         downloadThumbs.setSelected(configData.isArchiveThumbs());

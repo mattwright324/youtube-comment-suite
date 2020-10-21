@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import org.apache.commons.lang3.StringUtils;
@@ -33,8 +34,13 @@ public class GroupItem extends YouTubeObject {
     private long published;
     private long lastChecked;
 
-    private YouTube youtube;
-    private CommentDatabase database;
+    //private YouTube youtube;
+    //private CommentDatabase database;
+
+    @Inject
+    YouTube youtube;
+    @Inject
+    CommentDatabase database;
 
     /**
      * Used for converting selected search items for inserting into database.
@@ -115,8 +121,8 @@ public class GroupItem extends YouTubeObject {
 
         configData = FXMLSuite.getConfig().getDataObject();
 
-        youtube = FXMLSuite.getYouTube();
-        database = FXMLSuite.getDatabase();
+        //youtube = FXMLSuite.getYouTube();
+        //database = FXMLSuite.getDatabase();
 
         Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
         Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
@@ -163,7 +169,7 @@ public class GroupItem extends YouTubeObject {
         }
 
 
-        YouTube youtube = FXMLSuite.getYouTube();
+        //YouTube youtube = FXMLSuite.getYouTube();
         if (result.isEmpty()) {
             throw new IOException(String.format("Input did not match expected formats [fullLink=%s]", fullLink));
         } else {

@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.YouTube;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
@@ -37,8 +38,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private CommentDatabase database;
-    private YouTube youtube;
+    //private CommentDatabase database;
+    //private YouTube youtube;
 
     @FXML private Label alertError;
 
@@ -58,11 +59,16 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
     private IntegerProperty itemAdded = new SimpleIntegerProperty(0);
 
+    @Inject
+    YouTube youtube;
+    @Inject
+    CommentDatabase database;
+
     public MGMVAddItemModal(Group group) {
         this.group = group;
 
-        database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
+        //database = FXMLSuite.getDatabase();
+        //youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVAddItemModal.fxml"));
         loader.setController(this);

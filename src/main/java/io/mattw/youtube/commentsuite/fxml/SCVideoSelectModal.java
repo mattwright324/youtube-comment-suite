@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
@@ -42,7 +43,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
 
     private static final String ALL_VIDEOS = "All Videos";
 
-    private CommentDatabase database;
+    //private CommentDatabase database;
 
     @FXML private Label lblSelection, errorMsg;
     @FXML private Button btnSearch;
@@ -60,10 +61,13 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
     private Map<String, String> orderTypes = new LinkedHashMap<>();
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
+    @Inject
+    CommentDatabase database;
+
     public SCVideoSelectModal() {
         logger.debug("Initialize SCVideoSelectModal");
 
-        database = FXMLSuite.getDatabase();
+        //database = FXMLSuite.getDatabase();
 
         orderTypes.put("By Date", "publish_date DESC");
         orderTypes.put("By Title", "video_title ASC");
@@ -109,7 +113,6 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                         updateSelectionLabel();
                     });
                 }
-
             });
         } catch (IOException e) {
             logger.error("An error occurred loading the SCVideoSelectModal", e);

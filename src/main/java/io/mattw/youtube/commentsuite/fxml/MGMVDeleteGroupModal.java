@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
@@ -31,7 +32,7 @@ public class MGMVDeleteGroupModal extends VBox {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private CommentDatabase database;
+//    private CommentDatabase database;
 
     @FXML private CheckBox doVacuum;
     @FXML private Button btnClose;
@@ -39,10 +40,13 @@ public class MGMVDeleteGroupModal extends VBox {
 
     private Group group;
 
+    @Inject
+    CommentDatabase database;
+
     public MGMVDeleteGroupModal(Group group) {
         this.group = group;
 
-        database = FXMLSuite.getDatabase();
+//        database = FXMLSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVDeleteGroupModal.fxml"));
         loader.setController(this);

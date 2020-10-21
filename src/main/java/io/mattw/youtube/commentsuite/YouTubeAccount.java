@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Channel;
 import com.google.api.services.youtube.model.ChannelListResponse;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,11 @@ public class YouTubeAccount implements Serializable {
     private String username, channelId, thumbUrl;
     private OAuth2Tokens tokens;
 
+    @Inject
+    YouTube youtube;
+    @Inject
+    CommentDatabase database;
+
     public YouTubeAccount() {
         // default constructor
     }
@@ -52,7 +58,7 @@ public class YouTubeAccount implements Serializable {
      */
     void updateData() {
         CommentDatabase database = FXMLSuite.getDatabase();
-        YouTube youtube = FXMLSuite.getYouTube();
+        //YouTube youtube = FXMLSuite.getYouTube();
 
         logger.debug("Getting account data for [username={}]", getUsername());
 

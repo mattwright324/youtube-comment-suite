@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.YouTube;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
@@ -35,8 +36,8 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private CommentDatabase database;
-    private YouTube youtube;
+//    private CommentDatabase database;
+    //private YouTube youtube;
 
     @FXML private Label alertError;
     @FXML private TextField link;
@@ -48,14 +49,19 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
 
     private IntegerProperty itemsRemoved = new SimpleIntegerProperty(0);
 
+    @Inject
+    YouTube youtube;
+    @Inject
+    CommentDatabase database;
+
     public MGMVRemoveSelectedModal(Group group, MultipleSelectionModel<MGMVGroupItemView> selectionModel) {
         logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
 
         this.group = group;
         this.selectionModel = selectionModel;
 
-        database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
+//        database = FXMLSuite.getDatabase();
+        //youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRemoveSelectedModal.fxml"));
         loader.setController(this);

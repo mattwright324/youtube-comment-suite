@@ -2,6 +2,7 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
@@ -35,7 +36,7 @@ public class ManageGroups implements Initializable {
 
     Cache<String, ManageGroupsManager> managerCache = CacheBuilder.newBuilder().build();
 
-    private CommentDatabase database;
+    //private CommentDatabase database;
 
     @FXML private OverlayModal<MGCreateGroupModal> overlayModal;
 
@@ -44,10 +45,13 @@ public class ManageGroups implements Initializable {
     @FXML private Button btnCreateGroup;
     @FXML private Pane content;
 
+    @Inject
+    CommentDatabase database;
+
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize ManageGroups");
 
-        database = FXMLSuite.getDatabase();
+        //database = FXMLSuite.getDatabase();
 
         /*
          * Logic for main pane.

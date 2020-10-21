@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
@@ -56,7 +57,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private ChangeListener<Font> fontListener;
     private Group group;
 
-    private CommentDatabase database;
+    //private CommentDatabase database;
     private ConfigData configData;
 
     @FXML private OverlayModal<MGMVRefreshModal> refreshModal;
@@ -87,10 +88,13 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     @FXML private Accordion accordion;
     @FXML private TitledPane generalPane, videoPane, viewerPane;
 
+    @Inject
+    CommentDatabase database;
+
     public ManageGroupsManager(Group group) throws IOException {
         logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
 
-        database = FXMLSuite.getDatabase();
+        //database = FXMLSuite.getDatabase();
         configData = FXMLSuite.getConfig().getDataObject();
 
         this.group = group;

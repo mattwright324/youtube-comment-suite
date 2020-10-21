@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
@@ -90,14 +91,18 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private LinkedBlockingQueue<String> channelQueue = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<YouTubeChannel> channelInsertQueue = new LinkedBlockingQueue<>();
 
-    private YouTube youtube = FXMLSuite.getYouTube();
-    private CommentDatabase database = FXMLSuite.getDatabase();
+    //private YouTube youtube = FXMLSuite.getYouTube();
+    //private CommentDatabase database = FXMLSuite.getDatabase();
     private ConfigData configData = FXMLSuite.getConfig().getDataObject();
+
+    @Inject
+    YouTube youtube;
+    @Inject
+    CommentDatabase database;
 
     public MGMVGroupRefresh(Group group) {
         this.group = group;
     }
-
 
     /**
      * Starts group refresh, starting stopping threads, handles fatal errors.

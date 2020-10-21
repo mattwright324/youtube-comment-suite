@@ -1,5 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.api.services.youtube.YouTube;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -44,9 +46,13 @@ public class Main implements Initializable {
     @FXML private Pane searchYoutube;
     @FXML private Pane settings;
 
+    @Inject
+    YouTube youTube;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize Main");
+        logger.debug("main... {}", youTube);
 
         headerToggleGroup.getToggles().addListener((ListChangeListener<Toggle>) c -> {
             while (c.next()) {

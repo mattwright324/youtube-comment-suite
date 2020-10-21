@@ -1,9 +1,11 @@
 package io.mattw.youtube.commentsuite;
 
+import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.inject.Inject;
 import io.mattw.youtube.commentsuite.util.UTF8UrlEncoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +28,9 @@ public class OAuth2Handler {
     private String redirectUri;
     private String authUrl;
     private OAuth2Tokens tokens;
+
+    @Inject
+    YouTube youtube;
 
     OAuth2Handler(String clientId, String clientSecret, String redirectUri) {
         this.clientId = clientId;
@@ -95,7 +100,7 @@ public class OAuth2Handler {
         int attempt = 0;
         do {
             try {
-                Comment result = FXMLSuite.getYouTube().comments()
+                Comment result = youtube.comments()
                         .insert("snippet", comment)
                         .setOauthToken(tokens.getAccessToken())
                         .execute();
