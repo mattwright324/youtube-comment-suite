@@ -22,7 +22,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -66,19 +69,24 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
     private static final File exportsFolder = new File("exports/");
     private static final String searchSettingsFileName = "searchSettings.json";
 
-    @FXML private Label errorMsg;
-
-    @FXML private VBox exportPane;
-    @FXML private RadioButton radioCondensed, radioFlattened;
-    @FXML private TextArea exportModeExample;
-
-    @FXML private ProgressBar exportProgress;
-
-    @FXML private ScrollPane helpScrollPane;
-
-    @FXML private Button btnClose;
-    @FXML private Button btnStop;
-    @FXML private Button btnSubmit;
+    @FXML
+    private Label errorMsg;
+    @FXML
+    private VBox exportPane;
+    @FXML
+    private RadioButton radioCondensed, radioFlattened;
+    @FXML
+    private TextArea exportModeExample;
+    @FXML
+    private ProgressBar exportProgress;
+    @FXML
+    private ScrollPane helpScrollPane;
+    @FXML
+    private Button btnClose;
+    @FXML
+    private Button btnStop;
+    @FXML
+    private Button btnSubmit;
 
     private CommentQuery commentQuery;
     private CommentDatabase database;
@@ -174,7 +182,8 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                 File videoFile = new File(thisExportFolder, String.format("%s-meta.json", videoId));
 
                                 YouTubeVideo video = null;
-                                try (FileWriter writer = new FileWriter(videoFile)) {
+                                try (FileOutputStream fos = new FileOutputStream(searchSettings);
+                                     OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
                                     video = database.getVideo(videoId);
                                     video.setAuthor(database.getChannel(video.getChannelId()));
                                     video.prepForExport();
@@ -217,7 +226,8 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                                         localQuery.setCommentsType(CommentQuery.CommentsType.COMMENTS_ONLY);
                                     }
 
-                                    try (FileWriter writer = new FileWriter(commentsFile);
+                                    try (FileOutputStream fos = new FileOutputStream(searchSettings);
+                                         OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
                                          JsonWriter jsonWriter = new JsonWriter(writer)) {
                                         logger.debug("Writing file {}", commentsFile.getName());
 
@@ -284,7 +294,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
                             btnClose.setDisable(false);
 
-                            if(!quitExport) {
+                            if (!quitExport) {
                                 btnClose.fire();
                             }
                         });
