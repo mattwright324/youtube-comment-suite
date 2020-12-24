@@ -47,6 +47,16 @@ Simply extracting all zip contents to a folder will do this.
 
 Want to know more about how to use this program? [Check out the Wiki!](https://github.com/mattwright324/youtube-comment-suite/wiki/Overview-of-the-interface)
 
+### Building
+
+Refer to [BUILD.md](https://github.com/mattwright324/youtube-comment-suite/blob/master/BUILD.md)
+for instructions on how to build and run `youtube-comment-suite` from source.
+
+### Contributing
+
+Contributions are welcome, refer to [CONTRIBUTING.md](https://github.com/mattwright324/youtube-comment-suite/blob/master/CONTRIBUTING.md)
+for more detail.
+
 ## Donate
 
 If you'd like to support future development or just thank me, you can send donations @ [paypal.me/mattwright324](https://www.paypal.me/mattwright324)
