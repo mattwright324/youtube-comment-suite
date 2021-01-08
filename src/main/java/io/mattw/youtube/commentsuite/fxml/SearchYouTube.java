@@ -195,6 +195,12 @@ public class SearchYouTube implements Initializable {
                 pageToken = "";
             }
 
+            if (order.equals("Video Count")) {
+                order = "videoCount";
+            } else if (order.equals("View Count")) {
+                order = "viewCount";
+            }
+
             searchList = youtubeApi.search().list("snippet")
                     .setKey(FXMLSuite.getYouTubeApiKey())
                     .setMaxResults(50L)

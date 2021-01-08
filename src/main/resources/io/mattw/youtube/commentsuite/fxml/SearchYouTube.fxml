@@ -61,7 +61,8 @@
                         <String fx:value="Date" />
                         <String fx:value="Title" />
                         <String fx:value="Rating" />
-                        <String fx:value="Views" />
+                        <String fx:value="Video Count" />
+                        <String fx:value="View Count" />
                     </FXCollections>
                 </items>
             </ComboBox>
