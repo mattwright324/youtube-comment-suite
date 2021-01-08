@@ -78,7 +78,6 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
                         database.cleanUp();
                         runLater(() -> {
                             itemsRemoved.setValue(itemsRemoved.getValue() + 1);
-                            group.reloadGroupItems();
                             btnClose.fire();
                         });
                     } catch (SQLException e) {

@@ -140,7 +140,7 @@ public class ManageGroups implements Initializable {
                 }
             } else {
                 runLater(() -> {
-                    overlayModal.setDisable(true);
+                    overlayModal.setDisable(false);
                     modal.getErrorMsg().setManaged(true);
                     modal.getErrorMsg().setText("Name must not be empty.");
                 });
