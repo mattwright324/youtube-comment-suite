@@ -200,7 +200,7 @@ public class SearchYouTube implements Initializable {
                     .setMaxResults(50L)
                     .setPageToken(pageToken)
                     .setQ(encodedText)
-                    .setType(type)
+                    .setType(searchType)
                     .setOrder(order.toLowerCase());
 
             SearchListResponse sl;
