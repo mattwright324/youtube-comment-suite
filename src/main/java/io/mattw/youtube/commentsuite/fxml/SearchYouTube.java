@@ -74,6 +74,7 @@ public class SearchYouTube implements Initializable {
     private YouTube.Search.List searchList;
     private SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
     private String[] types = {"all", "video", "playlist", "channel"};
+    private String previousType;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -92,6 +93,18 @@ public class SearchYouTube implements Initializable {
         locationBox.visibleProperty().bind(isLocation);
         searchRadius.managedProperty().bind(isLocation);
         searchRadius.visibleProperty().bind(isLocation);
+        isLocation.addListener((o, ov, nv) -> {
+            runLater(() -> {
+                if (nv) {
+                    previousType = resultType.getValue();
+                    resultType.setValue("Video");
+                    resultType.setDisable(true);
+                } else {
+                    resultType.setValue(previousType);
+                    resultType.setDisable(false);
+                }
+            });
+        });
 
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -219,7 +232,9 @@ public class SearchYouTube implements Initializable {
                 logger.debug("Location Search [key={},part=snippet,text={},loc={},radius={},type={},order={},token={}]",
                         FXMLSuite.getYouTubeApiKey(), encodedText, locText, locRadius, searchType, order.toLowerCase(), pageToken);
 
-                sl = searchList.setLocation(locText)
+                sl = searchList
+                        .setType("video")
+                        .setLocation(locText)
                         .setLocationRadius(locRadius)
                         .execute();
             }
