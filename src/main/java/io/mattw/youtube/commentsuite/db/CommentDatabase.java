@@ -745,7 +745,7 @@ public class CommentDatabase implements Closeable {
         } catch (SQLException ignored) {
         }
 
-        return Long.MAX_VALUE;
+        return 0;
     }
 
     public GroupStats getGroupStats(Group group) throws SQLException {

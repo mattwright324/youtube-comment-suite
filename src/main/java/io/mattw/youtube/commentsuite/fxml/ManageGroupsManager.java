@@ -442,8 +442,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         long timestamp = database.getLastChecked(this.group);
 
         final String formattedTimestamp =
-                timestamp == Long.MAX_VALUE ?
-                        "Never refreshed." : timeSince(timestamp);
+                timestamp == 0 ? "never refreshed" : timeSince(timestamp);
 
         runLater(() -> refreshStatus.setText(formattedTimestamp));
     }
