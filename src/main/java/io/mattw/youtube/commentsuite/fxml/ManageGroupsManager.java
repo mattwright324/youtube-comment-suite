@@ -19,7 +19,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +50,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     private static final Logger logger = LogManager.getLogger();
     private final Image edit = ImageLoader.PENCIL.getImage();
-    private final Image close = ImageLoader.CLOSE.getImage();
+    private final Image save = ImageLoader.SAVE.getImage();
 
     private ChangeListener<Font> fontListener;
     private Group group;
@@ -135,7 +134,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         });
 
         rename.setOnAction(ae -> new Thread(() -> {
-            if (editIcon.getImage().equals(close)) {
+            if (editIcon.getImage().equals(save)) {
                 try {
                     database.renameGroup(group, groupTitle.getText());
                 } catch (SQLException e) {
@@ -144,7 +143,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             }
             runLater(() -> {
                 if (editIcon.getImage().equals(edit)) {
-                    editIcon.setImage(close);
+                    editIcon.setImage(save);
                     groupTitle.getStyleClass().remove("clearTextField");
                     groupTitle.setEditable(true);
                     rename.setTooltip(new Tooltip("Save Changes"));

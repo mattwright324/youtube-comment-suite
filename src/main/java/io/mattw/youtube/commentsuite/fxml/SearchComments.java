@@ -11,6 +11,7 @@ import io.mattw.youtube.commentsuite.util.*;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -140,6 +141,14 @@ public class SearchComments implements Initializable, ImageCache {
                     videoSelect.setDisable(true);
                 });
             }
+        });
+        database.groupRenameProperty().addListener((o, ov, nv) -> {
+            runLater(() -> {
+                Group selectedGroup = comboGroupSelect.getValue();
+                comboGroupSelect.setItems(FXCollections.emptyObservableList());
+                comboGroupSelect.setItems(database.getGlobalGroupList());
+                comboGroupSelect.getSelectionModel().select(selectedGroup);
+            });
         });
 
         resultsPane.disableProperty().bind(searchingProperty);

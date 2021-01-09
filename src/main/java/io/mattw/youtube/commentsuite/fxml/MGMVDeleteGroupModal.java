@@ -60,13 +60,9 @@ public class MGMVDeleteGroupModal extends VBox {
                     logger.warn("Deleting Group[id={},name={}]", group.getId(), group.getName());
                     database.deleteGroup(this.group);
 
-                    logger.warn("Cleaning up after group delete [id={},name={}]", group.getId(), group.getName());
-                    database.cleanUp();
-                    database.commit();
                     if (doVacuum.isSelected()) {
                         database.vacuum();
                     }
-                    database.refreshGroups();
                 } catch (SQLException e) {
                     logger.error("Failed to delete group.", e);
                 }

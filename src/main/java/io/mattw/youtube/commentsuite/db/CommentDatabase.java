@@ -2,7 +2,8 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import javafx.application.Platform;
+import javafx.beans.property.LongProperty;
+import javafx.beans.property.SimpleLongProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.logging.log4j.LogManager;
@@ -15,6 +16,8 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static javafx.application.Platform.runLater;
+
 /**
  * @author mattwright324
  */
@@ -23,6 +26,7 @@ public class CommentDatabase implements Closeable {
     private static final Logger logger = LogManager.getLogger();
 
     private ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
+    private LongProperty groupRename = new SimpleLongProperty(0);
 
     private Connection sqlite;
     private Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
@@ -52,6 +56,14 @@ public class CommentDatabase implements Closeable {
 
     public ObservableList<Group> getGlobalGroupList() {
         return globalGroupList;
+    }
+
+    public LongProperty groupRenameProperty() {
+        return groupRename;
+    }
+
+    public void incrGroupRenameProperty() {
+        groupRename.setValue(groupRename.getValue() + 1);
     }
 
     @Override
@@ -119,31 +131,35 @@ public class CommentDatabase implements Closeable {
      */
     public void refreshGroups() throws SQLException {
         logger.debug("Grabbing groups and refreshing global group list.");
-        try (Statement s = sqlite.createStatement();
-             ResultSet rs = s.executeQuery(SQLLoader.GET_ALL_GROUPS.toString())) {
-            List<Group> groups = new ArrayList<>();
+        try (final Statement s = sqlite.createStatement();
+             final ResultSet rs = s.executeQuery(SQLLoader.GET_ALL_GROUPS.toString())) {
+
+            final List<Group> groups = new ArrayList<>();
             while (rs.next()) {
-                Group group = resultSetToGroup(rs);
+                final Group group = resultSetToGroup(rs);
                 group.reloadGroupItems();
                 groups.add(group);
             }
 
+            logger.debug(globalGroupList);
+
             for (int i = 0; i < globalGroupList.size(); i++) {
                 if (!groups.contains(globalGroupList.get(i))) {
                     final int j = i;
-                    Platform.runLater(() -> globalGroupList.remove(j));
+                    runLater(() -> globalGroupList.remove(j));
                 }
             }
             for (Group g : groups) {
                 if (!globalGroupList.contains(g)) {
-                    Platform.runLater(() -> globalGroupList.add(g));
+                    runLater(() -> globalGroupList.add(g));
                 }
             }
-            if (groups.isEmpty()) {
+
+            if (globalGroupList.isEmpty()) {
                 System.out.println("INSERTING Default Group");
                 s.executeUpdate(SQLLoader.GROUP_CREATE_DEFAULT.toString());
                 commit();
-                Platform.runLater(() -> globalGroupList.add(defaultGroup));
+                runLater(() -> globalGroupList.add(defaultGroup));
             }
         }
     }
@@ -336,6 +352,7 @@ public class CommentDatabase implements Closeable {
 
             this.commit();
             g.setName(newName);
+            runLater(this::incrGroupRenameProperty);
         }
     }
 
@@ -347,6 +364,11 @@ public class CommentDatabase implements Closeable {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DELETE_GROUP.toString())) {
             ps.setString(1, g.getId());
             ps.executeUpdate();
+
+            logger.warn("Cleaning up after group delete [id={},name={}]", g.getId(), g.getName());
+            this.cleanUp();
+            this.commit();
+            this.refreshGroups();
         }
     }
 

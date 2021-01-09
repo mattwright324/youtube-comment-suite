@@ -6,6 +6,7 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -69,6 +70,14 @@ public class ManageGroups implements Initializable {
                 selectionModel.select(0);
             }
         }));
+        database.groupRenameProperty().addListener((o, ov, nv) -> {
+            runLater(() -> {
+                Group selectedGroup = comboGroupSelect.getValue();
+                comboGroupSelect.setItems(FXCollections.emptyObservableList());
+                comboGroupSelect.setItems(database.getGlobalGroupList());
+                comboGroupSelect.getSelectionModel().select(selectedGroup);
+            });
+        });
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
             if (nv != null) {
                 ManageGroupsManager manager = managerCache.getIfPresent(nv.getId());
