@@ -94,8 +94,8 @@
                     <Label />
 
                     <Label text="About" styleClass="sectionTitle, bold" maxWidth="Infinity" />
-                    <Label text="MIT License. Copyright © 2020 Matthew Wright." />
-                    <Label text="This release version: v1.4.3" />
+                    <Label text="MIT License. Copyright © ${current.year} Matthew Wright." />
+                    <Label text="This release version: ${version}" />
                     <Hyperlink fx:id="github" text="mattwright324/youtube-comment-suite" graphic="$githubIcon" />
                     <Label />
                 </VBox>
