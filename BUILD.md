@@ -15,7 +15,7 @@ Install [Java Development Kit 8](https://www.oracle.com/java/technologies/javase
 if it isn't installed already.
 
 Open the cloned project folder with your IDE of choice that supports Maven. 
-Make sure the IDE and/or project is configured to use JDK8. 
+Make sure the workspace and/or project is configured to use JDK8. 
 Depending on the IDE, you may need to wait for dependencies to download and things to index.
 
 To perform a project build, run the `mvn package` command. 
