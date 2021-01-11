@@ -12,7 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        
+
         <current.year>2021</current.year>
     </properties>
 
@@ -64,6 +64,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
+                            <includeScope>compile</includeScope>
                             <outputDirectory>${project.build.directory}/package/lib</outputDirectory>
                         </configuration>
                     </execution>
@@ -172,7 +173,7 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.9.13</version>
+            <version>1.10.19</version>
             <scope>test</scope>
         </dependency>
         <dependency>
