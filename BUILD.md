@@ -30,15 +30,18 @@ The build files will appear in folder `target/package/` and contains the followi
 - `README.md`
 - `youtube-comment-suite-#.#.#.jar`
 
+This is what gets zipped up for a release.
+
 The project version and year is configured in `pom.xml` with properties `project.version` and `current.year`.
-Maven will insert these values into `Settings.fxml` during the build.
+Maven will use the version in the built jar name. 
+Maven will also insert these values into `Settings.fxml` during the build.
 
 ### Running youtube-comment-suite
 
 There are two ways to run this application from your IDE
 
 1. **From in IDE** Right click on file and run `src/main/java/io.mattw.youtube.commentsuite/FXMLSuite.java`
-2. **From package** Double click the jar at `target/youtube-comment-suite-#.#.#.jar` 
+2. **From package** Double click the jar at `target/package/youtube-comment-suite-#.#.#.jar` 
 
 *Note: My YouTube API key provided in the application is not restricted at all given it isn't a website.
 Access should work for all local development. Please do not abuse it such that it uses up the daily quota.*
