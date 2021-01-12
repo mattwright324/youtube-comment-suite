@@ -1,33 +1,35 @@
 package io.mattw.youtube.commentsuite.db;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.sqlite.SQLiteConnection;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
-public class TestCommentDatabase {
+@ExtendWith(MockitoExtension.class)
+public class CommentDatabaseTest {
 
-    @Mock SQLiteConnection sqlite;
-    @Mock Statement statement;
-    @Mock PreparedStatement prepStatement;
+    @Mock
+    private SQLiteConnection sqlite;
+    @Mock
+    private Statement statement;
+    @Mock
+    private PreparedStatement prepStatement;
 
-    @InjectMocks CommentDatabase database;
+    @InjectMocks
+    private CommentDatabase database;
 
-    @Before
-    public void setup() throws SQLException {
+    private void prepStatement() throws SQLException {
         when(sqlite.createStatement()).thenReturn(statement);
-        // when(sqlite.prepareStatement(anyString())).thenReturn(prepStatement);
     }
 
     @Test
@@ -36,7 +38,7 @@ public class TestCommentDatabase {
     }
 
     @Test
-    public void testCommit() throws SQLException  {
+    public void testCommit() throws SQLException {
         database.commit();
 
         verify(sqlite, times(1)).commit();
@@ -44,6 +46,8 @@ public class TestCommentDatabase {
 
     @Test
     public void testCreate() throws SQLException {
+        prepStatement();
+
         database.create();
 
         verify(statement, times(1)).executeUpdate(anyString());
@@ -53,6 +57,8 @@ public class TestCommentDatabase {
 
     @Test
     public void testVacuum() throws SQLException {
+        prepStatement();
+
         database.vacuum();
 
         verify(statement, times(1)).execute(anyString());
@@ -63,6 +69,8 @@ public class TestCommentDatabase {
 
     @Test
     public void testReset() throws SQLException {
+        prepStatement();
+
         database.reset();
 
         // commit() and create()
@@ -77,6 +85,8 @@ public class TestCommentDatabase {
 
     @Test
     public void testCleanUp() throws SQLException {
+        prepStatement();
+
         database.cleanUp();
 
         // commit() and create()

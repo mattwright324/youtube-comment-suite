@@ -1,19 +1,15 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.fxml.SearchComments;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestSearchComments {
+@ExtendWith(MockitoExtension.class)
+public class SearchCommentsTest {
 
-    SearchComments controller;
-
-    @Before
-    public void setup() {
-        controller = new SearchComments();
-    }
+    private SearchComments controller = new SearchComments();
 
     @Test
     public void testTrunc() {
@@ -26,7 +22,7 @@ public class TestSearchComments {
         assertTrunc(2050000000L, "2.1b");
     }
 
-    void assertTrunc(long value, String expected) {
+    private void assertTrunc(long value, String expected) {
         String result = controller.trunc(value);
 
         assertEquals(expected, result);
