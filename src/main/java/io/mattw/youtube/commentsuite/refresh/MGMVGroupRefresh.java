@@ -1,9 +1,12 @@
-package io.mattw.youtube.commentsuite;
+package io.mattw.youtube.commentsuite.refresh;
 
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
+import io.mattw.youtube.commentsuite.ConfigData;
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.RefreshInterface;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
@@ -18,7 +21,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,59 +49,61 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private Group group;
-    private ObservableList<String> errorList = FXCollections.observableArrayList();
+    private final Group group;
+    private final RefreshOptions options;
+    private final ObservableList<String> errorList = FXCollections.observableArrayList();
     private boolean hardShutdown = false;
     private boolean endedOnError = false;
-    private BooleanProperty ended = new SimpleBooleanProperty(false);
-    private DoubleProperty progress = new SimpleDoubleProperty(0.0);
-    private StringProperty statusStep = new SimpleStringProperty("Preparing");
-    private StringProperty elapsedTime = new SimpleStringProperty("0 ms");
+    private final BooleanProperty ended = new SimpleBooleanProperty(false);
+    private final DoubleProperty progress = new SimpleDoubleProperty(0.0);
+    private final StringProperty statusStep = new SimpleStringProperty("Preparing");
+    private final StringProperty elapsedTime = new SimpleStringProperty("0 ms");
 
     // Observables for modal to bind to
-    private LongProperty newVideos = new SimpleLongProperty(0);
-    private LongProperty totalVideos = new SimpleLongProperty(0);
-    private LongProperty newComments = new SimpleLongProperty(0);
-    private LongProperty totalComments = new SimpleLongProperty(0);
-    private LongProperty newViewers = new SimpleLongProperty(0);
-    private LongProperty totalViewers = new SimpleLongProperty(0);
+    private final LongProperty newVideos = new SimpleLongProperty(0);
+    private final LongProperty totalVideos = new SimpleLongProperty(0);
+    private final LongProperty newComments = new SimpleLongProperty(0);
+    private final LongProperty totalComments = new SimpleLongProperty(0);
+    private final LongProperty newViewers = new SimpleLongProperty(0);
+    private final LongProperty totalViewers = new SimpleLongProperty(0);
 
     // Thread safe
-    private AtomicLong atomicNewVideos = new AtomicLong(0);
-    private AtomicLong atomicTotalVideos = new AtomicLong(0);
-    private AtomicLong atomicNewComments = new AtomicLong(0);
-    private AtomicLong atomicTotalComments = new AtomicLong(0);
-    private Set<String> concurrentTotalViewerSet = ConcurrentHashMap.newKeySet();
-    private Set<String> concurrentNewViewerSet = ConcurrentHashMap.newKeySet();
+    private final AtomicLong atomicNewVideos = new AtomicLong(0);
+    private final AtomicLong atomicTotalVideos = new AtomicLong(0);
+    private final AtomicLong atomicNewComments = new AtomicLong(0);
+    private final AtomicLong atomicTotalComments = new AtomicLong(0);
+    private final Set<String> concurrentTotalViewerSet = ConcurrentHashMap.newKeySet();
+    private final Set<String> concurrentNewViewerSet = ConcurrentHashMap.newKeySet();
 
     private final int maxAttempts = 5;
     private Double videoProgress = 0.0;
     private Double totalProgress = 0.0;
-    private ElapsedTime elapsedTimer = new ElapsedTime();
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+    private final ElapsedTime elapsedTimer = new ElapsedTime();
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
 
-    private ExecutorGroup gitemGroup = new ExecutorGroup(10);
-    private ExecutorGroup videoCommentsGroup = new ExecutorGroup(10);
-    private ExecutorGroup repliesGroup = new ExecutorGroup(20);
-    private ExecutorGroup commentInsertGroup = new ExecutorGroup(2);
-    private ExecutorGroup channelIdGroup = new ExecutorGroup(20);
-    private ExecutorGroup channelInsertGroup = new ExecutorGroup(2);
+    private final ExecutorGroup gitemGroup = new ExecutorGroup(10);
+    private final ExecutorGroup videoCommentsGroup = new ExecutorGroup(10);
+    private final ExecutorGroup repliesGroup = new ExecutorGroup(20);
+    private final ExecutorGroup commentInsertGroup = new ExecutorGroup(2);
+    private final ExecutorGroup channelIdGroup = new ExecutorGroup(20);
+    private final ExecutorGroup channelInsertGroup = new ExecutorGroup(2);
 
-    private LinkedBlockingQueue<GroupItem> gitemQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<YouTubeVideo> videoQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<Tuple<String, String>> commentThreadQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<YouTubeComment> commentInsertQueue = new LinkedBlockingQueue<>();
-    private List<CommentDatabase.GroupItemVideo> gitemVideo = new ArrayList<>();
-    private LinkedBlockingQueue<String> channelQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<YouTubeChannel> channelInsertQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<GroupItem> gitemQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<YouTubeVideo> videoQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<Tuple<String, String>> commentThreadQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<YouTubeComment> commentInsertQueue = new LinkedBlockingQueue<>();
+    private final List<CommentDatabase.GroupItemVideo> gitemVideo = new ArrayList<>();
+    private final LinkedBlockingQueue<String> channelQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<YouTubeChannel> channelInsertQueue = new LinkedBlockingQueue<>();
 
-    private YouTube youtube = FXMLSuite.getYouTube();
-    private CommentDatabase database = FXMLSuite.getDatabase();
-    private ConfigData configData = FXMLSuite.getConfig().getDataObject();
+    private final YouTube youtube = FXMLSuite.getYouTube();
+    private final CommentDatabase database = FXMLSuite.getDatabase();
+    private final ConfigData configData = FXMLSuite.getConfig().getDataObject();
 
-    public MGMVGroupRefresh(Group group) {
+    public MGMVGroupRefresh(final Group group, final RefreshOptions options) {
         this.group = group;
+        this.options = options;
     }
 
 
@@ -302,6 +310,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     int attempts = 0;
                     CommentThreadListResponse ctl;
                     String pageToken = "";
+                    int page = 1;
+                    RefreshCommentPages commentPages = options.getCommentPages();
                     do {
                         try {
                             logger.info("{} - {}", video.getId(), video.getTitle());
@@ -310,6 +320,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                         .setKey(FXMLSuite.getYouTubeApiKey())
                                         .setVideoId(video.getId())
                                         .setMaxResults(50L)
+                                        .setOrder(options.getCommentOrder().getDisplayText())
                                         .setPageToken(pageToken)
                                         .execute();
 
@@ -330,7 +341,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                             .collect(Collectors.toList());
 
                                     comments.forEach(c -> {
-                                        if (c.getReplyCount() > 0) {
+                                        if (c.getReplyCount() > 0 && options.getReplyPages() != RefreshReplyPages.NONE) {
                                             incrTotalProgress(1);
                                             updateProgress();
 
@@ -353,7 +364,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                 }
 
                                 awaitMillis(50);
-                            } while (pageToken != null && !isHardShutdown());
+                            } while (pageToken != null && page++ < commentPages.getPageCount() && !isHardShutdown());
                             break;
                         } catch (IOException e) {
                             if (e instanceof GoogleJsonResponseException) {
@@ -429,6 +440,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                     try {
                         CommentListResponse cl;
                         String pageToken = "";
+                        int page = 1;
+                        RefreshReplyPages replyPages = options.getReplyPages();
                         do {
                             cl = youtube.comments().list("snippet")
                                     .setKey(FXMLSuite.getYouTubeApiKey())
@@ -453,7 +466,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             channelInsertQueue.addAll(channels);
 
                             awaitMillis(50);
-                        } while (pageToken != null && !isHardShutdown());
+                        } while (pageToken != null && page++ < replyPages.getPageCount() && !isHardShutdown());
                     } catch (IOException e) {
                         logger.error("Couldn't grab commentThread[id={}]", tuple.getFirst(), e);
                     }
@@ -671,8 +684,22 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             List<YouTubeVideo> videos = vl.getItems().stream()
                     .map(YouTubeVideo::new)
                     .collect(Collectors.toList());
-            videoQueue.addAll(videos);
+
             database.insertVideos(videos);
+
+            RefreshTimeframe timeframe = options.getTimeframe();
+            if (timeframe == RefreshTimeframe.NONE || options.getCommentPages() == RefreshCommentPages.NONE) {
+                videos.clear();
+            } else if (timeframe != RefreshTimeframe.ALL) {
+                videos.removeIf(video -> {
+                    LocalDate periodDate = LocalDate.now().minus(timeframe.getTimeframe());
+                    LocalDate publishDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(video.getPublishedDate()), ZoneId.systemDefault()).toLocalDate();
+
+                    return publishDate.isBefore(periodDate);
+                });
+            }
+
+            videoQueue.addAll(videos);
         }
         incrVideoProgress(videoIds.size());
         updateProgress();

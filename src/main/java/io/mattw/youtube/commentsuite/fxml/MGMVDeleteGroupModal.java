@@ -49,28 +49,6 @@ public class MGMVDeleteGroupModal extends VBox {
         loader.setRoot(this);
         try {
             loader.load();
-
-            btnDelete.setOnAction(ae -> new Thread(() -> {
-                runLater(() -> {
-                    btnDelete.setDisable(true);
-                    btnClose.setDisable(true);
-                });
-
-                try {
-                    logger.warn("Deleting Group[id={},name={}]", group.getId(), group.getName());
-                    database.deleteGroup(this.group);
-
-                    if (doVacuum.isSelected()) {
-                        database.vacuum();
-                    }
-                } catch (SQLException e) {
-                    logger.error("Failed to delete group.", e);
-                }
-                runLater(() -> {
-                    btnDelete.setDisable(false);
-                    btnClose.setDisable(false);
-                });
-            }).start());
         } catch (IOException e) {
             logger.error(e);
         }
@@ -83,4 +61,6 @@ public class MGMVDeleteGroupModal extends VBox {
     public Button getBtnDelete() {
         return btnDelete;
     }
+
+    public CheckBox getDoVacuum() { return doVacuum; }
 }

@@ -12,6 +12,7 @@
          xmlns:fx="http://javafx.com/fxml">
     <fx:define>
         <ImageView fx:id="editIcon" fitHeight="25" fitWidth="25" />
+        <ImageView fx:id="closeIcon" fitHeight="25" fitWidth="25" />
     </fx:define>
     <!-- Content -->
     <VBox spacing="10" alignment="TOP_CENTER">
@@ -20,13 +21,14 @@
             <HBox alignment="CENTER_LEFT">
                 <TextField fx:id="groupTitle" editable="false" minWidth="0" styleClass="font18, clearTextField, dashedBottom" />
                 <Hyperlink fx:id="rename" graphic="$editIcon" />
+                <Hyperlink fx:id="renameCancel" graphic="$closeIcon" visible="false" managed="false" disable="true" />
             </HBox>
             <fx:include source="HFlexLabel.fxml" HBox.hgrow="ALWAYS" />
             <HBox styleClass="btnGroup, control">
                 <Button fx:id="btnRefresh" styleClass="control, btn, btnPrimary, noRadiusRight" text="Refresh" />
                 <Label fx:id="refreshStatus" styleClass="control, noRadiusLeft" text="..." />
             </HBox>
-            <Button fx:id="btnReload" styleClass="btn, btnLight, control" text="Reload Stats" />
+            <Button fx:id="btnReload" styleClass="btn, btnLight, control" text="Reload" />
             <Button fx:id="btnDelete" styleClass="btn, btnDanger, control" text="Delete Group" />
         </HBox>
         <HBox VBox.vgrow="ALWAYS" spacing="10" alignment="TOP_CENTER">

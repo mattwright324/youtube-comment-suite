@@ -2,6 +2,7 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.mattw.youtube.commentsuite.fxml.ManageGroups;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.collections.FXCollections;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static javafx.application.Platform.runLater;
 
@@ -134,33 +136,31 @@ public class CommentDatabase implements Closeable {
         try (final Statement s = sqlite.createStatement();
              final ResultSet rs = s.executeQuery(SQLLoader.GET_ALL_GROUPS.toString())) {
 
-            final List<Group> groups = new ArrayList<>();
+            final List<Group> dbGroups = new ArrayList<>();
             while (rs.next()) {
                 final Group group = resultSetToGroup(rs);
                 group.reloadGroupItems();
-                groups.add(group);
+                dbGroups.add(group);
             }
 
-            logger.debug(globalGroupList);
-
-            for (int i = 0; i < globalGroupList.size(); i++) {
-                if (!groups.contains(globalGroupList.get(i))) {
-                    final int j = i;
-                    runLater(() -> globalGroupList.remove(j));
-                }
-            }
-            for (Group g : groups) {
-                if (!globalGroupList.contains(g)) {
-                    runLater(() -> globalGroupList.add(g));
-                }
-            }
-
-            if (globalGroupList.isEmpty()) {
-                System.out.println("INSERTING Default Group");
+            if (dbGroups.isEmpty()) {
+                logger.debug("Creating Default Group");
                 s.executeUpdate(SQLLoader.GROUP_CREATE_DEFAULT.toString());
                 commit();
-                runLater(() -> globalGroupList.add(defaultGroup));
+                dbGroups.add(defaultGroup);
             }
+
+            runLater(() -> {
+                final List<Group> toRemove = globalGroupList.stream()
+                        .filter(globalGroup -> !dbGroups.contains(globalGroup))
+                        .collect(Collectors.toList());
+                final List<Group> toAdd = dbGroups.stream()
+                        .filter(dbGroup -> !globalGroupList.contains(dbGroup))
+                        .collect(Collectors.toList());
+
+                globalGroupList.removeAll(toRemove);
+                globalGroupList.addAll(toAdd);
+            });
         }
     }
 
@@ -316,6 +316,19 @@ public class CommentDatabase implements Closeable {
         return items;
     }
 
+    public Group getGroup(String groupId) throws SQLException {
+        try (PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM groups WHERE group_id = ?")) {
+            ps.setString(1, groupId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    return new Group(rs.getString("group_id"), rs.getString("group_name"));
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Attempts insert of a new group. Throws exception if name already exists.
      * Commits and refreshes globalGroupList.
@@ -360,14 +373,19 @@ public class CommentDatabase implements Closeable {
      * Deletes a Group.
      * Recommended to run cleanUp() afterwards.
      */
-    public void deleteGroup(Group g) throws SQLException {
+    public void deleteGroup(Group group) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DELETE_GROUP.toString())) {
-            ps.setString(1, g.getId());
+            ps.setString(1, group.getId());
             ps.executeUpdate();
 
-            logger.warn("Cleaning up after group delete [id={},name={}]", g.getId(), g.getName());
-            this.cleanUp();
+            logger.warn("Cleaning up after group delete [id={},name={}]", group.getId(), group.getName());
             this.commit();
+            this.cleanUp();
+
+            ManageGroups.invalidateAndRemove(group);
+
+            try { Thread.sleep(100); } catch (InterruptedException  ignored) {}
+
             this.refreshGroups();
         }
     }

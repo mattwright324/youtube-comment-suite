@@ -8,6 +8,30 @@
          xmlns:fx="http://javafx.com/fxml"
          spacing="10">
     <VBox spacing="10" HBox.hgrow="ALWAYS">
+        <VBox fx:id="optionsPane" spacing="10">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label style="-fx-font-weight: bold">Refresh style</Label>
+                <ComboBox fx:id="refreshStyle" />
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label>Grab comments from video(s) in timeframe</Label>
+                <ComboBox fx:id="refreshTimeframe" />
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label>Grab comments for up to</Label>
+                <ComboBox fx:id="refreshCommentPages" />
+                <Label>page(s) of 50 results per page.</Label>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label>Grab comments in order by </Label>
+                <ComboBox fx:id="refreshCommentOrder" />
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label>Grab replies up to</Label>
+                <ComboBox fx:id="refreshReplyPages" />
+                <Label>page(s) of 50 results per page.</Label>
+            </HBox>
+        </VBox>
         <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"
                     alignment="CENTER"
                     text="Warning: this could take a while!" />

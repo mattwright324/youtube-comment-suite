@@ -20,6 +20,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,6 +37,7 @@ import java.util.stream.Stream;
 import static java.lang.Math.min;
 import static java.util.stream.Collectors.toMap;
 import static javafx.application.Platform.runLater;
+import static org.apache.commons.lang3.StringUtils.*;
 
 /**
  * Manages a specific group; refreshing, stats, renaming, deletion, adding group items, etc.
@@ -50,6 +52,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     private static final Logger logger = LogManager.getLogger();
     private final Image edit = ImageLoader.PENCIL.getImage();
+    private final Image close = ImageLoader.CLOSE.getImage();
     private final Image save = ImageLoader.SAVE.getImage();
 
     private ChangeListener<Font> fontListener;
@@ -69,8 +72,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     @FXML private ListView<MGMVGroupItemView> groupItemList;
 
     @FXML private TextField groupTitle;
-    @FXML private ImageView editIcon;
-    @FXML private Hyperlink rename;
+    @FXML private ImageView editIcon, closeIcon;
+    @FXML private Hyperlink rename, renameCancel;
     @FXML private Button btnRefresh;
     @FXML private Button btnReload;
     @FXML private Button btnDelete;
@@ -112,10 +115,23 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         videosLineChart.getData().add(videosLineChartData);
 
         editIcon.setImage(edit);
+        closeIcon.setImage(close);
+
+        FXUtils.registerToSize(groupTitle, 18);
+        FXUtils.registerToPadding(groupTitle, 10.5);
 
         groupTitle.setMinWidth(Region.USE_PREF_SIZE);
         groupTitle.setMaxWidth(Region.USE_PREF_SIZE);
-        groupTitle.textProperty().addListener((ov, prevText, currText) -> FXUtils.adjustTextFieldWidthByContent(groupTitle));
+        groupTitle.textProperty().addListener((ov, prevText, currText) -> {
+            runLater(() -> {
+                int caretPosition = groupTitle.getCaretPosition();
+                groupTitle.setText(trimToEmpty(currText));
+                groupTitle.positionCaret(caretPosition);
+                rename.setDisable(isBlank(groupTitle.getText()));
+            });
+
+            FXUtils.adjustTextFieldWidthByContent(groupTitle);
+        });
         groupTitle.fontProperty().addListener(fontListener = (o, ov, nv) -> {
             FXUtils.adjustTextFieldWidthByContent(groupTitle);
 
@@ -138,6 +154,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 try {
                     database.renameGroup(group, groupTitle.getText());
                 } catch (SQLException e) {
+                    groupTitle.setText(group.getName());
                     logger.error(e);
                 }
             }
@@ -147,14 +164,40 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                     groupTitle.getStyleClass().remove("clearTextField");
                     groupTitle.setEditable(true);
                     rename.setTooltip(new Tooltip("Save Changes"));
+
+                    renameCancel.setVisible(true);
+                    renameCancel.setManaged(true);
+                    renameCancel.setDisable(false);
                 } else {
                     editIcon.setImage(edit);
                     groupTitle.getStyleClass().add("clearTextField");
                     groupTitle.setEditable(false);
                     rename.setTooltip(new Tooltip("Rename"));
+
+                    renameCancel.setVisible(false);
+                    renameCancel.setManaged(false);
+                    renameCancel.setDisable(true);
                 }
             });
         }).start());
+
+        renameCancel.setOnAction(ae -> new Thread(() -> {
+            runLater(() -> {
+                editIcon.setImage(edit);
+                groupTitle.getStyleClass().add("clearTextField");
+                groupTitle.setEditable(false);
+                rename.setTooltip(new Tooltip("Rename"));
+
+                renameCancel.setVisible(false);
+                renameCancel.setManaged(false);
+                renameCancel.setDisable(true);
+
+                groupTitle.setText(group.getName());
+
+                FXUtils.adjustTextFieldWidthByContent(groupTitle);
+            });
+        }).start());
+        renameCancel.setTooltip(new Tooltip("Cancel"));
 
         SelectionModel selectionModel = groupItemList.getSelectionModel();
         ((MultipleSelectionModel) selectionModel).setSelectionMode(SelectionMode.MULTIPLE);
@@ -173,10 +216,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 })
         );
 
-        group.itemsUpdatedProperty().addListener((o, ov, nv) -> this.reloadGroupItems());
+        group.itemsUpdatedProperty().addListener((o, ov, nv) -> this.reloadGroupItems("itemsUpdatedProperty"));
 
         btnReload.setOnAction(ae -> new Thread(() -> {
-            reloadGroupItems();
+            reloadGroupItems("btnReload");
             try {
                 reload();
             } catch (SQLException e) {
@@ -210,9 +253,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         });
         mgmvRefresh.getErrorList().managedProperty().addListener((o, ov, nv) -> {
             if (nv) {
-                runLater(() -> refreshModal.getModalContainer().setMaxWidth(420 + 250));
+                runLater(() -> refreshModal.getModalContainer().setMaxWidth(MGMVRefreshModal.WIDTH + 250));
             } else {
-                runLater(() -> refreshModal.getModalContainer().setMaxWidth(420));
+                runLater(() -> refreshModal.getModalContainer().setMaxWidth(MGMVRefreshModal.WIDTH));
             }
         });
 
@@ -229,6 +272,33 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvDelete.getBtnClose().setCancelButton(deleteModal.isVisible());
             mgmvDelete.getBtnDelete().setDefaultButton(deleteModal.isVisible());
         });
+        mgmvDelete.getBtnDelete().setOnAction(ae -> {
+            deleteModal.setVisible(false);
+            btnReload.fire();
+        });
+        mgmvDelete.getBtnDelete().setOnAction(ae -> new Thread(() -> {
+            runLater(() -> {
+                mgmvDelete.getBtnDelete().setDisable(true);
+                mgmvDelete.getBtnClose().setDisable(true);
+            });
+
+            try {
+                logger.warn("Deleting Group[id={},name={}]", group.getId(), group.getName());
+                database.deleteGroup(this.group);
+
+                if (mgmvDelete.getDoVacuum().isSelected()) {
+                    database.vacuum();
+                }
+            } catch (SQLException e) {
+                logger.error("Failed to delete group.", e);
+            }
+            runLater(() -> {
+                mgmvDelete.getBtnDelete().setDisable(false);
+                mgmvDelete.getBtnClose().setDisable(false);
+                deleteModal.setVisible(false);
+                btnReload.fire();
+            });
+        }).start());
         mgmvDelete.getBtnClose().setOnAction(ae -> {
             deleteModal.setVisible(false);
         });
@@ -263,7 +333,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvRemoveSelected.getBtnSubmit().setDefaultButton(removeItemModal.isVisible());
         });
         mgmvRemoveSelected.getBtnClose().setOnAction(ae -> removeItemModal.setVisible(false));
-        mgmvRemoveSelected.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
+        mgmvRemoveSelected.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems("mgmvRemoveSelected"));
 
         /*
           Remove All GroupItems Modal
@@ -280,7 +350,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvRemoveAll.getBtnSubmit().setDefaultButton(removeAllModal.isVisible());
         });
         mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
-        mgmvRemoveAll.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
+        mgmvRemoveAll.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems("mgmvRemoveAll"));
     }
 
     /**
@@ -290,9 +360,24 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
      * @throws SQLException the group stats operation failed
      */
     private void reload() throws SQLException {
+        logger.debug("Reload {}", group);
         runLater(() -> btnReload.setDisable(true));
 
         cleanUp();
+
+        final String previousName = group.getName();
+        final String previousId = group.getId();
+        final Group newGroup = database.getGroup(group.getId());
+
+        if (newGroup == null) {
+            ManageGroups.getManagerCache().invalidate(previousId);
+            return;
+        } else if (!StringUtils.equals(previousName, newGroup.getName())) {
+            group = newGroup;
+            runLater(() -> {
+                groupTitle.setText(group.getName());
+            });
+        }
 
         new Timer().schedule(
             new TimerTask() {
@@ -467,9 +552,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     /**
      * Starts a thread to reload the GroupItems in the ListView.
      */
-    private void reloadGroupItems() {
+    private void reloadGroupItems(String caller) {
         new Thread(() -> {
-            logger.debug("[Load] Grabbing GroupItems");
+            logger.debug("[Load] Grabbing GroupItems {}", caller);
             List<GroupItem> groupItems = database.getGroupItems(this.group);
             logger.debug("[Load] Found " + groupItems.size() + " GroupItem(s)");
 

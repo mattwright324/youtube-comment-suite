@@ -34,7 +34,8 @@ public class ManageGroups implements Initializable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    Cache<String, ManageGroupsManager> managerCache = CacheBuilder.newBuilder().build();
+    private static final Cache<String, ManageGroupsManager> managerCache = CacheBuilder.newBuilder().build();
+    private static ManageGroups instance;
 
     private CommentDatabase database;
 
@@ -47,6 +48,8 @@ public class ManageGroups implements Initializable {
 
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize ManageGroups");
+
+        instance = this;
 
         database = FXMLSuite.getDatabase();
 
@@ -79,6 +82,7 @@ public class ManageGroups implements Initializable {
             });
         });
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
+            logger.debug("selectedItemProperty({}, {})", ov, nv);
             if (nv != null) {
                 ManageGroupsManager manager = managerCache.getIfPresent(nv.getId());
                 if (manager != null) {
@@ -101,10 +105,8 @@ public class ManageGroups implements Initializable {
             } else {
                 managerCache.invalidateAll();
 
-                try {
-                    database.refreshGroups();
-                } catch (SQLException e) {
-                    logger.error("Failed to refresh groups", e);
+                if (!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
+                    selectionModel.select(0);
                 }
             }
         });
@@ -136,8 +138,8 @@ public class ManageGroups implements Initializable {
                     runLater(() -> {
                         comboGroupSelect.getSelectionModel().select(g);
                         overlayModal.setDisable(false);
-                        modal.getErrorMsg().setManaged(false);
                         overlayModal.setVisible(false);
+                        modal.getErrorMsg().setManaged(false);
                     });
                 } catch (SQLException e) {
                     logger.error(e);
@@ -156,4 +158,29 @@ public class ManageGroups implements Initializable {
             }
         }).start());
     }
+
+    public static Cache<String, ManageGroupsManager> getManagerCache() {
+        return managerCache;
+    }
+
+    private ComboBox<Group> getComboGroupSelect() {
+        return comboGroupSelect;
+    }
+
+    public static void invalidateAndRemove(Group g) {
+        managerCache.invalidate(g.getId());
+        runLater(() -> {
+            ComboBox<Group> groupSelect = instance.getComboGroupSelect();
+
+            logger.debug(groupSelect.getItems());
+            groupSelect.getItems().remove(g);
+            logger.debug(groupSelect.getItems());
+
+            Group selectedGroup = groupSelect.getValue();
+            groupSelect.setItems(FXCollections.emptyObservableList());
+            groupSelect.setItems(FXMLSuite.getDatabase().getGlobalGroupList());
+            groupSelect.getSelectionModel().select(selectedGroup);
+        });
+    }
+
 }
