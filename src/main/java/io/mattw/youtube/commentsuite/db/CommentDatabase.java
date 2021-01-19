@@ -2,9 +2,12 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.mattw.youtube.commentsuite.fxml.ManageGroups;
-import javafx.beans.property.LongProperty;
-import javafx.beans.property.SimpleLongProperty;
+import com.google.common.eventbus.EventBus;
+import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.events.GroupAddEvent;
+import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;
+import io.mattw.youtube.commentsuite.events.GroupItemChangeEvent;
+import io.mattw.youtube.commentsuite.events.GroupRenameEvent;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.logging.log4j.LogManager;
@@ -16,9 +19,6 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static javafx.application.Platform.runLater;
 
 /**
  * @author mattwright324
@@ -28,13 +28,15 @@ public class CommentDatabase implements Closeable {
     private static final Logger logger = LogManager.getLogger();
 
     private ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
-    private LongProperty groupRename = new SimpleLongProperty(0);
+
+    private List<Group> allGroups = new ArrayList<>();
 
     private Connection sqlite;
     private Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
     private Cache<String, YouTubeChannel> channelCache = CacheBuilder.newBuilder()
             .expireAfterAccess(5, TimeUnit.MINUTES)
             .build();
+    private EventBus eventBus = FXMLSuite.getEventBus();
 
     /**
      * Default constructor for testing.
@@ -54,18 +56,11 @@ public class CommentDatabase implements Closeable {
         sqlite = DriverManager.getConnection(String.format("jdbc:sqlite:%s", fileName));
         sqlite.setAutoCommit(false);
         this.create();
+        this.refreshAllGroups();
     }
 
     public ObservableList<Group> getGlobalGroupList() {
         return globalGroupList;
-    }
-
-    public LongProperty groupRenameProperty() {
-        return groupRename;
-    }
-
-    public void incrGroupRenameProperty() {
-        groupRename.setValue(groupRename.getValue() + 1);
     }
 
     @Override
@@ -128,39 +123,26 @@ public class CommentDatabase implements Closeable {
         channelCache.put(rs.getString("channel_id"), resultSetToChannel(rs));
     }
 
-    /**
-     * Refreshes the globalGroupList.
-     */
-    public void refreshGroups() throws SQLException {
-        logger.debug("Grabbing groups and refreshing global group list.");
+    public List<Group> getAllGroups() {
+        return allGroups;
+    }
+
+    private void refreshAllGroups() {
+        allGroups.clear();
         try (final Statement s = sqlite.createStatement();
              final ResultSet rs = s.executeQuery(SQLLoader.GET_ALL_GROUPS.toString())) {
 
-            final List<Group> dbGroups = new ArrayList<>();
             while (rs.next()) {
                 final Group group = resultSetToGroup(rs);
-                group.reloadGroupItems();
-                dbGroups.add(group);
+                allGroups.add(group);
             }
 
-            if (dbGroups.isEmpty()) {
+            if (allGroups.isEmpty()) {
                 logger.debug("Creating Default Group");
-                s.executeUpdate(SQLLoader.GROUP_CREATE_DEFAULT.toString());
-                commit();
-                dbGroups.add(defaultGroup);
+                createGroup(defaultGroup);
             }
-
-            runLater(() -> {
-                final List<Group> toRemove = globalGroupList.stream()
-                        .filter(globalGroup -> !dbGroups.contains(globalGroup))
-                        .collect(Collectors.toList());
-                final List<Group> toAdd = dbGroups.stream()
-                        .filter(dbGroup -> !globalGroupList.contains(dbGroup))
-                        .collect(Collectors.toList());
-
-                globalGroupList.removeAll(toRemove);
-                globalGroupList.addAll(toAdd);
-            });
+        } catch (SQLException e) {
+            logger.error(e);
         }
     }
 
@@ -303,7 +285,7 @@ public class CommentDatabase implements Closeable {
     public List<GroupItem> getGroupItems(Group g) {
         List<GroupItem> items = new ArrayList<>();
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUPITEMS.toString())) {
-            ps.setString(1, g.getId());
+            ps.setString(1, g.getGroupId());
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -329,21 +311,26 @@ public class CommentDatabase implements Closeable {
         return null;
     }
 
+    public Group createGroup(String name) throws SQLException {
+        return createGroup(new Group(name));
+    }
+
     /**
      * Attempts insert of a new group. Throws exception if name already exists.
      * Commits and refreshes globalGroupList.
      */
-    public Group createGroup(String name) throws SQLException {
-        Group group = new Group(name);
-        logger.trace("Created Group [id={},name={}]", group.getId(), name);
+    public Group createGroup(Group group) throws SQLException {
+        logger.trace("Created Group [name={}, id={}]", group.getName(), group.getGroupId());
 
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GROUP_CREATE.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setString(2, group.getName());
             ps.executeUpdate();
 
             this.commit();
-            this.refreshGroups();
+
+            refreshAllGroups();
+            eventBus.post(new GroupAddEvent(group));
         }
 
         return group;
@@ -353,19 +340,20 @@ public class CommentDatabase implements Closeable {
      * Attempts rename of existing group.
      * Commits.
      */
-    public void renameGroup(Group g, String newName) throws SQLException {
-        if (!g.getName().equals(newName)) {
-            logger.trace("Renaming Group [id={},name={},newName={}]", g.getId(), g.getName(), newName);
+    public void renameGroup(Group group, String newName) throws SQLException {
+        if (!group.getName().equals(newName)) {
+            logger.trace("Renaming Group [id={},name={},newName={}]", group.getGroupId(), group.getName(), newName);
 
             try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GROUP_RENAME.toString())) {
                 ps.setString(1, newName);
-                ps.setString(2, g.getId());
+                ps.setString(2, group.getGroupId());
                 ps.executeUpdate();
             }
 
             this.commit();
-            g.setName(newName);
-            runLater(this::incrGroupRenameProperty);
+
+            refreshAllGroups();
+            eventBus.post(new GroupRenameEvent(group));
         }
     }
 
@@ -375,18 +363,15 @@ public class CommentDatabase implements Closeable {
      */
     public void deleteGroup(Group group) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DELETE_GROUP.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.executeUpdate();
 
-            logger.warn("Cleaning up after group delete [id={},name={}]", group.getId(), group.getName());
+            logger.warn("Cleaning up after group delete [id={},name={}]", group.getGroupId(), group.getName());
             this.commit();
             this.cleanUp();
 
-            ManageGroups.invalidateAndRemove(group);
-
-            try { Thread.sleep(100); } catch (InterruptedException  ignored) {}
-
-            this.refreshGroups();
+            refreshAllGroups();
+            eventBus.post(new GroupDeleteEvent(group));
         }
     }
 
@@ -394,7 +379,7 @@ public class CommentDatabase implements Closeable {
      * Will ignore inserting duplicate GroupItem(s) if same YouTube ID is present.
      * Could create links to the same GroupItem to multiple Group(s).
      */
-    public void insertGroupItems(Group g, List<GroupItem> items) throws SQLException {
+    public void insertGroupItems(Group group, List<GroupItem> items) throws SQLException {
         try (PreparedStatement psCG = sqlite.prepareStatement(SQLLoader.CREATE_GITEM.toString());
              PreparedStatement psCGG = sqlite.prepareStatement(SQLLoader.CREATE_GROUP_GITEM.toString())) {
 
@@ -407,13 +392,15 @@ public class CommentDatabase implements Closeable {
                 psCG.setLong(6, gi.getLastChecked());
                 psCG.setString(7, gi.getThumbUrl());
                 psCG.addBatch();
-                psCGG.setString(1, g.getId());
+                psCGG.setString(1, group.getGroupId());
                 psCGG.setString(2, gi.getId());
                 psCGG.addBatch();
             }
 
             psCG.executeBatch();
             psCGG.executeBatch();
+
+            eventBus.post(new GroupItemChangeEvent(group));
         }
     }
 
@@ -440,10 +427,12 @@ public class CommentDatabase implements Closeable {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DELETE_GROUP_GITEM.toString())) {
             for (GroupItem gi : items) {
                 ps.setString(1, gi.getId());
-                ps.setString(2, group.getId());
+                ps.setString(2, group.getGroupId());
                 ps.addBatch();
             }
             ps.executeBatch();
+
+            eventBus.post(new GroupItemChangeEvent(group));
         }
     }
 
@@ -475,7 +464,7 @@ public class CommentDatabase implements Closeable {
      */
     public List<String> getCommentIds(Group group) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_ALL_COMMENT_IDS_BY_GROUP.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             try (ResultSet rs = ps.executeQuery()) {
                 List<String> list = new ArrayList<>();
                 while (rs.next()) {
@@ -537,7 +526,7 @@ public class CommentDatabase implements Closeable {
     public List<String> getVideoIds(Group group) throws SQLException {
         logger.debug("GET_ALL_VIDEO_IDS_BY_GROUP");
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_ALL_VIDEO_IDS_BY_GROUP.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             try (ResultSet rs = ps.executeQuery()) {
                 List<String> list = new ArrayList<>();
                 while (rs.next()) {
@@ -598,7 +587,7 @@ public class CommentDatabase implements Closeable {
     public List<YouTubeVideo> getVideos(Group group, String keyword, String order, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_VIDEOS_BY_CRITERIA_GROUP.toString()
                 .replace(":order", order))) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setString(2, "%" + keyword + "%");
             ps.setString(3, keyword);
             ps.setInt(4, limit);
@@ -776,7 +765,7 @@ public class CommentDatabase implements Closeable {
 
     public long getLastChecked(Group group) {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_LAST_CHECKED.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong("checked");
@@ -791,7 +780,7 @@ public class CommentDatabase implements Closeable {
     public GroupStats getGroupStats(Group group) throws SQLException {
         GroupStats stats = new GroupStats();
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_VIDEO_STATS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     stats.setTotalVideos(rs.getLong("total_videos"));
@@ -803,7 +792,7 @@ public class CommentDatabase implements Closeable {
             }
         }
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_UNIQUE_VIEWERS_BY_GROUP.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     stats.setUniqueViewers(rs.getLong("unique_viewers"));
@@ -817,7 +806,7 @@ public class CommentDatabase implements Closeable {
         stats.setWeeklyUploadHistogram(this.getWeekByWeekVideoHistogram(group));
 
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENT_STATS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     stats.setTotalCommentLikes(rs.getLong("total_likes"));
@@ -834,21 +823,21 @@ public class CommentDatabase implements Closeable {
 
     private Map<Long, Long> getWeekByWeekCommentHistogram(Group group) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENT_WEEK_HISTOGRAM.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             return resultSetToHistogram(ps);
         }
     }
 
     private Map<Long, Long> getWeekByWeekVideoHistogram(Group group) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_VIDEO_WEEK_HISTOGRAM.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             return resultSetToHistogram(ps);
         }
     }
 
     private LinkedHashMap<YouTubeChannel, Long> getMostActiveViewers(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_ACTIVE_VIEWERS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
             try (ResultSet rs = ps.executeQuery()) {
                 LinkedHashMap<YouTubeChannel, Long> map = new LinkedHashMap<>();
@@ -863,7 +852,7 @@ public class CommentDatabase implements Closeable {
 
     private LinkedHashMap<YouTubeChannel, Long> getMostPopularViewers(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_POPULAR_VIEWERS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
             try (ResultSet rs = ps.executeQuery()) {
                 LinkedHashMap<YouTubeChannel, Long> map = new LinkedHashMap<>();
@@ -878,7 +867,7 @@ public class CommentDatabase implements Closeable {
 
     private List<YouTubeVideo> getMostPopularVideos(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_POPULAR_VIDEOS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
             return resultSetToVideoList(ps);
         }
@@ -886,7 +875,7 @@ public class CommentDatabase implements Closeable {
 
     private List<YouTubeVideo> getMostDislikedVideos(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_DISLIKED_VIDEOS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
             return resultSetToVideoList(ps);
         }
@@ -894,7 +883,7 @@ public class CommentDatabase implements Closeable {
 
     private List<YouTubeVideo> getMostCommentedVideos(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_COMMENTED_VIDEOS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
             return resultSetToVideoList(ps);
         }
@@ -902,7 +891,7 @@ public class CommentDatabase implements Closeable {
 
     private List<YouTubeVideo> getDisabledVideos(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_GROUP_DISABLED_VIDEOS.toString())) {
-            ps.setString(1, group.getId());
+            ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
             return resultSetToVideoList(ps);
         }

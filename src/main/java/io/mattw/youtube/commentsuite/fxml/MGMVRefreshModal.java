@@ -5,7 +5,6 @@ import io.mattw.youtube.commentsuite.refresh.*;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.util.ClipboardUtil;
 import javafx.beans.binding.Bindings;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -72,7 +71,7 @@ public class MGMVRefreshModal extends HBox {
     private ConfigData configData = configFile.getDataObject();
 
     public MGMVRefreshModal(Group group) {
-        logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
+        logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         this.group = group;
 
@@ -143,7 +142,7 @@ public class MGMVRefreshModal extends HBox {
 
             btnStart.setOnAction(ae -> new Thread(() -> {
                 if (running) {
-                    logger.debug("Requesting group refresh stopped for group [id={},name={}]", group.getId(), group.getName());
+                    logger.debug("Requesting group refresh stopped for group [id={},name={}]", group.getGroupId(), group.getName());
                     runLater(() -> {
                         btnStart.setDisable(true);
                         endStatus.setImage(ImageLoader.MINUS_CIRCLE.getImage());
@@ -159,7 +158,7 @@ public class MGMVRefreshModal extends HBox {
                     runLater(() -> btnClose.setDisable(false));
                 } else {
                     running = true;
-                    logger.debug("Starting group refresh for group [id={},name={}]", group.getId(), group.getName());
+                    logger.debug("Starting group refresh for group [id={},name={}]", group.getGroupId(), group.getName());
                     runLater(() -> {
                         statusPane.setVisible(true);
                         statusPane.setManaged(true);

@@ -84,7 +84,7 @@ public class CommentQuery implements Serializable, Exportable {
             } else {
                 videoSubquery += "WHERE group_id = :groupId";
 
-                queryParams.put("groupId", group.getId());
+                queryParams.put("groupId", group.getGroupId());
             }
         }
 
@@ -338,7 +338,7 @@ public class CommentQuery implements Serializable, Exportable {
     @Override
     public void prepForExport() {
         if(group != null) {
-            this.withGroup = String.format("%s / %s", group.getId(), group.getName());
+            this.withGroup = String.format("%s / %s", group.getGroupId(), group.getName());
 
             long lastRefreshed = database.getLastChecked(this.getGroup());
 

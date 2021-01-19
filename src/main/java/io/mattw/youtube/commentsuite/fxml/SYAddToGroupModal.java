@@ -1,11 +1,17 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
+import io.mattw.youtube.commentsuite.events.GroupAddEvent;
+import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;
+import io.mattw.youtube.commentsuite.events.GroupRenameEvent;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
@@ -33,7 +39,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
     private static final Logger logger = LogManager.getLogger();
 
     @FXML private RadioButton addToExisting, addToNew;
-    @FXML private ComboBox<Group> groupsList;
+    @FXML private ComboBox<Group> comboGroupSelect;
     @FXML private TextField groupName;
     @FXML private Label lblAbout, lblWarn;
 
@@ -49,6 +55,8 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
         logger.debug("Initialize SYAddToGroupModal");
 
+        FXMLSuite.getEventBus().register(this);
+
         database = FXMLSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SYAddToGroupModal.fxml"));
@@ -62,14 +70,8 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
                             runLater(() -> lblAbout.setText(String.format("%s item(s) selected", lcl.getList().size())))
             );
 
-            groupsList.disableProperty().bind(addToNew.selectedProperty());
-            groupsList.setItems(database.getGlobalGroupList());
-            groupsList.getItems().addListener((ListChangeListener<Group>) (c -> {
-                SelectionModel<Group> selectionModel = groupsList.getSelectionModel();
-                if (!groupsList.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
-                    runLater(() -> selectionModel.select(0));
-                }
-            }));
+            comboGroupSelect.disableProperty().bind(addToNew.selectedProperty());
+            runLater(this::rebuildGroupSelect);
 
             groupName.disableProperty().bind(addToExisting.selectedProperty());
 
@@ -79,7 +81,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
                 List<SearchYouTubeListItem> items = listView.getSelectionModel().getSelectedItems();
 
                 if (addToExisting.isSelected()) {
-                    Group group = groupsList.getSelectionModel().getSelectedItem();
+                    Group group = comboGroupSelect.getSelectionModel().getSelectedItem();
                     if (group != null) {
                         submitItemsToGroup(items, group);
                     } else {
@@ -133,11 +135,10 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
                 logger.debug("GroupItems were successfully added to group");
 
                 runLater(() -> {
-                    group.reloadGroupItems();
                     btnClose.fire();
                 });
             } catch (SQLException e) {
-                logger.error("Failed to insert group items to group [id={}]", group.getId());
+                logger.error("Failed to insert group items to group [id={}]", group.getGroupId());
 
                 runLater(() -> setError(e.getMessage()));
             }
@@ -176,11 +177,43 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
         btnSubmit.setDisable(false);
 
-        if (groupsList.getItems().isEmpty()) {
+        if (comboGroupSelect.getItems().isEmpty()) {
             addToNew.fire();
         } else {
             addToExisting.fire();
-            groupsList.getSelectionModel().select(0);
+            comboGroupSelect.getSelectionModel().select(0);
         }
     }
+
+    @Subscribe
+    public void groupDeleteEvent(final GroupDeleteEvent deleteEvent) {
+        logger.debug("Group Delete Event");
+        runLater(this::rebuildGroupSelect);
+    }
+
+    @Subscribe
+    public void groupAddEvent(final GroupAddEvent addEvent) {
+        logger.debug("Group Add Event");
+        runLater(this::rebuildGroupSelect);
+    }
+
+    @Subscribe
+    public void groupRenameEvent(final GroupRenameEvent renameEvent) {
+        logger.debug("Group Rename Event");
+        runLater(this::rebuildGroupSelect);
+    }
+
+    private void rebuildGroupSelect() {
+        final Group selectedGroup = comboGroupSelect.getValue();
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        comboGroupSelect.setItems(FXCollections.emptyObservableList());
+        comboGroupSelect.setItems(groups);
+
+        if (selectedGroup == null || comboGroupSelect.getValue() == null) {
+            comboGroupSelect.getSelectionModel().select(0);
+        } else if (groups.contains(selectedGroup)) {
+            comboGroupSelect.setValue(selectedGroup);
+        }
+    }
+
 }

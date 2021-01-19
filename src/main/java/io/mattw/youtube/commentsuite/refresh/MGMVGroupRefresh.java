@@ -320,7 +320,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                         .setKey(FXMLSuite.getYouTubeApiKey())
                                         .setVideoId(video.getId())
                                         .setMaxResults(50L)
-                                        .setOrder(options.getCommentOrder().getDisplayText())
+                                        .setOrder(options.getCommentOrder().name())
                                         .setPageToken(pageToken)
                                         .execute();
 

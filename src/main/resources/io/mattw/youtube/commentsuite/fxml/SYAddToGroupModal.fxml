@@ -17,7 +17,7 @@
                 alignment="CENTER" managed="false" visible="false"
                 text="Couldn't add to group." />
     <RadioButton fx:id="addToExisting" text="Add to existing group" toggleGroup="$toggleGroup" />
-    <ComboBox fx:id="groupsList" />
+    <ComboBox fx:id="comboGroupSelect" />
     <RadioButton fx:id="addToNew" text="Create and add to new group" toggleGroup="$toggleGroup" />
     <TextField fx:id="groupName" promptText="New group name here" />
     <HBox spacing="10" alignment="CENTER_RIGHT">

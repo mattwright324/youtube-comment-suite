@@ -2,12 +2,16 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
+import io.mattw.youtube.commentsuite.events.GroupAddEvent;
+import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;
+import io.mattw.youtube.commentsuite.events.GroupRenameEvent;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -51,6 +55,8 @@ public class ManageGroups implements Initializable {
 
         instance = this;
 
+        FXMLSuite.getEventBus().register(this);
+
         database = FXMLSuite.getDatabase();
 
         /*
@@ -59,32 +65,14 @@ public class ManageGroups implements Initializable {
 
         plusIcon.setImage(ImageLoader.PLUS.getImage());
 
+        runLater(this::rebuildGroupSelect);
+
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
-        comboGroupSelect.setItems(database.getGlobalGroupList());
-        new Thread(() -> {
-            try {
-                database.refreshGroups();
-            } catch (SQLException e) {
-                logger.error(e);
-            }
-        }).start();
-        comboGroupSelect.getItems().addListener((ListChangeListener<Group>) (c -> {
-            if (!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
-                selectionModel.select(0);
-            }
-        }));
-        database.groupRenameProperty().addListener((o, ov, nv) -> {
-            runLater(() -> {
-                Group selectedGroup = comboGroupSelect.getValue();
-                comboGroupSelect.setItems(FXCollections.emptyObservableList());
-                comboGroupSelect.setItems(database.getGlobalGroupList());
-                comboGroupSelect.getSelectionModel().select(selectedGroup);
-            });
-        });
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            logger.debug("selectedItemProperty({}, {})", ov, nv);
+            logger.debug("selectedItemProperty({}, {}, {})", ov, nv, selectionModel.getSelectedIndex());
+
             if (nv != null) {
-                ManageGroupsManager manager = managerCache.getIfPresent(nv.getId());
+                ManageGroupsManager manager = managerCache.getIfPresent(nv.getGroupId());
                 if (manager != null) {
                     runLater(() -> {
                         content.getChildren().clear();
@@ -93,7 +81,7 @@ public class ManageGroups implements Initializable {
                 } else {
                     try {
                         ManageGroupsManager m = new ManageGroupsManager(selectionModel.getSelectedItem());
-                        managerCache.put(nv.getId(), m);
+                        managerCache.put(nv.getGroupId(), m);
                         runLater(() -> {
                             content.getChildren().clear();
                             content.getChildren().addAll(m);
@@ -101,12 +89,6 @@ public class ManageGroups implements Initializable {
                     } catch (IOException e) {
                         logger.error(e);
                     }
-                }
-            } else {
-                managerCache.invalidateAll();
-
-                if (!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
-                    selectionModel.select(0);
                 }
             }
         });
@@ -134,7 +116,7 @@ public class ManageGroups implements Initializable {
             if (!name.isEmpty()) {
                 try {
                     Group g = database.createGroup(name);
-                    logger.debug("Created new group [id={},name={}]", g.getId(), g.getName());
+                    logger.debug("Created new group [id={},name={}]", g.getGroupId(), g.getName());
                     runLater(() -> {
                         comboGroupSelect.getSelectionModel().select(g);
                         overlayModal.setDisable(false);
@@ -167,20 +149,37 @@ public class ManageGroups implements Initializable {
         return comboGroupSelect;
     }
 
-    public static void invalidateAndRemove(Group g) {
-        managerCache.invalidate(g.getId());
-        runLater(() -> {
-            ComboBox<Group> groupSelect = instance.getComboGroupSelect();
+    @Subscribe
+    public void groupDeleteEvent(final GroupDeleteEvent deleteEvent) {
+        logger.debug("Group Delete Event");
+        managerCache.invalidate(deleteEvent.getGroup().getGroupId());
+        runLater(this::rebuildGroupSelect);
+    }
 
-            logger.debug(groupSelect.getItems());
-            groupSelect.getItems().remove(g);
-            logger.debug(groupSelect.getItems());
+    @Subscribe
+    public void groupAddEvent(final GroupAddEvent addEvent) {
+        logger.debug("Group Add Event");
+        runLater(this::rebuildGroupSelect);
+    }
 
-            Group selectedGroup = groupSelect.getValue();
-            groupSelect.setItems(FXCollections.emptyObservableList());
-            groupSelect.setItems(FXMLSuite.getDatabase().getGlobalGroupList());
-            groupSelect.getSelectionModel().select(selectedGroup);
-        });
+    @Subscribe
+    public void groupRenameEvent(final GroupRenameEvent renameEvent) {
+        logger.debug("Group Rename Event");
+        //runLater(this::refreshGroupSelect);
+        runLater(this::rebuildGroupSelect);
+    }
+
+    private void rebuildGroupSelect() {
+        final Group selectedGroup = comboGroupSelect.getValue();
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        comboGroupSelect.setItems(FXCollections.emptyObservableList());
+        comboGroupSelect.setItems(groups);
+
+        if (selectedGroup == null || comboGroupSelect.getValue() == null) {
+            comboGroupSelect.getSelectionModel().select(0);
+        } else if (groups.contains(selectedGroup)) {
+            comboGroupSelect.setValue(selectedGroup);
+        }
     }
 
 }

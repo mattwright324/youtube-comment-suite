@@ -38,7 +38,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
     private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
-    private YouTube youtube;
 
     @FXML private Label alertError;
 
@@ -56,13 +55,10 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
     private Group group;
 
-    private IntegerProperty itemAdded = new SimpleIntegerProperty(0);
-
     public MGMVAddItemModal(Group group) {
         this.group = group;
 
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVAddItemModal.fxml"));
         loader.setController(this);
@@ -101,8 +97,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 database.insertGroupItems(this.group, list);
                                 database.commit();
                                 runLater(() -> {
-                                    itemAdded.setValue(itemAdded.getValue() + 1);
-                                    group.reloadGroupItems();
                                     btnClose.fire();
                                 });
                             } catch (SQLException e1) {
@@ -145,8 +139,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 database.insertGroupItems(this.group, list);
                                 database.commit();
                                 runLater(() -> {
-                                    itemAdded.setValue(itemAdded.getValue() + 1);
-                                    group.reloadGroupItems();
                                     btnClose.fire();
                                 });
                             } catch (SQLException e1) {
@@ -175,10 +167,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
         alertError.setText(message);
         alertError.setVisible(true);
         alertError.setManaged(true);
-    }
-
-    public IntegerProperty itemAddedProperty() {
-        return itemAdded;
     }
 
     @Override

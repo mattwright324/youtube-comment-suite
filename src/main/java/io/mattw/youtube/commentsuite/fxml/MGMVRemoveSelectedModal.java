@@ -36,7 +36,6 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
     private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
-    private YouTube youtube;
 
     @FXML private Label alertError;
     @FXML private TextField link;
@@ -46,16 +45,13 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
     private Group group;
     private MultipleSelectionModel<MGMVGroupItemView> selectionModel;
 
-    private IntegerProperty itemsRemoved = new SimpleIntegerProperty(0);
-
     public MGMVRemoveSelectedModal(Group group, MultipleSelectionModel<MGMVGroupItemView> selectionModel) {
-        logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
+        logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         this.group = group;
         this.selectionModel = selectionModel;
 
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRemoveSelectedModal.fxml"));
         loader.setController(this);
@@ -77,7 +73,6 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
                         database.deleteGroupItemLinks(group, items);
                         database.cleanUp();
                         runLater(() -> {
-                            itemsRemoved.setValue(itemsRemoved.getValue() + 1);
                             btnClose.fire();
                         });
                     } catch (SQLException e) {
@@ -96,10 +91,6 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
         alertError.setText(message);
         alertError.setVisible(true);
         alertError.setManaged(true);
-    }
-
-    public IntegerProperty itemsRemovedProperty() {
-        return itemsRemoved;
     }
 
     public Button getBtnClose() {
