@@ -27,14 +27,13 @@ public class GroupItem extends YouTubeObject {
 
     public static String ALL_ITEMS = "GI001";
 
-    private ConfigData configData;
-
     private String channelTitle;
     private long published;
     private long lastChecked;
 
     private YouTube youtube;
     private CommentDatabase database;
+    private boolean fastAdd = false;
 
     /**
      * Used for converting selected search items for inserting into database.
@@ -110,10 +109,13 @@ public class GroupItem extends YouTubeObject {
         ofLink(link);
     }
 
+    public GroupItem(String link, boolean fastAdd) throws IOException {
+        this.fastAdd = fastAdd;
+        ofLink(link);
+    }
+
     private void ofLink(String fullLink) throws IOException {
         logger.debug("Matching link to type [fullLink={}]", fullLink);
-
-        configData = FXMLSuite.getConfig().getDataObject();
 
         youtube = FXMLSuite.getYouTube();
         database = FXMLSuite.getDatabase();
@@ -146,7 +148,7 @@ public class GroupItem extends YouTubeObject {
             channelUsername = true;
         }
 
-        if (configData.isFastGroupAdd()) {
+        if (fastAdd) {
             if (channelUsername) {
                 throw new IOException("Channel usernames are not accepted when using fast group add.");
             }
@@ -222,7 +224,7 @@ public class GroupItem extends YouTubeObject {
      * Makes sure the channel associated with this GroupItem is in the database.
      */
     private void checkForNewChannel(String channelId) {
-        if(!database.doesChannelExist(channelId)) {
+        if(database.doesChannelNotExist(channelId)) {
             try {
                 ChannelListResponse clr = youtube.channels().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey())

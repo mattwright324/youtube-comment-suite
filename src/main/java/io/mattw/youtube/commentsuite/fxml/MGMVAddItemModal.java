@@ -2,6 +2,8 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.Cleanable;
+import io.mattw.youtube.commentsuite.ConfigData;
+import io.mattw.youtube.commentsuite.ConfigFile;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
@@ -43,6 +45,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
     @FXML private TabPane tabPane;
     @FXML private Tab tabSingular, tabBulk;
+    @FXML private CheckBox fastGroupAdd;
 
     @FXML private VBox singularPane;
     @FXML private TextField link;
@@ -54,6 +57,9 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
     @FXML private Button btnClose, btnSubmit;
 
     private Group group;
+
+    private ConfigFile<ConfigData> configFile = FXMLSuite.getConfig();
+    private ConfigData configData = configFile.getDataObject();
 
     public MGMVAddItemModal(Group group) {
         this.group = group;
@@ -68,6 +74,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
             bulkPane.maxHeightProperty().bind(singularPane.heightProperty());
             multiLink.maxHeightProperty().bind(singularPane.heightProperty());
+
+            fastGroupAdd.setSelected(configData.isFastGroupAdd());
 
             Label[] links = {link1, link2, link3, link4, link5};
             for (Label l : links) {
@@ -120,13 +128,16 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             .collect(Collectors.toList());
 
                     if (!givenLinks.isEmpty()) {
+                        configData.setFastGroupAdd(fastGroupAdd.isSelected());
+                        configFile.save();
+
                         List<GroupItem> list = new ArrayList<>();
 
                         int failures = 0;
 
                         for (String givenLink : givenLinks) {
                             try {
-                                GroupItem newItem = new GroupItem(givenLink);
+                                GroupItem newItem = new GroupItem(givenLink, configData.isFastGroupAdd());
 
                                 list.add(newItem);
                             } catch (IOException e) {

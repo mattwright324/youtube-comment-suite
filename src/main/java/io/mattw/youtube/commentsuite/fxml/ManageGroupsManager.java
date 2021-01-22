@@ -267,7 +267,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         /*
           Delete Group Modal
          */
-        MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal(group);
+        MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal();
         deleteModal.setContent(mgmvDelete);
         deleteModal.setDividerClass("dividerDanger");
         btnDelete.setOnAction(ae -> runLater(() -> {
@@ -290,13 +290,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             try {
                 logger.warn("Deleting Group[id={},name={}]", group.getGroupId(), group.getName());
                 database.deleteGroup(this.group);
-
-                if (mgmvDelete.getDoVacuum().isSelected()) {
-                    database.vacuum();
-                }
             } catch (SQLException e) {
                 logger.error("Failed to delete group.", e);
             }
+
             runLater(() -> {
                 mgmvDelete.getBtnDelete().setDisable(false);
                 mgmvDelete.getBtnClose().setDisable(false);
@@ -509,8 +506,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     @Subscribe
     public void groupItemChangeEvent(final GroupItemChangeEvent groupItemChangeEvent) {
-        logger.debug("Group Item Change Event");
-        reloadGroupItems("groupItemChangeEvent");
+        if (this.group.equals(groupItemChangeEvent.getGroup())) {
+            logger.debug("Group Item Change Event");
+            reloadGroupItems("groupItemChangeEvent");
+        }
     }
 
     /**

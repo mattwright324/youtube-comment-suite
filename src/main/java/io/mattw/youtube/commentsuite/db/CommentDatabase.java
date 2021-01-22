@@ -197,22 +197,22 @@ public class CommentDatabase implements Closeable {
                 rs.getInt("http_code"));
     }
 
-    public boolean doesChannelExist(String channelId) {
+    public boolean doesChannelNotExist(String channelId) {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.DOES_CHANNEL_EXIST.toString())) {
             ps.setString(1, channelId);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+                return !rs.next();
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
+        return true;
     }
 
     public long countChannelsNotExisting(Collection<String> channelIds) {
         long notExists = 0;
         for (String id : channelIds) {
-            if (!doesChannelExist(id)) {
+            if (doesChannelNotExist(id)) {
                 notExists++;
             }
         }
@@ -223,7 +223,7 @@ public class CommentDatabase implements Closeable {
         Set<String> idList = new HashSet<>();
 
         for (String id : channelIds) {
-            if(!doesChannelExist(id)) {
+            if(doesChannelNotExist(id)) {
                 idList.add(id);
             }
         }
@@ -728,11 +728,18 @@ public class CommentDatabase implements Closeable {
     /**
      * Inserts to gitem_video for group refreshing.
      */
+    public void insertGroupItemVideo(GroupItemVideo item) throws SQLException {
+        insertGroupItemVideo(Collections.singletonList(item));
+    }
+
+    /**
+     * Inserts to gitem_video for group refreshing.
+     */
     public void insertGroupItemVideo(List<GroupItemVideo> items) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(SQLLoader.INSERT_IGNORE_GITEM_VIDEO.toString())) {
             for (GroupItemVideo vg : items) {
-                ps.setString(1, vg.gitemId);
-                ps.setString(2, vg.videoId);
+                ps.setString(1, vg.getGitemId());
+                ps.setString(2, vg.getVideoId());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -742,6 +749,21 @@ public class CommentDatabase implements Closeable {
     public CommentQuery commentQuery() {
         return new CommentQuery(this);
     }
+
+    /**
+     * Gets all gitem_video for group refreshing.
+     */
+    /*public List<GroupItemVideo> getAllGroupItemVideo() throws SQLException {
+        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_ALL_GITEM_VIDEO.toString());
+            ResultSet rs = ps.executeQuery()) {
+
+            List<GroupItemVideo> list = new ArrayList<>();
+            while(rs.next()) {
+                list.add(resultSetToGroupItemVideo(rs));
+            }
+            return list;
+        }
+    }*/
 
     /**
      * Returns all of the comments associated with a comment parentId.
@@ -917,36 +939,4 @@ public class CommentDatabase implements Closeable {
         }
     }
 
-    /**
-     * Gets all gitem_video for group refreshing.
-     */
-    /*public List<GroupItemVideo> getAllGroupItemVideo() throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_ALL_GITEM_VIDEO.toString());
-            ResultSet rs = ps.executeQuery()) {
-
-            List<GroupItemVideo> list = new ArrayList<>();
-            while(rs.next()) {
-                list.add(resultSetToGroupItemVideo(rs));
-            }
-            return list;
-        }
-    }*/
-
-    public static class GroupItemVideo {
-        private String gitemId;
-        private String videoId;
-
-        public GroupItemVideo(String gitemId, String videoId) {
-            this.gitemId = gitemId;
-            this.videoId = videoId;
-        }
-
-        public boolean equals(Object o) {
-            if (o instanceof GroupItemVideo) {
-                GroupItemVideo giv = (GroupItemVideo) o;
-                return giv.gitemId.equals(gitemId) && giv.videoId.equals(videoId);
-            }
-            return false;
-        }
-    }
 }

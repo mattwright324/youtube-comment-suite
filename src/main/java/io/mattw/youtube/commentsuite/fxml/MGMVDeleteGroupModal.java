@@ -31,19 +31,10 @@ public class MGMVDeleteGroupModal extends VBox {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private CommentDatabase database;
-
-    @FXML private CheckBox doVacuum;
     @FXML private Button btnClose;
     @FXML private Button btnDelete;
 
-    private Group group;
-
-    public MGMVDeleteGroupModal(Group group) {
-        this.group = group;
-
-        database = FXMLSuite.getDatabase();
-
+    public MGMVDeleteGroupModal() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVDeleteGroupModal.fxml"));
         loader.setController(this);
         loader.setRoot(this);
@@ -62,5 +53,4 @@ public class MGMVDeleteGroupModal extends VBox {
         return btnDelete;
     }
 
-    public CheckBox getDoVacuum() { return doVacuum; }
 }

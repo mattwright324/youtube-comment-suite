@@ -179,7 +179,7 @@ public class MGMVRefreshModal extends HBox {
                     configData.setRefreshOptions(options);
                     configFile.save();
 
-                    refreshThread = new MGMVGroupRefresh(group, options);
+                    refreshThread = new NewGroupRefresh(group, options);
 
                     runLater(() -> {
                         refreshThread.getObservableErrorList().addListener((ListChangeListener<String>) (lcl) -> runLater(() -> {

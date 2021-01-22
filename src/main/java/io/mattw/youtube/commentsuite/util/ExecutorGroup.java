@@ -17,6 +17,7 @@ public class ExecutorGroup {
     private ExecutorService service;
     private List<Future<?>> futures = new ArrayList<>();
     private int threadCount;
+    private boolean began;
 
     /**
      * Default constructor
@@ -26,7 +27,11 @@ public class ExecutorGroup {
     public ExecutorGroup(int threadCount) {
         this.threadCount = threadCount;
 
-        service = Executors.newFixedThreadPool(threadCount);
+        if (threadCount == 1) {
+            service = Executors.newSingleThreadExecutor();
+        } else {
+            service = Executors.newFixedThreadPool(threadCount);
+        }
     }
 
     /**

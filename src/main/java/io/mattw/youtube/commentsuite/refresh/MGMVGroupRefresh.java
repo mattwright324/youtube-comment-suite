@@ -6,11 +6,10 @@ import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.RefreshInterface;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
-import io.mattw.youtube.commentsuite.util.Tuple;
+import io.mattw.youtube.commentsuite.util.StringTuple;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -91,9 +90,9 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
     private final LinkedBlockingQueue<GroupItem> gitemQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<String> videoIdQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<YouTubeVideo> videoQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<Tuple<String, String>> commentThreadQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<StringTuple> commentThreadQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<YouTubeComment> commentInsertQueue = new LinkedBlockingQueue<>();
-    private final List<CommentDatabase.GroupItemVideo> gitemVideo = new ArrayList<>();
+    private final List<GroupItemVideo> gitemVideo = new ArrayList<>();
     private final LinkedBlockingQueue<String> channelQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<YouTubeChannel> channelInsertQueue = new LinkedBlockingQueue<>();
 
@@ -121,6 +120,8 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             runLater(() -> statusStep.setValue("Grabbing Videos"));
             startAndAwaitParsingGitems();
 
+            logger.debug(String.join("|", new ArrayList<>(videoIdQueue)));
+
             if (isHardShutdown()) {
                 throw new InterruptedException("Manually stopped.");
             }
@@ -140,7 +141,9 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
             database.insertGroupItemVideo(gitemVideo);
             database.commit();
 
-            if (isHardShutdown()) {
+            logger.debug(new ArrayList<>(videoQueue).stream().map(YouTubeVideo::toString).collect(Collectors.joining("|")));
+
+            if (isHardShutdown() || true) {
                 throw new InterruptedException("Manually stopped.");
             }
 
@@ -244,7 +247,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                             .map(item -> item.getSnippet().getResourceId().getVideoId())
                                             .collect(Collectors.toList());
                                     videoIds.forEach(videoId ->
-                                            gitemVideo.add(new CommentDatabase.GroupItemVideo(
+                                            gitemVideo.add(new GroupItemVideo(
                                                     gitem.getId(), videoId))
                                     );
                                     videoIdQueue.addAll(videoIds);
@@ -259,7 +262,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                             } while (pil.getNextPageToken() != null && !isHardShutdown());
                         } else if (gitem.getTypeId() == YType.VIDEO) {
                             try {
-                                gitemVideo.add(new CommentDatabase.GroupItemVideo(
+                                gitemVideo.add(new GroupItemVideo(
                                         gitem.getId(), gitem.getId()));
 
                                 videoIdQueue.put(gitem.getId());
@@ -351,7 +354,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
                                              * VideoId's are not included in comment thread / comments.list. Using tuple
                                              * to pair a comment thread id with the video it was found on.
                                              */
-                                            commentThreadQueue.add(new Tuple<>(c.getId(), video.getId()));
+                                            commentThreadQueue.add(new StringTuple(c.getId(), video.getId()));
                                         }
                                     });
 
@@ -435,7 +438,7 @@ public class MGMVGroupRefresh extends Thread implements RefreshInterface {
         logger.debug("Starting Reply Threads");
         repliesGroup.submitAndShutdown(() -> {
             while (!commentThreadQueue.isEmpty() || videoCommentsGroup.isStillWorking()) {
-                Tuple<String, String> tuple = commentThreadQueue.poll();
+                StringTuple tuple = commentThreadQueue.poll();
                 if (tuple != null) {
                     try {
                         CommentListResponse cl;
