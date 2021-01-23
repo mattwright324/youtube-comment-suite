@@ -8,6 +8,7 @@ import io.mattw.youtube.commentsuite.db.YouTubeVideo;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.checker.units.qual.A;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -18,6 +19,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class VideoProducer extends ConsumerMultiProducer<String> {
@@ -25,6 +27,8 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
     private static final Logger logger = LogManager.getLogger();
 
     private final ExecutorGroup executorGroup = new ExecutorGroup(1);
+
+    private final AtomicLong timelineSkipped = new AtomicLong();
 
     private final RefreshOptions options;
     private final YouTube youTube;
@@ -68,14 +72,13 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
     private void queryAndInsert(final List<String> videoIds) throws IOException, SQLException {
         logger.debug("Grabbing Video Data [ids={}]", videoIds);
 
-        final YouTube.Videos.List yvl = youTube.videos()
+        final YouTube.Videos.List response = youTube.videos()
                 .list("snippet,statistics")
                 .setKey(FXMLSuite.getYouTubeApiKey())
                 .setMaxResults(50L)
-                .setId(String.join(",", videoIds))
-                .setPageToken("");
+                .setId(String.join(",", videoIds));
 
-        final VideoListResponse vl = yvl.execute();
+        final VideoListResponse vl = response.execute();
         if (vl.getItems().isEmpty()) {
             return;
         }
@@ -88,13 +91,19 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
 
         final RefreshTimeframe timeframe = options.getTimeframe();
         if (timeframe == RefreshTimeframe.NONE || options.getCommentPages() == RefreshCommentPages.NONE) {
+            timelineSkipped.addAndGet(videos.size());
             videos.clear();
         } else if (timeframe != RefreshTimeframe.ALL) {
             videos.removeIf(video -> {
-                LocalDate periodDate = LocalDate.now().minus(timeframe.getTimeframe());
-                LocalDate publishDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(video.getPublishedDate()), ZoneId.systemDefault()).toLocalDate();
+                final LocalDate periodDate = LocalDate.now().minus(timeframe.getTimeframe());
+                final LocalDate publishDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(video.getPublishedDate()), ZoneId.systemDefault()).toLocalDate();
 
-                return publishDate.isBefore(periodDate);
+                final boolean skip = publishDate.isBefore(periodDate);
+                if (skip) {
+                    timelineSkipped.incrementAndGet();
+                }
+
+                return skip;
             });
         }
 
@@ -104,5 +113,9 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
     @Override
     public ExecutorGroup getExecutorGroup() {
         return executorGroup;
+    }
+
+    public AtomicLong getTimelineSkipped() {
+        return timelineSkipped;
     }
 }

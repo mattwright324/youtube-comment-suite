@@ -28,7 +28,7 @@ import static javafx.application.Platform.runLater;
  *
  * @author mattwright324
  * @see RefreshInterface
- * @see MGMVGroupRefresh
+ * @see GroupRefresh
  * @see ManageGroupsManager
  */
 public class MGMVRefreshModal extends HBox {
@@ -179,7 +179,7 @@ public class MGMVRefreshModal extends HBox {
                     configData.setRefreshOptions(options);
                     configFile.save();
 
-                    refreshThread = new NewGroupRefresh(group, options);
+                    refreshThread = new GroupRefresh(group, options);
 
                     runLater(() -> {
                         refreshThread.getObservableErrorList().addListener((ListChangeListener<String>) (lcl) -> runLater(() -> {

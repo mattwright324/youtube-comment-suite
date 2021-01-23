@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.refresh;
 
+import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
@@ -15,16 +16,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
+public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private final ExecutorGroup executorGroup = new ExecutorGroup(4);
+    private final ExecutorGroup executorGroup = new ExecutorGroup(10);
 
     private final CommentDatabase database;
 
-    private final Set<String> concurrentTotalViewerSet = ConcurrentHashMap.newKeySet();
-    private final Set<String> concurrentNewViewerSet = ConcurrentHashMap.newKeySet();
+    private final Set<String> concurrentTotalChannelSet = ConcurrentHashMap.newKeySet();
+    private final Set<String> concurrentNewChannelSet = ConcurrentHashMap.newKeySet();
 
     public ChannelConsumer() {
         this.database = FXMLSuite.getDatabase();
@@ -73,11 +74,11 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
 
             final Set<String> notYetExisting = database.findChannelsNotExisting(channelIds)
                     .stream()
-                    .filter(id -> !concurrentTotalViewerSet.contains(id))
+                    .filter(id -> !concurrentTotalChannelSet.contains(id))
                     .collect(Collectors.toSet());
 
-            concurrentNewViewerSet.addAll(notYetExisting);
-            concurrentTotalViewerSet.addAll(channelIds);
+            concurrentNewChannelSet.addAll(notYetExisting);
+            concurrentTotalChannelSet.addAll(channelIds);
 
             database.insertChannels(channels);
             channels.clear();
@@ -87,15 +88,21 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
     }
 
     public int getTotalChannels() {
-        return concurrentTotalViewerSet.size();
+        return concurrentTotalChannelSet.size();
     }
 
     public int getNewChannels() {
-        return concurrentNewViewerSet.size();
+        return concurrentNewChannelSet.size();
     }
 
     @Override
     public ExecutorGroup getExecutorGroup() {
         return executorGroup;
+    }
+
+    @Override
+    public void cleanUp() {
+        this.concurrentNewChannelSet.clear();
+        this.concurrentTotalChannelSet.clear();
     }
 }

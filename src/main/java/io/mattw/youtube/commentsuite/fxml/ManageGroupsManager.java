@@ -84,7 +84,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     @FXML private LineChart<String, Number> commentsLineChart, videosLineChart;
     private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
-    @FXML private Label totalComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+    @FXML private Label totalComments, grabbedComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
             likeDislikeRatio, normalizedRatio;
     @FXML private ListView<MGMVYouTubeObjectItem> popularVideosList, dislikedVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
@@ -473,9 +473,14 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 .map(entry -> new MGMVYouTubeObjectItem(entry.getKey(), entry.getValue(), "comments"))
                 .collect(Collectors.toList());
 
+        final long comments = groupStats.getTotalComments();
+        final long grabbed = groupStats.getTotalGrabbedComments();
+        final double percentGrabbed = 100 * (grabbed / (comments * 1d));
+
         runLater(() -> {
             commentsLineChartData.getData().addAll(commentChartData);
-            totalComments.setText(String.format("%,d", groupStats.getTotalComments()));
+            totalComments.setText(String.format("%,d", comments));
+            grabbedComments.setText(String.format("%,d (%,.2f%%)", grabbed, percentGrabbed));
             totalLikes.setText(String.format("+%,d", groupStats.getTotalCommentLikes()));
             totalViewers.setText(String.format("%,d", groupStats.getUniqueViewers()));
 

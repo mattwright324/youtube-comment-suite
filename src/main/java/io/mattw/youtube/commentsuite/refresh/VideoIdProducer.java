@@ -84,8 +84,6 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                 .findFirst()
                 .orElse(null);
 
-        logger.debug(response);
-
         if (uploadsPlaylistId != null) {
             fromPlaylist(channel, uploadsPlaylistId);
         }
@@ -108,8 +106,6 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                     .setPlaylistId(playlistId)
                     .setPageToken(pageToken)
                     .execute();
-
-            logger.debug(response);
 
             pageToken = response.getNextPageToken();
 

@@ -29,7 +29,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
     private final RefreshOptions options;
     private final YouTube youTube;
 
-    public ReplyProducer(RefreshOptions options) {
+    public ReplyProducer(final RefreshOptions options) {
         this.options = options;
         this.youTube = FXMLSuite.getYouTube();
     }
@@ -45,48 +45,48 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
         while (shouldKeepAlive()) {
             final StringTuple tuple = getBlockingQueue().poll();
             if (tuple == null) {
-                awaitMillis(100);
+                awaitMillis(5);
                 continue;
             }
 
             try {
-                CommentListResponse cl;
+                CommentListResponse response;
                 String pageToken = "";
                 int page = 1;
                 RefreshReplyPages replyPages = options.getReplyPages();
                 do {
-                    cl = youTube.comments()
+                    response = youTube.comments()
                             .list("snippet")
                             .setKey(FXMLSuite.getYouTubeApiKey())
                             .setParentId(tuple.getFirst())
                             .setPageToken(pageToken)
                             .execute();
 
-                    pageToken = cl.getNextPageToken();
+                    pageToken = response.getNextPageToken();
 
-                    final List<Comment> comments = cl.getItems();
+                    final List<Comment> comments = response.getItems();
 
                     final List<YouTubeComment> replies = comments.stream()
                             .map(item -> new YouTubeComment(item, tuple.getSecond()))
-                            .filter(yc -> StringUtils.isNotEmpty(yc.getChannelId())/* filter out G+ comments */)
+                            .filter(yc -> StringUtils.isNotEmpty(yc.getChannelId()) /* filter out G+ comments */)
                             .collect(Collectors.toList());
                     sendCollection(replies, YouTubeComment.class);
 
-                    final List<YouTubeChannel> channels = cl.getItems().stream()
+                    final List<YouTubeChannel> channels = response.getItems().stream()
                             .filter(distinctByKey(Comment::getId))
                             .map(YouTubeChannel::new)
                             .collect(Collectors.toList());
                     sendCollection(channels, YouTubeChannel.class);
 
                     awaitMillis(50);
-                } while (pageToken != null && page++ < replyPages.getPageCount() && shouldKeepAlive());
+                } while (pageToken != null && page++ < replyPages.getPageCount() && !isHardShutdown());
             } catch (IOException e) {
                 e.printStackTrace();
                 logger.error("Couldn't grab commentThread[id={}]", tuple.getFirst(), e);
             }
 
             addProcessed(1);
-            awaitMillis(100);
+            awaitMillis(5);
         }
 
         logger.debug("Ending ReplyProducer");

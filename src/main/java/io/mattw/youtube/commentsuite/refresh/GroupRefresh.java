@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite.refresh;
 
+import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
@@ -8,11 +9,13 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ProgressBar;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -20,14 +23,16 @@ import java.util.concurrent.Executors;
 
 import static javafx.application.Platform.runLater;
 
-public class NewGroupRefresh extends Thread implements RefreshInterface {
+public class GroupRefresh extends Thread implements RefreshInterface {
 
     private static final Logger logger = LogManager.getLogger();
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
 
     private final DoubleProperty progressProperty = new SimpleDoubleProperty(0.0);
     private final BooleanProperty endedProperty = new SimpleBooleanProperty(false);
     private final StringProperty elapsedTimeProperty = new SimpleStringProperty();
     private final StringProperty statusStepProperty = new SimpleStringProperty();
+    private final ObservableList<String> errorList = FXCollections.observableArrayList();
 
     private final LongProperty newVideosProperty = new SimpleLongProperty(0);
     private final LongProperty totalVideosProperty = new SimpleLongProperty(0);
@@ -37,6 +42,7 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
     private final LongProperty totalViewersProperty = new SimpleLongProperty(0);
 
     private final Group group;
+    private final RefreshOptions options;
     private final CommentDatabase database;
 
     private final VideoIdProducer videoIdProducer;
@@ -49,10 +55,11 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
     private final ChannelConsumer channelConsumer;
 
     private boolean hardShutdown = false;
+    private boolean endedOnError = false;
 
-    public NewGroupRefresh(Group group, RefreshOptions options) {
+    public GroupRefresh(Group group, RefreshOptions options) {
         this.group = group;
-
+        this.options = options;
         this.database = FXMLSuite.getDatabase();
 
         this.videoIdProducer = new VideoIdProducer();
@@ -67,16 +74,19 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
 
     @Override
     public void run() {
-        logger.debug("Starting NewGroupRefresh");
+        logger.debug("Starting NewGroupRefresh options={}", options);
         runLater(() -> progressProperty.setValue(ProgressBar.INDETERMINATE_PROGRESS));
         startElapsedTimer();
 
         videoIdProducer.produceTo(uniqueVideoIdProducer, String.class);
         videoIdProducer.accept(database.getGroupItems(group));
+        videoIdProducer.setMessageFunc(this::postMessage);
 
         uniqueVideoIdProducer.produceTo(videoProducer, String.class);
+        uniqueVideoIdProducer.setMessageFunc(this::postMessage);
 
         videoProducer.produceTo(commentThreadProducer, YouTubeVideo.class);
+        videoProducer.setMessageFunc(this::postMessage);
 
         try {
             // Parse GroupItems to VideoIds
@@ -93,27 +103,32 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
             videoProducer.startProducing();
             await(videoProducer, "Await videoProducer over");
         } catch (SQLException | InterruptedException e) {
-            logger.error(e);
+            postMessage(Level.FATAL, e, null);
         }
 
         commentThreadProducer.produceTo(commentConsumer, YouTubeComment.class);
         commentThreadProducer.produceTo(channelProducer, String.class);
         commentThreadProducer.produceTo(replyProducer, StringTuple.class);
+        commentThreadProducer.setMessageFunc(this::postMessage);
 
         replyProducer.produceTo(commentConsumer, YouTubeComment.class);
         replyProducer.produceTo(channelConsumer, YouTubeChannel.class);
         replyProducer.keepAliveWith(commentThreadProducer);
         replyProducer.setStartProduceOnFirstAccept(true);
+        replyProducer.setMessageFunc(this::postMessage);
 
         channelProducer.produceTo(channelConsumer, YouTubeChannel.class);
         channelProducer.keepAliveWith(commentThreadProducer);
         channelProducer.setStartProduceOnFirstAccept(true);
+        channelProducer.setMessageFunc(this::postMessage);
 
         commentConsumer.keepAliveWith(commentThreadProducer, replyProducer);
         commentConsumer.setStartProduceOnFirstAccept(true);
+        commentConsumer.setMessageFunc(this::postMessage);
 
         channelConsumer.keepAliveWith(commentThreadProducer, channelProducer, replyProducer);
         channelConsumer.setStartProduceOnFirstAccept(true);
+        channelConsumer.setMessageFunc(this::postMessage);
 
         try {
             // Parse Videos to CommentThreads, Replies, Channels
@@ -126,14 +141,18 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
             await(channelProducer, "Await channelProducer over");
             await(commentConsumer, "Await commentConsumer over");
             await(channelConsumer, "Await channelConsumer over");
+        } catch (InterruptedException e) {
+            postMessage(Level.FATAL, e, null);
+        }
 
+        try {
             database.commit();
 
             awaitMillis(100);
 
             runLater(() -> statusStepProperty.setValue("Done"));
-        } catch (SQLException | InterruptedException e) {
-            logger.error(e);
+        } catch (SQLException e) {
+            postMessage(Level.FATAL, e, "Failed to commit");
         }
 
         runLater(() -> {
@@ -141,13 +160,40 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
             pollProcessed();
         });
 
-        logger.debug("Ending NewGroupRefresh");
+        logger.debug("Ending NewGroupRefresh videoSkipped={} duplicateChannelIdSkipped={}",
+                videoProducer.getTimelineSkipped(),
+                channelProducer.getDuplicateSkipped());
     }
 
     private void await(ConsumerMultiProducer<?> consumer, String message) throws InterruptedException {
         if (consumer.getExecutorGroup().isStillWorking()) {
             consumer.getExecutorGroup().await();
+
+            if (consumer instanceof Cleanable) {
+                ((Cleanable) consumer).cleanUp();
+            }
+
             logger.debug(message);
+            logger.debug(consumer);
+        }
+    }
+
+    private void postMessage(final Level level, final Throwable error, final String message) {
+        logger.debug("Refresh {} - {}", level,  message);
+
+        final String time = formatter.format(LocalDateTime.now());
+
+        if (level == Level.FATAL) {
+            endedOnError = true;
+            hardShutdown();
+        }
+
+        if (message != null) {
+            runLater(() -> errorList.add(0, String.format("%s - %s", time, message)));
+        }
+
+        if (error != null) {
+            runLater(() -> errorList.add(0, String.format("%s - %s", time, error.getLocalizedMessage())));
         }
     }
 
@@ -197,7 +243,13 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
 
             while (!endedProperty.getValue()) {
                 runLater(() -> {
-                    elapsedTimeProperty.setValue(elapsedTimer.humanReadableFormat());
+                    elapsedTimeProperty.setValue(String.format("%s CtP-%s RP-%s ChP-%s CmC-%s ChC-%s",
+                            elapsedTimer.humanReadableFormat(),
+                            commentThreadProducer.getBlockingQueue().size(),
+                            replyProducer.getBlockingQueue().size(),
+                            channelProducer.getBlockingQueue().size(),
+                            commentConsumer.getBlockingQueue().size(),
+                            channelConsumer.getBlockingQueue().size()));
                     pollProcessed();
                 });
                 awaitMillis(27);
@@ -300,12 +352,12 @@ public class NewGroupRefresh extends Thread implements RefreshInterface {
 
     @Override
     public ObservableList<String> getObservableErrorList() {
-        return FXCollections.emptyObservableList();
+        return errorList;
     }
 
     @Override
     public Boolean isEndedOnError() {
-        return false;
+        return endedOnError;
     }
 
     @Override

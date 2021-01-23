@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadListResponse;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
@@ -11,10 +12,10 @@ import io.mattw.youtube.commentsuite.db.YouTubeVideo;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import io.mattw.youtube.commentsuite.util.StringTuple;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
     private final YouTube youTube;
     private final CommentDatabase database;
 
-    public CommentThreadProducer(RefreshOptions options) {
+    public CommentThreadProducer(final RefreshOptions options) {
         this.options = options;
         this.youTube = FXMLSuite.getYouTube();
         this.database = FXMLSuite.getDatabase();
@@ -53,16 +54,16 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
             send(video.getChannelId());
 
             int attempts = 0;
-            CommentThreadListResponse ctl;
+            CommentThreadListResponse response;
             String pageToken = "";
             int page = 1;
             RefreshCommentPages commentPages = options.getCommentPages();
-            int maxAttempts = 5;
+            final int maxAttempts = 5;
             do {
                 try {
                     logger.info("{} - {}", video.getId(), video.getTitle());
                     do {
-                        ctl = youTube.commentThreads()
+                        response = youTube.commentThreads()
                                 .list("snippet")
                                 .setKey(FXMLSuite.getYouTubeApiKey())
                                 .setVideoId(video.getId())
@@ -71,53 +72,52 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .setPageToken(pageToken)
                                 .execute();
 
-                        pageToken = ctl.getNextPageToken();
+                        pageToken = response.getNextPageToken();
 
                         try {
                             // Maybe comments were re-enabled if we got a 403 in the past.
-
                             database.updateVideoHttpCode(video.getId(), 200);
                         } catch (SQLException sqle) {
                             logger.error("Failed to update video http response code", sqle);
                         }
 
-                        if (!ctl.getItems().isEmpty()) {
-                            List<YouTubeComment> comments = ctl.getItems().stream()
-                                    .map(YouTubeComment::new)
-                                    .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId())/* filter out G+ comments */)
-                                    .collect(Collectors.toList());
-
-                            comments.forEach(c -> {
-                                if (c.getReplyCount() > 0 && options.getReplyPages() != RefreshReplyPages.NONE) {
-//                                    incrTotalProgress(1);
-//                                    updateProgress();
-
-                                    /*
-                                     * Tuple to hold commentThreadId and videoId for consuming threads.
-                                     *
-                                     * VideoId's are not included in comment thread / comments.list. Using tuple
-                                     * to pair a comment thread id with the video it was found on.
-                                     */
-                                    send(new StringTuple(c.getId(), video.getId()));
-                                }
-                            });
-
-                            sendCollection(comments, YouTubeComment.class);
-
-                            final List<String> channelIds = comments.stream()
-                                    .map(YouTubeComment::getChannelId)
-                                    .distinct()
-                                    .collect(Collectors.toList());
-
-                            sendCollection(channelIds, String.class);
+                        final List<CommentThread> items = response.getItems();
+                        if (items.isEmpty()) {
+                            continue;
                         }
 
+                        final List<YouTubeComment> comments = items.stream()
+                                .map(YouTubeComment::new)
+                                .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()) /* filter out G+ comments */)
+                                .collect(Collectors.toList());
+                        sendCollection(comments, YouTubeComment.class);
+
+                        final List<String> channelIds = comments.stream()
+                                .map(YouTubeComment::getChannelId)
+                                .distinct()
+                                .collect(Collectors.toList());
+                        sendCollection(channelIds, String.class);
+
+                        /*
+                         * Tuple to hold commentThreadId and videoId for consuming threads.
+                         *
+                         * VideoId's are not included in comment thread / comments.list. Using tuple
+                         * to pair a comment thread id with the video it was found on.
+                         */
+                        final List<StringTuple> replyThreads = comments.stream()
+                                .filter(comment -> comment.getReplyCount() > 0)
+                                .filter(comment -> options.getReplyPages() != RefreshReplyPages.NONE)
+                                .map(comment -> new StringTuple(comment.getId(), video.getId()))
+                                .collect(Collectors.toList());
+                        sendCollection(replyThreads, StringTuple.class);
+
                         awaitMillis(50);
-                    } while (pageToken != null && page++ < commentPages.getPageCount() && shouldKeepAlive());
+                    } while (pageToken != null && page++ < commentPages.getPageCount() && !isHardShutdown());
+
                     break;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     if (e instanceof GoogleJsonResponseException) {
-                        GoogleJsonResponseException ge = (GoogleJsonResponseException) e;
+                        final GoogleJsonResponseException ge = (GoogleJsonResponseException) e;
 
                         try {
                             database.updateVideoHttpCode(video.getId(), ge.getStatusCode());
@@ -125,43 +125,47 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                             logger.error("Failed to update video http response code", sqle);
                         }
 
-                        GoogleJsonError.ErrorInfo firstError = ge.getDetails()
+                        final GoogleJsonError.ErrorInfo firstError = ge.getDetails()
                                 .getErrors()
                                 .get(0);
 
                         if (ge.getStatusCode() == 400) {
-                            String message = String.format("[%s/%s] %s %s [videoId=%s]", attempts, maxAttempts,
-                                    ge.getStatusCode(), firstError.getReason(), video.getId());
+                            final String message = String.format("[%s/%s] %s %s [videoId=%s]", attempts, maxAttempts,
+                                    ge.getStatusCode(),
+                                    firstError.getReason(),
+                                    video.getId());
 
-                            //appendError(message);
-                            logger.warn(message, e);
+                            sendMessage(Level.WARN, e, message);
 
                             attempts++;
                         } else if (ge.getStatusCode() == 403) {
-                            String message = String.format("Comments Disabled [videoId=%s]", video.getId());
+                            final String message = String.format("Comments Disabled [videoId=%s]", video.getId());
 
-                            //appendError(message);
-                            logger.warn(message);
+                            sendMessage(Level.WARN, message);
 
                             break;
                         } else {
-                            String message = String.format("Error %s %s [videoId=%s]",
-                                    ge.getStatusCode(), firstError.getReason(), video.getId());
+                            final String message = String.format("Error %s %s [videoId=%s]",
+                                    ge.getStatusCode(),
+                                    firstError.getReason(),
+                                    video.getId());
 
-                            //appendError(message);
-                            logger.warn(message, e);
+                            sendMessage(Level.WARN, e, message);
 
                             break;
                         }
                     } else {
-                        String message = String.format("[%s/%s] %s [videoId=%s]", attempts, maxAttempts, e.getClass().getSimpleName(), video.getId());
+                        final String message = String.format("[%s/%s] %s [videoId=%s]",
+                                attempts,
+                                maxAttempts,
+                                e.getClass().getSimpleName(),
+                                video.getId());
 
+                        sendMessage(Level.WARN, e, message);
                         attempts++;
-                        //appendError(message);
-                        logger.warn(message, e);
                     }
                 }
-            } while (attempts < maxAttempts && shouldKeepAlive());
+            } while (attempts < maxAttempts && !isHardShutdown());
 
             addProcessed(1);
             awaitMillis(500);

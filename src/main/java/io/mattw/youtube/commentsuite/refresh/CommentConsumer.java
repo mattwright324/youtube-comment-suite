@@ -18,7 +18,7 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private final ExecutorGroup executorGroup = new ExecutorGroup(4);
+    private final ExecutorGroup executorGroup = new ExecutorGroup(10);
 
     private final CommentDatabase database;
 

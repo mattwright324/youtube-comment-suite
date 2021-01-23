@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.ChannelListResponse;
+import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
@@ -13,13 +14,19 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class ChannelProducer extends ConsumerMultiProducer<String> {
+public class ChannelProducer extends ConsumerMultiProducer<String> implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private final ExecutorGroup executorGroup = new ExecutorGroup(20);
+    private final ExecutorGroup executorGroup = new ExecutorGroup(40);
+
+    private final Set<String> concurrentChannelSet = ConcurrentHashMap.newKeySet();
+    private final AtomicLong duplicateSkipped = new AtomicLong();
 
     private final YouTube youTube;
 
@@ -40,11 +47,19 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
         while (shouldKeepAlive()) {
             final String channelId = getBlockingQueue().poll();
             if (channelId == null) {
-                awaitMillis(100);
+                awaitMillis(5);
                 continue;
             } else {
-                channelIds.add(channelId);
                 addProcessed(1);
+
+                if (concurrentChannelSet.contains(channelId)) {
+                    duplicateSkipped.addAndGet(1);
+                    continue;
+                }
+
+                concurrentChannelSet.add(channelId);
+
+                channelIds.add(channelId);
             }
 
             if (channelIds.size() >= 50 || (elapsedTime.getElapsed().toMillis() > 500 && !channelIds.isEmpty())) {
@@ -93,5 +108,14 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
     @Override
     public ExecutorGroup getExecutorGroup() {
         return executorGroup;
+    }
+
+    public AtomicLong getDuplicateSkipped() {
+        return duplicateSkipped;
+    }
+
+    @Override
+    public void cleanUp() {
+        this.concurrentChannelSet.clear();
     }
 }
