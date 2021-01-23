@@ -2,8 +2,10 @@ package io.mattw.youtube.commentsuite.refresh;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.VideoListResponse;
+import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.YouTubeObject;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import org.apache.logging.log4j.Level;
@@ -34,11 +36,13 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
     private final RefreshOptions options;
     private final YouTube youTube;
     private final CommentDatabase database;
+    private final ConfigData configData;
 
     public VideoProducer(RefreshOptions options) {
         this.options = options;
         this.youTube = FXMLSuite.getYouTube();
         this.database = FXMLSuite.getDatabase();
+        this.configData = FXMLSuite.getConfig().getDataObject();
     }
 
     @Override
@@ -112,6 +116,12 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
         }
 
         sendCollection(videos, YouTubeVideo.class);
+
+        final List<YouTubeVideo> videosMine = videos.stream()
+                .filter(video -> configData.isSignedIn(video.getChannelId()))
+                .collect(Collectors.toList());
+        logger.debug("Video(s) matches a signed in account {}",
+                videosMine.stream().map(YouTubeObject::getId).collect(Collectors.toList()));
     }
 
     @Override

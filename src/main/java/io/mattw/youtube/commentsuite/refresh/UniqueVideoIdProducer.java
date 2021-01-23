@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
 public class UniqueVideoIdProducer extends ConsumerMultiProducer<String> {
 
@@ -32,13 +33,16 @@ public class UniqueVideoIdProducer extends ConsumerMultiProducer<String> {
     private void produce() {
         logger.debug("Starting UniqueVideoIdProducer");
 
-        final Set<String> uniqueVideoIds = new HashSet<>(getBlockingQueue());
+        final BlockingQueue<String> queue = getBlockingQueue();
+
+        final Set<String> uniqueVideoIds = new HashSet<>(queue);
         totalVideos = uniqueVideoIds.size();
         newVideos = database.countVideosNotExisting(uniqueVideoIds);
 
         sendCollection(uniqueVideoIds, String.class);
 
-        getBlockingQueue().clear();
+        addProcessed(queue.size());
+        queue.clear();
 
         logger.debug("Ending UniqueVideoIdProducer");
     }

@@ -67,6 +67,10 @@ public class ConfigData implements Serializable {
         }
     }
 
+    public boolean isSignedIn(String channelId) {
+        return accounts.stream().anyMatch(acc -> channelId.equals(acc.getChannelId()));
+    }
+
     public ReadOnlyIntegerProperty accountListChangedProperty() {
         return accountListChanged;
     }

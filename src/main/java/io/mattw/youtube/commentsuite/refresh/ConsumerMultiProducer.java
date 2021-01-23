@@ -25,7 +25,7 @@ public abstract class ConsumerMultiProducer<C> {
     private static final Logger logger = LogManager.getLogger();
 
     private List<ConsumerMultiProducer<?>> keepAliveWith = new ArrayList<>();
-    private Map<Class<?>, List<ConsumerMultiProducer<?>>> consumers = new HashMap<>();
+    private Map<Class<?>, List<ConsumerMultiProducer<?>>> consumersByClass = new HashMap<>();
     private BlockingQueue<C> blockingQueue = new LinkedBlockingQueue<>();
     private boolean startProduceOnFirstAccept = false;
     private boolean didProduceOnFirstAccept = false;
@@ -38,14 +38,14 @@ public abstract class ConsumerMultiProducer<C> {
     /**
      * @param consumer consuemr
      * @param clazz needed for sendCollection()
-     * @param <K> consumer must consume type of clazz
+     * @param <P> consumer must consume type of clazz
      */
-    public <K> void produceTo(ConsumerMultiProducer<K> consumer, Class<K> clazz) {
-        consumers.computeIfPresent(clazz, (key, value) -> {
+    public <P> void produceTo(ConsumerMultiProducer<P> consumer, Class<P> clazz) {
+        consumersByClass.computeIfPresent(clazz, (key, value) -> {
             value.add(consumer);
             return value;
         });
-        consumers.computeIfAbsent(clazz, (key) -> {
+        consumersByClass.computeIfAbsent(clazz, (key) -> {
             List<ConsumerMultiProducer<?>> list = new ArrayList<>();
             list.add(consumer);
             return list;
@@ -116,21 +116,21 @@ public abstract class ConsumerMultiProducer<C> {
         }
     }
 
-    public <K> void sendCollection(Collection<K> objects, Class<K> clazz) {
-        if (!consumers.containsKey(clazz)) {
+    public <P> void sendCollection(Collection<P> objects, Class<P> clazz) {
+        if (!consumersByClass.containsKey(clazz) || objects.isEmpty()) {
             return;
         }
-        for (ConsumerMultiProducer<?> consumer : consumers.get(clazz)) {
-            ((ConsumerMultiProducer<K>) consumer).accept(objects);
+        for (ConsumerMultiProducer<?> consumer : consumersByClass.get(clazz)) {
+            ((ConsumerMultiProducer<P>) consumer).accept(objects);
         }
     }
 
-    public <K> void send(K object) {
-        if (!consumers.containsKey(object.getClass())) {
+    public <P> void send(P object) {
+        if (!consumersByClass.containsKey(object.getClass())) {
             return;
         }
-        for (ConsumerMultiProducer<?> consumer : consumers.get(object.getClass())) {
-            ((ConsumerMultiProducer<K>) consumer).accept(object);
+        for (ConsumerMultiProducer<?> consumer : consumersByClass.get(object.getClass())) {
+            ((ConsumerMultiProducer<P>) consumer).accept(object);
         }
     }
 

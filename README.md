@@ -33,7 +33,7 @@ YouTube creators and more.
 
 ### Windows
 
-Extract the latest release zip file and run `youtube-comment-suite-v#.#.#.jar`.
+Extract the latest release zip file and run `youtube-comment-suite-#.#.#.jar`.
 
 * Be sure that you have Java 8 installed, if not you can get it
   [here from Oracle](https://www.java.com/en/download/).
