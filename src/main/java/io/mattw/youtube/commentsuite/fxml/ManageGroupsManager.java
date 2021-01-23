@@ -598,7 +598,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         runLater(() -> {
             commentsLineChartData.getData().clear();
             videosLineChartData.getData().clear();
-            Stream.of(totalComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+            Stream.of(totalComments, grabbedComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
                     likeDislikeRatio, normalizedRatio)
                     .forEach(label -> label.setText("..."));
             Stream.of(generalPane, videoPane, viewerPane)
