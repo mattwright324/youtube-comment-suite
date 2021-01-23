@@ -1,13 +1,10 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;

@@ -3,8 +3,6 @@ package io.mattw.youtube.commentsuite.db;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author mattwright324

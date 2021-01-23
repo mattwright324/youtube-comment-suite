@@ -303,7 +303,7 @@ public class CommentDatabase implements Closeable {
             ps.setString(1, groupId);
 
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
+                if (rs.next()) {
                     return new Group(rs.getString("group_id"), rs.getString("group_name"));
                 }
             }

@@ -103,6 +103,7 @@ public class MGMVRefreshModal extends HBox {
                     });
                 }
             });
+
             RefreshOptions refreshOptions = configData.getRefreshOptions();
             if (refreshOptions.getStyle() == CUSTOM) {
                 refreshStyle.setValue(CUSTOM);

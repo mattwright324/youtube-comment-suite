@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.ConfigData;
@@ -25,7 +24,7 @@ public class GroupItem extends YouTubeObject {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public static String ALL_ITEMS = "GI001";
+    public static String ALL_ITEMS = "ALL_ITEMS";
 
     private String channelTitle;
     private long published;
@@ -201,7 +200,7 @@ public class GroupItem extends YouTubeObject {
 
                     checkForNewChannel(item.getId());
                 }
-            } else if (type == YType.PLAYLIST) {
+            } else {
                 PlaylistListResponse pl = youtube.playlists().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey())
                         .setId(result)
@@ -214,8 +213,6 @@ public class GroupItem extends YouTubeObject {
 
                     checkForNewChannel(item.getSnippet().getChannelId());
                 }
-            } else {
-                throw new IOException("Unexpected result, link was not in an expected format.");
             }
         }
     }

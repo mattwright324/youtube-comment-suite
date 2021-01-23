@@ -355,13 +355,10 @@ public class CommentQuery implements Serializable, Exportable {
             this.withGroupItem = "All Item(s)";
         }
 
-        if (videos.isPresent()) {
-            this.withVideos = videos.get().stream()
-                    .map(YouTubeVideo::getId)
-                    .collect(Collectors.joining(","));
-        } else {
-            this.withVideos = "All Video(s)";
-        }
+        this.withVideos = videos.map(youTubeVideos -> youTubeVideos.stream()
+                .map(YouTubeVideo::getId)
+                .collect(Collectors.joining(",")))
+                .orElse("All Video(s)");
     }
 
     public enum Order {

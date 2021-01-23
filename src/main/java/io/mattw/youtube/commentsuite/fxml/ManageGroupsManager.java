@@ -437,6 +437,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         final long gcd = gcd(groupStats.getTotalLikes(), groupStats.getTotalDislikes());
         final long gcdLikes = gcd == 0 ? 0 : groupStats.getTotalLikes() / gcd;
         final long gcdDislikes = gcd == 0 ? 0 : groupStats.getTotalDislikes() / gcd;
+        final String gcdStyle = gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered";
 
         final long nLikes, nDislikes;
         if (gcd != 0) {
@@ -489,9 +490,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             totalVideoLikes.setText(String.format("+%,d", groupStats.getTotalLikes()));
             totalVideoDislikes.setText(String.format("-%,d", groupStats.getTotalDislikes()));
             likeDislikeRatio.setText(String.format("+%,d : -%,d", gcdLikes, gcdDislikes));
-            likeDislikeRatio.setStyle(String.format("-fx-text-fill:%s", gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered"));
+            likeDislikeRatio.setStyle(String.format("-fx-text-fill:%s", gcdStyle));
             normalizedRatio.setText(String.format("+%,d : -%,d", nLikes, nDislikes));
-            normalizedRatio.setStyle(String.format("-fx-text-fill:%s", gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered"));
+            normalizedRatio.setStyle(String.format("-fx-text-fill:%s", gcdStyle));
             generalPane.setDisable(false);
 
             popularVideosList.getItems().addAll(popularVideos);

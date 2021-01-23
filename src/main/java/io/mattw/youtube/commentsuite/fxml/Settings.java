@@ -246,7 +246,7 @@ public class Settings implements Initializable {
     private void deleteDirectoryContents(String dir) {
         File file = new File(dir);
 
-        for (File f : file.listFiles()) {
+        for (File f : Objects.requireNonNull(file.listFiles())) {
             f.delete();
         }
     }

@@ -31,7 +31,7 @@ public class FXMLSuite extends Application {
 
     private static final ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
     private static final EventBus eventBus = new EventBus();
-    private static final Location location = new Location<IpApiProvider, IpApiProvider.Location>(new IpApiProvider(), IpApiProvider.Location.class);
+    private static final Location<IpApiProvider, IpApiProvider.Location> location = new Location<>(new IpApiProvider(), IpApiProvider.Location.class);
     private static final OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
 
     private static CommentDatabase database;
@@ -86,7 +86,7 @@ public class FXMLSuite extends Application {
         return eventBus;
     }
 
-    public static Location getLocation() {
+    public static Location<IpApiProvider, IpApiProvider.Location> getLocation() {
         return location;
     }
 
