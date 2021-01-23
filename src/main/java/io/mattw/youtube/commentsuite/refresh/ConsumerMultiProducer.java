@@ -152,6 +152,10 @@ public abstract class ConsumerMultiProducer<C> {
         }
     }
 
+    public void onCompletion() {
+        // Default nothing on completion
+    }
+
     public AtomicLong getTotalAccepted() {
         return totalAccepted;
     }

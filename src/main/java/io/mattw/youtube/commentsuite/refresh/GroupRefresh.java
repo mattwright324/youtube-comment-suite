@@ -161,21 +161,19 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         });
 
         logger.debug("Ending NewGroupRefresh videoSkipped={} duplicateChannelIdSkipped={}",
-                videoProducer.getTimelineSkipped(),
+                videoProducer.getTimeframeSkipped(),
                 channelProducer.getDuplicateSkipped());
     }
 
     private void await(ConsumerMultiProducer<?> consumer, String message) throws InterruptedException {
         if (consumer.getExecutorGroup().isStillWorking()) {
             consumer.getExecutorGroup().await();
-
-            if (consumer instanceof Cleanable) {
-                ((Cleanable) consumer).cleanUp();
-            }
+            consumer.onCompletion();
 
             logger.debug(message);
-            logger.debug(consumer);
         }
+
+        logger.debug(consumer);
     }
 
     private void postMessage(final Level level, final Throwable error, final String message) {

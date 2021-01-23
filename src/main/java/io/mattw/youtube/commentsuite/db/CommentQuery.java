@@ -343,8 +343,8 @@ public class CommentQuery implements Serializable, Exportable {
             long lastRefreshed = database.getLastChecked(this.getGroup());
 
             this.groupLastRefreshed =
-                    lastRefreshed == Long.MAX_VALUE ?
-                            "Never refreshed" : DateUtils.epochMillisToDateTime(lastRefreshed).toString();
+                    lastRefreshed == 0 ?
+                            "never refreshed" : DateUtils.epochMillisToDateTime(lastRefreshed).toString();
         }
 
         if (groupItem.isPresent()) {

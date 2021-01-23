@@ -452,7 +452,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             nDislikes = 0;
         }
 
-
         final List<MGMVYouTubeObjectItem> popularVideos = groupStats.getMostViewed().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getViewCount(), "views"))
                 .collect(Collectors.toList());

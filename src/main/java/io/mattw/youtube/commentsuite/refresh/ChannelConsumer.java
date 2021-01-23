@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.refresh;
 
-import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
@@ -16,7 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> implements Cleanable {
+public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -100,9 +99,4 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> imple
         return executorGroup;
     }
 
-    @Override
-    public void cleanUp() {
-        this.concurrentNewChannelSet.clear();
-        this.concurrentTotalChannelSet.clear();
-    }
 }

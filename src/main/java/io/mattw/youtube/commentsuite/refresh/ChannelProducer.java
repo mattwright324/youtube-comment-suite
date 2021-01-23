@@ -3,15 +3,14 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.ChannelListResponse;
-import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -19,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class ChannelProducer extends ConsumerMultiProducer<String> implements Cleanable {
+public class ChannelProducer extends ConsumerMultiProducer<String> {
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -42,35 +41,38 @@ public class ChannelProducer extends ConsumerMultiProducer<String> implements Cl
     private void produce() {
         logger.debug("Starting ChannelProducer");
 
-        final ElapsedTime elapsedTime = new ElapsedTime();
-        final List<String> channelIds = new ArrayList<>();
-        while (shouldKeepAlive()) {
-            final String channelId = getBlockingQueue().poll();
-            if (channelId == null) {
-                awaitMillis(5);
-                continue;
-            } else {
-                addProcessed(1);
-
-                if (concurrentChannelSet.contains(channelId)) {
-                    duplicateSkipped.addAndGet(1);
+        try {
+            final ElapsedTime elapsedTime = new ElapsedTime();
+            final List<String> channelIds = new ArrayList<>();
+            while (shouldKeepAlive()) {
+                final String channelId = getBlockingQueue().poll();
+                if (channelId == null) {
+                    awaitMillis(5);
                     continue;
+                } else {
+                    addProcessed(1);
+
+                    if (concurrentChannelSet.contains(channelId)) {
+                        duplicateSkipped.addAndGet(1);
+                        continue;
+                    }
+
+                    concurrentChannelSet.add(channelId);
+                    channelIds.add(channelId);
                 }
 
-                concurrentChannelSet.add(channelId);
+                if (channelIds.size() >= 50 || (elapsedTime.getElapsed().toMillis() > 500 && !channelIds.isEmpty())) {
+                    produceChannels(channelIds);
+                }
 
-                channelIds.add(channelId);
+                awaitMillis(5);
             }
 
-            if (channelIds.size() >= 50 || (elapsedTime.getElapsed().toMillis() > 500 && !channelIds.isEmpty())) {
+            if (!channelIds.isEmpty()) {
                 produceChannels(channelIds);
             }
-
-            awaitMillis(5);
-        }
-
-        if (!channelIds.isEmpty()) {
-            produceChannels(channelIds);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         logger.debug("Ending ChannelProducer");
@@ -84,6 +86,13 @@ public class ChannelProducer extends ConsumerMultiProducer<String> implements Cl
                     .setId(String.join(",", channelIds))
                     .setMaxResults(50L)
                     .execute();
+
+            if (cl == null || cl.getItems() == null) {
+                // This seems to occur when a 'Show Channel' is input
+                // as the api returns no info about the channel id.
+                logger.warn("No channels were returned for input {}", channelIds);
+                return;
+            }
 
             final List<YouTubeChannel> channels = cl.getItems()
                     .stream()
@@ -100,7 +109,7 @@ public class ChannelProducer extends ConsumerMultiProducer<String> implements Cl
             } else {
                 e.printStackTrace();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Error on channel grab", e);
         }
     }
@@ -115,7 +124,10 @@ public class ChannelProducer extends ConsumerMultiProducer<String> implements Cl
     }
 
     @Override
-    public void cleanUp() {
-        this.concurrentChannelSet.clear();
+    public void onCompletion() {
+        if (duplicateSkipped.get() > 0) {
+            sendMessage(Level.INFO, null, String.format("Ignored %d duplicate channelIds", duplicateSkipped.get()));
+        }
     }
+
 }

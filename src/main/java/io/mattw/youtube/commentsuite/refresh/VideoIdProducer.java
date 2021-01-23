@@ -13,9 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
@@ -58,6 +56,8 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                 } else if (type == YType.VIDEO) {
                     fromVideo(item);
                 }
+
+                updateGroupItem(item);
             } catch (IOException | SQLException e) {
                 logger.debug("Failed GroupItem {}", item, e);
             }
@@ -144,6 +144,10 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
         database.insertGroupItemVideo(new GroupItemVideo(video.getId(), video.getId()));
 
         send(video.getId());
+    }
+
+    private void updateGroupItem(GroupItem gitem) throws SQLException {
+        database.updateGroupItem(gitem);
     }
 
     @Override

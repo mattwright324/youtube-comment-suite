@@ -6,9 +6,9 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.units.qual.A;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -28,7 +28,8 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
 
     private final ExecutorGroup executorGroup = new ExecutorGroup(1);
 
-    private final AtomicLong timelineSkipped = new AtomicLong();
+    private final AtomicLong timeframeSkipped = new AtomicLong();
+    private final AtomicLong timeframeKept = new AtomicLong();
 
     private final RefreshOptions options;
     private final YouTube youTube;
@@ -91,7 +92,7 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
 
         final RefreshTimeframe timeframe = options.getTimeframe();
         if (timeframe == RefreshTimeframe.NONE || options.getCommentPages() == RefreshCommentPages.NONE) {
-            timelineSkipped.addAndGet(videos.size());
+            timeframeSkipped.addAndGet(videos.size());
             videos.clear();
         } else if (timeframe != RefreshTimeframe.ALL) {
             videos.removeIf(video -> {
@@ -100,11 +101,14 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
 
                 final boolean skip = publishDate.isBefore(periodDate);
                 if (skip) {
-                    timelineSkipped.incrementAndGet();
+                    timeframeSkipped.incrementAndGet();
                 }
 
                 return skip;
             });
+            timeframeKept.addAndGet(videos.size());
+        } else {
+            timeframeKept.addAndGet(videos.size());
         }
 
         sendCollection(videos, YouTubeVideo.class);
@@ -115,7 +119,15 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
         return executorGroup;
     }
 
-    public AtomicLong getTimelineSkipped() {
-        return timelineSkipped;
+    @Override
+    public void onCompletion() {
+        if (timeframeSkipped.get() > 0) {
+            sendMessage(Level.INFO, null, String.format("Skipped %d video(s) outside timeframe", timeframeSkipped.get()));
+            sendMessage(Level.INFO, null, String.format("Checking %d video(s) in timeframe", timeframeKept.get()));
+        }
+    }
+
+    public AtomicLong getTimeframeSkipped() {
+        return timeframeSkipped;
     }
 }
