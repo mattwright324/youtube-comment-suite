@@ -24,21 +24,20 @@ public class CommentDatabase implements Closeable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
+    private static final Group DEFAULT_GROUP = new Group("28da132f5f5b48d881264d892aba790a", "Default");
 
-    private List<Group> allGroups = new ArrayList<>();
-
-    private Connection sqlite;
-    private Group defaultGroup = new Group("28da132f5f5b48d881264d892aba790a", "Default");
-    private Cache<String, YouTubeChannel> channelCache = CacheBuilder.newBuilder()
+    private final ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
+    private final List<Group> allGroups = new ArrayList<>();
+    private final Connection sqlite;
+    private final Cache<String, YouTubeChannel> channelCache = CacheBuilder.newBuilder()
             .expireAfterAccess(5, TimeUnit.MINUTES)
             .build();
-    private EventBus eventBus = FXMLSuite.getEventBus();
+    private final EventBus eventBus = FXMLSuite.getEventBus();
 
     /**
      * Default constructor for testing.
      */
-    protected CommentDatabase(SQLiteConnection sqlite) {
+    protected CommentDatabase(final SQLiteConnection sqlite) {
         this.sqlite = sqlite;
     }
 
@@ -48,7 +47,7 @@ public class CommentDatabase implements Closeable {
      * @param fileName name of database file
      * @throws SQLException failed to create database
      */
-    public CommentDatabase(String fileName) throws SQLException {
+    public CommentDatabase(final String fileName) throws SQLException {
         logger.debug("Initialize Database [file={}]", fileName);
         sqlite = DriverManager.getConnection(String.format("jdbc:sqlite:%s", fileName));
         sqlite.setAutoCommit(false);
@@ -136,7 +135,7 @@ public class CommentDatabase implements Closeable {
 
             if (allGroups.isEmpty()) {
                 logger.debug("Creating Default Group");
-                createGroup(defaultGroup);
+                createGroup(DEFAULT_GROUP);
             }
         } catch (SQLException e) {
             logger.error(e);

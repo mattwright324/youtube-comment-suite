@@ -10,7 +10,7 @@ import java.security.MessageDigest;
 public class Group {
 
     private final String groupId;
-    private final String name;
+    private String name;
 
     /**
      * Used when creating a new group.
@@ -34,6 +34,10 @@ public class Group {
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String toString() {

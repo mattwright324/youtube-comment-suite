@@ -8,10 +8,7 @@ import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
-import io.mattw.youtube.commentsuite.events.GroupAddEvent;
-import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;
-import io.mattw.youtube.commentsuite.events.GroupItemAddEvent;
-import io.mattw.youtube.commentsuite.events.GroupRenameEvent;
+import io.mattw.youtube.commentsuite.events.*;
 import io.mattw.youtube.commentsuite.util.*;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -697,8 +694,14 @@ public class SearchComments implements Initializable, ImageCache {
     }
 
     @Subscribe
-    public void groupItemChangeEvent(final GroupItemAddEvent groupItemAddEvent) {
-        logger.debug("Group Item Change Event");
+    public void groupItemAddEvent(final GroupItemAddEvent groupItemAddEvent) {
+        logger.debug("Group Item Add Event");
+        reloadGroupItems();
+    }
+
+    @Subscribe
+    public void groupItemDeleteEvent(final GroupItemDeleteEvent groupItemDeleteEvent) {
+        logger.debug("Group Item Delete Event");
         reloadGroupItems();
     }
 

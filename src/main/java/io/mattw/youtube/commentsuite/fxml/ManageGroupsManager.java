@@ -59,11 +59,11 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private final Image close = ImageLoader.CLOSE.getImage();
     private final Image save = ImageLoader.SAVE.getImage();
 
-    private ChangeListener<Font> fontListener;
-    private Group group;
+    private final Group group;
+    private final CommentDatabase database;
+    private final ConfigData configData;
 
-    private CommentDatabase database;
-    private ConfigData configData;
+    private ChangeListener<Font> fontListener;
 
     @FXML private OverlayModal<MGMVRefreshModal> refreshModal;
     @FXML private OverlayModal<MGMVDeleteGroupModal> deleteModal;
@@ -93,7 +93,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     @FXML private Accordion accordion;
     @FXML private TitledPane generalPane, videoPane, viewerPane;
 
-    public ManageGroupsManager(Group group) throws IOException {
+    public ManageGroupsManager(final Group group) throws IOException {
         logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         database = FXMLSuite.getDatabase();
@@ -374,10 +374,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             ManageGroups.getManagerCache().invalidate(previousId);
             return;
         } else if (!StringUtils.equals(previousName, newGroup.getName())) {
-            group = newGroup;
-            runLater(() -> {
-                groupTitle.setText(group.getName());
-            });
+            group.setName(newGroup.getName());
+            runLater(() -> groupTitle.setText(group.getName()));
         }
 
         new Timer().schedule(

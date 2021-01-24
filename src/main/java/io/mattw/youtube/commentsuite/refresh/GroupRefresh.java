@@ -240,13 +240,14 @@ public class GroupRefresh extends Thread implements RefreshInterface {
 
             while (!endedProperty.getValue()) {
                 runLater(() -> {
-                    elapsedTimeProperty.setValue(String.format("%s CtP-%s RP-%s ChP-%s CmC-%s ChC-%s",
+                    /*elapsedTimeProperty.setValue(String.format("%s CtP-%s RP-%s ChP-%s CmC-%s ChC-%s",
                             elapsedTimer.humanReadableFormat(),
                             commentThreadProducer.getBlockingQueue().size(),
                             replyProducer.getBlockingQueue().size(),
                             channelProducer.getBlockingQueue().size(),
                             commentConsumer.getBlockingQueue().size(),
-                            channelConsumer.getBlockingQueue().size()));
+                            channelConsumer.getBlockingQueue().size()));*/
+                    elapsedTimeProperty.setValue(String.format("%s", elapsedTimer.humanReadableFormat()));
                     pollProcessed();
                 });
                 awaitMillis(27);
