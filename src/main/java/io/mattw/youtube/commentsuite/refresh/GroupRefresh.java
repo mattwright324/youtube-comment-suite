@@ -1,5 +1,7 @@
 package io.mattw.youtube.commentsuite.refresh;
 
+import com.google.api.client.googleapis.json.GoogleJsonError;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
@@ -19,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
@@ -183,6 +186,18 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         if (level == Level.FATAL) {
             endedOnError = true;
             hardShutdown();
+        }
+
+        if (error instanceof GoogleJsonResponseException) {
+            final GoogleJsonResponseException googleError = (GoogleJsonResponseException) error;
+            final List<GoogleJsonError.ErrorInfo> errorInfos = googleError.getDetails().getErrors();
+            if (googleError.getStatusCode() == 403 && errorInfos.stream()
+                    .map(GoogleJsonError.ErrorInfo::getReason)
+                    .anyMatch("quotaExceeded"::equals)) {
+                endedOnError = true;
+                hardShutdown();
+                runLater(() -> errorList.add(0, String.format("%s - %s", time, googleError)));
+            }
         }
 
         if (message != null) {

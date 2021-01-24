@@ -107,7 +107,7 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
                 logger.warn(e.getDetails().getMessage());
                 logger.warn("filter parameters [id={}]", String.join(",", channelIds));
             } else {
-                e.printStackTrace();
+                sendMessage(Level.ERROR, e, "Failed during query for channels");
             }
         } catch (Exception e) {
             logger.error("Error on channel grab", e);

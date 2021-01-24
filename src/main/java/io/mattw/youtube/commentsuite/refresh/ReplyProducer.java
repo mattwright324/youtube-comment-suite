@@ -9,6 +9,7 @@ import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import io.mattw.youtube.commentsuite.util.StringTuple;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -82,8 +83,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                     awaitMillis(50);
                 } while (pageToken != null && page++ < replyPages.getPageCount() && !isHardShutdown());
             } catch (IOException e) {
-                e.printStackTrace();
-                logger.error("Couldn't grab commentThread[id={}]", tuple.getFirst(), e);
+                sendMessage(Level.ERROR, e, String.format("Couldn't grab commentThread[id={}]", tuple.getFirst()));
             }
 
             addProcessed(1);

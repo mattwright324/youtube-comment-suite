@@ -8,6 +8,7 @@ import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.db.GroupItemVideo;
 import io.mattw.youtube.commentsuite.db.YType;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,7 +60,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
 
                 updateGroupItem(item);
             } catch (IOException | SQLException e) {
-                logger.debug("Failed GroupItem {}", item, e);
+                sendMessage(Level.ERROR, e, String.format("Failed GroupItem %s", item));
             }
 
             addProcessed(1);

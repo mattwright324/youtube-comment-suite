@@ -135,7 +135,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                     firstError.getReason(),
                                     video.getId());
 
-                            sendMessage(Level.WARN, e, message);
+                            sendMessage(Level.ERROR, e, message);
 
                             attempts++;
                         } else if (ge.getStatusCode() == 403) {
@@ -150,7 +150,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                     firstError.getReason(),
                                     video.getId());
 
-                            sendMessage(Level.WARN, e, message);
+                            sendMessage(Level.ERROR, e, message);
 
                             break;
                         }
@@ -161,7 +161,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 e.getClass().getSimpleName(),
                                 video.getId());
 
-                        sendMessage(Level.WARN, e, message);
+                        sendMessage(Level.ERROR, e, message);
                         attempts++;
                     }
                 }

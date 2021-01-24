@@ -68,7 +68,7 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
             queryAndInsert(videoIds);
             addProcessed(videoIds.size());
         } catch (IOException | SQLException e) {
-            logger.error(e);
+            sendMessage(Level.ERROR, e, "Failed to query for videos");
         }
 
         logger.debug("Ending VideoProducer");
