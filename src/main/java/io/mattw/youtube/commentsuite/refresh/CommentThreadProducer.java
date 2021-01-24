@@ -67,7 +67,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .list("snippet")
                                 .setKey(FXMLSuite.getYouTubeApiKey())
                                 .setVideoId(video.getId())
-                                .setMaxResults(50L)
+                                .setMaxResults(100L)
                                 .setOrder(options.getCommentOrder().name())
                                 .setPageToken(pageToken)
                                 .execute();

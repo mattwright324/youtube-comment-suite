@@ -60,6 +60,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                             .setKey(FXMLSuite.getYouTubeApiKey())
                             .setParentId(tuple.getFirst())
                             .setPageToken(pageToken)
+                            .setMaxResults(100L)
                             .execute();
 
                     pageToken = response.getNextPageToken();

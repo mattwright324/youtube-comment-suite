@@ -20,7 +20,7 @@
             <HBox alignment="CENTER_LEFT" spacing="10">
                 <Label>Grab comments for up to</Label>
                 <ComboBox fx:id="refreshCommentPages" />
-                <Label>page(s) of 50 results per page.</Label>
+                <Label>page(s) of 100 results per page</Label>
             </HBox>
             <HBox alignment="CENTER_LEFT" spacing="10">
                 <Label>Grab comments in order by </Label>
@@ -29,7 +29,7 @@
             <HBox alignment="CENTER_LEFT" spacing="10">
                 <Label>Grab replies up to</Label>
                 <ComboBox fx:id="refreshReplyPages" />
-                <Label>page(s) of 50 results per page.</Label>
+                <Label>page(s) of 100 results per page</Label>
             </HBox>
         </VBox>
         <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"
