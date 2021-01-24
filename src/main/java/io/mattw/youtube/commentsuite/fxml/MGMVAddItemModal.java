@@ -1,13 +1,12 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.Cleanable;
+import io.mattw.youtube.commentsuite.ConfigData;
+import io.mattw.youtube.commentsuite.ConfigFile;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
@@ -38,12 +37,12 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
     private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
-    private YouTube youtube;
 
     @FXML private Label alertError;
 
     @FXML private TabPane tabPane;
     @FXML private Tab tabSingular, tabBulk;
+    @FXML private CheckBox fastGroupAdd;
 
     @FXML private VBox singularPane;
     @FXML private TextField link;
@@ -56,13 +55,13 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
     private Group group;
 
-    private IntegerProperty itemAdded = new SimpleIntegerProperty(0);
+    private ConfigFile<ConfigData> configFile = FXMLSuite.getConfig();
+    private ConfigData configData = configFile.getDataObject();
 
     public MGMVAddItemModal(Group group) {
         this.group = group;
 
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVAddItemModal.fxml"));
         loader.setController(this);
@@ -72,6 +71,8 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
             bulkPane.maxHeightProperty().bind(singularPane.heightProperty());
             multiLink.maxHeightProperty().bind(singularPane.heightProperty());
+
+            fastGroupAdd.setSelected(configData.isFastGroupAdd());
 
             Label[] links = {link1, link2, link3, link4, link5};
             for (Label l : links) {
@@ -101,8 +102,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 database.insertGroupItems(this.group, list);
                                 database.commit();
                                 runLater(() -> {
-                                    itemAdded.setValue(itemAdded.getValue() + 1);
-                                    group.reloadGroupItems();
                                     btnClose.fire();
                                 });
                             } catch (SQLException e1) {
@@ -126,13 +125,16 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                             .collect(Collectors.toList());
 
                     if (!givenLinks.isEmpty()) {
+                        configData.setFastGroupAdd(fastGroupAdd.isSelected());
+                        configFile.save();
+
                         List<GroupItem> list = new ArrayList<>();
 
                         int failures = 0;
 
                         for (String givenLink : givenLinks) {
                             try {
-                                GroupItem newItem = new GroupItem(givenLink);
+                                GroupItem newItem = new GroupItem(givenLink, configData.isFastGroupAdd());
 
                                 list.add(newItem);
                             } catch (IOException e) {
@@ -145,8 +147,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                                 database.insertGroupItems(this.group, list);
                                 database.commit();
                                 runLater(() -> {
-                                    itemAdded.setValue(itemAdded.getValue() + 1);
-                                    group.reloadGroupItems();
                                     btnClose.fire();
                                 });
                             } catch (SQLException e1) {
@@ -175,10 +175,6 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
         alertError.setText(message);
         alertError.setVisible(true);
         alertError.setManaged(true);
-    }
-
-    public IntegerProperty itemAddedProperty() {
-        return itemAdded;
     }
 
     @Override

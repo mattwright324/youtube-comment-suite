@@ -1,11 +1,11 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.MGMVGroupRefresh;
-import io.mattw.youtube.commentsuite.RefreshInterface;
+import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.refresh.*;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.util.ClipboardUtil;
 import javafx.beans.binding.Bindings;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
+import static io.mattw.youtube.commentsuite.refresh.RefreshStyle.*;
 import static javafx.application.Platform.runLater;
 
 /**
@@ -27,12 +28,14 @@ import static javafx.application.Platform.runLater;
  *
  * @author mattwright324
  * @see RefreshInterface
- * @see MGMVGroupRefresh
+ * @see GroupRefresh
  * @see ManageGroupsManager
  */
 public class MGMVRefreshModal extends HBox {
 
     private static final Logger logger = LogManager.getLogger();
+
+    public static final int WIDTH = 500;
 
     private ClipboardUtil clipboard = new ClipboardUtil();
 
@@ -42,6 +45,13 @@ public class MGMVRefreshModal extends HBox {
     @FXML private Button btnStart;
     @FXML private ProgressBar progressBar;
     @FXML private VBox statusPane;
+
+    @FXML private VBox optionsPane;
+    @FXML private ComboBox<RefreshStyle> refreshStyle;
+    @FXML private ComboBox<RefreshTimeframe> refreshTimeframe;
+    @FXML private ComboBox<RefreshCommentPages> refreshCommentPages;
+    @FXML private ComboBox<RefreshCommentOrder> refreshCommentOrder;
+    @FXML private ComboBox<RefreshReplyPages> refreshReplyPages;
 
     @FXML private HBox warningsPane;
     @FXML private Label warnings, elapsedTime, newVideos, totalVideos, newComments, totalComments, newViewers, totalViewers;
@@ -55,11 +65,13 @@ public class MGMVRefreshModal extends HBox {
     private RefreshInterface refreshThread;
     private boolean running = false;
     private boolean hasBeenStarted = false;
-
     private boolean expanded = false;
 
+    private ConfigFile<ConfigData> configFile = FXMLSuite.getConfig();
+    private ConfigData configData = configFile.getDataObject();
+
     public MGMVRefreshModal(Group group) {
-        logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
+        logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         this.group = group;
 
@@ -73,6 +85,40 @@ public class MGMVRefreshModal extends HBox {
 
             errorList.prefHeightProperty().bind(statusPane.heightProperty());
             errorList.maxHeightProperty().bind(statusPane.heightProperty());
+
+            refreshStyle.setItems(FXCollections.observableArrayList(values()));
+            refreshTimeframe.setItems(FXCollections.observableArrayList(RefreshTimeframe.values()));
+            refreshCommentPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
+            refreshCommentOrder.setItems(FXCollections.observableArrayList(RefreshCommentOrder.values()));
+            refreshReplyPages.setItems(FXCollections.observableArrayList(RefreshReplyPages.values()));
+
+            refreshStyle.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+                logger.debug("Style {}", nv);
+                if (nv != CUSTOM) {
+                    runLater(() -> {
+                        refreshTimeframe.setValue(nv.getTimeframe());
+                        refreshCommentPages.setValue(nv.getCommentPages());
+                        refreshCommentOrder.setValue(nv.getCommentOrder());
+                        refreshReplyPages.setValue(nv.getReplyPages());
+                    });
+                }
+            });
+
+            RefreshOptions refreshOptions = configData.getRefreshOptions();
+            if (refreshOptions.getStyle() == CUSTOM) {
+                refreshStyle.setValue(CUSTOM);
+                refreshTimeframe.setValue(refreshOptions.getTimeframe());
+                refreshCommentPages.setValue(refreshOptions.getCommentPages());
+                refreshCommentOrder.setValue(refreshOptions.getCommentOrder());
+                refreshReplyPages.setValue(refreshOptions.getReplyPages());
+            } else {
+                refreshStyle.setValue(refreshOptions.getStyle());
+            }
+
+            refreshTimeframe.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> checkCustomStyle());
+            refreshCommentPages.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> checkCustomStyle());
+            refreshCommentOrder.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> checkCustomStyle());
+            refreshReplyPages.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> checkCustomStyle());
 
             expand.setOnAction(ae -> {
                 expanded = !expanded;
@@ -97,7 +143,7 @@ public class MGMVRefreshModal extends HBox {
 
             btnStart.setOnAction(ae -> new Thread(() -> {
                 if (running) {
-                    logger.debug("Requesting group refresh stopped for group [id={},name={}]", group.getId(), group.getName());
+                    logger.debug("Requesting group refresh stopped for group [id={},name={}]", group.getGroupId(), group.getName());
                     runLater(() -> {
                         btnStart.setDisable(true);
                         endStatus.setImage(ImageLoader.MINUS_CIRCLE.getImage());
@@ -113,7 +159,7 @@ public class MGMVRefreshModal extends HBox {
                     runLater(() -> btnClose.setDisable(false));
                 } else {
                     running = true;
-                    logger.debug("Starting group refresh for group [id={},name={}]", group.getId(), group.getName());
+                    logger.debug("Starting group refresh for group [id={},name={}]", group.getGroupId(), group.getName());
                     runLater(() -> {
                         statusPane.setVisible(true);
                         statusPane.setManaged(true);
@@ -121,9 +167,21 @@ public class MGMVRefreshModal extends HBox {
                         btnStart.setText("Stop");
                         alert.setVisible(false);
                         alert.setManaged(false);
+                        optionsPane.setVisible(false);
+                        optionsPane.setManaged(false);
                     });
 
-                    refreshThread = new MGMVGroupRefresh(group);
+                    RefreshOptions options = new RefreshOptions();
+                    options.setStyle(refreshStyle.getValue());
+                    options.setTimeframe(refreshTimeframe.getValue());
+                    options.setCommentPages(refreshCommentPages.getValue());
+                    options.setReplyPages(refreshReplyPages.getValue());
+
+                    configData.setRefreshOptions(options);
+                    configFile.save();
+
+                    refreshThread = new GroupRefresh(group, options);
+
                     runLater(() -> {
                         refreshThread.getObservableErrorList().addListener((ListChangeListener<String>) (lcl) -> runLater(() -> {
                             int items = lcl.getList().size();
@@ -197,6 +255,8 @@ public class MGMVRefreshModal extends HBox {
             alert.getStyleClass().add("alertWarning");
             alert.setVisible(true);
             alert.setManaged(true);
+            optionsPane.setVisible(true);
+            optionsPane.setManaged(true);
             statusPane.setVisible(false);
             statusPane.setManaged(false);
             btnStart.setVisible(true);
@@ -222,5 +282,14 @@ public class MGMVRefreshModal extends HBox {
 
     public boolean isHasBeenStarted() {
         return hasBeenStarted;
+    }
+
+    private void checkCustomStyle() {
+        runLater(() -> {
+            if (refreshStyle.getValue() != CUSTOM &&
+                    !refreshStyle.getValue().matches(refreshTimeframe.getValue(), refreshCommentPages.getValue(),refreshCommentOrder.getValue(), refreshReplyPages.getValue())) {
+                refreshStyle.setValue(CUSTOM);
+            }
+        });
     }
 }

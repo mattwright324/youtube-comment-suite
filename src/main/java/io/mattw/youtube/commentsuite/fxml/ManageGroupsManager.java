@@ -1,10 +1,13 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.db.GroupStats;
+import io.mattw.youtube.commentsuite.events.GroupItemAddEvent;
+import io.mattw.youtube.commentsuite.events.GroupItemDeleteEvent;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import io.mattw.youtube.commentsuite.util.FXUtils;
 import javafx.beans.value.ChangeListener;
@@ -19,8 +22,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,6 +40,8 @@ import java.util.stream.Stream;
 import static java.lang.Math.min;
 import static java.util.stream.Collectors.toMap;
 import static javafx.application.Platform.runLater;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 /**
  * Manages a specific group; refreshing, stats, renaming, deletion, adding group items, etc.
@@ -52,12 +57,13 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private static final Logger logger = LogManager.getLogger();
     private final Image edit = ImageLoader.PENCIL.getImage();
     private final Image close = ImageLoader.CLOSE.getImage();
+    private final Image save = ImageLoader.SAVE.getImage();
+
+    private final Group group;
+    private final CommentDatabase database;
+    private final ConfigData configData;
 
     private ChangeListener<Font> fontListener;
-    private Group group;
-
-    private CommentDatabase database;
-    private ConfigData configData;
 
     @FXML private OverlayModal<MGMVRefreshModal> refreshModal;
     @FXML private OverlayModal<MGMVDeleteGroupModal> deleteModal;
@@ -70,8 +76,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     @FXML private ListView<MGMVGroupItemView> groupItemList;
 
     @FXML private TextField groupTitle;
-    @FXML private ImageView editIcon;
-    @FXML private Hyperlink rename;
+    @FXML private ImageView editIcon, closeIcon;
+    @FXML private Hyperlink rename, renameCancel;
     @FXML private Button btnRefresh;
     @FXML private Button btnReload;
     @FXML private Button btnDelete;
@@ -79,7 +85,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     @FXML private LineChart<String, Number> commentsLineChart, videosLineChart;
     private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
-    @FXML private Label totalComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+    @FXML private Label totalComments, grabbedComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
             likeDislikeRatio, normalizedRatio;
     @FXML private ListView<MGMVYouTubeObjectItem> popularVideosList, dislikedVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
@@ -87,11 +93,13 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     @FXML private Accordion accordion;
     @FXML private TitledPane generalPane, videoPane, viewerPane;
 
-    public ManageGroupsManager(Group group) throws IOException {
-        logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
+    public ManageGroupsManager(final Group group) throws IOException {
+        logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         database = FXMLSuite.getDatabase();
         configData = FXMLSuite.getConfig().getDataObject();
+
+        FXMLSuite.getEventBus().register(this);
 
         this.group = group;
 
@@ -104,6 +112,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         this.setStyle(String.format("-fx-background-color: linear-gradient(to top, rgba(%s,%s,%s,%s), transparent);",
                 220 - random.nextInt(60), 220 - random.nextInt(60), 220 - random.nextInt(60), 0.4));
 
+        reloadGroupItems("init");
+
         accordion.setExpandedPane(generalPane);
 
         commentsLineChartData = new LineChart.Series<>();
@@ -113,10 +123,23 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         videosLineChart.getData().add(videosLineChartData);
 
         editIcon.setImage(edit);
+        closeIcon.setImage(close);
+
+        FXUtils.registerToSize(groupTitle, 18);
+        FXUtils.registerToPadding(groupTitle, 10.5);
 
         groupTitle.setMinWidth(Region.USE_PREF_SIZE);
         groupTitle.setMaxWidth(Region.USE_PREF_SIZE);
-        groupTitle.textProperty().addListener((ov, prevText, currText) -> FXUtils.adjustTextFieldWidthByContent(groupTitle));
+        groupTitle.textProperty().addListener((ov, prevText, currText) -> {
+            runLater(() -> {
+                int caretPosition = groupTitle.getCaretPosition();
+                groupTitle.setText(trimToEmpty(currText));
+                groupTitle.positionCaret(caretPosition);
+                rename.setDisable(isBlank(groupTitle.getText()));
+            });
+
+            FXUtils.adjustTextFieldWidthByContent(groupTitle);
+        });
         groupTitle.fontProperty().addListener(fontListener = (o, ov, nv) -> {
             FXUtils.adjustTextFieldWidthByContent(groupTitle);
 
@@ -135,27 +158,54 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         });
 
         rename.setOnAction(ae -> new Thread(() -> {
-            if (editIcon.getImage().equals(close)) {
+            if (editIcon.getImage().equals(save)) {
                 try {
                     database.renameGroup(group, groupTitle.getText());
                 } catch (SQLException e) {
+                    groupTitle.setText(group.getName());
                     logger.error(e);
                 }
             }
             runLater(() -> {
                 if (editIcon.getImage().equals(edit)) {
-                    editIcon.setImage(close);
+                    editIcon.setImage(save);
                     groupTitle.getStyleClass().remove("clearTextField");
                     groupTitle.setEditable(true);
                     rename.setTooltip(new Tooltip("Save Changes"));
+
+                    renameCancel.setVisible(true);
+                    renameCancel.setManaged(true);
+                    renameCancel.setDisable(false);
                 } else {
                     editIcon.setImage(edit);
                     groupTitle.getStyleClass().add("clearTextField");
                     groupTitle.setEditable(false);
                     rename.setTooltip(new Tooltip("Rename"));
+
+                    renameCancel.setVisible(false);
+                    renameCancel.setManaged(false);
+                    renameCancel.setDisable(true);
                 }
             });
         }).start());
+
+        renameCancel.setOnAction(ae -> new Thread(() -> {
+            runLater(() -> {
+                editIcon.setImage(edit);
+                groupTitle.getStyleClass().add("clearTextField");
+                groupTitle.setEditable(false);
+                rename.setTooltip(new Tooltip("Rename"));
+
+                renameCancel.setVisible(false);
+                renameCancel.setManaged(false);
+                renameCancel.setDisable(true);
+
+                groupTitle.setText(group.getName());
+
+                FXUtils.adjustTextFieldWidthByContent(groupTitle);
+            });
+        }).start());
+        renameCancel.setTooltip(new Tooltip("Cancel"));
 
         SelectionModel selectionModel = groupItemList.getSelectionModel();
         ((MultipleSelectionModel) selectionModel).setSelectionMode(SelectionMode.MULTIPLE);
@@ -174,12 +224,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 })
         );
 
-        group.itemsUpdatedProperty().addListener((o, ov, nv) -> this.reloadGroupItems());
-
         btnReload.setOnAction(ae -> new Thread(() -> {
-            reloadGroupItems();
+            reloadGroupItems("btnReload");
             try {
-                reload();
+                reloadStats();
             } catch (SQLException e) {
                 logger.error("An error occured during group reload", e);
             }
@@ -211,16 +259,16 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         });
         mgmvRefresh.getErrorList().managedProperty().addListener((o, ov, nv) -> {
             if (nv) {
-                runLater(() -> refreshModal.getModalContainer().setMaxWidth(420 + 250));
+                runLater(() -> refreshModal.getModalContainer().setMaxWidth(MGMVRefreshModal.WIDTH + 250));
             } else {
-                runLater(() -> refreshModal.getModalContainer().setMaxWidth(420));
+                runLater(() -> refreshModal.getModalContainer().setMaxWidth(MGMVRefreshModal.WIDTH));
             }
         });
 
         /*
           Delete Group Modal
          */
-        MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal(group);
+        MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal();
         deleteModal.setContent(mgmvDelete);
         deleteModal.setDividerClass("dividerDanger");
         btnDelete.setOnAction(ae -> runLater(() -> {
@@ -230,6 +278,30 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvDelete.getBtnClose().setCancelButton(deleteModal.isVisible());
             mgmvDelete.getBtnDelete().setDefaultButton(deleteModal.isVisible());
         });
+        mgmvDelete.getBtnDelete().setOnAction(ae -> {
+            deleteModal.setVisible(false);
+            btnReload.fire();
+        });
+        mgmvDelete.getBtnDelete().setOnAction(ae -> new Thread(() -> {
+            runLater(() -> {
+                mgmvDelete.getBtnDelete().setDisable(true);
+                mgmvDelete.getBtnClose().setDisable(true);
+            });
+
+            try {
+                logger.warn("Deleting Group[id={},name={}]", group.getGroupId(), group.getName());
+                database.deleteGroup(this.group);
+            } catch (SQLException e) {
+                logger.error("Failed to delete group.", e);
+            }
+
+            runLater(() -> {
+                mgmvDelete.getBtnDelete().setDisable(false);
+                mgmvDelete.getBtnClose().setDisable(false);
+                deleteModal.setVisible(false);
+                btnReload.fire();
+            });
+        }).start());
         mgmvDelete.getBtnClose().setOnAction(ae -> {
             deleteModal.setVisible(false);
         });
@@ -264,7 +336,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvRemoveSelected.getBtnSubmit().setDefaultButton(removeItemModal.isVisible());
         });
         mgmvRemoveSelected.getBtnClose().setOnAction(ae -> removeItemModal.setVisible(false));
-        mgmvRemoveSelected.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
 
         /*
           Remove All GroupItems Modal
@@ -281,7 +352,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             mgmvRemoveAll.getBtnSubmit().setDefaultButton(removeAllModal.isVisible());
         });
         mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
-        mgmvRemoveAll.itemsRemovedProperty().addListener((o, ov, nv) -> reloadGroupItems());
     }
 
     /**
@@ -290,37 +360,50 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
      *
      * @throws SQLException the group stats operation failed
      */
-    private void reload() throws SQLException {
+    private void reloadStats() throws SQLException {
+        logger.debug("Reload {}", group);
         runLater(() -> btnReload.setDisable(true));
 
         cleanUp();
 
+        final String previousName = group.getName();
+        final String previousId = group.getGroupId();
+        final Group newGroup = database.getGroup(group.getGroupId());
+
+        if (newGroup == null) {
+            ManageGroups.getManagerCache().invalidate(previousId);
+            return;
+        } else if (!StringUtils.equals(previousName, newGroup.getName())) {
+            group.setName(newGroup.getName());
+            runLater(() -> groupTitle.setText(group.getName()));
+        }
+
         new Timer().schedule(
-            new TimerTask() {
-                @Override
-                public void run() {
-                    updateLastRefreshed();
-                }
-            }, 0, Duration.ofSeconds(30).toMillis()
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        updateLastRefreshed();
+                    }
+                }, 0, Duration.ofSeconds(30).toMillis()
         );
 
-        GroupStats groupStats = database.getGroupStats(this.group);
+        final GroupStats groupStats = database.getGroupStats(this.group);
 
-        List<LineChart.Data<String, Number>> commentChartData = groupStats.getWeeklyCommentHistogram().entrySet().stream()
+        final List<LineChart.Data<String, Number>> commentChartData = groupStats.getWeeklyCommentHistogram().entrySet().stream()
                 .map(entry -> {
-                    LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
+                    final LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
                     String beginningOfWeekStr = formatter.format(beginningOfWeek);
 
-                    LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
-                    String endOfWeekStr = formatter.format(endOfWeek);
+                    final LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
+                    final String endOfWeekStr = formatter.format(endOfWeek);
 
-                    LineChart.Data<String, Number> dataPoint =
+                    final LineChart.Data<String, Number> dataPoint =
                             new LineChart.Data<>(beginningOfWeekStr, entry.getValue());
 
-                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new comment(s)",
+                    final Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new comment(s)",
                             beginningOfWeekStr, endOfWeekStr, entry.getValue()));
 
-                    StackPane node = new StackPane();
+                    final StackPane node = new StackPane();
 
                     installDataTooltip(tooltip, node, dataPoint);
 
@@ -328,21 +411,21 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 })
                 .collect(Collectors.toList());
 
-        List<LineChart.Data<String, Number>> videoChartData = groupStats.getWeeklyUploadHistogram().entrySet().stream()
+        final List<LineChart.Data<String, Number>> videoChartData = groupStats.getWeeklyUploadHistogram().entrySet().stream()
                 .map(entry -> {
-                    LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
-                    String beginningOfWeekStr = formatter.format(beginningOfWeek);
+                    final LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
+                    final String beginningOfWeekStr = formatter.format(beginningOfWeek);
 
-                    LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
-                    String endOfWeekStr = formatter.format(endOfWeek);
+                    final LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
+                    final String endOfWeekStr = formatter.format(endOfWeek);
 
-                    LineChart.Data<String, Number> dataPoint =
+                    final LineChart.Data<String, Number> dataPoint =
                             new LineChart.Data<>(beginningOfWeekStr, entry.getValue());
 
-                    Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new video(s)",
+                    final Tooltip tooltip = new Tooltip(String.format("%s - %s\r\n%,d new video(s)",
                             beginningOfWeekStr, endOfWeekStr, entry.getValue()));
 
-                    StackPane node = new StackPane();
+                    final StackPane node = new StackPane();
 
                     installDataTooltip(tooltip, node, dataPoint);
 
@@ -350,11 +433,12 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 })
                 .collect(Collectors.toList());
 
-        long gcd = gcd(groupStats.getTotalLikes(), groupStats.getTotalDislikes());
-        long gcdLikes = gcd == 0 ? 0 : groupStats.getTotalLikes() / gcd;
-        long gcdDislikes = gcd == 0 ? 0 : groupStats.getTotalDislikes() / gcd;
+        final long gcd = gcd(groupStats.getTotalLikes(), groupStats.getTotalDislikes());
+        final long gcdLikes = gcd == 0 ? 0 : groupStats.getTotalLikes() / gcd;
+        final long gcdDislikes = gcd == 0 ? 0 : groupStats.getTotalDislikes() / gcd;
+        final String gcdStyle = gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered";
 
-        long nLikes, nDislikes;
+        final long nLikes, nDislikes;
         if (gcd != 0) {
             if (gcdLikes > gcdDislikes) {
                 nLikes = gcdLikes / gcdDislikes;
@@ -368,30 +452,34 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             nDislikes = 0;
         }
 
-
-        List<MGMVYouTubeObjectItem> popularVideos = groupStats.getMostViewed().stream()
+        final List<MGMVYouTubeObjectItem> popularVideos = groupStats.getMostViewed().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getViewCount(), "views"))
                 .collect(Collectors.toList());
-        List<MGMVYouTubeObjectItem> dislikedVideos = groupStats.getMostDisliked().stream()
+        final List<MGMVYouTubeObjectItem> dislikedVideos = groupStats.getMostDisliked().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getDislikes(), "dislikes"))
                 .collect(Collectors.toList());
-        List<MGMVYouTubeObjectItem> commentedVideos = groupStats.getMostCommented().stream()
+        final List<MGMVYouTubeObjectItem> commentedVideos = groupStats.getMostCommented().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getCommentCount(), "comments"))
                 .collect(Collectors.toList());
-        List<MGMVYouTubeObjectItem> disabledVideos = groupStats.getCommentsDisabled().stream()
+        final List<MGMVYouTubeObjectItem> disabledVideos = groupStats.getCommentsDisabled().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, 0L, "Comments Disabled", true))
                 .collect(Collectors.toList());
 
-        List<MGMVYouTubeObjectItem> mostLikedViewers = groupStats.getMostLikedViewers().entrySet().stream()
+        final List<MGMVYouTubeObjectItem> mostLikedViewers = groupStats.getMostLikedViewers().entrySet().stream()
                 .map(entry -> new MGMVYouTubeObjectItem(entry.getKey(), entry.getValue(), "likes"))
                 .collect(Collectors.toList());
-        List<MGMVYouTubeObjectItem> mostActiveViewers = groupStats.getMostActiveViewers().entrySet().stream()
+        final List<MGMVYouTubeObjectItem> mostActiveViewers = groupStats.getMostActiveViewers().entrySet().stream()
                 .map(entry -> new MGMVYouTubeObjectItem(entry.getKey(), entry.getValue(), "comments"))
                 .collect(Collectors.toList());
 
+        final long comments = groupStats.getTotalComments();
+        final long grabbed = groupStats.getTotalGrabbedComments();
+        final double percentGrabbed = 100 * (grabbed / (comments * 1d));
+
         runLater(() -> {
             commentsLineChartData.getData().addAll(commentChartData);
-            totalComments.setText(String.format("%,d", groupStats.getTotalComments()));
+            totalComments.setText(String.format("%,d", comments));
+            grabbedComments.setText(String.format("%,d (%,.2f%%)", grabbed, percentGrabbed));
             totalLikes.setText(String.format("+%,d", groupStats.getTotalCommentLikes()));
             totalViewers.setText(String.format("%,d", groupStats.getUniqueViewers()));
 
@@ -401,9 +489,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             totalVideoLikes.setText(String.format("+%,d", groupStats.getTotalLikes()));
             totalVideoDislikes.setText(String.format("-%,d", groupStats.getTotalDislikes()));
             likeDislikeRatio.setText(String.format("+%,d : -%,d", gcdLikes, gcdDislikes));
-            likeDislikeRatio.setStyle(String.format("-fx-text-fill:%s", gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered"));
+            likeDislikeRatio.setStyle(String.format("-fx-text-fill:%s", gcdStyle));
             normalizedRatio.setText(String.format("+%,d : -%,d", nLikes, nDislikes));
-            normalizedRatio.setStyle(String.format("-fx-text-fill:%s", gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered"));
+            normalizedRatio.setStyle(String.format("-fx-text-fill:%s", gcdStyle));
             generalPane.setDisable(false);
 
             popularVideosList.getItems().addAll(popularVideos);
@@ -418,6 +506,47 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
             btnReload.setDisable(false);
         });
+    }
+
+    @Subscribe
+    public void groupItemAddEvent(final GroupItemAddEvent groupItemAddEvent) {
+        if (this.group.equals(groupItemAddEvent.getGroup())) {
+            logger.debug("Group Item Add Event");
+            reloadGroupItems("groupItemAddEvent");
+        }
+    }
+
+    @Subscribe
+    public void groupItemDeleteEvent(final GroupItemDeleteEvent groupItemDeleteEvent) {
+        if (this.group.equals(groupItemDeleteEvent.getGroup())) {
+            logger.debug("Group Item Delete Event");
+            reloadGroupItems("groupItemDeleteEvent");
+            try {
+                reloadStats();
+            } catch (SQLException e) {
+                logger.error("Failed to reload stats", e);
+            }
+        }
+    }
+
+    /**
+     * Starts a thread to reload the GroupItems in the ListView.
+     */
+    private void reloadGroupItems(final String caller) {
+        logger.debug("[Load] Grabbing GroupItems {}", caller);
+        final List<GroupItem> groupItems = database.getGroupItems(this.group);
+        logger.debug("[Load] Found " + groupItems.size() + " GroupItem(s)");
+
+        runLater(() -> groupItemList.getItems().clear());
+
+        final Map<Integer, List<GroupItem>> partitioned = partition(groupItems, 1000);
+        for (int key : partitioned.keySet()) {
+            final List<MGMVGroupItemView> groupItemViews = partitioned.get(key).stream()
+                    .map(MGMVGroupItemView::new)
+                    .collect(Collectors.toList());
+
+            runLater(() -> groupItemList.getItems().addAll(groupItemViews));
+        }
     }
 
     private void installDataTooltip(Tooltip tooltip, Node node, LineChart.Data<?, ?> dataPoint) {
@@ -442,53 +571,30 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         long timestamp = database.getLastChecked(this.group);
 
         final String formattedTimestamp =
-                timestamp == Long.MAX_VALUE ?
-                        "Never refreshed." : timeSince(timestamp);
+                timestamp == 0 ? "never refreshed" : timeSince(timestamp);
 
         runLater(() -> refreshStatus.setText(formattedTimestamp));
     }
 
-    private String timeSince(long timestamp) {
-        LocalDateTime dateTime = DateUtils.epochMillisToDateTime(timestamp);
+    private String timeSince(final long timestamp) {
+        final LocalDateTime dateTime = DateUtils.epochMillisToDateTime(timestamp);
 
-        Duration diff = Duration.between(dateTime, LocalDateTime.now());
+        final Duration diff = Duration.between(dateTime, LocalDateTime.now());
 
-        if(diff.minusSeconds(60).isNegative()) {
+        if (diff.minusSeconds(60).isNegative()) {
             return "just now";
-        } else if(diff.minusMinutes(60).isNegative()) {
+        } else if (diff.minusMinutes(60).isNegative()) {
             return String.format("%s minute(s) ago", diff.toMinutes());
-        } else if(diff.minusHours(24).isNegative()) {
+        } else if (diff.minusHours(24).isNegative()) {
             return String.format("%s hour(s) ago", diff.toHours());
-        } else if(diff.minusDays(7).isNegative()) {
+        } else if (diff.minusDays(7).isNegative()) {
             return String.format("%s day(s) ago", diff.toDays());
         } else {
             return String.format("%s week(s) ago", diff.toDays() / 7);
         }
     }
 
-    /**
-     * Starts a thread to reload the GroupItems in the ListView.
-     */
-    private void reloadGroupItems() {
-        new Thread(() -> {
-            logger.debug("[Load] Grabbing GroupItems");
-            List<GroupItem> groupItems = database.getGroupItems(this.group);
-            logger.debug("[Load] Found " + groupItems.size() + " GroupItem(s)");
-
-            runLater(() -> groupItemList.getItems().clear());
-
-            Map<Integer, List<GroupItem>> partitioned = partition(groupItems, 1000);
-            for(int key : partitioned.keySet()) {
-                List<MGMVGroupItemView> groupItemViews = partitioned.get(key).stream()
-                        .map(MGMVGroupItemView::new)
-                        .collect(Collectors.toList());
-
-                runLater(() -> groupItemList.getItems().addAll(groupItemViews));
-            }
-        }).start();
-    }
-
-    private <T> Map<Integer, List<T>> partition(List<T> list, int pageSize) {
+    private <T> Map<Integer, List<T>> partition(final List<T> list, int pageSize) {
         return IntStream.iterate(0, i -> i + pageSize)
                 .limit((list.size() + pageSize - 1) / pageSize)
                 .boxed()
@@ -504,7 +610,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         runLater(() -> {
             commentsLineChartData.getData().clear();
             videosLineChartData.getData().clear();
-            Stream.of(totalComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+            Stream.of(totalComments, grabbedComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
                     likeDislikeRatio, normalizedRatio)
                     .forEach(label -> label.setText("..."));
             Stream.of(generalPane, videoPane, viewerPane)

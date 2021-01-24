@@ -1,5 +1,6 @@
 package io.mattw.youtube.commentsuite;
 
+import io.mattw.youtube.commentsuite.refresh.RefreshOptions;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 
@@ -27,6 +28,7 @@ public class ConfigData implements Serializable {
     private boolean filterDuplicatesOnCopy = true;
     private List<YouTubeAccount> accounts = new ArrayList<>();
     private String youtubeApiKey = defaultApiKey;
+    private RefreshOptions refreshOptions = new RefreshOptions();
 
     public ConfigData() {
         // empty constructor
@@ -63,6 +65,10 @@ public class ConfigData implements Serializable {
         if (accounts.removeIf(acc -> acc.getChannelId() != null && acc.getChannelId().equals(account.getChannelId()))) {
             triggerAccountListChanged();
         }
+    }
+
+    public boolean isSignedIn(String channelId) {
+        return accounts.stream().anyMatch(acc -> channelId.equals(acc.getChannelId()));
     }
 
     public ReadOnlyIntegerProperty accountListChangedProperty() {
@@ -121,4 +127,11 @@ public class ConfigData implements Serializable {
         this.filterDuplicatesOnCopy = filterDuplicatesOnCopy;
     }
 
+    public RefreshOptions getRefreshOptions() {
+        return refreshOptions;
+    }
+
+    public void setRefreshOptions(RefreshOptions refreshOptions) {
+        this.refreshOptions = refreshOptions;
+    }
 }

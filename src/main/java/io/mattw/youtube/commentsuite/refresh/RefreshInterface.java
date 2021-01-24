@@ -1,4 +1,4 @@
-package io.mattw.youtube.commentsuite;
+package io.mattw.youtube.commentsuite.refresh;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;

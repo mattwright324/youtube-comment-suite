@@ -13,7 +13,7 @@
     </padding>
     <VBox alignment="CENTER">
         <fx:include fx:id="topSpacer" source="VFlexLabel.fxml" VBox.vgrow="ALWAYS" />
-        <VBox fx:id="modalContainer" styleClass="overlayMenu, border4" VBox.vgrow="SOMETIMES" maxWidth="420">
+        <VBox fx:id="modalContainer" styleClass="overlayMenu, border4" VBox.vgrow="SOMETIMES" maxWidth="500">
             <HBox alignment="CENTER_RIGHT">
                 <padding>
                     <Insets right="10" left="10" />

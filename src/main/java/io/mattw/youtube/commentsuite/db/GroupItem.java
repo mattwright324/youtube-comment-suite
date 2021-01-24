@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.ConfigData;
@@ -25,9 +24,7 @@ public class GroupItem extends YouTubeObject {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public static String ALL_ITEMS = "GI001";
-
-    private ConfigData configData;
+    public static String ALL_ITEMS = "ALL_ITEMS";
 
     private String channelTitle;
     private long published;
@@ -35,6 +32,7 @@ public class GroupItem extends YouTubeObject {
 
     private YouTube youtube;
     private CommentDatabase database;
+    private boolean fastAdd = false;
 
     /**
      * Used for converting selected search items for inserting into database.
@@ -110,10 +108,13 @@ public class GroupItem extends YouTubeObject {
         ofLink(link);
     }
 
+    public GroupItem(String link, boolean fastAdd) throws IOException {
+        this.fastAdd = fastAdd;
+        ofLink(link);
+    }
+
     private void ofLink(String fullLink) throws IOException {
         logger.debug("Matching link to type [fullLink={}]", fullLink);
-
-        configData = FXMLSuite.getConfig().getDataObject();
 
         youtube = FXMLSuite.getYouTube();
         database = FXMLSuite.getDatabase();
@@ -146,7 +147,7 @@ public class GroupItem extends YouTubeObject {
             channelUsername = true;
         }
 
-        if (configData.isFastGroupAdd()) {
+        if (fastAdd) {
             if (channelUsername) {
                 throw new IOException("Channel usernames are not accepted when using fast group add.");
             }
@@ -199,7 +200,7 @@ public class GroupItem extends YouTubeObject {
 
                     checkForNewChannel(item.getId());
                 }
-            } else if (type == YType.PLAYLIST) {
+            } else {
                 PlaylistListResponse pl = youtube.playlists().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey())
                         .setId(result)
@@ -212,8 +213,6 @@ public class GroupItem extends YouTubeObject {
 
                     checkForNewChannel(item.getSnippet().getChannelId());
                 }
-            } else {
-                throw new IOException("Unexpected result, link was not in an expected format.");
             }
         }
     }
@@ -222,7 +221,7 @@ public class GroupItem extends YouTubeObject {
      * Makes sure the channel associated with this GroupItem is in the database.
      */
     private void checkForNewChannel(String channelId) {
-        if(!database.doesChannelExist(channelId)) {
+        if(database.doesChannelNotExist(channelId)) {
             try {
                 ChannelListResponse clr = youtube.channels().list("snippet")
                         .setKey(FXMLSuite.getYouTubeApiKey())

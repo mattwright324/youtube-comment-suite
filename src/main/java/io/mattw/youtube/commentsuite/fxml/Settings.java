@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
@@ -39,7 +38,6 @@ public class Settings implements Initializable {
     private ConfigFile<ConfigData> config;
     private OAuth2Handler oauth2;
     private CommentDatabase database;
-    private YouTube youtube;
 
     @FXML private Pane settingsPane;
 
@@ -55,7 +53,6 @@ public class Settings implements Initializable {
     @FXML private CheckBox prefixReply;
     @FXML private CheckBox autoLoadStats;
     @FXML private CheckBox downloadThumbs;
-    @FXML private CheckBox fastGroupAdd;
     @FXML private CheckBox customKey;
     @FXML private CheckBox filterDuplicatesOnCopy;
     @FXML private TextField youtubeApiKey;
@@ -80,14 +77,12 @@ public class Settings implements Initializable {
         oauth2 = FXMLSuite.getOauth2();
         config = FXMLSuite.getConfig();
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
 
         ConfigData configData = config.getDataObject();
         configData.refreshAccounts();
         autoLoadStats.setSelected(configData.isAutoLoadStats());
         prefixReply.setSelected(configData.isPrefixReplies());
         downloadThumbs.setSelected(configData.isArchiveThumbs());
-        fastGroupAdd.setSelected(configData.isFastGroupAdd());
         customKey.setSelected(configData.isCustomApiKey());
         youtubeApiKey.setText(configData.getYoutubeApiKey());
         filterDuplicatesOnCopy.setSelected(configData.isFilterDuplicatesOnCopy());
@@ -157,7 +152,6 @@ public class Settings implements Initializable {
             data.setAutoLoadStats(autoLoadStats.isSelected());
             data.setPrefixReplies(prefixReply.isSelected());
             data.setArchiveThumbs(downloadThumbs.isSelected());
-            data.setFastGroupAdd(fastGroupAdd.isSelected());
             data.setCustomApiKey(customKey.isSelected());
             data.setYoutubeApiKey(youtubeApiKey.getText());
             data.setFilterDuplicatesOnCopy(filterDuplicatesOnCopy.isSelected());
@@ -166,9 +160,9 @@ public class Settings implements Initializable {
             config.save();
 
             if (customKey.isSelected()) {
-                FXMLSuite.setYoutubeApiKey(data.getYoutubeApiKey());
+                FXMLSuite.setYouTubeApiKey(data.getYoutubeApiKey());
             } else {
-                FXMLSuite.setYoutubeApiKey(data.getDefaultApiKey());
+                FXMLSuite.setYouTubeApiKey(data.getDefaultApiKey());
             }
 
             logger.debug("Closing Settings");
@@ -252,7 +246,7 @@ public class Settings implements Initializable {
     private void deleteDirectoryContents(String dir) {
         File file = new File(dir);
 
-        for (File f : file.listFiles()) {
+        for (File f : Objects.requireNonNull(file.listFiles())) {
             f.delete();
         }
     }

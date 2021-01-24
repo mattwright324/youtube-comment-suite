@@ -1,13 +1,10 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import com.google.api.services.youtube.YouTube;
 import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -36,7 +33,6 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
     private static final Logger logger = LogManager.getLogger();
 
     private CommentDatabase database;
-    private YouTube youtube;
 
     @FXML private Label alertError;
     @FXML private TextField link;
@@ -46,16 +42,13 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
     private Group group;
     private ObservableList<MGMVGroupItemView> groupItems;
 
-    private IntegerProperty itemsRemoved = new SimpleIntegerProperty(0);
-
     public MGMVRemoveAllModal(Group group, ObservableList<MGMVGroupItemView> groupItems) {
-        logger.debug("Initialize for Group [id={},name={}]", group.getId(), group.getName());
+        logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         this.group = group;
         this.groupItems = groupItems;
 
         database = FXMLSuite.getDatabase();
-        youtube = FXMLSuite.getYouTube();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRemoveAllModal.fxml"));
         loader.setController(this);
@@ -77,8 +70,6 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
                         database.deleteGroupItemLinks(group, items);
                         database.cleanUp();
                         runLater(() -> {
-                            itemsRemoved.setValue(itemsRemoved.getValue() + 1);
-                            group.reloadGroupItems();
                             btnClose.fire();
                         });
                     } catch (SQLException e) {
@@ -97,10 +88,6 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
         alertError.setText(message);
         alertError.setVisible(true);
         alertError.setManaged(true);
-    }
-
-    public IntegerProperty itemsRemovedProperty() {
-        return itemsRemoved;
     }
 
     public Button getBtnClose() {

@@ -11,7 +11,7 @@
                 alignment="CENTER" managed="false" visible="false"
                 text="" />
     <HBox spacing="10">
-        <VBox spacing="10" maxWidth="420">
+        <VBox spacing="10" maxWidth="500">
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <ImageView fx:id="authorThumb" fitWidth="30" fitHeight="30" />
                 <TextField fx:id="author" editable="false" styleClass="noBorder, noPadding"
@@ -21,7 +21,7 @@
                       editable="false"
                       wrapText="true" />
         </VBox>
-        <VBox fx:id="replyPane" spacing="10" maxWidth="420"
+        <VBox fx:id="replyPane" spacing="10" maxWidth="500"
             managed="false" visible="false">
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <ImageView fx:id="accountThumb" fitWidth="30" fitHeight="30" />

@@ -4,10 +4,8 @@ import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Saves and loads a data object to the specified JSON file.
@@ -62,8 +60,9 @@ public class ConfigFile<T> {
 
     public void save() {
         logger.debug("Saving Config File");
-        try (FileWriter fw = new FileWriter(file)) {
-            fw.write(gson.toJson(dataObject));
+        try (FileOutputStream fos = new FileOutputStream(file);
+             OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+            writer.write(gson.toJson(dataObject));
         } catch (Exception e) {
             logger.error(e);
         }

@@ -9,3 +9,4 @@ thumbs/
 target/
 *.sqlite3-journal
 exports/
+*.~vsdx

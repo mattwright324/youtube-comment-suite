@@ -2,16 +2,19 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
+import io.mattw.youtube.commentsuite.events.*;
 import io.mattw.youtube.commentsuite.util.*;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.ListChangeListener;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
@@ -107,33 +110,12 @@ public class SearchComments implements Initializable, ImageCache {
         commentQuery = database.commentQuery();
         configData = FXMLSuite.getConfig().getDataObject();
 
+        FXMLSuite.getEventBus().register(this);
+
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
-        comboGroupSelect.setItems(database.getGlobalGroupList());
-        comboGroupSelect.getItems().addListener((ListChangeListener<Group>) (c -> {
-            if (!comboGroupSelect.getItems().isEmpty() && selectionModel.getSelectedIndex() == -1) {
-                runLater(() -> selectionModel.select(0));
-            }
-        }));
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            if (ov != null) {
-                ov.itemsUpdatedProperty().removeListener(cl);
-                ov.itemsUpdatedProperty().unbind();
-                ov.nameProperty().unbind();
-            }
             if (nv != null) {
-                nv.itemsUpdatedProperty().addListener(cl = (o1, ov2, nv3) -> {
-                    List<GroupItem> groupItems = database.getGroupItems(nv);
-                    GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
-                    runLater(() -> {
-                        comboGroupItemSelect.getItems().clear();
-                        comboGroupItemSelect.getItems().add(all);
-                        comboGroupItemSelect.getItems().addAll(groupItems);
-                        comboGroupItemSelect.setDisable(false);
-                        comboGroupItemSelect.getSelectionModel().select(0);
-                        videoSelect.setDisable(false);
-                    });
-                });
-                runLater(nv::reloadGroupItems);
+                reloadGroupItems();
             } else {
                 runLater(() -> {
                     comboGroupItemSelect.setDisable(true);
@@ -141,6 +123,8 @@ public class SearchComments implements Initializable, ImageCache {
                 });
             }
         });
+        runLater(this::rebuildGroupSelect);
+        runLater(this::reloadGroupItems);
 
         resultsPane.disableProperty().bind(searchingProperty);
         queryPane.disableProperty().bind(searchingProperty);
@@ -235,7 +219,7 @@ public class SearchComments implements Initializable, ImageCache {
         MultipleSelectionModel<SearchCommentsListItem> scSelection = resultsList.getSelectionModel();
         scSelection.selectedItemProperty().addListener((o, ov, nv) -> new Thread(() -> {
             if (nv != null) {
-                checkUpdateThumbs(nv);
+                loadCommentContext(nv);
             }
         }).start());
 
@@ -393,7 +377,7 @@ public class SearchComments implements Initializable, ImageCache {
     /**
      * Load video context and comment author profiles on comment interaction: on selection, show more, reply, view thread
      */
-    private void checkUpdateThumbs(SearchCommentsListItem commentItem) {
+    private void loadCommentContext(SearchCommentsListItem commentItem) {
         YouTubeComment comment = commentItem.getComment();
 
         commentItem.loadProfileThumb();
@@ -431,7 +415,7 @@ public class SearchComments implements Initializable, ImageCache {
             final Image fAuthorThumb = fVideoAuthor != null ?
                     ImageCache.findOrGetImage(fVideoAuthor) : ImageCache.toLetterAvatar(' ');
             runLater(() -> {
-                if(fVideoAuthor != null) {
+                if (fVideoAuthor != null) {
                     author.setText(fVideoAuthor.getTitle());
                     authorThumb.setCursor(Cursor.HAND);
                     authorThumb.setOnMouseClicked(me -> browserUtil.open(fVideoAuthor.buildYouTubeLink()));
@@ -485,8 +469,8 @@ public class SearchComments implements Initializable, ImageCache {
 
         logger.debug("Attempting comment search [submittedPage={},queryPage={}]", page, commentQuery.getPageNum());
 
-        if (page-1 != commentQuery.getPageNum() || forced) {
-            logger.debug("Changing page {} -> {}", commentQuery.getPageNum(), page-1);
+        if (page - 1 != commentQuery.getPageNum() || forced) {
+            logger.debug("Changing page {} -> {}", commentQuery.getPageNum(), page - 1);
 
             new Thread(this::searchComments).start();
         } else {
@@ -539,7 +523,7 @@ public class SearchComments implements Initializable, ImageCache {
                     .setTextLike(commentLike.getText())
                     .setDateFrom(dateFrom.getValue())
                     .setDateTo(dateTo.getValue())
-                    .getByPage(pageNum-1, 500); // 1 in app = 0 in query
+                    .getByPage(pageNum - 1, 500); // 1 in app = 0 in query
 
             logger.debug("Query completed [time={},comments={}]",
                     elapsedTime.humanReadableFormat(),
@@ -619,7 +603,7 @@ public class SearchComments implements Initializable, ImageCache {
                 comment.getVideoId(),
                 comment.getId());
 
-        checkUpdateThumbs(scli);
+        loadCommentContext(scli);
         commentModal(comment, false);
     }
 
@@ -632,7 +616,7 @@ public class SearchComments implements Initializable, ImageCache {
                 comment.getVideoId(),
                 comment.getId());
 
-        checkUpdateThumbs(scli);
+        loadCommentContext(scli);
         commentModal(comment, true);
     }
 
@@ -654,7 +638,7 @@ public class SearchComments implements Initializable, ImageCache {
 
         actionComment = scli;
 
-        checkUpdateThumbs(scli);
+        loadCommentContext(scli);
 
         YouTubeComment comment = scli.getComment();
 
@@ -677,6 +661,66 @@ public class SearchComments implements Initializable, ImageCache {
         }
     }
 
+    @Subscribe
+    public void groupDeleteEvent(final GroupDeleteEvent deleteEvent) {
+        logger.debug("Group Delete Event");
+        runLater(this::rebuildGroupSelect);
+    }
+
+    @Subscribe
+    public void groupAddEvent(final GroupAddEvent addEvent) {
+        logger.debug("Group Add Event");
+        runLater(this::rebuildGroupSelect);
+    }
+
+    @Subscribe
+    public void groupRenameEvent(final GroupRenameEvent renameEvent) {
+        logger.debug("Group Rename Event");
+        //runLater(this::refreshGroupSelect);
+        runLater(this::rebuildGroupSelect);
+    }
+
+    private void rebuildGroupSelect() {
+        final Group selectedGroup = comboGroupSelect.getValue();
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        comboGroupSelect.setItems(FXCollections.emptyObservableList());
+        comboGroupSelect.setItems(groups);
+
+        if (selectedGroup == null || comboGroupSelect.getValue() == null) {
+            comboGroupSelect.getSelectionModel().select(0);
+        } else if (groups.contains(selectedGroup)) {
+            comboGroupSelect.setValue(selectedGroup);
+        }
+    }
+
+    @Subscribe
+    public void groupItemAddEvent(final GroupItemAddEvent groupItemAddEvent) {
+        logger.debug("Group Item Add Event");
+        reloadGroupItems();
+    }
+
+    @Subscribe
+    public void groupItemDeleteEvent(final GroupItemDeleteEvent groupItemDeleteEvent) {
+        logger.debug("Group Item Delete Event");
+        reloadGroupItems();
+    }
+
+    private void reloadGroupItems() {
+        final Group selectedGroup = comboGroupSelect.getValue();
+        final List<GroupItem> groupItems = database.getGroupItems(selectedGroup);
+
+        final GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
+        runLater(() -> {
+            comboGroupItemSelect.getItems().clear();
+            comboGroupItemSelect.getItems().add(all);
+            comboGroupItemSelect.getItems().addAll(groupItems);
+            comboGroupItemSelect.setDisable(false);
+            comboGroupItemSelect.getSelectionModel().select(0);
+            videoSelect.setDisable(false);
+        });
+
+    }
+
     /**
      * Truncates a number with shorthand:
      * 2000       -> 2.0k
@@ -693,4 +737,5 @@ public class SearchComments implements Initializable, ImageCache {
         }
         return String.format("%.1f%s", value, pos > 0 ? suffix[pos - 1] : "");
     }
+
 }

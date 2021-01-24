@@ -84,7 +84,7 @@ public class CommentQuery implements Serializable, Exportable {
             } else {
                 videoSubquery += "WHERE group_id = :groupId";
 
-                queryParams.put("groupId", group.getId());
+                queryParams.put("groupId", group.getGroupId());
             }
         }
 
@@ -338,13 +338,13 @@ public class CommentQuery implements Serializable, Exportable {
     @Override
     public void prepForExport() {
         if(group != null) {
-            this.withGroup = String.format("%s / %s", group.getId(), group.getName());
+            this.withGroup = String.format("%s / %s", group.getGroupId(), group.getName());
 
             long lastRefreshed = database.getLastChecked(this.getGroup());
 
             this.groupLastRefreshed =
-                    lastRefreshed == Long.MAX_VALUE ?
-                            "Never refreshed" : DateUtils.epochMillisToDateTime(lastRefreshed).toString();
+                    lastRefreshed == 0 ?
+                            "never refreshed" : DateUtils.epochMillisToDateTime(lastRefreshed).toString();
         }
 
         if (groupItem.isPresent()) {
@@ -355,13 +355,10 @@ public class CommentQuery implements Serializable, Exportable {
             this.withGroupItem = "All Item(s)";
         }
 
-        if (videos.isPresent()) {
-            this.withVideos = videos.get().stream()
-                    .map(YouTubeVideo::getId)
-                    .collect(Collectors.joining(","));
-        } else {
-            this.withVideos = "All Video(s)";
-        }
+        this.withVideos = videos.map(youTubeVideos -> youTubeVideos.stream()
+                .map(YouTubeVideo::getId)
+                .collect(Collectors.joining(",")))
+                .orElse("All Video(s)");
     }
 
     public enum Order {

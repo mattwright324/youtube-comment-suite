@@ -67,7 +67,7 @@
                 </padding>
                 <TextArea fx:id="multiLink" prefRowCount="99" wrapText="true"
                           promptText="Line separated list. Ignores duplicate links and filters bad links."/>
-
+                <CheckBox fx:id="fastGroupAdd" text="Fast add to group (for large lists)" />
             </VBox>
         </Tab>
     </TabPane>
