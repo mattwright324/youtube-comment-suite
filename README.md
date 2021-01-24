@@ -38,7 +38,7 @@ Extract the latest release zip file and run `youtube-comment-suite-#.#.#.jar`.
 * Be sure that you have Java 8 installed, if not you can get it
   [here from Oracle](https://www.java.com/en/download/).
 * If you want to use Java 11 or higher, there is a workaround in the wiki here:
-  [Installation - Java 11+](https://github.com/mattwright324/youtube-comment-suite/wiki/Installation---Java-11-)
+  [Installation - Java 11+](https://github.com/mattwright324/youtube-comment-suite/wiki/Installation---Java-11)
 
 ### Linux / Ubuntu
 
