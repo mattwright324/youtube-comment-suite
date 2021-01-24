@@ -10,7 +10,7 @@ import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.events.GroupAddEvent;
 import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;
-import io.mattw.youtube.commentsuite.events.GroupItemChangeEvent;
+import io.mattw.youtube.commentsuite.events.GroupItemAddEvent;
 import io.mattw.youtube.commentsuite.events.GroupRenameEvent;
 import io.mattw.youtube.commentsuite.util.*;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -222,7 +222,7 @@ public class SearchComments implements Initializable, ImageCache {
         MultipleSelectionModel<SearchCommentsListItem> scSelection = resultsList.getSelectionModel();
         scSelection.selectedItemProperty().addListener((o, ov, nv) -> new Thread(() -> {
             if (nv != null) {
-                checkUpdateThumbs(nv);
+                loadCommentContext(nv);
             }
         }).start());
 
@@ -380,7 +380,7 @@ public class SearchComments implements Initializable, ImageCache {
     /**
      * Load video context and comment author profiles on comment interaction: on selection, show more, reply, view thread
      */
-    private void checkUpdateThumbs(SearchCommentsListItem commentItem) {
+    private void loadCommentContext(SearchCommentsListItem commentItem) {
         YouTubeComment comment = commentItem.getComment();
 
         commentItem.loadProfileThumb();
@@ -606,7 +606,7 @@ public class SearchComments implements Initializable, ImageCache {
                 comment.getVideoId(),
                 comment.getId());
 
-        checkUpdateThumbs(scli);
+        loadCommentContext(scli);
         commentModal(comment, false);
     }
 
@@ -619,7 +619,7 @@ public class SearchComments implements Initializable, ImageCache {
                 comment.getVideoId(),
                 comment.getId());
 
-        checkUpdateThumbs(scli);
+        loadCommentContext(scli);
         commentModal(comment, true);
     }
 
@@ -641,7 +641,7 @@ public class SearchComments implements Initializable, ImageCache {
 
         actionComment = scli;
 
-        checkUpdateThumbs(scli);
+        loadCommentContext(scli);
 
         YouTubeComment comment = scli.getComment();
 
@@ -697,7 +697,7 @@ public class SearchComments implements Initializable, ImageCache {
     }
 
     @Subscribe
-    public void groupItemChangeEvent(final GroupItemChangeEvent groupItemChangeEvent) {
+    public void groupItemChangeEvent(final GroupItemAddEvent groupItemAddEvent) {
         logger.debug("Group Item Change Event");
         reloadGroupItems();
     }

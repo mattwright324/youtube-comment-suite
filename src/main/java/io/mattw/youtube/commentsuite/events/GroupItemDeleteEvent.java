@@ -2,11 +2,11 @@ package io.mattw.youtube.commentsuite.events;
 
 import io.mattw.youtube.commentsuite.db.Group;
 
-public class GroupItemChangeEvent {
+public class GroupItemDeleteEvent {
 
     private Group group;
 
-    public GroupItemChangeEvent(Group group) {
+    public GroupItemDeleteEvent(Group group) {
         this.group = group;
     }
 

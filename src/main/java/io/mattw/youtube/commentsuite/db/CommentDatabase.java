@@ -4,10 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.eventbus.EventBus;
 import io.mattw.youtube.commentsuite.FXMLSuite;
-import io.mattw.youtube.commentsuite.events.GroupAddEvent;
-import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;
-import io.mattw.youtube.commentsuite.events.GroupItemChangeEvent;
-import io.mattw.youtube.commentsuite.events.GroupRenameEvent;
+import io.mattw.youtube.commentsuite.events.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.logging.log4j.LogManager;
@@ -400,7 +397,7 @@ public class CommentDatabase implements Closeable {
             psCG.executeBatch();
             psCGG.executeBatch();
 
-            eventBus.post(new GroupItemChangeEvent(group));
+            eventBus.post(new GroupItemAddEvent(group));
         }
     }
 
@@ -432,7 +429,7 @@ public class CommentDatabase implements Closeable {
             }
             ps.executeBatch();
 
-            eventBus.post(new GroupItemChangeEvent(group));
+            eventBus.post(new GroupItemDeleteEvent(group));
         }
     }
 

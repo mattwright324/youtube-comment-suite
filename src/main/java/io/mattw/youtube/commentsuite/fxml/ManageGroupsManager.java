@@ -6,7 +6,8 @@ import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.db.GroupStats;
-import io.mattw.youtube.commentsuite.events.GroupItemChangeEvent;
+import io.mattw.youtube.commentsuite.events.GroupItemAddEvent;
+import io.mattw.youtube.commentsuite.events.GroupItemDeleteEvent;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import io.mattw.youtube.commentsuite.util.FXUtils;
 import javafx.beans.value.ChangeListener;
@@ -226,7 +227,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         btnReload.setOnAction(ae -> new Thread(() -> {
             reloadGroupItems("btnReload");
             try {
-                reload();
+                reloadStats();
             } catch (SQLException e) {
                 logger.error("An error occured during group reload", e);
             }
@@ -359,7 +360,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
      *
      * @throws SQLException the group stats operation failed
      */
-    private void reload() throws SQLException {
+    private void reloadStats() throws SQLException {
         logger.debug("Reload {}", group);
         runLater(() -> btnReload.setDisable(true));
 
@@ -510,10 +511,23 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     }
 
     @Subscribe
-    public void groupItemChangeEvent(final GroupItemChangeEvent groupItemChangeEvent) {
-        if (this.group.equals(groupItemChangeEvent.getGroup())) {
-            logger.debug("Group Item Change Event");
-            reloadGroupItems("groupItemChangeEvent");
+    public void groupItemAddEvent(final GroupItemAddEvent groupItemAddEvent) {
+        if (this.group.equals(groupItemAddEvent.getGroup())) {
+            logger.debug("Group Item Add Event");
+            reloadGroupItems("groupItemAddEvent");
+        }
+    }
+
+    @Subscribe
+    public void groupItemDeleteEvent(final GroupItemDeleteEvent groupItemDeleteEvent) {
+        if (this.group.equals(groupItemDeleteEvent.getGroup())) {
+            logger.debug("Group Item Delete Event");
+            reloadGroupItems("groupItemDeleteEvent");
+            try {
+                reloadStats();
+            } catch (SQLException e) {
+                logger.error("Failed to reload stats", e);
+            }
         }
     }
 
