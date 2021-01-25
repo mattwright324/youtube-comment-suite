@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-import io.mattw.youtube.commentsuite.Exportable;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;

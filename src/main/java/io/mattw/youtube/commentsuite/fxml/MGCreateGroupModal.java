@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.Cleanable;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;

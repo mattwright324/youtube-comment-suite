@@ -1,4 +1,4 @@
-package io.mattw.youtube.commentsuite;
+package io.mattw.youtube.commentsuite.db;
 
 /**
  * To be used on classes that may be exported to JSON files as part of the export process.

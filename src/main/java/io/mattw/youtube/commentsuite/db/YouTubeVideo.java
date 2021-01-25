@@ -3,7 +3,6 @@ package io.mattw.youtube.commentsuite.db;
 import com.google.api.services.youtube.model.Video;
 import com.google.api.services.youtube.model.VideoSnippet;
 import com.google.api.services.youtube.model.VideoStatistics;
-import io.mattw.youtube.commentsuite.Exportable;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.ConfigFile;
 import io.mattw.youtube.commentsuite.FXMLSuite;

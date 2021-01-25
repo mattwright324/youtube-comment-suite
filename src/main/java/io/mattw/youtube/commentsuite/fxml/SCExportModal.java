@@ -3,7 +3,6 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
-import io.mattw.youtube.commentsuite.Cleanable;
 import io.mattw.youtube.commentsuite.FXMLSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
