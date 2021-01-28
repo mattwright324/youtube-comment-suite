@@ -4,9 +4,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-/**
- * @author mattwright324
- */
 public class Group {
 
     private final String groupId;

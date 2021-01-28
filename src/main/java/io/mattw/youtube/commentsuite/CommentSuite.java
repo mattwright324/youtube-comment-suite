@@ -5,6 +5,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
 import com.google.common.eventbus.EventBus;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
 import io.mattw.youtube.commentsuite.util.IpApiProvider;
 import io.mattw.youtube.commentsuite.util.Location;
 import javafx.application.Application;
@@ -23,31 +24,28 @@ import java.sql.SQLException;
 /**
  * Application Window
  *
- * @author mattwright324
  */
-public class FXMLSuite extends Application {
+public class CommentSuite extends Application {
 
     private static final Logger logger = LogManager.getLogger();
 
     private static final ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
     private static final EventBus eventBus = new EventBus();
     private static final Location<IpApiProvider, IpApiProvider.Location> location = new Location<>(new IpApiProvider(), IpApiProvider.Location.class);
-    private static final OAuth2Handler oauth2 = new OAuth2Handler("972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com", "QuTdoA-KArupKMWwDrrxOcoS", "urn:ietf:wg:oauth:2.0:oob");
 
     private static CommentDatabase database;
     private static YouTube youTube;
     private static String youTubeApiKey;
+    private static OAuth2Manager oauth2Manager;
 
     public void start(final Stage stage) {
         try {
             youTube = new YouTube.Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), null)
                     .setApplicationName("youtube-comment-suite")
                     .build();
-
-            // System.setProperty("glass.win.uiScale", "100%");
             youTubeApiKey = config.getDataObject().getYoutubeApiKey();
-
             database = new CommentDatabase("commentsuite.sqlite3");
+            oauth2Manager = new OAuth2Manager();
 
             final Parent parent = FXMLLoader.load(getClass().getResource("/io/mattw/youtube/commentsuite/fxml/Main.fxml"));
 
@@ -90,8 +88,8 @@ public class FXMLSuite extends Application {
         return location;
     }
 
-    public static OAuth2Handler getOauth2() {
-        return oauth2;
+    public static OAuth2Manager getOauth2Manager() {
+        return oauth2Manager;
     }
 
     public static CommentDatabase getDatabase() {

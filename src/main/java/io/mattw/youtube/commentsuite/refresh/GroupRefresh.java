@@ -2,10 +2,11 @@ package io.mattw.youtube.commentsuite.refresh;
 
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import io.mattw.youtube.commentsuite.util.StringTuple;
+import io.mattw.youtube.commentsuite.util.Threads;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -21,8 +22,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Stream;
 
+import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.HELD_FOR_REVIEW;
+import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.LIKELY_SPAM;
 import static javafx.application.Platform.runLater;
 
 public class GroupRefresh extends Thread implements RefreshInterface {
@@ -40,6 +42,8 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     private final LongProperty totalVideosProperty = new SimpleLongProperty(0);
     private final LongProperty newCommentsProperty = new SimpleLongProperty(0);
     private final LongProperty totalCommentsProperty = new SimpleLongProperty(0);
+    private final LongProperty newModeratedProperty = new SimpleLongProperty(0);
+    private final LongProperty totalModeratedProperty = new SimpleLongProperty(0);
     private final LongProperty newViewersProperty = new SimpleLongProperty(0);
     private final LongProperty totalViewersProperty = new SimpleLongProperty(0);
 
@@ -50,10 +54,10 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     private final VideoIdProducer videoIdProducer;
     private final UniqueVideoIdProducer uniqueVideoIdProducer;
     private final VideoProducer videoProducer;
-    private final CommentThreadProducer commentThreadProducer;
+    private final CommentThreadProducer commentThreadProducer, reviewThreadProducer, spamThreadProducer;
     private final ReplyProducer replyProducer;
     private final ChannelProducer channelProducer;
-    private final CommentConsumer commentConsumer;
+    private final CommentConsumer commentConsumer, moderatedCommentConsumer;
     private final ChannelConsumer channelConsumer;
 
     private boolean hardShutdown = false;
@@ -62,15 +66,18 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     public GroupRefresh(Group group, RefreshOptions options) {
         this.group = group;
         this.options = options;
-        this.database = FXMLSuite.getDatabase();
+        this.database = CommentSuite.getDatabase();
 
         this.videoIdProducer = new VideoIdProducer();
         this.uniqueVideoIdProducer = new UniqueVideoIdProducer();
         this.videoProducer = new VideoProducer(options);
-        this.commentThreadProducer = new CommentThreadProducer(options);
+        this.commentThreadProducer = new CommentThreadProducer(options, options.getCommentPages());
+        this.reviewThreadProducer = new CommentThreadProducer(options, options.getReviewPages(), HELD_FOR_REVIEW);
+        this.spamThreadProducer = new CommentThreadProducer(options, options.getReplyPages(), LIKELY_SPAM);
         this.replyProducer = new ReplyProducer(options);
         this.channelProducer = new ChannelProducer();
-        this.commentConsumer = new CommentConsumer();
+        this.commentConsumer = new CommentConsumer(false);
+        this.moderatedCommentConsumer = new CommentConsumer(true);
         this.channelConsumer = new ChannelConsumer();
     }
 
@@ -88,30 +95,25 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         uniqueVideoIdProducer.setMessageFunc(this::postMessage);
 
         videoProducer.produceTo(commentThreadProducer, YouTubeVideo.class);
+        videoProducer.produceTo(reviewThreadProducer, YouTubeVideo.class, HELD_FOR_REVIEW.name());
+        videoProducer.produceTo(spamThreadProducer, YouTubeVideo.class, LIKELY_SPAM.name());
         videoProducer.setMessageFunc(this::postMessage);
-
-        try {
-            // Parse GroupItems to VideoIds
-            runLater(() -> statusStepProperty.setValue("Grabbing Videos"));
-            videoIdProducer.startProducing();
-            await(videoIdProducer, "Await videoIdProducer over");
-            database.commit();
-
-            uniqueVideoIdProducer.startProducing();
-            await(uniqueVideoIdProducer, "Await uniqueVideoIdProducer over");
-
-            // Parse VideoIds to Videos
-            runLater(() -> statusStepProperty.setValue("Grabbing Video Data"));
-            videoProducer.startProducing();
-            await(videoProducer, "Await videoProducer over");
-        } catch (SQLException | InterruptedException e) {
-            postMessage(Level.FATAL, e, null);
-        }
 
         commentThreadProducer.produceTo(commentConsumer, YouTubeComment.class);
         commentThreadProducer.produceTo(channelProducer, String.class);
         commentThreadProducer.produceTo(replyProducer, StringTuple.class);
         commentThreadProducer.setMessageFunc(this::postMessage);
+
+        reviewThreadProducer.produceTo(moderatedCommentConsumer, YouTubeComment.class);
+        reviewThreadProducer.produceTo(channelProducer, String.class);
+        //reviewThreadProducer.produceTo(replyProducer, StringTuple.class);
+        reviewThreadProducer.setMessageFunc(this::postMessage);
+
+        spamThreadProducer.produceTo(moderatedCommentConsumer, YouTubeComment.class);
+        spamThreadProducer.produceTo(channelProducer, String.class);
+        //spamThreadProducer.produceTo(replyProducer, StringTuple.class);
+        spamThreadProducer.setMessageFunc(this::postMessage);
+        spamThreadProducer.setStartProduceOnFirstAccept(true);
 
         replyProducer.produceTo(commentConsumer, YouTubeComment.class);
         replyProducer.produceTo(channelConsumer, YouTubeChannel.class);
@@ -128,33 +130,60 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         commentConsumer.setStartProduceOnFirstAccept(true);
         commentConsumer.setMessageFunc(this::postMessage);
 
+        moderatedCommentConsumer.keepAliveWith(reviewThreadProducer, spamThreadProducer);
+        moderatedCommentConsumer.setStartProduceOnFirstAccept(true);
+        moderatedCommentConsumer.setMessageFunc(this::postMessage);
+
         channelConsumer.keepAliveWith(commentThreadProducer, channelProducer, replyProducer);
         channelConsumer.setStartProduceOnFirstAccept(true);
         channelConsumer.setMessageFunc(this::postMessage);
 
         try {
+            // Parse GroupItems to VideoIds
+            runLater(() -> statusStepProperty.setValue("Grabbing Videos"));
+            videoIdProducer.startProducing();
+            await(videoIdProducer, "Await videoIdProducer over");
+            database.commit();
+
+            uniqueVideoIdProducer.startProducing();
+            await(uniqueVideoIdProducer, "Await uniqueVideoIdProducer over");
+
+            // Parse VideoIds to Videos
+            runLater(() -> statusStepProperty.setValue("Grabbing Video Data"));
+            videoProducer.startProducing();
+            await(videoProducer, "Await videoProducer over");
+
             // Parse Videos to CommentThreads, Replies, Channels
             runLater(() -> statusStepProperty.setValue("Grabbing Comments"));
             startProgressThread();
             commentThreadProducer.startProducing();
+
+            if (!reviewThreadProducer.getBlockingQueue().isEmpty()) {
+                reviewThreadProducer.startProducing();
+            }
+
+            if (!spamThreadProducer.getBlockingQueue().isEmpty()) {
+                spamThreadProducer.startProducing();
+            }
 
             await(commentThreadProducer, "Await commentThreadProducer over");
             await(replyProducer, "Await replyProducer over");
             await(channelProducer, "Await channelProducer over");
             await(commentConsumer, "Await commentConsumer over");
             await(channelConsumer, "Await channelConsumer over");
-        } catch (InterruptedException e) {
+
+            try {
+                database.commit();
+
+                Threads.awaitMillis(100);
+
+                runLater(() -> statusStepProperty.setValue("Done"));
+            } catch (SQLException e) {
+                postMessage(Level.FATAL, e, "Failed to commit");
+            }
+
+        } catch (SQLException | InterruptedException e) {
             postMessage(Level.FATAL, e, null);
-        }
-
-        try {
-            database.commit();
-
-            awaitMillis(100);
-
-            runLater(() -> statusStepProperty.setValue("Done"));
-        } catch (SQLException e) {
-            postMessage(Level.FATAL, e, "Failed to commit");
         }
 
         runLater(() -> {
@@ -184,6 +213,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         final String time = formatter.format(LocalDateTime.now());
 
         if (level == Level.FATAL) {
+            runLater(() -> statusStepProperty.setValue("[FATAL] " + statusStepProperty.getValue()));
             endedOnError = true;
             hardShutdown();
         }
@@ -229,7 +259,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
                 final double percentage = totalProcessed / totalAccepted;
                 runLater(() -> progressProperty.setValue(percentage));
 
-                awaitMillis(100);
+                Threads.awaitMillis(100);
             }
             logger.debug("Ended Progress Thread");
         });
@@ -242,6 +272,9 @@ public class GroupRefresh extends Thread implements RefreshInterface {
 
         newCommentsProperty.setValue(commentConsumer.getNewComments());
         totalCommentsProperty.setValue(commentConsumer.getTotalComments());
+
+        newModeratedProperty.setValue(moderatedCommentConsumer.getNewComments());
+        totalModeratedProperty.setValue(moderatedCommentConsumer.getTotalComments());
 
         newViewersProperty.setValue(channelConsumer.getNewChannels());
         totalViewersProperty.setValue(channelConsumer.getTotalChannels());
@@ -265,7 +298,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
                     elapsedTimeProperty.setValue(String.format("%s", elapsedTimer.humanReadableFormat()));
                     pollProcessed();
                 });
-                awaitMillis(27);
+                Threads.awaitMillis(27);
             }
 
             logger.debug("Ended Elapsed Timer");
@@ -285,18 +318,6 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         });
         tes.shutdown();
          */
-    }
-
-    private void awaitMillis(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException ignored) {
-        }
-    }
-
-    @Override
-    public void appendError(String error) {
-
     }
 
     @Override
@@ -331,6 +352,16 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     @Override
     public LongProperty totalCommentsProperty() {
         return totalCommentsProperty;
+    }
+
+    @Override
+    public LongProperty newModeratedProperty() {
+        return newModeratedProperty;
+    }
+
+    @Override
+    public LongProperty totalModeratedProperty() {
+        return totalModeratedProperty;
     }
 
     @Override

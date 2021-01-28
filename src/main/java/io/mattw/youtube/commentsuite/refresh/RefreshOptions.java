@@ -10,7 +10,9 @@ public class RefreshOptions {
     private RefreshTimeframe timeframe = style.getTimeframe();
     private RefreshCommentPages commentPages = style.getCommentPages();
     private RefreshCommentOrder commentOrder = style.getCommentOrder();
-    private RefreshReplyPages replyPages = style.getReplyPages();
+    private RefreshCommentPages replyPages = style.getReplyPages();
+    private RefreshCommentPages reviewPages = RefreshCommentPages.ALL;
+    private RefreshCommentPages spamPages = RefreshCommentPages.ALL;
 
     public RefreshStyle getStyle() {
         return style;
@@ -44,12 +46,28 @@ public class RefreshOptions {
         this.commentOrder = commentOrder;
     }
 
-    public RefreshReplyPages getReplyPages() {
+    public RefreshCommentPages getReplyPages() {
         return replyPages;
     }
 
-    public void setReplyPages(RefreshReplyPages replyPages) {
+    public void setReplyPages(RefreshCommentPages replyPages) {
         this.replyPages = replyPages;
+    }
+
+    public RefreshCommentPages getReviewPages() {
+        return reviewPages;
+    }
+
+    public void setReviewPages(RefreshCommentPages reviewPages) {
+        this.reviewPages = reviewPages;
+    }
+
+    public RefreshCommentPages getSpamPages() {
+        return spamPages;
+    }
+
+    public void setSpamPages(RefreshCommentPages spamPages) {
+        this.spamPages = spamPages;
     }
 
     @Override

@@ -14,7 +14,6 @@ import java.io.IOException;
 /**
  * This modal allows the user to create a new and empty Group with the name of their choosing. The name must be unique.
  *
- * @author mattwright324
  * @see ManageGroups
  */
 public class MGCreateGroupModal extends VBox implements Cleanable {

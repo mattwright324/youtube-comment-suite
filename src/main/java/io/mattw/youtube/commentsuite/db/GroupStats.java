@@ -5,9 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author mattwright324
- */
 public class GroupStats {
 
     private long totalViews = 0;
@@ -24,12 +21,10 @@ public class GroupStats {
 
     private long totalCommentLikes = 0;
     private long totalGrabbedComments = 0;
+    private long totalModeratedComments = 0;
     private Map<YouTubeChannel, Long> mostLikedViewers = new LinkedHashMap<>();
     private Map<YouTubeChannel, Long> mostActiveViewers = new LinkedHashMap<>();
     private Map<Long, Long> weeklyCommentHistogram = new LinkedHashMap<>();
-
-    public GroupStats() {
-    }
 
     public long getTotalViews() {
         return totalViews;
@@ -134,6 +129,14 @@ public class GroupStats {
 
     public void setTotalGrabbedComments(long totalGrabbedComments) {
         this.totalGrabbedComments = totalGrabbedComments;
+    }
+
+    public long getTotalModeratedComments() {
+        return totalModeratedComments;
+    }
+
+    public void setTotalModeratedComments(long totalModeratedComments) {
+        this.totalModeratedComments = totalModeratedComments;
     }
 
     public Map<YouTubeChannel, Long> getMostLikedViewers() {

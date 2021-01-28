@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 /**
  * Gives a duration from a given date and the current time.
  *
- * @author mattwright324
  */
 public class ElapsedTime {
 

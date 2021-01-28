@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
@@ -32,13 +32,12 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to select a specific video for comment searching that are within the currently
  * selected Group and GroupItem prior to opening the modal.
  *
- * @author mattwright324
  * @see SearchComments
  */
 public class SCVideoSelectModal extends VBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
-
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private static final String ALL_VIDEOS = "All Videos";
 
     private CommentDatabase database;
@@ -52,17 +51,16 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
     @FXML private Button btnClose, btnSubmit;
 
     private StringProperty valueProperty = new SimpleStringProperty();
+    private final Map<String, String> orderTypes = new LinkedHashMap<>();
 
     private Group group;
     private GroupItem groupItem;
     private YouTubeVideo selectedVideo;
-    private Map<String, String> orderTypes = new LinkedHashMap<>();
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
     public SCVideoSelectModal() {
         logger.debug("Initialize SCVideoSelectModal");
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         orderTypes.put("By Date", "publish_date DESC");
         orderTypes.put("By Title", "video_title ASC");
@@ -123,11 +121,11 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
         return btnSubmit;
     }
 
-    YouTubeVideo getSelectedVideo() {
+    public YouTubeVideo getSelectedVideo() {
         return selectedVideo;
     }
 
-    void loadWith(Group group, GroupItem groupItem) {
+    public void loadWith(Group group, GroupItem groupItem) {
         if (this.group != group || this.groupItem != groupItem) {
             this.group = group;
             this.groupItem = groupItem;
@@ -139,7 +137,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
         updateVideoList();
     }
 
-    void updateSelectionLabel() {
+    public void updateSelectionLabel() {
         btnReset.setDisable(selectedVideo == null);
         lblSelection.setText(String.format("%s > %s > %s",
                 group != null ? group.getName() : "$group",
@@ -147,7 +145,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                 selectedVideo != null ? selectedVideo.getTitle() : ALL_VIDEOS));
     }
 
-    void updateVideoList() {
+    public void updateVideoList() {
         new Thread(() -> {
             runLater(() -> btnSearch.setDisable(true));
             try {
@@ -181,7 +179,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
         }).start();
     }
 
-    void setValueProperty(String value) {
+    public void setValueProperty(String value) {
         valueProperty.setValue(String.format("Selected: (%s)", value));
     }
 

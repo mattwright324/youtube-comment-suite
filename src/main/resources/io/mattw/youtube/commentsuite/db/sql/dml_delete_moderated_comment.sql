@@ -1,0 +1,1 @@
+DELETE FROM comments_moderated WHERE comment_id = ?

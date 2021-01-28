@@ -3,7 +3,7 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.VideoListResponse;
 import io.mattw.youtube.commentsuite.ConfigData;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeObject;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
@@ -24,6 +24,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.HELD_FOR_REVIEW;
+import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.LIKELY_SPAM;
+
 public class VideoProducer extends ConsumerMultiProducer<String> {
 
     private static final Logger logger = LogManager.getLogger();
@@ -40,9 +43,9 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
 
     public VideoProducer(RefreshOptions options) {
         this.options = options;
-        this.youTube = FXMLSuite.getYouTube();
-        this.database = FXMLSuite.getDatabase();
-        this.configData = FXMLSuite.getConfig().getDataObject();
+        this.youTube = CommentSuite.getYouTube();
+        this.database = CommentSuite.getDatabase();
+        this.configData = CommentSuite.getConfig().getDataObject();
     }
 
     @Override
@@ -79,7 +82,7 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
 
         final YouTube.Videos.List response = youTube.videos()
                 .list("snippet,statistics")
-                .setKey(FXMLSuite.getYouTubeApiKey())
+                .setKey(CommentSuite.getYouTubeApiKey())
                 .setMaxResults(50L)
                 .setId(String.join(",", videoIds));
 
@@ -122,6 +125,16 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
                 .collect(Collectors.toList());
         logger.debug("Video(s) matches a signed in account {}",
                 videosMine.stream().map(YouTubeObject::getId).collect(Collectors.toList()));
+
+        if (configData.isGrabHeldForReview()) {
+            logger.debug("Sending review?");
+            sendCollection(videosMine, YouTubeVideo.class, HELD_FOR_REVIEW.name());
+        }
+
+        if (configData.isGrabLikelySpam()) {
+            logger.debug("Sending spam?");
+            sendCollection(videosMine, YouTubeVideo.class, LIKELY_SPAM.name());
+        }
     }
 
     @Override

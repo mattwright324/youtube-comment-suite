@@ -3,7 +3,6 @@ package io.mattw.youtube.commentsuite.db;
 /**
  * Type definition for YouTubeObjects
  *
- * @author mattwright324
  */
 public enum YType {
     UNKNOWN("Unknown"),

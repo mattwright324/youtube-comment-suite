@@ -13,7 +13,6 @@ import java.io.IOException;
  * Base template for modal format overlaying parent StackPane.
  *
  * @param <T> Custom modal content fxml controller class
- * @author mattwright324
  */
 public class OverlayModal<T extends Pane> extends StackPane {
 
@@ -36,16 +35,16 @@ public class OverlayModal<T extends Pane> extends StackPane {
         return this.title.getText();
     }
 
-    public void setTitle(String title) {
+    public void setTitle(final String title) {
         this.title.setText(title);
     }
 
-    public void setContent(T content) {
+    public void setContent(final T content) {
         this.content.getChildren().clear();
         this.content.getChildren().add(content);
     }
 
-    public void setDividerClass(String cssClass) {
+    public void setDividerClass(final String cssClass) {
         divider.getStyleClass().clear();
         divider.getStyleClass().addAll("divider", cssClass);
     }
@@ -71,7 +70,7 @@ public class OverlayModal<T extends Pane> extends StackPane {
      *
      * @param show show/hide the spacers
      */
-    void showSpacers(boolean show) {
+    void showSpacers(final boolean show) {
         topSpacer.setVisible(show);
         topSpacer.setManaged(show);
         bottomSpacer.setVisible(show);

@@ -2,7 +2,7 @@ package io.mattw.youtube.commentsuite.refresh;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.GroupItem;
 import io.mattw.youtube.commentsuite.db.GroupItemVideo;
@@ -28,8 +28,8 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
     private final CommentDatabase database;
 
     public VideoIdProducer() {
-        this.youTube = FXMLSuite.getYouTube();
-        this.database = FXMLSuite.getDatabase();
+        this.youTube = CommentSuite.getYouTube();
+        this.database = CommentSuite.getDatabase();
     }
 
     @Override
@@ -73,7 +73,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
         logger.debug("fromChannel {}", channel);
         final ChannelListResponse response = youTube.channels()
                 .list("contentDetails")
-                .setKey(FXMLSuite.getYouTubeApiKey())
+                .setKey(CommentSuite.getYouTubeApiKey())
                 .setId(channel.getId())
                 .execute();
 
@@ -102,7 +102,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
         do {
             response = youTube.playlistItems()
                     .list("snippet")
-                    .setKey(FXMLSuite.getYouTubeApiKey())
+                    .setKey(CommentSuite.getYouTubeApiKey())
                     .setMaxResults(50L)
                     .setPlaylistId(playlistId)
                     .setPageToken(pageToken)

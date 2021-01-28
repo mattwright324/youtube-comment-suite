@@ -31,6 +31,16 @@
                 <ComboBox fx:id="refreshReplyPages" />
                 <Label>page(s) of 100 results per page</Label>
             </HBox>
+            <HBox fx:id="reviewOption" alignment="CENTER_LEFT" spacing="10">
+                <Label>Grab review comments up to</Label>
+                <ComboBox fx:id="refreshReviewPages" />
+                <Label>page(s)</Label>
+            </HBox>
+            <HBox fx:id="spamOption" alignment="CENTER_LEFT" spacing="10">
+                <Label>Grab spam comments up to</Label>
+                <ComboBox fx:id="refreshSpamPages" />
+                <Label>page(s)</Label>
+            </HBox>
         </VBox>
         <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"
                     alignment="CENTER"
@@ -43,31 +53,7 @@
             </HBox>
 
             <ProgressBar fx:id="progressBar" progress="0.0" maxWidth="Infinity" />
-            <GridPane vgap="10" hgap="20">
-                <Label text="Elapsed time" styleClass="bold, font14" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                <Label fx:id="elapsedTime" text="0 ms" styleClass="font14" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="2" />
-
-                <Label text="New videos" styleClass="bold, font14"
-                       GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                <fx:include source="HFlexLabel.fxml" fx:id="newVideos" text="0" styleClass="font14"
-                            GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.hgrow="ALWAYS" />
-                <Label fx:id="totalVideos" text="of 0 total" styleClass="textMutedLight, font14" alignment="TOP_RIGHT"
-                       GridPane.columnIndex="2" GridPane.rowIndex="1" />
-
-                <Label text="New comments" styleClass="bold, font14"
-                       GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                <fx:include source="HFlexLabel.fxml" fx:id="newComments" text="0" styleClass="font14"
-                            GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.hgrow="ALWAYS" />
-                <Label fx:id="totalComments" text="of 0 total" styleClass="textMutedLight, font14" alignment="TOP_RIGHT"
-                       GridPane.columnIndex="2" GridPane.rowIndex="2" />
-
-                <Label text="New viewers" styleClass="bold, font14"
-                       GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                <fx:include source="HFlexLabel.fxml" fx:id="newViewers" text="0" styleClass="font14"
-                            GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.hgrow="ALWAYS" />
-                <Label fx:id="totalViewers" text="of 0 total" styleClass="textMutedLight, font14" alignment="TOP_RIGHT"
-                       GridPane.columnIndex="2" GridPane.rowIndex="3" />
-            </GridPane>
+            <GridPane fx:id="refreshStatsPane" vgap="10" hgap="20" />
             <HBox fx:id="warningsPane" alignment="CENTER_RIGHT" managed="false" visible="false">
                 <fx:define>
                     <ImageView fx:id="expandIcon" fitWidth="30" fitHeight="30" />

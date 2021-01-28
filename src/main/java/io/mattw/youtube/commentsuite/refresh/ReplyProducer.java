@@ -3,7 +3,7 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentListResponse;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
@@ -32,7 +32,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
 
     public ReplyProducer(final RefreshOptions options) {
         this.options = options;
-        this.youTube = FXMLSuite.getYouTube();
+        this.youTube = CommentSuite.getYouTube();
     }
 
     @Override
@@ -54,11 +54,11 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                 CommentListResponse response;
                 String pageToken = "";
                 int page = 1;
-                RefreshReplyPages replyPages = options.getReplyPages();
+                RefreshCommentPages replyPages = options.getReplyPages();
                 do {
                     response = youTube.comments()
                             .list("snippet")
-                            .setKey(FXMLSuite.getYouTubeApiKey())
+                            .setKey(CommentSuite.getYouTubeApiKey())
                             .setParentId(tuple.getFirst())
                             .setPageToken(pageToken)
                             .setMaxResults(100L)

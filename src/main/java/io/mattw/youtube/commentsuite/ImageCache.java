@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.mattw.youtube.commentsuite.db.YouTubeObject;
+import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Cache for images and letter avatars.
  *
- * @author mattwright324
  */
 public interface ImageCache {
 
@@ -31,11 +31,11 @@ public interface ImageCache {
             .expireAfterAccess(5, TimeUnit.MINUTES)
             .build();
 
-    static Image toLetterAvatar(YouTubeObject object) {
+    static Image toLetterAvatar(final YouTubeObject object) {
         return toLetterAvatar(object.getTitle());
     }
 
-    static Image toLetterAvatar(String s) {
+    static Image toLetterAvatar(final String s) {
         if (s == null || s.isEmpty()) {
             return toLetterAvatar(" ");
         } else {
@@ -43,7 +43,7 @@ public interface ImageCache {
         }
     }
 
-    static Image toLetterAvatar(char letter) {
+    static Image toLetterAvatar(final char letter) {
         Image image = thumbCache.getIfPresent(letter);
         if (image == null) {
             image = new LetterAvatar(letter);
@@ -52,9 +52,9 @@ public interface ImageCache {
         return image;
     }
 
-    static Image findOrGetImage(String id, String imageUrl) {
-        ConfigFile<ConfigData> config = FXMLSuite.getConfig();
-        ConfigData configData = config.getDataObject();
+    static Image findOrGetImage(final String id, final String imageUrl) {
+        final ConfigFile<ConfigData> config = CommentSuite.getConfig();
+        final ConfigData configData = config.getDataObject();
 
         if (ConfigData.FAST_GROUP_ADD_THUMB_PLACEHOLDER.equals(imageUrl)) {
             return null;
@@ -62,13 +62,13 @@ public interface ImageCache {
 
         Image image = thumbCache.getIfPresent(id);
         if (image == null) {
-            File thumbFile = new File(thumbsDir, String.format("%s.%s", id, thumbFormat));
+            final File thumbFile = new File(thumbsDir, String.format("%s.%s", id, thumbFormat));
             if (configData.isArchiveThumbs() && !thumbFile.exists()) {
                 thumbsDir.mkdir();
 
                 logger.debug("Archiving [id={}]", id);
                 try {
-                    BufferedImage bufferedImage = ImageIO.read(new URL(imageUrl));
+                    final BufferedImage bufferedImage = ImageIO.read(new URL(imageUrl));
 
                     thumbFile.createNewFile();
 
@@ -90,15 +90,15 @@ public interface ImageCache {
         return image;
     }
 
-    static Image findOrGetImage(YouTubeObject object) {
+    static Image findOrGetImage(final YouTubeObject object) {
         return findOrGetImage(object.getId(), object.getThumbUrl());
     }
 
-    static Image findOrGetImage(YouTubeAccount account) {
+    static Image findOrGetImage(final YouTubeAccount account) {
         return findOrGetImage(account.getChannelId(), account.getThumbUrl());
     }
 
-    static boolean hasImageCached(YouTubeObject object) {
+    static boolean hasImageCached(final YouTubeObject object) {
         return thumbCache.getIfPresent(object.getId()) != null;
     }
 }

@@ -3,7 +3,6 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.api.services.youtube.model.SearchResult;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.YouTubeSearchItem;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -22,7 +21,6 @@ import static javafx.application.Platform.runLater;
  * <p>
  * Searching occurs in the SearchYouTube.
  *
- * @author mattwright324
  */
 public class SearchYouTubeListItem extends HBox {
 
@@ -37,12 +35,12 @@ public class SearchYouTubeListItem extends HBox {
     @FXML private Label number;
     @FXML private ImageView thumbnail;
 
-    private SearchResult data;
+    private final SearchResult data;
     private String objectId;
     private String youtubeURL;
     private String typeStr;
 
-    public SearchYouTubeListItem(SearchResult data, int num) throws IOException {
+    public SearchYouTubeListItem(final SearchResult data, final int num) throws IOException {
         this.data = data;
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SearchYouTubeListItem.fxml"));
@@ -76,8 +74,8 @@ public class SearchYouTubeListItem extends HBox {
             description.setText(data.getSnippet().getDescription());
 
             new Thread(() -> {
-                YouTubeSearchItem obj = new YouTubeSearchItem(data);
-                Image thumb = ImageCache.findOrGetImage(obj);
+                final YouTubeSearchItem obj = new YouTubeSearchItem(data);
+                final Image thumb = ImageCache.findOrGetImage(obj);
                 thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
                 thumbnail.setImage(thumb);
             }).start();
@@ -85,7 +83,7 @@ public class SearchYouTubeListItem extends HBox {
             title.setText("SearchList.Item Error");
             author.setText(data.getEtag());
             description.setText("There was no snippet attached to this object.");
-            Image thumb = ImageLoader.OOPS.getImage();
+            final Image thumb = ImageLoader.OOPS.getImage();
             runLater(() -> {
                 thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
                 thumbnail.setImage(thumb);

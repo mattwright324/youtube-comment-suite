@@ -1,8 +1,15 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.*;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import io.mattw.youtube.commentsuite.ConfigData;
+import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.ImageCache;
+import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
+import io.mattw.youtube.commentsuite.events.*;
+import io.mattw.youtube.commentsuite.refresh.ModerationStatus;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.fxml.FXML;
@@ -18,15 +25,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
+import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
 import static javafx.application.Platform.runLater;
 
-/**
- * @author mattwright324
- */
 public class SearchCommentsListItem extends HBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
+    private static final LocalDateTime DAYS_AGO_60 = LocalDateTime.now().minusDays(60);
 
     @FXML private ImageView thumbnail;
     @FXML private Hyperlink author;
@@ -35,24 +42,28 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     @FXML private Label type;
     @FXML private Label likes;
     @FXML private Hyperlink showMore, viewTree, reply;
+    @FXML private HBox tagsPane;
 
-    private YouTubeComment comment;
-    private YouTubeChannel channel;
+    private final BrowserUtil browserUtil = new BrowserUtil();
+    private final ConfigData configData;
+    private final EventBus eventBus;
 
-    private BrowserUtil browserUtil = new BrowserUtil();
-    private ConfigData configData;
+    private final YouTubeComment comment;
+    private final YouTubeChannel channel;
+    private boolean showReplyBtn = true;
 
-    SearchCommentsListItem(YouTubeComment comment) throws IOException {
+    public SearchCommentsListItem(final YouTubeComment comment) throws IOException {
         this.comment = comment;
+        this.channel = comment.getChannel();
 
-        configData = FXMLSuite.getConfig().getDataObject();
+        configData = CommentSuite.getConfig().getDataObject();
+        eventBus = CommentSuite.getEventBus();
+        eventBus.register(this);
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SearchCommentsListItem.fxml"));
         loader.setController(this);
         loader.setRoot(this);
         loader.load();
-
-        channel = comment.getChannel();
 
         thumbnail.setImage(channel.getDefaultThumb());
         checkProfileThumb();
@@ -74,9 +85,14 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             }
         }
 
+        final ModerationStatus status = comment.getModerationStatus();
+        if (status != null && status != PUBLISHED) {
+            this.getStyleClass().add(status.getApiValue());
+        }
+
         if (comment.isReply()) {
-            type.setText("Reply");
             this.getStyleClass().add("reply");
+            type.setText("Reply");
         }
 
         if (comment.getLikes() > 0) {
@@ -86,33 +102,56 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             likes.setManaged(false);
         }
 
-        reply.setManaged(!configData.getAccounts().isEmpty());
-        reply.setVisible(!configData.getAccounts().isEmpty());
+        if (status != null && status != PUBLISHED) {
+            addTag(status.getApiValue());
+        }
 
-        configData.accountListChangedProperty().addListener((o, ov, nv) -> {
-            reply.setManaged(!configData.getAccounts().isEmpty());
-            reply.setVisible(!configData.getAccounts().isEmpty());
-        });
+        if (status != null && status != PUBLISHED && comment.getPublishedDateTime().isBefore(DAYS_AGO_60)) {
+            reply.setManaged(false);
+            reply.setVisible(false);
+            viewTree.setManaged(false);
+            viewTree.setVisible(false);
+            showReplyBtn = false;
+            addTag("past-60-days");
+        }
+
+        determineHideReply();
+
+        showMore.setOnAction(ae -> eventBus.post(new ShowMoreEvent(this)));
+        reply.setOnAction(ae -> eventBus.post(new ReplyEvent(this)));
+        viewTree.setOnAction(ae -> eventBus.post(new ViewTreeEvent(this)));
     }
 
-
-    YouTubeComment getComment() {
+    public YouTubeComment getComment() {
         return comment;
     }
 
-    Hyperlink getShowMore() {
-        return showMore;
+    public void addTag(String text) {
+        final Label tag = new Label(text);
+        tag.getStyleClass().addAll("textMuted", "tag");
+        runLater(() -> tagsPane.getChildren().add(tag));
     }
 
-    Hyperlink getReply() {
-        return reply;
+    private void determineHideReply() {
+        final boolean display = !configData.getAccounts().isEmpty() && showReplyBtn;
+
+        runLater(() -> {
+            reply.setManaged(display);
+            reply.setVisible(display);
+        });
     }
 
-    Hyperlink getViewTree() {
-        return viewTree;
+    @Subscribe
+    public void accountAddEvent(final AccountAddEvent accountAddEvent) {
+        determineHideReply();
     }
 
-    void treeMode() {
+    @Subscribe
+    public void accountDeleteEvent(final AccountDeleteEvent accountDeleteEvent) {
+        determineHideReply();
+    }
+
+    public void treeMode() {
         viewTree.setVisible(false);
         viewTree.setManaged(false);
     }
@@ -120,7 +159,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     /**
      * Loads profile thumbnail.
      */
-    void loadProfileThumb() {
+    public void loadProfileThumb() {
         runLater(() -> thumbnail.setImage(ImageLoader.LOADING.getImage()));
         Image thumbImage = ImageCache.findOrGetImage(channel);
         runLater(() -> thumbnail.setImage(thumbImage));
@@ -129,7 +168,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     /**
      * Checks if profile thumb loaded and loads if present.
      */
-    void checkProfileThumb() {
+    public void checkProfileThumb() {
         if (ImageCache.hasImageCached(channel)) {
             loadProfileThumb();
         }

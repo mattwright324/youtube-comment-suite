@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.refresh;
 
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
@@ -27,7 +27,7 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
     private final Set<String> concurrentNewChannelSet = ConcurrentHashMap.newKeySet();
 
     public ChannelConsumer() {
-        this.database = FXMLSuite.getDatabase();
+        this.database = CommentSuite.getDatabase();
     }
 
     @Override

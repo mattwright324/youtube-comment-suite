@@ -3,7 +3,7 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.eventbus.Subscribe;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
@@ -32,7 +32,6 @@ import static javafx.application.Platform.runLater;
 /**
  * Manages group selection, creation, and content switching.
  *
- * @author mattwright324
  */
 public class ManageGroups implements Initializable {
 
@@ -55,9 +54,9 @@ public class ManageGroups implements Initializable {
 
         instance = this;
 
-        FXMLSuite.getEventBus().register(this);
+        CommentSuite.getEventBus().register(this);
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         /*
          * Logic for main pane.
@@ -165,7 +164,6 @@ public class ManageGroups implements Initializable {
     @Subscribe
     public void groupRenameEvent(final GroupRenameEvent renameEvent) {
         logger.debug("Group Rename Event");
-        //runLater(this::refreshGroupSelect);
         runLater(this::rebuildGroupSelect);
     }
 

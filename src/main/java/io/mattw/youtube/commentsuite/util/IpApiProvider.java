@@ -1,8 +1,5 @@
 package io.mattw.youtube.commentsuite.util;
 
-/**
- * @author mattwright324
- */
 public class IpApiProvider implements LocationProvider {
 
     @Override

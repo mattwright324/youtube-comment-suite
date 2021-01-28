@@ -4,18 +4,17 @@ import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadSnippet;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.refresh.ModerationStatus;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * @author mattwright324
- */
 public class YouTubeComment extends YouTubeObject implements Exportable {
 
     public static final Logger logger = LogManager.getLogger();
@@ -23,11 +22,13 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
     private String commentText;
     private String channelId;
     private transient long published;
+    private transient LocalDateTime publishedDateTime;
     private String commentDate;
     private String videoId;
     private long likes, replyCount;
     private boolean isReply;
     private String parentId;
+    private ModerationStatus moderationStatus;
 
     // Field(s) used just for export to make things pretty.
     private YouTubeChannel author;
@@ -47,6 +48,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
         CommentSnippet snippet = item.getSnippet();
         this.commentText = snippet.getTextDisplay();
         this.published = snippet.getPublishedAt().getValue();
+        this.publishedDateTime = DateUtils.epochMillisToDateTime(published);
         this.likes = snippet.getLikeCount();
         this.parentId = snippet.getParentId();
 
@@ -74,7 +76,9 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
         CommentSnippet tlcSnippet = snippet.getTopLevelComment().getSnippet();
         this.commentText = tlcSnippet.getTextDisplay();
         this.published = tlcSnippet.getPublishedAt().getValue();
+        this.publishedDateTime = DateUtils.epochMillisToDateTime(published);
         this.likes = tlcSnippet.getLikeCount();
+        this.moderationStatus = ModerationStatus.fromApiValue(tlcSnippet.getModerationStatus());
 
         if (tlcSnippet.getAuthorChannelId() != null) {
             this.channelId = getChannelIdFromObject(tlcSnippet.getAuthorChannelId());
@@ -92,17 +96,38 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
         this.commentText = text;
         this.published = published;
+        this.publishedDateTime = DateUtils.epochMillisToDateTime(published);
         this.videoId = videoId;
         this.channelId = channelId;
         this.likes = likes;
         this.replyCount = replies;
         this.isReply = isReply;
         this.parentId = parentId;
+        this.moderationStatus = ModerationStatus.PUBLISHED;
+    }
+
+    /**
+     * Constructor used for initialization from the database.
+     */
+    public YouTubeComment(String commentId, String text, long published, String videoId, String channelId, int likes, int replies, boolean isReply, String parentId, String moderationStatus) {
+        super(commentId, null, null);
+        this.setTypeId(YType.COMMENT);
+
+        this.commentText = text;
+        this.published = published;
+        this.publishedDateTime = DateUtils.epochMillisToDateTime(published);
+        this.videoId = videoId;
+        this.channelId = channelId;
+        this.likes = likes;
+        this.replyCount = replies;
+        this.isReply = isReply;
+        this.parentId = parentId;
+        this.moderationStatus = ModerationStatus.fromName(moderationStatus);
     }
 
     @Override
     public void prepForExport() {
-        commentDate = DateUtils.epochMillisToDateTime(published).toString();
+        commentDate = publishedDateTime.toString();
     }
 
     public String getCommentText() {
@@ -111,6 +136,10 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
     public long getPublished() {
         return published;
+    }
+
+    public LocalDateTime getPublishedDateTime() {
+        return publishedDateTime;
     }
 
     public String getVideoId() {
@@ -122,7 +151,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
     }
 
     public YouTubeChannel getChannel() {
-        return FXMLSuite.getDatabase().getChannel(channelId);
+        return CommentSuite.getDatabase().getChannel(channelId);
     }
 
     public long getLikes() {
@@ -143,6 +172,14 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
     public YouTubeChannel getAuthor() {
         return author;
+    }
+
+    public ModerationStatus getModerationStatus() {
+        return moderationStatus;
+    }
+
+    public void setModerationStatus(ModerationStatus moderationStatus) {
+        this.moderationStatus = moderationStatus;
     }
 
     /**

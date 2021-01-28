@@ -3,7 +3,7 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonWriter;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.refresh.ConsumerMultiProducer;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
@@ -39,7 +39,7 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
     public SCExportProducer(final CommentQuery commentQuery, final boolean condensed) {
         this.commentQuery = commentQuery;
         this.condensedMode = condensed;
-        this.database = FXMLSuite.getDatabase();
+        this.database = CommentSuite.getDatabase();
 
         this.thisExportFolder = new File(EXPORT_FOLDER, formatter.format(LocalDateTime.now()) + "/");
         this.thisExportFolder.mkdirs();
@@ -129,7 +129,7 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
                     comment.prepForExport();
 
                     if (condensedMode && comment.getReplyCount() > 0 && !comment.isReply()) {
-                        final List<YouTubeComment> replyList = database.getCommentTree(comment.getId());
+                        final List<YouTubeComment> replyList = database.getCommentTree(comment.getId(), false);
                         for (final YouTubeComment reply : replyList) {
                             reply.setAuthor(database.getChannel(reply.getChannelId()));
                             reply.prepForExport();

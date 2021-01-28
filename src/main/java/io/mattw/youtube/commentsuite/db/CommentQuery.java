@@ -14,10 +14,11 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.mattw.youtube.commentsuite.db.CommentQuery.CommentsType.*;
+
 /**
  * Queries the database for comments.
  *
- * @author mattwright324
  */
 public class CommentQuery implements Serializable, Exportable {
 
@@ -87,10 +88,12 @@ public class CommentQuery implements Serializable, Exportable {
             }
         }
 
-        List<String> queryLines = new ArrayList<>();
-        queryLines.add("SELECT * FROM comments");
+        final String commentsTable = commentsType == MODERATED_ONLY ? "comments_moderated" : "comments";
+        final List<String> queryLines = new ArrayList<>();
+        queryLines.add("SELECT * FROM");
+        queryLines.add(commentsTable);
         queryLines.add("LEFT JOIN channels USING (channel_id)");
-        queryLines.add("WHERE comments.video_id IN (:videoSubquery)".replace(":videoSubquery", videoSubquery));
+        queryLines.add("WHERE " + commentsTable + ".video_id IN (:videoSubquery)".replace(":videoSubquery", videoSubquery));
         if (StringUtils.isNotEmpty(nameLike)) {
             queryLines.add("AND (channels.channel_name LIKE :nameLike OR channels.channel_id = :channelId)");
 
@@ -98,18 +101,18 @@ public class CommentQuery implements Serializable, Exportable {
             queryParams.put("channelId", nameLike);
         }
         if (StringUtils.isNotEmpty(textLike)) {
-            queryLines.add("AND (comments.comment_text LIKE :textLike OR comments.comment_id = :commentId)");
+            queryLines.add("AND (" + commentsTable + ".comment_text LIKE :textLike OR " + commentsTable + ".comment_id = :commentId)");
 
             queryParams.put("textLike", '%' + textLike + '%');
             queryParams.put("commentId", textLike);
         }
-        if (commentsType != CommentsType.ALL) {
+        if (commentsType == REPLIES_ONLY || commentsType == COMMENTS_ONLY) {
             queryLines.add("AND is_reply = :isReply");
 
-            queryParams.put("isReply", commentsType == CommentsType.REPLIES_ONLY);
+            queryParams.put("isReply", commentsType == REPLIES_ONLY);
         }
 
-        queryLines.add("AND comments.comment_date > :dateFrom AND comments.comment_date < :dateTo");
+        queryLines.add("AND " + commentsTable + ".comment_date > :dateFrom AND " + commentsTable + ".comment_date < :dateTo");
         queryParams.put("dateFrom", localDateToEpochMillis(dateFrom, false));
         queryParams.put("dateTo", localDateToEpochMillis(dateTo, true));
 
@@ -394,6 +397,7 @@ public class CommentQuery implements Serializable, Exportable {
         ALL("Comments and Replies"),
         COMMENTS_ONLY("Comments Only"),
         REPLIES_ONLY("Replies Only"),
+        MODERATED_ONLY("Moderated Only")
         ;
 
         private String title;

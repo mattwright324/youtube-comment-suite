@@ -10,5 +10,5 @@ Class-Path: lib/checker-qual-3.5.0.jar lib/commons-codec-1.10.jar lib/co
  .13.1.jar lib/jsr305-3.0.2.jar lib/listenablefuture-9999.0-empty-to-avo
  id-conflict-with-guava.jar lib/log4j-api-2.14.0.jar lib/log4j-core-2.14
  .0.jar lib/sqlite-jdbc-3.34.0.jar
-Main-Class: io.mattw.youtube.commentsuite.FXMLSuite
+Main-Class: io.mattw.youtube.commentsuite.CommentSuite
 

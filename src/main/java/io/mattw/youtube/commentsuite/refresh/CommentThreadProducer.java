@@ -5,10 +5,14 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadListResponse;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import com.google.api.services.youtube.model.CommentThreadReplies;
+import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
+import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
+import io.mattw.youtube.commentsuite.oauth2.OAuth2Tokens;
+import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import io.mattw.youtube.commentsuite.util.StringTuple;
 import org.apache.commons.lang3.StringUtils;
@@ -18,7 +22,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
 
 public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
@@ -27,13 +34,23 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
     private final ExecutorGroup executorGroup = new ExecutorGroup(10);
 
     private final RefreshOptions options;
+    private final RefreshCommentPages pages;
     private final YouTube youTube;
     private final CommentDatabase database;
+    private final ModerationStatus moderationStatus;
+    private final ConfigData configData = CommentSuite.getConfig().getDataObject();
+    private final OAuth2Manager oAuth2Manager = CommentSuite.getOauth2Manager();
 
-    public CommentThreadProducer(final RefreshOptions options) {
+    public CommentThreadProducer(final RefreshOptions options, final RefreshCommentPages pages) {
+        this(options, pages, PUBLISHED);
+    }
+
+    public CommentThreadProducer(final RefreshOptions options, final RefreshCommentPages pages, final ModerationStatus moderationStatus) {
         this.options = options;
-        this.youTube = FXMLSuite.getYouTube();
-        this.database = FXMLSuite.getDatabase();
+        this.pages = pages;
+        this.moderationStatus = moderationStatus;
+        this.youTube = CommentSuite.getYouTube();
+        this.database = CommentSuite.getDatabase();
     }
 
     @Override
@@ -41,8 +58,38 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
         executorGroup.submitAndShutdown(this::produce);
     }
 
+    private String getOauthToken(String channelId) {
+        if (moderationStatus == PUBLISHED) {
+            return null;
+        }
+
+        final YouTubeAccount account = configData.getAccount(channelId);
+        final String accessToken = Optional.ofNullable(account)
+                .map(YouTubeAccount::getTokens)
+                .map(OAuth2Tokens::getAccessToken)
+                .orElse(null);
+
+        logger.debug(accessToken);
+
+        return accessToken;
+    }
+
+    private void refreshOauth2(final String channelId) {
+        if (moderationStatus == PUBLISHED) {
+            return;
+        }
+
+        logger.debug("Refreshing OAuth2 Tokens for {}", channelId);
+
+        try {
+            oAuth2Manager.getNewAccessToken(configData.getAccount(channelId));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void produce() {
-        logger.debug("Starting CommentThreadProducer");
+        logger.debug("Starting CommentThreadProducer " + moderationStatus);
 
         while (shouldKeepAlive()) {
             final YouTubeVideo video = getBlockingQueue().poll();
@@ -51,28 +98,39 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                 continue;
             }
 
+            if (moderationStatus != PUBLISHED && !configData.isSignedIn(video.getChannelId())) {
+                logger.warn("Authorization required for {} commentThreads on {} but not signed in", moderationStatus, video.getId());
+                awaitMillis(100);
+                continue;
+            }
+
             send(video.getChannelId());
 
-            int attempts = 0;
+            int attempts = 1;
             CommentThreadListResponse response;
             String pageToken = "";
             int page = 1;
-            RefreshCommentPages commentPages = options.getCommentPages();
             final int maxAttempts = 5;
             do {
                 try {
-                    logger.info("{} - {}", video.getId(), video.getTitle());
+                    logger.info("{} - {} {}", video.getId(), moderationStatus, video.getTitle());
                     do {
+                        logger.debug("{} {}", moderationStatus, attempts);
+
                         response = youTube.commentThreads()
-                                .list("snippet")
-                                .setKey(FXMLSuite.getYouTubeApiKey())
+                                .list(moderationStatus.getPart())
+                                .setKey(CommentSuite.getYouTubeApiKey())
+                                .setOauthToken(getOauthToken(video.getChannelId()))
                                 .setVideoId(video.getId())
                                 .setMaxResults(100L)
                                 .setOrder(options.getCommentOrder().name())
                                 .setPageToken(pageToken)
+                                .setModerationStatus(moderationStatus.getApiValue())
                                 .execute();
 
                         pageToken = response.getNextPageToken();
+
+                        logger.debug(response);
 
                         try {
                             // Maybe comments were re-enabled if we got a 403 in the past.
@@ -92,6 +150,19 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .collect(Collectors.toList());
                         sendCollection(comments, YouTubeComment.class);
 
+                        if (moderationStatus != PUBLISHED) {
+                            final List<YouTubeComment> replies = items.stream()
+                                    .map(CommentThread::getReplies)
+                                    .map(CommentThreadReplies::getComments)
+                                    .flatMap(List::stream)
+                                    .map(comment -> new YouTubeComment(comment, video.getId()))
+                                    .peek(comment -> comment.setModerationStatus(moderationStatus))
+                                    .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
+                                    .collect(Collectors.toList());
+
+                            sendCollection(replies, YouTubeComment.class);
+                        }
+
                         final List<String> channelIds = comments.stream()
                                 .map(YouTubeComment::getChannelId)
                                 .distinct()
@@ -106,13 +177,13 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                          */
                         final List<StringTuple> replyThreads = comments.stream()
                                 .filter(comment -> comment.getReplyCount() > 0)
-                                .filter(comment -> options.getReplyPages() != RefreshReplyPages.NONE)
+                                .filter(comment -> options.getReplyPages() != RefreshCommentPages.NONE)
                                 .map(comment -> new StringTuple(comment.getId(), video.getId()))
                                 .collect(Collectors.toList());
                         sendCollection(replyThreads, StringTuple.class);
 
                         awaitMillis(50);
-                    } while (pageToken != null && page++ < commentPages.getPageCount() && !isHardShutdown());
+                    } while (pageToken != null && page++ < pages.getPageCount() && !isHardShutdown());
 
                     break;
                 } catch (Exception e) {
@@ -136,6 +207,19 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                     video.getId());
 
                             sendMessage(Level.ERROR, e, message);
+
+                            attempts++;
+                        } else if (ge.getStatusCode() == 401 && moderationStatus != PUBLISHED) {
+                            final String message = String.format("[%s/%s] Authorization failed [videoId=%s]",
+                                    attempts,
+                                    maxAttempts,
+                                    video.getId());
+
+                            sendMessage(Level.WARN, message);
+                            sendMessage(Level.WARN, "Trying to refresh Oauth2 access token");
+
+                            refreshOauth2(video.getChannelId());
+                            CommentSuite.getConfig().save();
 
                             attempts++;
                         } else if (ge.getStatusCode() == 403) {
@@ -165,13 +249,13 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         attempts++;
                     }
                 }
-            } while (attempts < maxAttempts && !isHardShutdown());
+            } while (attempts <= maxAttempts && !isHardShutdown());
 
             addProcessed(1);
             awaitMillis(500);
         }
 
-        logger.debug("Ending CommentThreadProducer");
+        logger.debug("Ending CommentThreadProducer " + moderationStatus);
     }
 
     @Override

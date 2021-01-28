@@ -2,10 +2,10 @@ package io.mattw.youtube.commentsuite.db;
 
 public class GroupItemVideo {
 
-    private String gitemId;
-    private String videoId;
+    private final String gitemId;
+    private final String videoId;
 
-    public GroupItemVideo(String gitemId, String videoId) {
+    public GroupItemVideo(final String gitemId, final String videoId) {
         this.gitemId = gitemId;
         this.videoId = videoId;
     }
@@ -18,9 +18,9 @@ public class GroupItemVideo {
         return videoId;
     }
 
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (o instanceof GroupItemVideo) {
-            GroupItemVideo giv = (GroupItemVideo) o;
+            final GroupItemVideo giv = (GroupItemVideo) o;
             return giv.gitemId.equals(gitemId) && giv.videoId.equals(videoId);
         }
         return false;

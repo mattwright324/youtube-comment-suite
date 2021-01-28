@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
@@ -24,7 +24,6 @@ import static javafx.application.Platform.runLater;
 /**
  * This modal allows the user to remove selected GroupItems from the Group of its ManageGroupsManager.
  *
- * @author mattwright324
  * @see ManageGroupsManager
  */
 public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
@@ -38,16 +37,16 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
     @FXML private Button btnClose;
     @FXML private Button btnSubmit;
 
-    private Group group;
-    private MultipleSelectionModel<MGMVGroupItemView> selectionModel;
+    private final Group group;
+    private final MultipleSelectionModel<MGMVGroupItemView> selectionModel;
 
-    public MGMVRemoveSelectedModal(Group group, MultipleSelectionModel<MGMVGroupItemView> selectionModel) {
+    public MGMVRemoveSelectedModal(final Group group, final MultipleSelectionModel<MGMVGroupItemView> selectionModel) {
         logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         this.group = group;
         this.selectionModel = selectionModel;
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRemoveSelectedModal.fxml"));
         loader.setController(this);

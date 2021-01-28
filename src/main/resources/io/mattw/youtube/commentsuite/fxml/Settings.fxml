@@ -60,6 +60,8 @@
                     <Label text="YouTube Accounts" styleClass="sectionTitle, bold" maxWidth="Infinity" />
                     <Button fx:id="btnAddAccount" styleClass="btn, btnLight" text="Add Account" />
                     <ListView fx:id="accountList" maxHeight="150" minHeight="150" />
+                    <CheckBox fx:id="grabHeldForReview" text="Grab held-for-review comments on refresh"/>
+                    <CheckBox fx:id="grabLikelySpam" text="Grab likely-spam comments on refresh"/>
                     <Label />
 
                     <Label text="Maintenance" styleClass="sectionTitle, bold" maxWidth="Infinity" />

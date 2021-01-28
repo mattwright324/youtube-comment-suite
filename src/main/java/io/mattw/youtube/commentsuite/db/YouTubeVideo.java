@@ -10,9 +10,6 @@ import org.apache.logging.log4j.Logger;
 import java.math.BigInteger;
 import java.util.Optional;
 
-/**
- * @author mattwright324
- */
 public class YouTubeVideo extends YouTubeObject implements Exportable {
 
     private static final Logger logger = LogManager.getLogger();

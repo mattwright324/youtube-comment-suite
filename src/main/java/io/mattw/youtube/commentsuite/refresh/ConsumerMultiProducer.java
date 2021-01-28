@@ -26,6 +26,7 @@ public abstract class ConsumerMultiProducer<C> {
 
     private List<ConsumerMultiProducer<?>> keepAliveWith = new ArrayList<>();
     private Map<Class<?>, List<ConsumerMultiProducer<?>>> consumersByClass = new HashMap<>();
+    private Map<String, List<ConsumerMultiProducer<?>>> consumersByKey = new HashMap<>();
     private BlockingQueue<C> blockingQueue = new LinkedBlockingQueue<>();
     private boolean startProduceOnFirstAccept = false;
     private boolean didProduceOnFirstAccept = false;
@@ -46,6 +47,23 @@ public abstract class ConsumerMultiProducer<C> {
             return value;
         });
         consumersByClass.computeIfAbsent(clazz, (key) -> {
+            List<ConsumerMultiProducer<?>> list = new ArrayList<>();
+            list.add(consumer);
+            return list;
+        });
+    }
+
+    /**
+     * @param consumer consuemr
+     * @param clazz needed for sendCollection()
+     * @param <P> consumer must consume type of clazz
+     */
+    public <P> void produceTo(ConsumerMultiProducer<P> consumer, Class<P> clazz, String key) {
+        consumersByKey.computeIfPresent(key, (key1, value) -> {
+            value.add(consumer);
+            return value;
+        });
+        consumersByKey.computeIfAbsent(key, (key1) -> {
             List<ConsumerMultiProducer<?>> list = new ArrayList<>();
             list.add(consumer);
             return list;
@@ -130,6 +148,24 @@ public abstract class ConsumerMultiProducer<C> {
             return;
         }
         for (ConsumerMultiProducer<?> consumer : consumersByClass.get(object.getClass())) {
+            ((ConsumerMultiProducer<P>) consumer).accept(object);
+        }
+    }
+
+    public <P> void sendCollection(Collection<P> objects, Class<P> clazz, String key) {
+        if (!consumersByKey.containsKey(key) || objects.isEmpty()) {
+            return;
+        }
+        for (ConsumerMultiProducer<?> consumer : consumersByKey.get(key)) {
+            ((ConsumerMultiProducer<P>) consumer).accept(objects);
+        }
+    }
+
+    public <P> void send(P object, String key) {
+        if (!consumersByKey.containsKey(key)) {
+            return;
+        }
+        for (ConsumerMultiProducer<?> consumer : consumersByKey.get(key)) {
             ((ConsumerMultiProducer<P>) consumer).accept(object);
         }
     }

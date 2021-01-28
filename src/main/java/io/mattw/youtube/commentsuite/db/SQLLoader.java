@@ -16,7 +16,6 @@ import java.io.InputStreamReader;
  * - Use in NamedParameterStatement (:params)
  * - String replacement before use in one of above (:order)
  *
- * @author mattwright324
  */
 public enum SQLLoader {
     /* DDL SQL Scripts */
@@ -31,6 +30,9 @@ public enum SQLLoader {
     GROUP_RENAME("dml_rename_group.sql"),
     INSERT_REPLACE_VIDEOS("dml_insert_replace_videos.sql"),
     INSERT_IGNORE_COMMENTS("dml_insert_ignore_comments.sql"),
+    INSERT_IGNORE_MODERATED_COMMENTS("dml_insert_ignore_moderated_comments.sql"),
+    DELETE_MODERATED_COMMENT("dml_delete_moderated_comment.sql"),
+    DELETE_COMMENT("dml_delete_comment.sql"),
     INSERT_IGNORE_CHANNELS("dml_insert_ignore_channels.sql"),
     INSERT_IGNORE_GITEM_VIDEO("dml_insert_ignore_gitem_video.sql"),
     DELETE_GROUP("dml_delete_group.sql"),
@@ -48,6 +50,7 @@ public enum SQLLoader {
     GET_GROUPITEMS("dql_get_groupitems.sql"),
     GET_ALL_COMMENT_IDS_BY_GROUP("dql_get_all_comment_ids_by_group.sql"),
     DOES_COMMENT_EXIST("dql_does_comment_exist.sql"),
+    DOES_MODERATED_COMMENT_EXIST("dql_does_moderated_comment_exist.sql"),
     DOES_VIDEO_EXIST("dql_does_video_exist.sql"),
     DOES_CHANNEL_EXIST("dql_does_channel_exist.sql"),
     GET_ALL_VIDEO_IDS_BY_GROUPITEM("dql_get_video_ids_by_groupitem.sql"),
@@ -72,6 +75,7 @@ public enum SQLLoader {
     GET_GROUP_DISABLED_VIDEOS("dql_get_group_disabled_videos.sql"),
     GET_VIDEO_STATS("dql_get_video_stats.sql"),
     GET_COMMENT_STATS("dql_get_comment_stats.sql"),
+    GET_MODERATED_COMMENT_STATS("dql_get_moderated_comment_stats.sql"),
     GET_UNIQUE_VIEWERS_BY_GROUP("dql_get_unique_viewers_by_group.sql"),
     ;
 

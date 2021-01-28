@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Structure to make managing a group of threads running the same task in an ExecutorService easier.
  *
- * @author mattwright324
  */
 public class ExecutorGroup {
 

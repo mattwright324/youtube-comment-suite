@@ -4,9 +4,6 @@ import com.google.api.services.youtube.model.Channel;
 import com.google.api.services.youtube.model.Comment;
 import org.apache.commons.text.StringEscapeUtils;
 
-/**
- * @author mattwright324
- */
 public class YouTubeChannel extends YouTubeObject {
 
     /**

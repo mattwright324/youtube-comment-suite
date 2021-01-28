@@ -3,10 +3,11 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.CommentQuery;
+import io.mattw.youtube.commentsuite.util.Threads;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
@@ -36,7 +37,6 @@ import static javafx.application.Platform.runLater;
  * videoId2-comments.json
  * ...
  *
- * @author mattwright324
  * @see SearchComments
  */
 public class SCExportModal extends VBox implements Cleanable, ImageCache {
@@ -82,7 +82,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
     public SCExportModal() {
         logger.debug("Initialize SCExportModal");
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SCExportModal.fxml"));
         loader.setController(this);
@@ -155,10 +155,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                     final double progress = exportProducer.getTotalProcessed().get() / (exportProducer.getTotalAccepted().get() * 1d);
                     runLater(() -> exportProgress.setProgress(progress));
 
-                    try {
-                        Thread.sleep(100);
-                    } catch (Exception ignored) {
-                    }
+                    Threads.awaitMillis(100);
                 }
 
                 if (!exportProducer.isHardShutdown()) {

@@ -16,9 +16,6 @@ import java.io.IOException;
 
 import static javafx.application.Platform.runLater;
 
-/**
- * @author mattwright324
- */
 public class MGMVGroupItemView extends HBox {
 
     private GroupItem groupItem;
@@ -30,7 +27,7 @@ public class MGMVGroupItemView extends HBox {
 
     private BrowserUtil browserUtil = new BrowserUtil();
 
-    public MGMVGroupItemView(GroupItem groupItem) {
+    public MGMVGroupItemView(final GroupItem groupItem) {
         this.groupItem = groupItem;
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVGroupItemView.fxml"));

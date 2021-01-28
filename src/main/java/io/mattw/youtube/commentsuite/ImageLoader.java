@@ -4,9 +4,6 @@ import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- * @author mattwright324
- */
 public enum ImageLoader {
     ANGLE_DOUBLE_LEFT("angle-double-left.png"),
     ANGLE_DOUBLE_RIGHT("angle-double-right.png"),
@@ -45,7 +42,7 @@ public enum ImageLoader {
 
     private final Logger logger = LogManager.getLogger();
 
-    private String basePath = "/io/mattw/youtube/commentsuite/img";
+    private final String basePath = "/io/mattw/youtube/commentsuite/img";
     private Image image;
 
     ImageLoader(String fileName) {

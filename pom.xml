@@ -44,7 +44,7 @@
                                 <manifest>
                                     <addClasspath>true</addClasspath>
                                     <classpathPrefix>lib/</classpathPrefix>
-                                    <mainClass>io.mattw.youtube.commentsuite.FXMLSuite</mainClass>
+                                    <mainClass>io.mattw.youtube.commentsuite.CommentSuite</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>

@@ -23,7 +23,6 @@ import static javafx.application.Platform.runLater;
 /**
  * Controls the header: switching content and opening the settings view.
  *
- * @author mattwright324
  */
 public class Main implements Initializable {
 

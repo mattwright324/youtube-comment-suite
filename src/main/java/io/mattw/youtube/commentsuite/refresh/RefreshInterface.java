@@ -9,13 +9,10 @@ import javafx.collections.ObservableList;
 /**
  * Common interface for group refreshing.
  *
- * @author mattwright324
  */
 public interface RefreshInterface {
 
     void run();
-
-    void appendError(String error);
 
     void hardShutdown();
 
@@ -30,6 +27,10 @@ public interface RefreshInterface {
     LongProperty newCommentsProperty();
 
     LongProperty totalCommentsProperty();
+
+    LongProperty newModeratedProperty();
+
+    LongProperty totalModeratedProperty();
 
     LongProperty newViewersProperty();
 

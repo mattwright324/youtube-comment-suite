@@ -1,7 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.eventbus.Subscribe;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
@@ -30,7 +30,6 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to add selected items (Videos, Channels, Playlists) from the Search YouTube section to an
  * already existing group or create an entirely new group to add the selection to.
  *
- * @author mattwright324
  * @see SearchYouTube
  */
 public class SYAddToGroupModal extends VBox implements Cleanable {
@@ -45,18 +44,18 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
     @FXML private Button btnClose;
     @FXML private Button btnSubmit;
 
-    private CommentDatabase database;
+    private final CommentDatabase database;
 
-    private ListView<SearchYouTubeListItem> listView;
+    private final ListView<SearchYouTubeListItem> listView;
 
-    public SYAddToGroupModal(ListView<SearchYouTubeListItem> listView) {
+    public SYAddToGroupModal(final ListView<SearchYouTubeListItem> listView) {
         this.listView = listView;
 
         logger.debug("Initialize SYAddToGroupModal");
 
-        FXMLSuite.getEventBus().register(this);
+        CommentSuite.getEventBus().register(this);
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SYAddToGroupModal.fxml"));
         loader.setController(this);
@@ -109,7 +108,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
         }
     }
 
-    private void submitItemsToGroup(List<SearchYouTubeListItem> items, Group group) {
+    private void submitItemsToGroup(final List<SearchYouTubeListItem> items, final Group group) {
         List<GroupItem> list = items.stream()
                 .map(SearchYouTubeListItem::getYoutubeURL)
                 .map(link -> {
@@ -151,7 +150,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
     }
 
-    void setError(String error) {
+    void setError(final String error) {
         lblWarn.setText(error);
         lblWarn.setVisible(true);
         lblWarn.setManaged(true);

@@ -5,7 +5,7 @@ public class StringTuple {
     private final String first;
     private final String second;
 
-    public StringTuple(String first, String second) {
+    public StringTuple(final String first, final String second) {
         this.first = first;
         this.second = second;
     }

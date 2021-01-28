@@ -6,7 +6,6 @@ package io.mattw.youtube.commentsuite.fxml;
  * <p>
  * Most applicable to modals.
  *
- * @author mattwright324
  */
 public interface Cleanable {
 

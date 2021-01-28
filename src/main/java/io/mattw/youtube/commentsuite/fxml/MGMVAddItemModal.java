@@ -2,7 +2,7 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.ConfigFile;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
@@ -27,7 +27,6 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to add a GroupItem to the Group of the ManageGroupsManager with a YouTube link.
  * The YouTube link can be any of a video, channel, or playlist and should match the example formats to be accepted.
  *
- * @author mattwright324
  * @see GroupItem#GroupItem(String)
  * @see ManageGroupsManager
  */
@@ -35,32 +34,27 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private CommentDatabase database;
-
     @FXML private Label alertError;
-
     @FXML private TabPane tabPane;
     @FXML private Tab tabSingular, tabBulk;
     @FXML private CheckBox fastGroupAdd;
-
     @FXML private VBox singularPane;
     @FXML private TextField link;
     @FXML private Label link1, link2, link3, link4, link5;
-
     @FXML private VBox bulkPane;
     @FXML private TextArea multiLink;
-
     @FXML private Button btnClose, btnSubmit;
 
-    private Group group;
+    private final Group group;
 
-    private ConfigFile<ConfigData> configFile = FXMLSuite.getConfig();
-    private ConfigData configData = configFile.getDataObject();
+    private final ConfigFile<ConfigData> configFile = CommentSuite.getConfig();
+    private final ConfigData configData = configFile.getDataObject();
+    private final CommentDatabase database;
 
-    public MGMVAddItemModal(Group group) {
+    public MGMVAddItemModal(final Group group) {
         this.group = group;
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVAddItemModal.fxml"));
         loader.setController(this);

@@ -3,7 +3,7 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.ChannelListResponse;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
@@ -30,7 +30,7 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
     private final YouTube youTube;
 
     public ChannelProducer() {
-        this.youTube = FXMLSuite.getYouTube();
+        this.youTube = CommentSuite.getYouTube();
     }
 
     @Override
@@ -82,7 +82,7 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
         try {
             final ChannelListResponse cl = youTube.channels()
                     .list("snippet")
-                    .setKey(FXMLSuite.getYouTubeApiKey())
+                    .setKey(CommentSuite.getYouTubeApiKey())
                     .setId(String.join(",", channelIds))
                     .setMaxResults(50L)
                     .execute();

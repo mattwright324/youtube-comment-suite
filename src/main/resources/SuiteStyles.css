@@ -161,8 +161,15 @@
     -fx-cursor: hand;
     -fx-background-color: linear-gradient(to left, lightgray, transparent);
 }
+
 .reply {
     -fx-background-color: linear-gradient(to right, rgba(127,255,127,0.2), transparent);
+}
+.heldForReview {
+    -fx-background-color: linear-gradient(to right, rgba(255, 255, 127, 0.2), transparent);
+}
+.likelySpam {
+    -fx-background-color: linear-gradient(to right, rgba(127,127,127,0.2), transparent);
 }
 
 .commentDate {
@@ -170,6 +177,11 @@
     -fx-background-color: derive(rgba(255,255,255,0.5), 70%);
     -fx-background-radius: 5;
 }
+.tag {
+     -fx-padding: 0 8 0 8;
+     -fx-background-color: derive(rgba(255,255,255,0.5), 70%);
+     -fx-background-radius: 5;
+ }
 
 .commentLikes {
     -fx-padding: 0 8 0 8;

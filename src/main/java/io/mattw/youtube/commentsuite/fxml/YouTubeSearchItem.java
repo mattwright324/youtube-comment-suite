@@ -1,11 +1,8 @@
-package io.mattw.youtube.commentsuite;
+package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.model.SearchResult;
 import io.mattw.youtube.commentsuite.db.YouTubeObject;
 
-/**
- * @author mattwright324
- */
 public class YouTubeSearchItem extends YouTubeObject {
 
     public YouTubeSearchItem(SearchResult searchResult) {
