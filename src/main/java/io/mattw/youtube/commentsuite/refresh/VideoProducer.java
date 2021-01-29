@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.HELD_FOR_REVIEW;
-import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.LIKELY_SPAM;
 
 public class VideoProducer extends ConsumerMultiProducer<String> {
 
@@ -129,11 +128,6 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
         if (configData.isGrabHeldForReview()) {
             logger.debug("Sending review?");
             sendCollection(videosMine, YouTubeVideo.class, HELD_FOR_REVIEW.name());
-        }
-
-        if (configData.isGrabLikelySpam()) {
-            logger.debug("Sending spam?");
-            sendCollection(videosMine, YouTubeVideo.class, LIKELY_SPAM.name());
         }
     }
 

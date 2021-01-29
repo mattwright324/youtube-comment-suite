@@ -168,9 +168,6 @@
 .heldForReview {
     -fx-background-color: linear-gradient(to right, rgba(255, 255, 127, 0.2), transparent);
 }
-.likelySpam {
-    -fx-background-color: linear-gradient(to right, rgba(127,127,127,0.2), transparent);
-}
 
 .commentDate {
     -fx-padding: 0 8 0 8;

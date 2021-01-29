@@ -36,11 +36,6 @@
                 <ComboBox fx:id="refreshReviewPages" />
                 <Label>page(s)</Label>
             </HBox>
-            <HBox fx:id="spamOption" alignment="CENTER_LEFT" spacing="10">
-                <Label>Grab spam comments up to</Label>
-                <ComboBox fx:id="refreshSpamPages" />
-                <Label>page(s)</Label>
-            </HBox>
         </VBox>
         <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"
                     alignment="CENTER"

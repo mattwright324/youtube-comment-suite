@@ -16,7 +16,6 @@ public enum RefreshStyle {
     private RefreshCommentOrder commentOrder;
     private RefreshCommentPages replyPages;
     private RefreshCommentPages reviewPages;
-    private RefreshCommentPages spamPages;
 
     RefreshStyle(String displayText) {
         this.displayText = displayText;
@@ -52,10 +51,6 @@ public enum RefreshStyle {
 
     public RefreshCommentPages getReviewPages() {
         return reviewPages;
-    }
-
-    public RefreshCommentPages getSpamPages() {
-        return spamPages;
     }
 
     public boolean matches(RefreshTimeframe timeframe, RefreshCommentPages commentPages, RefreshCommentOrder commentOrder, RefreshCommentPages replyPages) {

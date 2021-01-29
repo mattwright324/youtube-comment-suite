@@ -60,7 +60,7 @@ public class Settings implements Initializable {
     @FXML private TextField youtubeApiKey;
     @FXML private Button btnAddAccount;
     @FXML private ListView<SettingsAccountItemView> accountList;
-    @FXML private CheckBox grabHeldForReview, grabLikelySpam;
+    @FXML private CheckBox grabHeldForReview;
 
     @FXML private ProgressIndicator cleanProgress;
     @FXML private Button btnClean;
@@ -90,7 +90,6 @@ public class Settings implements Initializable {
         youtubeApiKey.setText(configData.getYoutubeApiKey());
         filterDuplicatesOnCopy.setSelected(configData.isFilterDuplicatesOnCopy());
         grabHeldForReview.setSelected(configData.isGrabHeldForReview());
-        grabLikelySpam.setSelected(configData.isGrabLikelySpam());
 
         CookieHandler.setDefault(new CookieManager());
 
@@ -140,7 +139,6 @@ public class Settings implements Initializable {
             data.setCustomApiKey(customKey.isSelected());
             data.setFilterDuplicatesOnCopy(filterDuplicatesOnCopy.isSelected());
             data.setGrabHeldForReview(grabHeldForReview.isSelected());
-            data.setGrabLikelySpam(grabLikelySpam.isSelected());
             data.setPrefixReplies(prefixReply.isSelected());
             data.setYoutubeApiKey(youtubeApiKey.getText());
 

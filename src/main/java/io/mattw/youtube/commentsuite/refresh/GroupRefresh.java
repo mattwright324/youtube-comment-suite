@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.HELD_FOR_REVIEW;
-import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.LIKELY_SPAM;
 import static javafx.application.Platform.runLater;
 
 public class GroupRefresh extends Thread implements RefreshInterface {
@@ -54,7 +53,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     private final VideoIdProducer videoIdProducer;
     private final UniqueVideoIdProducer uniqueVideoIdProducer;
     private final VideoProducer videoProducer;
-    private final CommentThreadProducer commentThreadProducer, reviewThreadProducer, spamThreadProducer;
+    private final CommentThreadProducer commentThreadProducer, reviewThreadProducer;
     private final ReplyProducer replyProducer;
     private final ChannelProducer channelProducer;
     private final CommentConsumer commentConsumer, moderatedCommentConsumer;
@@ -73,7 +72,6 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         this.videoProducer = new VideoProducer(options);
         this.commentThreadProducer = new CommentThreadProducer(options, options.getCommentPages());
         this.reviewThreadProducer = new CommentThreadProducer(options, options.getReviewPages(), HELD_FOR_REVIEW);
-        this.spamThreadProducer = new CommentThreadProducer(options, options.getReplyPages(), LIKELY_SPAM);
         this.replyProducer = new ReplyProducer(options);
         this.channelProducer = new ChannelProducer();
         this.commentConsumer = new CommentConsumer(false);
@@ -96,7 +94,6 @@ public class GroupRefresh extends Thread implements RefreshInterface {
 
         videoProducer.produceTo(commentThreadProducer, YouTubeVideo.class);
         videoProducer.produceTo(reviewThreadProducer, YouTubeVideo.class, HELD_FOR_REVIEW.name());
-        videoProducer.produceTo(spamThreadProducer, YouTubeVideo.class, LIKELY_SPAM.name());
         videoProducer.setMessageFunc(this::postMessage);
 
         commentThreadProducer.produceTo(commentConsumer, YouTubeComment.class);
@@ -108,12 +105,6 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         reviewThreadProducer.produceTo(channelProducer, String.class);
         //reviewThreadProducer.produceTo(replyProducer, StringTuple.class);
         reviewThreadProducer.setMessageFunc(this::postMessage);
-
-        spamThreadProducer.produceTo(moderatedCommentConsumer, YouTubeComment.class);
-        spamThreadProducer.produceTo(channelProducer, String.class);
-        //spamThreadProducer.produceTo(replyProducer, StringTuple.class);
-        spamThreadProducer.setMessageFunc(this::postMessage);
-        spamThreadProducer.setStartProduceOnFirstAccept(true);
 
         replyProducer.produceTo(commentConsumer, YouTubeComment.class);
         replyProducer.produceTo(channelConsumer, YouTubeChannel.class);
@@ -130,7 +121,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         commentConsumer.setStartProduceOnFirstAccept(true);
         commentConsumer.setMessageFunc(this::postMessage);
 
-        moderatedCommentConsumer.keepAliveWith(reviewThreadProducer, spamThreadProducer);
+        moderatedCommentConsumer.keepAliveWith(reviewThreadProducer);
         moderatedCommentConsumer.setStartProduceOnFirstAccept(true);
         moderatedCommentConsumer.setMessageFunc(this::postMessage);
 
@@ -160,10 +151,6 @@ public class GroupRefresh extends Thread implements RefreshInterface {
 
             if (!reviewThreadProducer.getBlockingQueue().isEmpty()) {
                 reviewThreadProducer.startProducing();
-            }
-
-            if (!spamThreadProducer.getBlockingQueue().isEmpty()) {
-                spamThreadProducer.startProducing();
             }
 
             await(commentThreadProducer, "Await commentThreadProducer over");

@@ -61,10 +61,10 @@ public class MGMVRefreshModal extends HBox {
     @FXML private VBox optionsPane;
     @FXML private ComboBox<RefreshStyle> refreshStyle;
     @FXML private ComboBox<RefreshTimeframe> refreshTimeframe;
-    @FXML private ComboBox<RefreshCommentPages> refreshCommentPages, refreshReviewPages, refreshSpamPages;
+    @FXML private ComboBox<RefreshCommentPages> refreshCommentPages, refreshReviewPages;
     @FXML private ComboBox<RefreshCommentOrder> refreshCommentOrder;
     @FXML private ComboBox<RefreshCommentPages> refreshReplyPages;
-    @FXML private HBox reviewOption, spamOption;
+    @FXML private HBox reviewOption;
 
     @FXML private HBox warningsPane;
     @FXML private Label warnings;
@@ -108,11 +108,9 @@ public class MGMVRefreshModal extends HBox {
             refreshTimeframe.setItems(FXCollections.observableArrayList(RefreshTimeframe.values()));
             refreshCommentPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
             refreshReviewPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
-            refreshSpamPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
             refreshCommentOrder.setItems(FXCollections.observableArrayList(RefreshCommentOrder.values()));
             refreshReplyPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
             refreshReviewPages.setValue(RefreshCommentPages.ALL);
-            refreshSpamPages.setValue(RefreshCommentPages.ALL);
 
             refreshStyle.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
                 logger.debug("Style {}", nv);
@@ -132,7 +130,6 @@ public class MGMVRefreshModal extends HBox {
                 refreshTimeframe.setValue(refreshOptions.getTimeframe());
                 refreshCommentPages.setValue(refreshOptions.getCommentPages());
                 refreshReviewPages.setValue(refreshOptions.getReviewPages());
-                refreshSpamPages.setValue(refreshOptions.getSpamPages());
                 refreshCommentOrder.setValue(refreshOptions.getCommentOrder());
                 refreshReplyPages.setValue(refreshOptions.getReplyPages());
             } else {
@@ -197,7 +194,6 @@ public class MGMVRefreshModal extends HBox {
                     options.setTimeframe(refreshTimeframe.getValue());
                     options.setCommentPages(refreshCommentPages.getValue());
                     options.setReviewPages(refreshReviewPages.getValue());
-                    options.setSpamPages(refreshSpamPages.getValue());
                     options.setReplyPages(refreshReplyPages.getValue());
 
                     configData.setRefreshOptions(options);
@@ -210,7 +206,7 @@ public class MGMVRefreshModal extends HBox {
                         createGridRow(STAT_ELAPSED, rowIndex++, "Elapsed time");
                         createGridRowNewTotal(STAT_VIDEO, rowIndex++,"New videos");
                         createGridRowNewTotal(STAT_COMMENT, rowIndex++,"New comments");
-                        if (configData.isGrabHeldForReview() || configData.isGrabLikelySpam()) {
+                        if (configData.isGrabHeldForReview()) {
                             createGridRowNewTotal(STAT_MODERATED, rowIndex++,"New moderated");
                         }
                         createGridRowNewTotal(STAT_VIEWER, rowIndex++,"New viewers");
@@ -327,8 +323,6 @@ public class MGMVRefreshModal extends HBox {
             }
             reviewOption.setVisible(configData.isGrabHeldForReview());
             reviewOption.setManaged(configData.isGrabHeldForReview());
-            spamOption.setVisible(configData.isGrabLikelySpam());
-            spamOption.setManaged(configData.isGrabLikelySpam());
             refreshStatsPane.getChildren().clear();
             endStatus.setManaged(false);
             endStatus.setVisible(false);

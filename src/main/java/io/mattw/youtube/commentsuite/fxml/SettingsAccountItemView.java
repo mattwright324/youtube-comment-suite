@@ -1,6 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
 import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,6 +24,7 @@ public class SettingsAccountItemView extends HBox implements ImageCache {
 
     private final ConfigFile<ConfigData> configFile;
     private final ConfigData configData;
+    private final OAuth2Manager oAuth2Manager;
 
     private final YouTubeAccount account;
 
@@ -31,6 +33,7 @@ public class SettingsAccountItemView extends HBox implements ImageCache {
 
         configFile = CommentSuite.getConfig();
         configData = configFile.getDataObject();
+        oAuth2Manager = CommentSuite.getOauth2Manager();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SettingsAccountItemView.fxml"));
         loader.setController(this);
@@ -42,7 +45,14 @@ public class SettingsAccountItemView extends HBox implements ImageCache {
             accountThumb.setImage(ImageCache.findOrGetImage(account));
             accountName.setText(account.getUsername());
 
-            btnRemove.setOnAction(ae -> configData.removeAccount(account));
+            btnRemove.setOnAction(ae -> new Thread(() -> {
+                try {
+                    oAuth2Manager.revokeAccessTo(account);
+                    configData.removeAccount(account);
+                } catch (IOException e) {
+                    logger.error("Problem while remove account");
+                }
+            }).start());
         } catch (IOException e) {
             logger.error(e);
         }

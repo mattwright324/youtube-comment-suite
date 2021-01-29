@@ -12,7 +12,6 @@ public class RefreshOptions {
     private RefreshCommentOrder commentOrder = style.getCommentOrder();
     private RefreshCommentPages replyPages = style.getReplyPages();
     private RefreshCommentPages reviewPages = RefreshCommentPages.ALL;
-    private RefreshCommentPages spamPages = RefreshCommentPages.ALL;
 
     public RefreshStyle getStyle() {
         return style;
@@ -60,14 +59,6 @@ public class RefreshOptions {
 
     public void setReviewPages(RefreshCommentPages reviewPages) {
         this.reviewPages = reviewPages;
-    }
-
-    public RefreshCommentPages getSpamPages() {
-        return spamPages;
-    }
-
-    public void setSpamPages(RefreshCommentPages spamPages) {
-        this.spamPages = spamPages;
     }
 
     @Override

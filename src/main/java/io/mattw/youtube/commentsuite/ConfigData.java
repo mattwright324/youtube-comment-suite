@@ -21,7 +21,6 @@ public class ConfigData implements Serializable {
     private boolean fastGroupAdd = false;
     private boolean filterDuplicatesOnCopy = true;
     private boolean grabHeldForReview = false;
-    private boolean grabLikelySpam = false;
     private boolean prefixReplies = true;
     private RefreshOptions refreshOptions = new RefreshOptions();
     private String youtubeApiKey = DEFAULT_API_KEY;
@@ -80,14 +79,6 @@ public class ConfigData implements Serializable {
 
     public void setGrabHeldForReview(boolean grabHeldForReview) {
         this.grabHeldForReview = grabHeldForReview;
-    }
-
-    public boolean isGrabLikelySpam() {
-        return grabLikelySpam;
-    }
-
-    public void setGrabLikelySpam(boolean grabLikelySpam) {
-        this.grabLikelySpam = grabLikelySpam;
     }
 
     public boolean isPrefixReplies() {

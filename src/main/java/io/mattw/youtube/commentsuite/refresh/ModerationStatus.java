@@ -6,8 +6,7 @@ import java.util.Map;
 
 public enum ModerationStatus {
     PUBLISHED("published", "snippet"),
-    HELD_FOR_REVIEW("heldForReview", "snippet,replies"),
-    LIKELY_SPAM("likelySpam", "snippet,replies");
+    HELD_FOR_REVIEW("heldForReview", "snippet,replies");
 
     private static final Map<String, ModerationStatus> lookup = EnumUtils.getEnumMap(ModerationStatus.class);
 

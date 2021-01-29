@@ -29,6 +29,7 @@ public class OAuth2Manager {
     private static final Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.FINAL).create();
 
     private static final String OAUTH2_TOKENS_URL = "https://accounts.google.com/o/oauth2/token";
+    private static final String OAUTH2_REVOKE_URL = "https://accounts.google.com/o/oauth2/revoke";
     private static final String CLIENT_ID = "972416191049-htqcmg31u2t7hbd1ncen2e2jsg68cnqn.apps.googleusercontent.com";
     private static final String CLIENT_SECRET = "QuTdoA-KArupKMWwDrrxOcoS";
     private static final String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
@@ -74,6 +75,20 @@ public class OAuth2Manager {
         configFile.save();
 
         return account;
+    }
+
+    /**
+     * Revoke access to this account
+     */
+    public void revokeAccessTo(final YouTubeAccount account) throws IOException {
+        logger.debug("Revoking access to account [name={}]", account.getUsername());
+
+        final Document document = Jsoup.connect(OAUTH2_REVOKE_URL)
+                .ignoreContentType(true)
+                .ignoreHttpErrors(true)
+                .data("token", account.getTokens().getRefreshToken())
+                .get();
+        logger.debug(document.text());
     }
 
     private Connection getOauth2Connection() {
