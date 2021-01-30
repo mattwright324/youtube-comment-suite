@@ -97,7 +97,7 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
         database.insertVideos(videos);
 
         final RefreshTimeframe timeframe = options.getTimeframe();
-        if (timeframe == RefreshTimeframe.NONE || options.getCommentPages() == RefreshCommentPages.NONE) {
+        if (timeframe == RefreshTimeframe.NONE) {
             timeframeSkipped.addAndGet(videos.size());
             videos.clear();
         } else if (timeframe != RefreshTimeframe.ALL) {

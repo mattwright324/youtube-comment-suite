@@ -86,7 +86,7 @@ public class OAuth2Manager {
         final Document document = Jsoup.connect(OAUTH2_REVOKE_URL)
                 .ignoreContentType(true)
                 .ignoreHttpErrors(true)
-                .data("token", account.getTokens().getRefreshToken())
+                .data("token", account.getTokens().getAccessToken())
                 .get();
         logger.debug(document.text());
     }

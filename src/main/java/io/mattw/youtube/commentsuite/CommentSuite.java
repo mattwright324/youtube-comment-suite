@@ -119,6 +119,11 @@ public class CommentSuite extends Application {
          */
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 
+        /*
+         * https://stackoverflow.com/a/24419312/2650847
+         */
+        System.setProperty("prism.lcdtext", "false");
+
         launch(args);
     }
 }
