@@ -130,11 +130,9 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
                         pageToken = response.getNextPageToken();
 
-                        logger.debug(response);
-
                         try {
                             // Maybe comments were re-enabled if we got a 403 in the past.
-                            database.updateVideoHttpCode(video.getId(), 200);
+                            database.videos().updateHttpCode(video.getId(), 200);
                         } catch (SQLException sqle) {
                             logger.error("Failed to update video http response code", sqle);
                         }
@@ -191,7 +189,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         final GoogleJsonResponseException ge = (GoogleJsonResponseException) e;
 
                         try {
-                            database.updateVideoHttpCode(video.getId(), ge.getStatusCode());
+                            database.videos().updateHttpCode(video.getId(), ge.getStatusCode());
                         } catch (SQLException sqle) {
                             logger.error("Failed to update video http response code", sqle);
                         }

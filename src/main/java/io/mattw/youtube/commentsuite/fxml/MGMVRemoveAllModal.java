@@ -65,7 +65,7 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
                                 .map(MGMVGroupItemView::getGroupItem)
                                 .collect(Collectors.toList());
 
-                        database.deleteGroupItemLinks(group, items);
+                        database.groupItems().deleteAssociations(group, items);
                         database.cleanUp();
                         runLater(() -> {
                             btnClose.fire();

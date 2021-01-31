@@ -1,1 +1,0 @@
-SELECT 1 FROM comments_moderated WHERE comment_id = ?;

@@ -190,9 +190,9 @@ public class CommentQuery implements Serializable, Exportable {
 
             while (resultSet.next()) {
                 if (index >= indexStart && index < indexEnd) {
-                    database.checkChannel(resultSet);
+                    database.channels().check(resultSet.getString("channel_id"));
 
-                    comments.add(database.resultSetToComment(resultSet));
+                    comments.add(database.comments().to(resultSet));
                 }
 
                 index++;
@@ -221,9 +221,9 @@ public class CommentQuery implements Serializable, Exportable {
                     .collect(Collectors.toList()));
         } else {
             if (groupItem.isPresent()) {
-                items.addAll(database.getVideoIds(groupItem.get()));
+                items.addAll(database.videos().idsByGroupItem(groupItem.get()));
             } else {
-                items.addAll(database.getVideoIds(group));
+                items.addAll(database.videos().idsByGroup(group));
             }
         }
 

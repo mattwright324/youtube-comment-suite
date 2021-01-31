@@ -151,7 +151,7 @@ public class OAuth2Manager {
 
             try {
                 final YouTubeChannel channel = new YouTubeChannel(channelItem);
-                database.insertChannels(Collections.singletonList(channel));
+                database.channels().insert(channel);
                 database.commit();
             } catch (SQLException e) {
                 logger.error("Unable to insert account channel into database.", e);

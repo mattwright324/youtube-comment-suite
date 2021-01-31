@@ -92,7 +92,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
                         if (!list.isEmpty()) {
                             try {
-                                database.insertGroupItems(this.group, list);
+                                database.groupItems().insertAll(this.group, list);
                                 database.commit();
                                 runLater(() -> {
                                     btnClose.fire();
@@ -137,7 +137,7 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
 
                         if (!list.isEmpty()) {
                             try {
-                                database.insertGroupItems(this.group, list);
+                                database.groupItems().insertAll(this.group, list);
                                 database.commit();
                                 runLater(() -> {
                                     btnClose.fire();

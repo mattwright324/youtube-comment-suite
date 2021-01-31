@@ -38,6 +38,25 @@ public class CommentSuite extends Application {
     private static String youTubeApiKey;
     private static OAuth2Manager oauth2Manager;
 
+    public static void main(String[] args) {
+        logger.debug("Starting Application");
+
+        /*
+         * Setting this system property is a fix for the JavaFX Webview behaving improperly.
+         * The 'Tap Yes' authentication when signing in from {@link mattw.youtube.commentsuite.fxml.Settings)
+         * would do nothing and the icon would flicker when not set, requiring the user to use SMS
+         * authentication instead.
+         */
+        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+
+        /*
+         * https://stackoverflow.com/a/24419312/2650847
+         */
+        System.setProperty("prism.lcdtext", "false");
+
+        launch(args);
+    }
+
     public void start(final Stage stage) {
         try {
             youTube = new YouTube.Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), null)
@@ -76,6 +95,10 @@ public class CommentSuite extends Application {
         }
     }
 
+    public static void postEvent(Object event) {
+        eventBus.post(event);
+    }
+
     public static ConfigFile<ConfigData> getConfig() {
         return config;
     }
@@ -108,22 +131,4 @@ public class CommentSuite extends Application {
         youTubeApiKey = apiKey;
     }
 
-    public static void main(String[] args) {
-        logger.debug("Starting Application");
-
-        /*
-         * Setting this system property is a fix for the JavaFX Webview behaving improperly.
-         * The 'Tap Yes' authentication when signing in from {@link mattw.youtube.commentsuite.fxml.Settings)
-         * would do nothing and the icon would flicker when not set, requiring the user to use SMS
-         * authentication instead.
-         */
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-
-        /*
-         * https://stackoverflow.com/a/24419312/2650847
-         */
-        System.setProperty("prism.lcdtext", "false");
-
-        launch(args);
-    }
 }

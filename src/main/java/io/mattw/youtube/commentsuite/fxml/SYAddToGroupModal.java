@@ -88,7 +88,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
                     }
                 } else if (addToNew.isSelected()) {
                     try {
-                        Group group = database.createGroup(groupName.getText());
+                        Group group = database.groups().create(groupName.getText());
 
                         if (group != null) {
                             submitItemsToGroup(items, group);
@@ -127,7 +127,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
         if (!list.isEmpty()) {
             try {
-                database.insertGroupItems(group, list);
+                database.groupItems().insertAll(group, list);
                 database.commit();
 
                 logger.debug("GroupItems were successfully added to group");
@@ -203,7 +203,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
     private void rebuildGroupSelect() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.groups().getAllGroups());
         comboGroupSelect.setItems(FXCollections.emptyObservableList());
         comboGroupSelect.setItems(groups);
 

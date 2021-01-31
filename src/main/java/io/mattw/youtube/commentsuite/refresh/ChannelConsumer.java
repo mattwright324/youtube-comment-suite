@@ -79,7 +79,7 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
             concurrentNewChannelSet.addAll(notYetExisting);
             concurrentTotalChannelSet.addAll(channelIds);
 
-            database.insertChannels(channels);
+            database.channels().insertAll(channels);
             channels.clear();
         } catch (SQLException e) {
             logger.error("Error on channel submit", e);

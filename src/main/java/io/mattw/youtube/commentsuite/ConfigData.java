@@ -9,6 +9,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.mattw.youtube.commentsuite.CommentSuite.*;
+
 public class ConfigData implements Serializable {
 
     public static final transient String DEFAULT_API_KEY = "AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ";
@@ -108,13 +110,13 @@ public class ConfigData implements Serializable {
     public void addAccount(final YouTubeAccount account) {
         if (accounts.stream().noneMatch(ac -> ac.getChannelId().equals(account.getChannelId()))) {
             accounts.add(account);
-            CommentSuite.getEventBus().post(new AccountAddEvent(account));
+            postEvent(new AccountAddEvent(account));
         }
     }
 
     public void removeAccount(final YouTubeAccount account) {
         if (accounts.removeIf(acc -> acc.getChannelId() != null && acc.getChannelId().equals(account.getChannelId()))) {
-            CommentSuite.getEventBus().post(new AccountDeleteEvent(account));
+            postEvent(new AccountDeleteEvent(account));
         }
     }
 

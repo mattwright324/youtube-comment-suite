@@ -1,21 +1,12 @@
 package io.mattw.youtube.commentsuite.db;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.eventbus.EventBus;
-import io.mattw.youtube.commentsuite.CommentSuite;
-import io.mattw.youtube.commentsuite.events.*;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.sqlite.SQLiteConnection;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static io.mattw.youtube.commentsuite.db.SQLLoader.*;
 
@@ -23,21 +14,21 @@ public class CommentDatabase implements Closeable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private static final Group DEFAULT_GROUP = new Group("28da132f5f5b48d881264d892aba790a", "Default");
-
-    private final ObservableList<Group> globalGroupList = FXCollections.observableArrayList();
-    private final List<Group> allGroups = new ArrayList<>();
     private final Connection sqlite;
-    private final Cache<String, YouTubeChannel> channelCache = CacheBuilder.newBuilder()
-            .expireAfterAccess(5, TimeUnit.MINUTES)
-            .build();
-    private final EventBus eventBus = CommentSuite.getEventBus();
+
+    private GroupsTable groups;
+    private GroupItemsTable groupItems;
+    private VideosTable videos;
+    private CommentsTable comments;
+    private ModeratedCommentsTable moderatedComments;
+    private ChannelsTable channels;
 
     /**
      * Default constructor for testing.
      */
-    protected CommentDatabase(final SQLiteConnection sqlite) {
+    public CommentDatabase(final Connection sqlite) {
         this.sqlite = sqlite;
+        this.init(sqlite);
     }
 
     /**
@@ -48,14 +39,49 @@ public class CommentDatabase implements Closeable {
      */
     public CommentDatabase(final String fileName) throws SQLException {
         logger.debug("Initialize Database [file={}]", fileName);
-        sqlite = DriverManager.getConnection(String.format("jdbc:sqlite:%s", fileName));
-        sqlite.setAutoCommit(false);
+
+        this.sqlite = DriverManager.getConnection(String.format("jdbc:sqlite:%s", fileName));
+        this.sqlite.setAutoCommit(false);
+
+        this.init(sqlite);
         this.create();
-        this.refreshAllGroups();
+        groups.refreshAllGroups();
     }
 
-    public ObservableList<Group> getGlobalGroupList() {
-        return globalGroupList;
+    private void init(final Connection connection) {
+        this.groups = new GroupsTable(connection, this);
+        this.groupItems = new GroupItemsTable(connection);
+        this.videos = new VideosTable(connection);
+        this.comments = new CommentsTable(connection, this);
+        this.moderatedComments = new ModeratedCommentsTable(connection, this);
+        this.channels = new ChannelsTable(connection);
+    }
+
+    public void create() throws SQLException {
+        logger.debug("Creating tables if not exists.");
+        try (Statement s = sqlite.createStatement()) {
+            s.executeUpdate(CREATE_DB.toString());
+        }
+        this.commit();
+    }
+
+    public void vacuum() throws SQLException {
+        logger.warn("Vacuuming database. This may take a long time.");
+        sqlite.setAutoCommit(true);
+        try (Statement s = sqlite.createStatement()) {
+            s.execute("VACUUM");
+        }
+        sqlite.setAutoCommit(false);
+    }
+
+    public void reset() throws SQLException {
+        logger.warn("Dropping all database contents. This cannot be undone.");
+        try (Statement s = sqlite.createStatement()) {
+            s.executeUpdate(RESET_DB.toString());
+        }
+        this.commit();
+        this.vacuum();
+        this.create();
     }
 
     @Override
@@ -76,33 +102,6 @@ public class CommentDatabase implements Closeable {
         sqlite.commit();
     }
 
-    protected void create() throws SQLException {
-        logger.debug("Creating tables if not exists.");
-        try (Statement s = sqlite.createStatement()) {
-            s.executeUpdate(CREATE_DB.toString());
-        }
-        this.commit();
-    }
-
-    public void reset() throws SQLException {
-        logger.warn("Dropping all database contents. This cannot be undone.");
-        try (Statement s = sqlite.createStatement()) {
-            s.executeUpdate(RESET_DB.toString());
-        }
-        this.commit();
-        this.vacuum();
-        this.create();
-    }
-
-    public void vacuum() throws SQLException {
-        logger.warn("Vacuuming database. This may take a long time.");
-        sqlite.setAutoCommit(true);
-        try (Statement s = sqlite.createStatement()) {
-            s.execute(VACUUM_DB.toString());
-        }
-        sqlite.setAutoCommit(false);
-    }
-
     public void cleanUp() throws SQLException {
         logger.warn("Cleaning database of unlinked content.");
         try (Statement s = sqlite.createStatement()) {
@@ -111,187 +110,69 @@ public class CommentDatabase implements Closeable {
         commit();
     }
 
-    /**
-     * Checks if the channel is cached and caches it if not.
-     */
-    void checkChannel(ResultSet rs) throws SQLException {
-        channelCache.put(rs.getString("channel_id"), resultSetToChannel(rs));
+    public GroupsTable groups() {
+        return groups;
     }
 
-    public List<Group> getAllGroups() {
-        return allGroups;
+    public GroupItemsTable groupItems() {
+        return groupItems;
     }
 
-    private void refreshAllGroups() {
-        allGroups.clear();
-        try (final Statement s = sqlite.createStatement();
-             final ResultSet rs = s.executeQuery(GET_ALL_GROUPS.toString())) {
-
-            while (rs.next()) {
-                final Group group = resultSetToGroup(rs);
-                allGroups.add(group);
-            }
-
-            if (allGroups.isEmpty()) {
-                logger.debug("Creating Default Group");
-                createGroup(DEFAULT_GROUP);
-            }
-        } catch (SQLException e) {
-            logger.error(e);
-        }
+    public VideosTable videos() {
+        return videos;
     }
 
-    private Group resultSetToGroup(ResultSet rs) throws SQLException {
-        return new Group(rs.getString("group_id"), rs.getString("group_name"));
+    public CommentsTable comments() {
+        return comments;
     }
 
-    private GroupItem resultSetToGroupItem(ResultSet rs) throws SQLException {
-        return new GroupItem(rs.getString("gitem_id"),
-                YType.values()[rs.getInt("type_id") + 1],
-                rs.getString("title"),
-                rs.getString("channel_title"),
-                rs.getString("thumb_url"),
-                rs.getLong("published"),
-                rs.getLong("last_checked"));
+    public ModeratedCommentsTable moderatedComments() {
+        return moderatedComments;
     }
 
-    private GroupItemVideo resultSetToGroupItemVideo(ResultSet rs) throws SQLException {
-        return new GroupItemVideo(rs.getString("gitem_id"), rs.getString("video_id"));
-    }
-
-    private YouTubeChannel resultSetToChannel(ResultSet rs) throws SQLException {
-        return new YouTubeChannel(rs.getString("channel_id"),
-                rs.getString("channel_name"),
-                rs.getString("channel_profile_url"));
-    }
-
-    public YouTubeComment resultSetToComment(ResultSet rs) throws SQLException {
-        return new YouTubeComment(rs.getString("comment_id"),
-                rs.getString("comment_text"),
-                rs.getLong("comment_date"),
-                rs.getString("video_id"),
-                rs.getString("channel_id"),
-                rs.getInt("comment_likes"),
-                rs.getInt("reply_count"),
-                rs.getBoolean("is_reply"),
-                rs.getString("parent_id"),
-                hasColumn(rs, "moderation_status") ? rs.getString("moderation_status") : null);
-    }
-
-    private YouTubeVideo resultSetToVideo(ResultSet rs) throws SQLException {
-        return new YouTubeVideo(rs.getString("video_id"),
-                rs.getString("channel_id"),
-                rs.getString("video_title"),
-                rs.getString("video_desc"),
-                rs.getString("thumb_url"),
-                rs.getLong("publish_date"),
-                rs.getLong("grab_date"),
-                rs.getLong("total_comments"),
-                rs.getLong("total_likes"),
-                rs.getLong("total_dislikes"),
-                rs.getLong("total_views"),
-                rs.getInt("http_code"));
-    }
-
-    public static boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
-        ResultSetMetaData rsmd = rs.getMetaData();
-        int columns = rsmd.getColumnCount();
-        for (int x = 1; x <= columns; x++) {
-            if (columnName.equals(rsmd.getColumnName(x))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean doesChannelNotExist(String channelId) {
-        try (PreparedStatement ps = sqlite.prepareStatement(DOES_CHANNEL_EXIST.toString())) {
-            ps.setString(1, channelId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return !rs.next();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    public long countChannelsNotExisting(Collection<String> channelIds) {
-        long notExists = 0;
-        for (String id : channelIds) {
-            if (doesChannelNotExist(id)) {
-                notExists++;
-            }
-        }
-        return notExists;
+    public ChannelsTable channels() {
+        return channels;
     }
 
     public Collection<String> findChannelsNotExisting(Collection<String> channelIds) {
         Set<String> idList = new HashSet<>();
 
         for (String id : channelIds) {
-            if(doesChannelNotExist(id)) {
-                idList.add(id);
+            try {
+                if (channels.notExists(id)) {
+                    idList.add(id);
+                }
+            } catch (SQLException e) {
+                logger.error(e);
             }
         }
 
         return idList;
     }
 
-    public boolean doesVideoExist(String videoId) {
-        try (PreparedStatement ps = sqlite.prepareStatement(DOES_VIDEO_EXIST.toString())) {
-            ps.setString(1, videoId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     public long countVideosNotExisting(Collection<String> videoIds) {
         long notExists = 0;
         for (String id : videoIds) {
-            if (!doesVideoExist(id)) {
+            try {
+                if (videos.notExists(id)) {
+                    notExists++;
+                }
+            } catch (SQLException e) {
                 notExists++;
             }
         }
         return notExists;
     }
 
-    public boolean doesCommentExist(String commentId) {
-        try (PreparedStatement ps = sqlite.prepareStatement(DOES_COMMENT_EXIST.toString())) {
-            ps.setString(1, commentId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public boolean doesModeratedCommentExist(String commentId) {
-        try (PreparedStatement ps = sqlite.prepareStatement(DOES_MODERATED_COMMENT_EXIST.toString())) {
-            ps.setString(1, commentId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     public long countCommentsNotExisting(Collection<String> commentIds) {
         // logger.trace("Checking if commentIds's exist [size={},ids={}]", commentIds.size(), commentIds.toString());
         long notExists = 0;
         for (String id : commentIds) {
-            if (!doesCommentExist(id)) {
+            try {
+                if (comments.notExists(id)) {
+                    notExists++;
+                }
+            } catch (SQLException e) {
                 notExists++;
             }
         }
@@ -302,540 +183,20 @@ public class CommentDatabase implements Closeable {
         // logger.trace("Checking if commentIds's exist [size={},ids={}]", commentIds.size(), commentIds.toString());
         long notExists = 0;
         for (String id : commentIds) {
-            if (!doesModeratedCommentExist(id)) {
+            try {
+                if (moderatedComments.notExists(id)) {
+                    notExists++;
+                }
+            } catch (SQLException e) {
                 notExists++;
             }
         }
         return notExists;
     }
 
-    /**
-     * Returns list of GroupItems for a given Group.
-     * If no GroupItems are present, returns a "No groups" Item with id GroupItem.NO_ITEMS
-     */
-    public List<GroupItem> getGroupItems(Group g) {
-        List<GroupItem> items = new ArrayList<>();
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_GROUPITEMS.toString())) {
-            ps.setString(1, g.getGroupId());
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    items.add(resultSetToGroupItem(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return items;
-    }
-
-    public Group getGroup(String groupId) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement("SELECT * FROM groups WHERE group_id = ?")) {
-            ps.setString(1, groupId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return new Group(rs.getString("group_id"), rs.getString("group_name"));
-                }
-            }
-        }
-        return null;
-    }
-
-    public Group createGroup(String name) throws SQLException {
-        return createGroup(new Group(name));
-    }
-
-    /**
-     * Attempts insert of a new group. Throws exception if name already exists.
-     * Commits and refreshes globalGroupList.
-     */
-    public Group createGroup(Group group) throws SQLException {
-        logger.trace("Created Group [name={}, id={}]", group.getName(), group.getGroupId());
-
-        try (PreparedStatement ps = sqlite.prepareStatement(GROUP_CREATE.toString())) {
-            ps.setString(1, group.getGroupId());
-            ps.setString(2, group.getName());
-            ps.executeUpdate();
-
-            this.commit();
-
-            refreshAllGroups();
-            eventBus.post(new GroupAddEvent(group));
-        }
-
-        return group;
-    }
-
-    /**
-     * Attempts rename of existing group.
-     * Commits.
-     */
-    public void renameGroup(Group group, String newName) throws SQLException {
-        if (!group.getName().equals(newName)) {
-            logger.trace("Renaming Group [id={},name={},newName={}]", group.getGroupId(), group.getName(), newName);
-
-            try (PreparedStatement ps = sqlite.prepareStatement(GROUP_RENAME.toString())) {
-                ps.setString(1, newName);
-                ps.setString(2, group.getGroupId());
-                ps.executeUpdate();
-            }
-
-            this.commit();
-
-            refreshAllGroups();
-            eventBus.post(new GroupRenameEvent(group));
-        }
-    }
-
-    /**
-     * Deletes a Group.
-     * Recommended to run cleanUp() afterwards.
-     */
-    public void deleteGroup(Group group) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(DELETE_GROUP.toString())) {
-            ps.setString(1, group.getGroupId());
-            ps.executeUpdate();
-
-            logger.warn("Cleaning up after group delete [id={},name={}]", group.getGroupId(), group.getName());
-            this.commit();
-            this.cleanUp();
-
-            refreshAllGroups();
-            eventBus.post(new GroupDeleteEvent(group));
-        }
-    }
-
-    /**
-     * Will ignore inserting duplicate GroupItem(s) if same YouTube ID is present.
-     * Could create links to the same GroupItem to multiple Group(s).
-     */
-    public void insertGroupItems(Group group, List<GroupItem> items) throws SQLException {
-        try (PreparedStatement psCG = sqlite.prepareStatement(CREATE_GITEM.toString());
-             PreparedStatement psCGG = sqlite.prepareStatement(CREATE_GROUP_GITEM.toString())) {
-
-            for (GroupItem gi : items) {
-                psCG.setString(1, gi.getId());
-                psCG.setInt(2, gi.getTypeId().id());
-                psCG.setString(3, gi.getTitle());
-                psCG.setString(4, gi.getChannelTitle());
-                psCG.setLong(5, gi.getPublished());
-                psCG.setLong(6, gi.getLastChecked());
-                psCG.setString(7, gi.getThumbUrl());
-                psCG.addBatch();
-                psCGG.setString(1, group.getGroupId());
-                psCGG.setString(2, gi.getId());
-                psCGG.addBatch();
-            }
-
-            psCG.executeBatch();
-            psCGG.executeBatch();
-
-            eventBus.post(new GroupItemAddEvent(group));
-        }
-    }
-
-    /**
-     * Updates gitem_list with set lastChecked values.
-     */
-    public void updateGroupItem(GroupItem item) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(UPDATE_GITEM.toString())) {
-            ps.setString(1, item.getTitle());
-            ps.setString(2, item.getChannelTitle());
-            ps.setLong(3, item.getPublished());
-            ps.setLong(4, System.currentTimeMillis());
-            ps.setString(5, item.getThumbUrl());
-            ps.setString(6, item.getId());
-            ps.executeUpdate();
-        }
-    }
-
-    /**
-     * Deletes GroupItem(s).
-     * Recommended to run cleanUp() afterwards.
-     */
-    public void deleteGroupItemLinks(Group group, List<GroupItem> items) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(DELETE_GROUP_GITEM.toString())) {
-            for (GroupItem gi : items) {
-                ps.setString(1, gi.getId());
-                ps.setString(2, group.getGroupId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-
-            eventBus.post(new GroupItemDeleteEvent(group));
-        }
-    }
-
-    /**
-     * Inserts comments for group refreshing.
-     */
-    public void insertComments(List<YouTubeComment> items) throws SQLException {
-        // logger.trace("Inserting Comments [size={}]", items.size());
-        try (PreparedStatement ps = sqlite.prepareStatement(INSERT_IGNORE_COMMENTS.toString())) {
-            for (YouTubeComment ct : items) {
-                ps.setString(1, ct.getId());
-                ps.setString(2, ct.getChannelId());
-                ps.setString(3, ct.getVideoId());
-                ps.setLong(4, ct.getPublished());
-                ps.setString(5, ct.getCommentText());
-                ps.setLong(6, ct.getLikes());
-                ps.setLong(7, ct.getReplyCount());
-                ps.setBoolean(8, ct.isReply());
-                ps.setString(9, ct.getParentId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-
-        // If we got the same comment this time from the published, delete it in moderated.
-        try (PreparedStatement ps = sqlite.prepareStatement(DELETE_MODERATED_COMMENT.toString())) {
-            for (YouTubeComment comment : items) {
-                ps.setString(1, comment.getId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    /**
-     * Inserts moderatedcomments for group refreshing.
-     */
-    public void insertModeratedComments(List<YouTubeComment> items) throws SQLException {
-        // logger.trace("Inserting Comments [size={}]", items.size());
-        try (PreparedStatement ps = sqlite.prepareStatement(INSERT_IGNORE_MODERATED_COMMENTS.toString())) {
-            for (YouTubeComment ct : items) {
-                ps.setString(1, ct.getId());
-                ps.setString(2, ct.getChannelId());
-                ps.setString(3, ct.getVideoId());
-                ps.setLong(4, ct.getPublished());
-                ps.setString(5, ct.getCommentText());
-                ps.setLong(6, ct.getLikes());
-                ps.setLong(7, ct.getReplyCount());
-                ps.setBoolean(8, ct.isReply());
-                ps.setString(9, ct.getParentId());
-                ps.setString(10, ct.getModerationStatus().name());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-
-        // If a comment was added from in-app reply, remove from the published-comments table since it is actually moderated.
-        try (PreparedStatement ps = sqlite.prepareStatement(DELETE_COMMENT.toString())) {
-            for (YouTubeComment comment : items) {
-                ps.setString(1, comment.getId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    /**
-     * Gets all comment ids for the selected group's videos.
-     * Used for group refresh.
-     */
-    public List<String> getCommentIds(Group group) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_ALL_COMMENT_IDS_BY_GROUP.toString())) {
-            ps.setString(1, group.getGroupId());
-            try (ResultSet rs = ps.executeQuery()) {
-                List<String> list = new ArrayList<>();
-                while (rs.next()) {
-                    list.add(rs.getString("comment_id"));
-                }
-
-                return list;
-            }
-        }
-
-    }
-
-    /**
-     * Insert videos for group refreshing.
-     */
-    public void insertVideos(List<YouTubeVideo> items) throws SQLException {
-        logger.debug("Inserting Videos [size={}]", items.size());
-        try (PreparedStatement ps = sqlite.prepareStatement(INSERT_REPLACE_VIDEOS.toString())) {
-            for (YouTubeVideo video : items) {
-                ps.setString(1, video.getId());
-                ps.setString(2, video.getChannelId());
-                ps.setLong(3, video.getRefreshedOn());
-                ps.setLong(4, video.getPublishedDate());
-                ps.setString(5, video.getTitle());
-                ps.setLong(6, video.getCommentCount());
-                ps.setLong(7, video.getViewCount());
-                ps.setLong(8, video.getLikes());
-                ps.setLong(9, video.getDislikes());
-                ps.setString(10, video.getDescription());
-                ps.setString(11, video.getThumbUrl());
-                ps.setInt(12, video.getResponseCode());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    /**
-     * Get a list of all video ids.
-     * Used for group refreshing.
-     */
-    public List<String> getAllVideoIds() throws SQLException {
-        try (Statement s = sqlite.createStatement();
-             ResultSet rs = s.executeQuery(GET_ALL_UNIQUE_VIDEO_IDS.toString())) {
-
-            List<String> ids = new ArrayList<>();
-            while (rs.next()) {
-                ids.add(rs.getString("video_id"));
-            }
-
-            return ids;
-        }
-    }
-
-    /**
-     * Gets a list of all video ids by group.
-     * Used for group refeshing & export.
-     */
-    public List<String> getVideoIds(Group group) throws SQLException {
-        logger.debug("GET_ALL_VIDEO_IDS_BY_GROUP");
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_ALL_VIDEO_IDS_BY_GROUP.toString())) {
-            ps.setString(1, group.getGroupId());
-            try (ResultSet rs = ps.executeQuery()) {
-                List<String> list = new ArrayList<>();
-                while (rs.next()) {
-                    list.add(rs.getString("video_id"));
-                }
-
-                return list;
-            }
-        }
-    }
-
-
-    /**
-     * Gets a list of all video ids by groupItem.
-     * Used for comment export.
-     */
-    public List<String> getVideoIds(GroupItem gitem) throws SQLException {
-        logger.debug("GET_ALL_VIDEO_IDS_BY_GROUPITEM");
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_ALL_VIDEO_IDS_BY_GROUPITEM.toString())) {
-            ps.setString(1, gitem.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                List<String> list = new ArrayList<>();
-                while (rs.next()) {
-                    list.add(rs.getString("video_id"));
-                }
-
-                return list;
-            }
-        }
-    }
-
-
-    public YouTubeVideo getVideo(String videoId) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_VIDEO_BY_ID.toString())) {
-            ps.setString(1, videoId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return resultSetToVideo(rs);
-                }
-
-                return null;
-            }
-        }
-    }
-
-    public List<YouTubeVideo> getVideos(GroupItem gitem, String keyword, String order, int limit) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_VIDEOS_BY_CRITERIA_GITEM.toString()
-                .replace(":order", order))) {
-            ps.setString(1, gitem.getId());
-            ps.setString(2, "%" + keyword + "%");
-            ps.setString(3, keyword);
-            ps.setInt(4, limit);
-
-            return resultSetToVideoList(ps);
-        }
-    }
-
-    public List<YouTubeVideo> getVideos(Group group, String keyword, String order, int limit) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_VIDEOS_BY_CRITERIA_GROUP.toString()
-                .replace(":order", order))) {
-            ps.setString(1, group.getGroupId());
-            ps.setString(2, "%" + keyword + "%");
-            ps.setString(3, keyword);
-            ps.setInt(4, limit);
-
-            return resultSetToVideoList(ps);
-        }
-    }
-
-    /**
-     * Updates video data for group refreshing.
-     */
-    /*public void updateVideos(List<YouTubeVideo> items) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.UPDATE_VIDEO.toString())) {
-            for(YouTubeVideo video : items) {
-                ps.setLong(1, video.getRefreshedOn());
-                ps.setString(2, video.getTitle());
-                ps.setLong(3, video.getCommentCount());
-                ps.setLong(4, video.getViewCount());
-                ps.setLong(5, video.getLikes());
-                ps.setLong(6, video.getDislikes());
-                ps.setString(7, video.getDescription());
-                ps.setString(8, video.getThumbUrl());
-                ps.setString(9, video.getId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }*/
-
-    /**
-     * Updates http code for group refreshing.
-     */
-    public void updateVideoHttpCode(String videoId, int httpCode) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(UPDATE_VIDEO_HTTPCODE.toString())) {
-            ps.setInt(1, httpCode);
-            ps.setString(2, videoId);
-            ps.executeUpdate();
-        }
-    }
-
-    /**
-     * Returns existing threads and reply counts for group refreshing.
-     * Threads with different reply counts are rechecked.
-     */
-    /*public Map<String,Integer> getCommentThreadReplyCounts(Group group) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_COMMENTTHREAD_REPLY_COUNT_BY_GROUP.toString())) {
-            ps.setBoolean(1, false);
-            ps.setString(2, group.getId());
-            try(ResultSet rs = ps.executeQuery()) {
-                Map<String,Integer> map = new HashMap<>();
-                while(rs.next()) {
-                    map.put(rs.getString("comment_id"), rs.getInt("db_replies"));
-                }
-                return map;
-            }
-        }
-    }*/
-
-    /**
-     * Insert channels for group refreshing.
-     */
-    public void insertChannels(List<YouTubeChannel> items) throws SQLException {
-        // logger.debug("Inserting Channels [size={}]", items.size());
-        try (PreparedStatement ps = sqlite.prepareStatement(INSERT_IGNORE_CHANNELS.toString())) {
-            for (YouTubeChannel c : items) {
-                ps.setString(1, c.getId());
-                ps.setString(2, c.getTitle());
-                ps.setString(3, c.getThumbUrl());
-                ps.setBoolean(4, false);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    /**
-     * Updates channels for group refreshing.
-     */
-    /*public void updateChannels(List<YouTubeChannel> items) throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.UPDATE_CHANNEL.toString())) {
-            for(YouTubeChannel c : items) {
-                ps.setString(1, c.getTitle());
-                ps.setString(2, c.getThumbUrl());
-                ps.setBoolean(3, false);
-                ps.setString(4, c.getId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }*/
-
-    /**
-     * Checks if exists and caches it if it does.
-     */
-    public YouTubeChannel channelExists(String channelId) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_CHANNEL_EXISTS.toString())) {
-            ps.setString(1, channelId);
-            try (ResultSet rs = ps.executeQuery()) {
-                YouTubeChannel channel = null;
-                if (rs.next()) {
-                    channelCache.put(channelId, channel = resultSetToChannel(rs));
-                }
-                return channel;
-            }
-        }
-    }
-
-    /**
-     * Returns all channel ids for group refreshing.
-     */
-    /*public List<String> getAllChannelIds() throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_ALL_UNIQUE_CHANNEL_IDS.toString());
-            ResultSet rs = ps.executeQuery()) {
-            List<String> list = new ArrayList<>();
-            while(rs.next()) {
-                list.add(rs.getString("channel_id"));
-            }
-            return list;
-        }
-    }*/
-
-    /**
-     *
-     */
-    public YouTubeChannel getChannel(String channelId) {
-        YouTubeChannel channel = channelCache.getIfPresent(channelId);
-        if (channel != null) {
-            return channel;
-        } else {
-            try {
-                return channelExists(channelId);
-            } catch (SQLException e) {
-                return null;
-            }
-        }
-    }
-
-    /**
-     * Inserts to gitem_video for group refreshing.
-     */
-    public void insertGroupItemVideo(GroupItemVideo item) throws SQLException {
-        insertGroupItemVideo(Collections.singletonList(item));
-    }
-
-    /**
-     * Inserts to gitem_video for group refreshing.
-     */
-    public void insertGroupItemVideo(List<GroupItemVideo> items) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(INSERT_IGNORE_GITEM_VIDEO.toString())) {
-            for (GroupItemVideo vg : items) {
-                ps.setString(1, vg.getGitemId());
-                ps.setString(2, vg.getVideoId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
     public CommentQuery commentQuery() {
         return new CommentQuery(this);
     }
-
-    /**
-     * Gets all gitem_video for group refreshing.
-     */
-    /*public List<GroupItemVideo> getAllGroupItemVideo() throws SQLException {
-        try(PreparedStatement ps = sqlite.prepareStatement(SQLLoader.GET_ALL_GITEM_VIDEO.toString());
-            ResultSet rs = ps.executeQuery()) {
-
-            List<GroupItemVideo> list = new ArrayList<>();
-            while(rs.next()) {
-                list.add(resultSetToGroupItemVideo(rs));
-            }
-            return list;
-        }
-    }*/
 
     /**
      * Returns all of the comments associated with a comment parentId.
@@ -850,8 +211,8 @@ public class CommentDatabase implements Closeable {
             try (ResultSet rs = ps.executeQuery()) {
                 List<YouTubeComment> tree = new ArrayList<>();
                 while (rs.next()) {
-                    checkChannel(rs);
-                    tree.add(resultSetToComment(rs));
+                    channels.check(rs.getString("channel_id"));
+                    tree.add(comments.to(rs));
                 }
                 return tree;
             }
@@ -947,8 +308,8 @@ public class CommentDatabase implements Closeable {
             try (ResultSet rs = ps.executeQuery()) {
                 LinkedHashMap<YouTubeChannel, Long> map = new LinkedHashMap<>();
                 while (rs.next()) {
-                    checkChannel(rs);
-                    map.put(resultSetToChannel(rs), rs.getLong("count"));
+                    channels.check(rs.getString("channel_id"));
+                    map.put(channels.to(rs), rs.getLong("count"));
                 }
                 return map;
             }
@@ -962,8 +323,8 @@ public class CommentDatabase implements Closeable {
             try (ResultSet rs = ps.executeQuery()) {
                 LinkedHashMap<YouTubeChannel, Long> map = new LinkedHashMap<>();
                 while (rs.next()) {
-                    checkChannel(rs);
-                    map.put(resultSetToChannel(rs), rs.getLong("total_likes"));
+                    channels.check(rs.getString("channel_id"));
+                    map.put(channels.to(rs), rs.getLong("total_likes"));
                 }
                 return map;
             }
@@ -974,7 +335,7 @@ public class CommentDatabase implements Closeable {
         try (PreparedStatement ps = sqlite.prepareStatement(GET_GROUP_POPULAR_VIDEOS.toString())) {
             ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
-            return resultSetToVideoList(ps);
+            return videos.toList(ps);
         }
     }
 
@@ -982,7 +343,7 @@ public class CommentDatabase implements Closeable {
         try (PreparedStatement ps = sqlite.prepareStatement(GET_GROUP_DISLIKED_VIDEOS.toString())) {
             ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
-            return resultSetToVideoList(ps);
+            return videos.toList(ps);
         }
     }
 
@@ -990,7 +351,7 @@ public class CommentDatabase implements Closeable {
         try (PreparedStatement ps = sqlite.prepareStatement(GET_GROUP_COMMENTED_VIDEOS.toString())) {
             ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
-            return resultSetToVideoList(ps);
+            return videos.toList(ps);
         }
     }
 
@@ -998,17 +359,8 @@ public class CommentDatabase implements Closeable {
         try (PreparedStatement ps = sqlite.prepareStatement(GET_GROUP_DISABLED_VIDEOS.toString())) {
             ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
-            return resultSetToVideoList(ps);
-        }
-    }
 
-    private List<YouTubeVideo> resultSetToVideoList(PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            List<YouTubeVideo> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(resultSetToVideo(rs));
-            }
-            return list;
+            return videos.toList(ps);
         }
     }
 

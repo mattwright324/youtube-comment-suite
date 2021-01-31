@@ -2,15 +2,14 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
-import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.ConfigData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -219,8 +218,8 @@ public class GroupItem extends YouTubeObject {
      * Makes sure the channel associated with this GroupItem is in the database.
      */
     private void checkForNewChannel(final String channelId) {
-        if(database.doesChannelNotExist(channelId)) {
-            try {
+        try {
+            if (database.channels().notExists(channelId)) {
                 final ChannelListResponse clr = youtube.channels().list("snippet")
                         .setKey(CommentSuite.getYouTubeApiKey())
                         .setId(channelId)
@@ -228,12 +227,12 @@ public class GroupItem extends YouTubeObject {
 
                 final YouTubeChannel channel = new YouTubeChannel(clr.getItems().get(0));
 
-                database.insertChannels(Collections.singletonList(channel));
-            } catch (IOException e) {
-                logger.error("Failed to get channel [id={}]", channelId);
-            } catch (SQLException e) {
-                logger.error("Failed to insert new channel [id={}]", channelId);
+                database.channels().insert(channel);
             }
+        } catch (IOException e) {
+            logger.error("Failed to get channel [id={}]", channelId);
+        } catch (SQLException e) {
+            logger.error("Failed to insert new channel [id={}]", channelId);
         }
     }
 

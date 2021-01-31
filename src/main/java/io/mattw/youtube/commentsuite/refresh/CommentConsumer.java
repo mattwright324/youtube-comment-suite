@@ -83,10 +83,10 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
 
                 comments.removeIf(comment -> comment.getModerationStatus() == null || comment.getModerationStatus() == ModerationStatus.PUBLISHED);
 
-                database.insertModeratedComments(comments);
+                database.moderatedComments().insertAll(comments);
             } else {
                 newComments.addAndGet(database.countCommentsNotExisting(commentIds));
-                database.insertComments(comments);
+                database.comments().insertAll(comments);
             }
 
             comments.clear();

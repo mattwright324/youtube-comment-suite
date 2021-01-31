@@ -86,7 +86,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         startElapsedTimer();
 
         videoIdProducer.produceTo(uniqueVideoIdProducer, String.class);
-        videoIdProducer.accept(database.getGroupItems(group));
+        videoIdProducer.accept(database.groupItems().byGroup(group));
         videoIdProducer.setMessageFunc(this::postMessage);
 
         uniqueVideoIdProducer.produceTo(videoProducer, String.class);

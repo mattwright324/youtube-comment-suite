@@ -29,6 +29,11 @@ public class YouTubeVideo extends YouTubeObject implements Exportable {
     // Field(s) used just for export to make things pretty.
     private YouTubeChannel author;
 
+    public YouTubeVideo(String id, String title, String thumbUrl) {
+        super(id, title, thumbUrl);
+        setTypeId(YType.VIDEO);
+    }
+
     /**
      * Used for refreshing
      *
@@ -75,117 +80,119 @@ public class YouTubeVideo extends YouTubeObject implements Exportable {
         this.refreshedOn = System.currentTimeMillis();
     }
 
-    /**
-     * Constructor used for initialization from the database.
-     */
-    public YouTubeVideo(String videoId, String channelId, String title, String description, String thumbUrl, long published, long grabDate, long comments, long likes, long dislikes, long viewCount, int responseCode) {
-        super(videoId, title, thumbUrl);
-        setTypeId(YType.VIDEO);
-
-        this.channelId = channelId;
-        this.description = description;
-        this.published = published;
-        this.refreshedOn = grabDate;
-        this.comments = comments;
-        this.likes = likes;
-        this.dislikes = dislikes;
-        this.viewCount = viewCount;
-        this.responseCode = responseCode;
-    }
-
     @Override
     public void prepForExport() {
+        channelId = null;
         publishDate = DateUtils.epochMillisToDateTime(published).toString();
         refreshedOnDate = DateUtils.epochMillisToDateTime(refreshedOn).toString();
     }
 
-    /**
-     * Overwrite channelId as null when set because it will be on the channel object for export.
-     */
-    public YouTubeVideo setAuthor(YouTubeChannel author) {
-        this.channelId = null;
-        this.author = author;
-        return this;
-    }
-
-    /**
-     * @return description that is on the video as of the refresh date
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * @return id of channel that published the video
-     */
     public String getChannelId() {
         return channelId;
     }
 
-    /**
-     * @return date video was published in epoch millis
-     */
-    public long getPublishedDate() {
+    public YouTubeVideo setChannelId(String channelId) {
+        this.channelId = channelId;
+        return this;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public YouTubeVideo setDescription(String description) {
+        this.description = description;
+        return this;
+    }
+
+    public long getPublished() {
         return published;
     }
 
-    /**
-     * @return date refreshed on in epoch millis
-     */
+    public YouTubeVideo setPublished(long published) {
+        this.published = published;
+        return this;
+    }
+
+    public String getPublishDate() {
+        return publishDate;
+    }
+
+    public YouTubeVideo setPublishDate(String publishDate) {
+        this.publishDate = publishDate;
+        return this;
+    }
+
     public long getRefreshedOn() {
         return refreshedOn;
     }
 
-    public void setRefreshedOn(long epochMillis) {
-        this.refreshedOn = epochMillis;
+    public YouTubeVideo setRefreshedOn(long refreshedOn) {
+        this.refreshedOn = refreshedOn;
+        return this;
     }
 
-    /**
-     * The total number of comments as reported by YouTube API, not what's in the database.
-     *
-     * @return total comments as of refresh date
-     */
-    public long getCommentCount() {
-        return comments;
+    public String getRefreshedOnDate() {
+        return refreshedOnDate;
     }
 
-    /**
-     * As reported by the YouTube API
-     *
-     * @return total likes as of refresh date
-     */
-    public long getLikes() {
-        return likes;
+    public YouTubeVideo setRefreshedOnDate(String refreshedOnDate) {
+        this.refreshedOnDate = refreshedOnDate;
+        return this;
     }
 
-    /**
-     * As reported by the YouTube API
-     *
-     * @return total dislikes as of refresh date
-     */
-    public long getDislikes() {
-        return dislikes;
-    }
-
-
-    /**
-     * As reported by the YouTube API
-     *
-     * @return total views as of refresh date
-     */
     public long getViewCount() {
         return viewCount;
     }
 
-    /**
-     * Used to determine if comments are disabled (403) when querying the database.
-     *
-     * TODO: Maybe use error reason with new api? e.g. "commentsDisabled" Would require updates to DB columns, break compatibility
-     *
-     * @return response code when refreshing
-     */
+    public YouTubeVideo setViewCount(long viewCount) {
+        this.viewCount = viewCount;
+        return this;
+    }
+
+    public long getComments() {
+        return comments;
+    }
+
+    public YouTubeVideo setComments(long comments) {
+        this.comments = comments;
+        return this;
+    }
+
+    public long getLikes() {
+        return likes;
+    }
+
+    public YouTubeVideo setLikes(long likes) {
+        this.likes = likes;
+        return this;
+    }
+
+    public long getDislikes() {
+        return dislikes;
+    }
+
+    public YouTubeVideo setDislikes(long dislikes) {
+        this.dislikes = dislikes;
+        return this;
+    }
+
     public int getResponseCode() {
         return responseCode;
+    }
+
+    public YouTubeVideo setResponseCode(int responseCode) {
+        this.responseCode = responseCode;
+        return this;
+    }
+
+    public YouTubeChannel getAuthor() {
+        return author;
+    }
+
+    public YouTubeVideo setAuthor(YouTubeChannel author) {
+        this.author = author;
+        return this;
     }
 
     /**

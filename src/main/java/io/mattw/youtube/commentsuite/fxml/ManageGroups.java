@@ -114,7 +114,7 @@ public class ManageGroups implements Initializable {
             String name = modal.getNameField().getText();
             if (!name.isEmpty()) {
                 try {
-                    Group g = database.createGroup(name);
+                    Group g = database.groups().create(name);
                     logger.debug("Created new group [id={},name={}]", g.getGroupId(), g.getName());
                     runLater(() -> {
                         comboGroupSelect.getSelectionModel().select(g);
@@ -169,7 +169,7 @@ public class ManageGroups implements Initializable {
 
     private void rebuildGroupSelect() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.groups().getAllGroups());
         comboGroupSelect.setItems(FXCollections.emptyObservableList());
         comboGroupSelect.setItems(groups);
 

@@ -94,7 +94,7 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
                 .map(YouTubeVideo::new)
                 .collect(Collectors.toList());
 
-        database.insertVideos(videos);
+        database.videos().insertAll(videos);
 
         final RefreshTimeframe timeframe = options.getTimeframe();
         if (timeframe == RefreshTimeframe.NONE) {
@@ -103,7 +103,7 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
         } else if (timeframe != RefreshTimeframe.ALL) {
             videos.removeIf(video -> {
                 final LocalDate periodDate = LocalDate.now().minus(timeframe.getTimeframe());
-                final LocalDate publishDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(video.getPublishedDate()), ZoneId.systemDefault()).toLocalDate();
+                final LocalDate publishDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(video.getPublished()), ZoneId.systemDefault()).toLocalDate();
 
                 final boolean skip = publishDate.isBefore(periodDate);
                 if (skip) {

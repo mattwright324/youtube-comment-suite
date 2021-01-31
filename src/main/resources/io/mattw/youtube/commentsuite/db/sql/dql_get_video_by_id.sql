@@ -1,1 +1,0 @@
-SELECT * FROM videos WHERE video_id = ? LIMIT 1;

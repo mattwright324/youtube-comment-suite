@@ -195,7 +195,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         rename.setOnAction(ae -> new Thread(() -> {
             if (editIcon.getImage().equals(save)) {
                 try {
-                    database.renameGroup(group, groupTitle.getText());
+                    database.groups().rename(group, groupTitle.getText());
                 } catch (SQLException e) {
                     groupTitle.setText(group.getName());
                     logger.error(e);
@@ -325,7 +325,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
             try {
                 logger.warn("Deleting Group[id={},name={}]", group.getGroupId(), group.getName());
-                database.deleteGroup(this.group);
+                database.groups().delete(this.group);
             } catch (SQLException e) {
                 logger.error("Failed to delete group.", e);
             }
@@ -415,7 +415,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         final String previousName = group.getName();
         final String previousId = group.getGroupId();
-        final Group newGroup = database.getGroup(group.getGroupId());
+        final Group newGroup = database.groups().get(group.getGroupId());
 
         if (newGroup == null) {
             ManageGroups.getManagerCache().invalidate(previousId);
@@ -506,7 +506,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getDislikes(), "dislikes"))
                 .collect(Collectors.toList());
         final List<MGMVYouTubeObjectItem> commentedVideos = groupStats.getMostCommented().stream()
-                .map(video -> new MGMVYouTubeObjectItem(video, video.getCommentCount(), "comments"))
+                .map(video -> new MGMVYouTubeObjectItem(video, video.getComments(), "comments"))
                 .collect(Collectors.toList());
         final List<MGMVYouTubeObjectItem> disabledVideos = groupStats.getCommentsDisabled().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, 0L, "Comments Disabled", true))
@@ -582,7 +582,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
      */
     private void reloadGroupItems(final String caller) {
         logger.debug("[Load] Grabbing GroupItems {}", caller);
-        final List<GroupItem> groupItems = database.getGroupItems(this.group);
+        final List<GroupItem> groupItems = database.groupItems().byGroup(this.group);
         logger.debug("[Load] Found " + groupItems.size() + " GroupItem(s)");
 
         runLater(() -> groupItemList.getItems().clear());

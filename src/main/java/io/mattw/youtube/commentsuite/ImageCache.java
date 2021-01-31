@@ -77,8 +77,11 @@ public interface ImageCache {
                     logger.error("Failed to archive image [id={}]", id, e);
                 }
             }
+
             if (thumbFile.exists()) {
                 image = new Image(String.format("file:///%s", thumbFile.getAbsolutePath()));
+            } else if(imageUrl == null) {
+                return toLetterAvatar("?");
             } else {
                 image = new Image(imageUrl);
             }

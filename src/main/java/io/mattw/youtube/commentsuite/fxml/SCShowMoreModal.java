@@ -126,7 +126,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                     final Comment yourReply = postReply(selectedAccount, parentId, replyText.getText());
                     final YouTubeComment comment = new YouTubeComment(yourReply, loadedComment.getVideoId());
 
-                    database.insertComments(Collections.singletonList(comment));
+                    database.comments().insert(comment);
                     database.commit();
 
                     if (openReply.isSelected()) {

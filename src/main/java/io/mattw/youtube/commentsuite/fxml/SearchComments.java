@@ -376,7 +376,7 @@ public class SearchComments implements Initializable, ImageCache {
 
         try {
             final String videoId = comment.getVideoId();
-            final YouTubeVideo video = database.getVideo(videoId);
+            final YouTubeVideo video = database.videos().get(videoId);
 
             final Image vThumb = ImageCache.findOrGetImage(video);
             runLater(() -> {
@@ -385,7 +385,7 @@ public class SearchComments implements Initializable, ImageCache {
                 videoDislikes.setText(readableNumber(video.getDislikes()));
                 videoViews.setText(String.format("%s views", readableNumber(video.getViewCount())));
                 videoDescription.setText(String.format("Published %s • %s",
-                        formatter.format(DateUtils.epochMillisToDateTime(video.getPublishedDate())),
+                        formatter.format(DateUtils.epochMillisToDateTime(video.getPublished())),
                         StringEscapeUtils.unescapeHtml4(video.getDescription())));
 
                 videoThumb.setCursor(Cursor.HAND);
@@ -393,7 +393,7 @@ public class SearchComments implements Initializable, ImageCache {
                 videoThumb.setImage(vThumb);
             });
 
-            final YouTubeChannel author = database.getChannel(video.getChannelId());
+            final YouTubeChannel author = database.channels().getOrNull(video.getChannelId());
             final Image aThumb = author != null ?
                     ImageCache.findOrGetImage(author) : ImageCache.toLetterAvatar(' ');
             runLater(() -> {
@@ -655,7 +655,7 @@ public class SearchComments implements Initializable, ImageCache {
 
     private void rebuildGroupSelect() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.groups().getAllGroups());
         comboGroupSelect.setItems(FXCollections.emptyObservableList());
         comboGroupSelect.setItems(groups);
 
@@ -680,7 +680,7 @@ public class SearchComments implements Initializable, ImageCache {
 
     private void reloadGroupItems() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final List<GroupItem> groupItems = database.getGroupItems(selectedGroup);
+        final List<GroupItem> groupItems = database.groupItems().byGroup(selectedGroup);
 
         final GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
         runLater(() -> {

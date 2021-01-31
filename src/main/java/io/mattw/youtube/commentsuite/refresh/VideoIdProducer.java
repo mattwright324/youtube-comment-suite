@@ -5,7 +5,6 @@ import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.commentsuite.db.GroupItemVideo;
 import io.mattw.youtube.commentsuite.db.YType;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import org.apache.logging.log4j.Level;
@@ -14,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
@@ -122,10 +122,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                         .map(ResourceId::getVideoId)
                         .collect(Collectors.toList());
 
-                final List<GroupItemVideo> groupItemVideos = videoIds.stream()
-                        .map(videoId -> new GroupItemVideo(item.getId(), videoId))
-                        .collect(Collectors.toList());
-                database.insertGroupItemVideo(groupItemVideos);
+                database.groupItems().associateVideos(item, videoIds);
 
                 sendCollection(videoIds, String.class);
 
@@ -142,13 +139,13 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
     private void fromVideo(final GroupItem video) throws SQLException {
         logger.debug("fromVideo {}", video);
 
-        database.insertGroupItemVideo(new GroupItemVideo(video.getId(), video.getId()));
+        database.groupItems().associateVideos(video, Collections.singletonList(video.getId()));
 
         send(video.getId());
     }
 
     private void updateGroupItem(GroupItem gitem) throws SQLException {
-        database.updateGroupItem(gitem);
+        database.groupItems().update(gitem);
     }
 
     @Override
