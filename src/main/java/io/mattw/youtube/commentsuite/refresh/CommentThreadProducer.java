@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
@@ -117,10 +118,11 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                     do {
                         logger.debug("{} {}", moderationStatus, attempts);
 
+                        final String oauthToken = getOauthToken(video.getChannelId());
                         response = youTube.commentThreads()
                                 .list(moderationStatus.getPart())
-                                .setKey(CommentSuite.getYouTubeApiKey())
-                                .setOauthToken(getOauthToken(video.getChannelId()))
+                                .setKey(isBlank(oauthToken) ? CommentSuite.getYouTubeApiKey() : null)
+                                .setOauthToken(oauthToken)
                                 .setVideoId(video.getId())
                                 .setMaxResults(100L)
                                 .setOrder(options.getCommentOrder().name())
