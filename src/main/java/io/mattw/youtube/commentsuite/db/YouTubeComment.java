@@ -47,8 +47,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
         CommentSnippet snippet = item.getSnippet();
         this.commentText = snippet.getTextDisplay();
-        this.published = snippet.getPublishedAt().getValue();
-        this.publishedDateTime = DateUtils.epochMillisToDateTime(published);
+        setPublished(snippet.getPublishedAt().getValue());
         this.likes = snippet.getLikeCount();
         this.parentId = snippet.getParentId();
 
@@ -75,8 +74,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
         CommentSnippet tlcSnippet = snippet.getTopLevelComment().getSnippet();
         this.commentText = tlcSnippet.getTextDisplay();
-        this.published = tlcSnippet.getPublishedAt().getValue();
-        this.publishedDateTime = DateUtils.epochMillisToDateTime(published);
+        setPublished(tlcSnippet.getPublishedAt().getValue());
         this.likes = tlcSnippet.getLikeCount();
         this.moderationStatus = ModerationStatus.fromApiValue(tlcSnippet.getModerationStatus());
 
@@ -86,7 +84,6 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
             logger.warn("There was no authorChannelId {}", ReflectionToStringBuilder.toString(item));
         }
     }
-
 
     public YouTubeComment(String commentId) {
         super(commentId, null, null);
@@ -127,6 +124,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
     public YouTubeComment setPublished(long published) {
         this.published = published;
+        setPublishedDateTime(DateUtils.epochMillisToDateTime(published));
         return this;
     }
 
@@ -198,7 +196,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
     }
 
     public YouTubeComment setModerationStatus(String moderationStatus) {
-        this.moderationStatus = ModerationStatus.fromApiValue(moderationStatus);
+        this.moderationStatus = ModerationStatus.fromName(moderationStatus);
         return this;
     }
 

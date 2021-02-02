@@ -42,15 +42,11 @@ import static javafx.application.Platform.runLater;
 public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
     private static final Logger logger = LogManager.getLogger();
-
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH.mm.ss");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final String prettyFlattenedExample = gson.toJson(JsonParser.parseString(
             "[{\"type\":\"comment\"},{\"type\":\"comment\"},{\"type\":\"reply\"},{\"type\":\"reply\"},{\"type\":\"comment\"}]"));
     private static final String prettyCondensedExample = gson.toJson(JsonParser.parseString(
             "[{\"type\":\"comment\"},{\"type\":\"comment\", replies:[{\"type\":\"reply\"},{\"type\":\"reply\"}]},{\"type\":\"comment\"}]"));
-
-    private static final File exportsFolder = new File("exports/");
 
     @FXML
     private Label errorMsg;
