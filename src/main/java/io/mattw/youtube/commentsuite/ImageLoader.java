@@ -17,7 +17,6 @@ public enum ImageLoader {
     GITHUB("github.png"),
     GROUP("group.png"),
     GROUP_ICON("groupIcon.png"),
-    YCS_ICON("icon.png"),
     LOADING("loading.png"),
     LOCATION("location.png"),
     MANAGE("manage.png"),
@@ -30,6 +29,7 @@ public enum ImageLoader {
     SAVE("save.png"),
     SEARCH("search.png"),
     SETTINGS("settings.png"),
+    TAGS("tag.png"),
     THUMBNAIL("thumbnail.png"),
     THUMBS_DOWN("thumbs-down.png"),
     THUMBS_UP("thumbs-up.png"),
@@ -38,6 +38,7 @@ public enum ImageLoader {
     TOGGLE_QUERY("toggleQuery.png"),
     VIDEO("video.png"),
     VIDEO_PLACEHOLDER("videoPlaceholder.png"),
+    YCS_ICON("icon.png"),
     YOUTUBE("youtube.png");
 
     private final Logger logger = LogManager.getLogger();

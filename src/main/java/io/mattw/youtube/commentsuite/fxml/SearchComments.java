@@ -55,7 +55,8 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private TextArea videoDescription;
 
     @FXML private ImageView browserIcon;
-    @FXML private MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks, copyCommentIds, copyChannelIds;
+    @FXML private ImageView tagsIcon;
+    @FXML private MenuItem openInBrowser, manageTags, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks, copyCommentIds, copyChannelIds;
     @FXML private ListView<SearchCommentsListItem> resultsList;
     @FXML private TextField pageValue;
     @FXML private Label displayCount, lblMaxPage;
@@ -68,13 +69,14 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private Hyperlink videoSelect;
     @FXML private ComboBox<CommentQuery.CommentsType> comboCommentType;
     @FXML private ComboBox<CommentQuery.Order> comboOrderBy;
-    @FXML private TextField nameLike, commentLike;
+    @FXML private TextField nameLike, commentLike, hasTags;
     @FXML private DatePicker dateFrom, dateTo;
     @FXML private Button btnSearch, btnClear, btnExport;
 
     @FXML private OverlayModal<SCVideoSelectModal> videoSelectModal;
     @FXML private OverlayModal<SCShowMoreModal> showMoreModal;
     @FXML private OverlayModal<SCExportModal> exportModal;
+    @FXML private OverlayModal<SCManageTagsModal> tagsModal;
 
     private ChangeListener<Font> fontListener;
 
@@ -360,6 +362,16 @@ public class SearchComments implements Initializable, ImageCache {
             scExportModal.getBtnClose().setCancelButton(exportModal.isVisible());
             scExportModal.getBtnSubmit().setDefaultButton(exportModal.isVisible());
         });
+
+        SCManageTagsModal scManageTagsModal = new SCManageTagsModal();
+        tagsModal.setContent(scManageTagsModal);
+        scManageTagsModal.getBtnFinish().setOnAction(ae -> tagsModal.setVisible(false));
+        tagsIcon.setImage(ImageLoader.TAGS.getImage());
+        manageTags.setOnAction(ae -> {
+            scManageTagsModal.cleanUp();
+            scManageTagsModal.withComments(resultsList.getSelectionModel().getSelectedItems());
+            tagsModal.setVisible(true);
+        });
     }
 
     /**
@@ -503,6 +515,7 @@ public class SearchComments implements Initializable, ImageCache {
                     .setOrder(comboOrderBy.getValue())
                     .setNameLike(nameLike.getText())
                     .setTextLike(commentLike.getText())
+                    .setHasTags(hasTags.getText())
                     .setDateFrom(dateFrom.getValue())
                     .setDateTo(dateTo.getValue())
                     .getByPage(pageNum - 1, 500); // 1 in app = 0 in query

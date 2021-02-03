@@ -1,5 +1,8 @@
 package io.mattw.youtube.commentsuite.db;
 
+import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.events.TagsChangeEvent;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +32,8 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
                 .setReplyCount(resultSet.getLong("reply_count"))
                 .setReply(resultSet.getBoolean("is_reply"))
                 .setParentId(resultSet.getString("parent_id"))
-                .setModerationStatus(columnOrDefault(resultSet, "moderation_status", null));
+                .setModerationStatus(columnOrDefault(resultSet, "moderation_status", null))
+                .setTags(columnOrDefault(resultSet, "tags", null));
     }
 
     @Override
@@ -114,6 +118,64 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
     @Override
     public void updateAll(List<YouTubeComment> objects) throws SQLException {
         // not updating, ignoring if exists
+    }
+
+    public void associateTags(List<YouTubeComment> comments, List<String> tags)throws SQLException {
+        try (PreparedStatement ps = preparedStatement(
+                "INSERT OR IGNORE INTO comment_tags (comment_id, tag) VALUES (?, ?)")) {
+            for (YouTubeComment comment : comments) {
+                for (String tag : tags) {
+                    ps.setString(1, comment.getId());
+                    ps.setString(2, tag);
+                    ps.addBatch();
+
+                    if (comment.getTags() == null) {
+                        comment.setTags(new ArrayList<>());
+                    }
+                    if (!comment.getTags().contains(tag)) {
+                        comment.getTags().add(tag);
+                    }
+                }
+            }
+
+            ps.executeBatch();
+
+            CommentSuite.postEvent(new TagsChangeEvent(comments));
+        }
+    }
+
+    public void deassociateTags(List<YouTubeComment> comments, List<String> tags) throws SQLException {
+        try (PreparedStatement ps = preparedStatement(
+                "DELETE FROM comment_tags WHERE comment_id = ? AND tag = ?")) {
+            for (YouTubeComment comment : comments) {
+                for (String tag : tags) {
+                    ps.setString(1, comment.getId());
+                    ps.setString(2, tag);
+                    ps.addBatch();
+
+                    if (comment.getTags() != null) {
+                        comment.getTags().remove(tag);
+                    }
+                }
+            }
+
+            ps.executeBatch();
+
+            CommentSuite.postEvent(new TagsChangeEvent(comments));
+        }
+    }
+
+    public List<String> getAllTags() throws SQLException {
+        final List<String> tags = new ArrayList<>();
+        try (PreparedStatement ps = preparedStatement(
+                "SELECT DISTINCT tag FROM comment_tags ORDER BY tag")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    tags.add(rs.getString("tag"));
+                }
+            }
+        }
+        return tags;
     }
 
 }

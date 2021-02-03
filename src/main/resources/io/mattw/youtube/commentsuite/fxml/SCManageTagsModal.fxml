@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<fx:root type="VBox"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         spacing="10">
+
+    <fx:include source="AlertLabel.fxml" styleClass="alertPrimary" fx:id="lblAbout"
+                alignment="CENTER"
+                text="0 item(s) selected" />
+
+    <TextField fx:id="tags" promptText="tag1, tag2, tag3" />
+
+    <Button fx:id="btnAdd" styleClass="btnPrimary" text="Add tag(s) to selected" />
+    <Button fx:id="btnRemove" styleClass="btnLight" text="Remove tag(s) from selected" />
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button fx:id="btnFinish" styleClass="btnLight" text="Finish" />
+    </HBox>
+</fx:root>

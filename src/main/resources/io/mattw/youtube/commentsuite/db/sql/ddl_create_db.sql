@@ -96,6 +96,15 @@ CREATE TABLE IF NOT EXISTS comments_moderated
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_comments_id ON comments (comment_id);
 
+CREATE TABLE IF NOT EXISTS comment_tags
+(
+    comment_id    STRING,
+    tag           STRING,
+    PRIMARY KEY (comment_id, tag),
+    FOREIGN KEY (comment_id) REFERENCES comments (comment_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_comments_id ON comments (comment_id);
+
 CREATE TABLE IF NOT EXISTS channels
 (
     channel_id          STRING PRIMARY KEY,

@@ -13,6 +13,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class YouTubeComment extends YouTubeObject implements Exportable {
@@ -29,6 +31,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
     private boolean isReply;
     private String parentId;
     private ModerationStatus moderationStatus;
+    private List<String> tags;
 
     // Field(s) used just for export to make things pretty.
     private YouTubeChannel author;
@@ -227,6 +230,23 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
      */
     public YouTubeComment setReplies(List<YouTubeComment> replies) {
         this.replies = replies;
+        return this;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public YouTubeComment setTags(String tags) {
+        if (tags != null) {
+            this.tags = new ArrayList<>();
+            this.tags.addAll(Arrays.asList(tags.split(",")));
+        }
+        return this;
+    }
+
+    public YouTubeComment setTags(List<String> tags) {
+        this.tags = tags;
         return this;
     }
 

@@ -21,6 +21,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,7 +43,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     @FXML private Label type;
     @FXML private Label likes;
     @FXML private Hyperlink showMore, viewTree, reply;
-    @FXML private HBox tagsPane;
+    @FXML private HBox systemTagsPane, userTagsPane;
 
     private final BrowserUtil browserUtil = new BrowserUtil();
     private final ConfigData configData;
@@ -72,7 +73,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         author.setOnAction(ae -> browserUtil.open(channel.buildYouTubeLink()));
         author.setBorder(Border.EMPTY);
 
-        commentText.setText(comment.getCleanText(false));
+        commentText.setText(comment.getCleanText(false).replace("\r\n", " "));
         commentText.setTextOverrun(OverrunStyle.ELLIPSIS);
 
         date.setText(DateUtils.epochMillisToDateTime(comment.getPublished()).toString());
@@ -103,7 +104,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         }
 
         if (status != null && status != PUBLISHED) {
-            addTag(status.getApiValue());
+            addTag(systemTagsPane, status.getApiValue());
         }
 
         if (status != null && status != PUBLISHED && comment.getPublishedDateTime().isBefore(DAYS_AGO_60)) {
@@ -112,9 +113,10 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             viewTree.setManaged(false);
             viewTree.setVisible(false);
             showReplyBtn = false;
-            addTag("past-60-days");
+            addTag(systemTagsPane, "past-60-days");
         }
 
+        reloadUserTags();
         determineHideReply();
 
         showMore.setOnAction(ae -> eventBus.post(new ShowMoreEvent(this)));
@@ -126,10 +128,10 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         return comment;
     }
 
-    public void addTag(String text) {
+    public void addTag(Pane pane, String text) {
         final Label tag = new Label(text);
         tag.getStyleClass().addAll("textMuted", "tag");
-        runLater(() -> tagsPane.getChildren().add(tag));
+        runLater(() -> pane.getChildren().add(tag));
     }
 
     private void determineHideReply() {
@@ -149,6 +151,23 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     @Subscribe
     public void accountDeleteEvent(final AccountDeleteEvent accountDeleteEvent) {
         determineHideReply();
+    }
+
+    @Subscribe
+    public void tagsChangeEvent(final TagsChangeEvent tagsChangeEvent) {
+        if (tagsChangeEvent.wasChanged(comment)) {
+            tagsChangeEvent.updateTags(comment);
+
+            reloadUserTags();
+        }
+    }
+
+    public void reloadUserTags() {
+        runLater(() -> userTagsPane.getChildren().clear());
+
+        if (comment.getTags() != null) {
+            comment.getTags().stream().sorted().forEach(tag -> runLater(() -> addTag(userTagsPane, tag)));
+        }
     }
 
     public void treeMode() {
