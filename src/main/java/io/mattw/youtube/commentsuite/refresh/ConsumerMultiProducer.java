@@ -1,6 +1,9 @@
 package io.mattw.youtube.commentsuite.refresh;
 
+import com.google.api.client.googleapis.json.GoogleJsonError;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -218,6 +221,17 @@ public abstract class ConsumerMultiProducer<C> {
 
     public void setStartProduceOnFirstAccept(boolean startProduceOnFirstAccept) {
         this.startProduceOnFirstAccept = startProduceOnFirstAccept;
+    }
+
+    public static String getFirstReasonCode(GoogleJsonResponseException e) {
+        return Optional.ofNullable(e)
+                .map(GoogleJsonResponseException::getDetails)
+                .map(GoogleJsonError::getErrors)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(GoogleJsonError.ErrorInfo::getReason)
+                .findFirst()
+                .orElse(StringUtils.EMPTY);
     }
 
     @Override

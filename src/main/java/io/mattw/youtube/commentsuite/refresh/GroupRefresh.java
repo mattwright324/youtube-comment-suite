@@ -103,7 +103,6 @@ public class GroupRefresh extends Thread implements RefreshInterface {
 
         reviewThreadProducer.produceTo(moderatedCommentConsumer, YouTubeComment.class);
         reviewThreadProducer.produceTo(channelProducer, String.class);
-        //reviewThreadProducer.produceTo(replyProducer, StringTuple.class);
         reviewThreadProducer.setMessageFunc(this::postMessage);
 
         replyProducer.produceTo(commentConsumer, YouTubeComment.class);
@@ -154,9 +153,11 @@ public class GroupRefresh extends Thread implements RefreshInterface {
             }
 
             await(commentThreadProducer, "Await commentThreadProducer over");
+            await(reviewThreadProducer, "Await reviewThreadProducer over");
             await(replyProducer, "Await replyProducer over");
             await(channelProducer, "Await channelProducer over");
             await(commentConsumer, "Await commentConsumer over");
+            await(moderatedCommentConsumer, "Await moderatedCommentConsumer over");
             await(channelConsumer, "Await channelConsumer over");
 
             try {
@@ -207,13 +208,17 @@ public class GroupRefresh extends Thread implements RefreshInterface {
 
         if (error instanceof GoogleJsonResponseException) {
             final GoogleJsonResponseException googleError = (GoogleJsonResponseException) error;
-            final List<GoogleJsonError.ErrorInfo> errorInfos = googleError.getDetails().getErrors();
-            if (googleError.getStatusCode() == 403 && errorInfos.stream()
-                    .map(GoogleJsonError.ErrorInfo::getReason)
-                    .anyMatch("quotaExceeded"::equals)) {
-                endedOnError = true;
-                hardShutdown();
-                runLater(() -> errorList.add(0, String.format("%s - %s", time, googleError)));
+            final String reasonCode = ConsumerMultiProducer.getFirstReasonCode(googleError);
+
+            switch (reasonCode) {
+                case "quotaExceeded":
+                    endedOnError = true;
+                    hardShutdown();
+                    runLater(() -> errorList.add(0, String.format("%s - %s", time, googleError)));
+                    break;
+
+                default:
+                    logger.warn(googleError);
             }
         }
 
@@ -275,36 +280,20 @@ public class GroupRefresh extends Thread implements RefreshInterface {
 
             while (!endedProperty.getValue()) {
                 runLater(() -> {
-                    /*elapsedTimeProperty.setValue(String.format("%s CtP-%s RP-%s ChP-%s CmC-%s ChC-%s",
-                            elapsedTimer.humanReadableFormat(),
-                            commentThreadProducer.getBlockingQueue().size(),
-                            replyProducer.getBlockingQueue().size(),
-                            channelProducer.getBlockingQueue().size(),
-                            commentConsumer.getBlockingQueue().size(),
-                            channelConsumer.getBlockingQueue().size()));*/
                     elapsedTimeProperty.setValue(String.format("%s", elapsedTimer.humanReadableFormat()));
                     pollProcessed();
                 });
                 Threads.awaitMillis(27);
             }
 
+            runLater(() -> {
+                elapsedTimeProperty.setValue(String.format("%s", elapsedTimer.humanReadableFormat()));
+                pollProcessed();
+            });
+
             logger.debug("Ended Elapsed Timer");
         });
         es.shutdown();
-
-        /* Debug thread to make sure no items remaining
-        final ExecutorService tes = Executors.newSingleThreadExecutor();
-        tes.submit(() -> {
-            while (true) {
-                logger.debug("replyProducer {} {} items={}", replyProducer.shouldKeepAlive(), replyProducer.getExecutorGroup().isStillWorking(), new ArrayList(replyProducer.getBlockingQueue()));
-                logger.debug("channelProducer {} {} items={}", channelProducer.shouldKeepAlive(), channelProducer.getExecutorGroup().isStillWorking(), new ArrayList(channelProducer.getBlockingQueue()));
-                logger.debug("commentConsumer {} {} items={}", commentConsumer.shouldKeepAlive(), commentConsumer.getExecutorGroup().isStillWorking(), new ArrayList(commentConsumer.getBlockingQueue()));
-                logger.debug("channelConsumer {} {} items={}", channelConsumer.shouldKeepAlive(), channelConsumer.getExecutorGroup().isStillWorking(), new ArrayList(channelConsumer.getBlockingQueue()));
-                awaitMillis(5000);
-            }
-        });
-        tes.shutdown();
-         */
     }
 
     @Override
@@ -313,9 +302,11 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         uniqueVideoIdProducer.setHardShutdown(true);
         videoProducer.setHardShutdown(true);
         commentThreadProducer.setHardShutdown(true);
+        reviewThreadProducer.setHardShutdown(true);
         replyProducer.setHardShutdown(true);
         channelProducer.setHardShutdown(true);
         commentConsumer.setHardShutdown(true);
+        moderatedCommentConsumer.setHardShutdown(true);
         channelConsumer.setHardShutdown(true);
 
         hardShutdown = true;

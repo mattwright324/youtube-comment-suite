@@ -110,7 +110,7 @@ public class OAuth2Manager {
     }
 
     private OAuth2Tokens getNewAccessToken(final OAuth2Tokens oldTokens) throws IOException {
-        logger.debug("Refreshing OAuth2 Access Token that has expired {}", oldTokens);
+        logger.debug("Refreshing OAuth2 Access Token that has expired");
         final Document result = getOauth2Connection()
                 .data("refresh_token", oldTokens.getRefreshToken())
                 .data("grant_type", "refresh_token")

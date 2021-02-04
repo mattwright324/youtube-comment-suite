@@ -368,7 +368,6 @@ public class SearchComments implements Initializable, ImageCache {
         scManageTagsModal.getBtnFinish().setOnAction(ae -> tagsModal.setVisible(false));
         tagsIcon.setImage(ImageLoader.TAGS.getImage());
         manageTags.setOnAction(ae -> {
-            scManageTagsModal.cleanUp();
             scManageTagsModal.withComments(resultsList.getSelectionModel().getSelectedItems());
             tagsModal.setVisible(true);
         });

@@ -51,7 +51,7 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
                 addProcessed(1);
             }
 
-            if (comments.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 1200 && !comments.isEmpty())) {
+            if (comments.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 3000 && !comments.isEmpty())) {
                 insertComments(comments);
                 elapsedTime.setNow();
             }
@@ -68,6 +68,10 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
 
     private void insertComments(final List<YouTubeComment> comments) {
         try {
+            if (moderated) {
+                logger.debug("Inserting moderated comments {}", comments.size());
+            }
+
             comments.removeIf(comment -> moderated
                     && (comment.getModerationStatus() == null ||
                     comment.getModerationStatus() == ModerationStatus.PUBLISHED));
@@ -84,9 +88,11 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
                 comments.removeIf(comment -> comment.getModerationStatus() == null || comment.getModerationStatus() == ModerationStatus.PUBLISHED);
 
                 database.moderatedComments().insertAll(comments);
+                logger.debug("Inserted moderated comments {}", comments.size());
             } else {
                 newComments.addAndGet(database.countCommentsNotExisting(commentIds));
                 database.comments().insertAll(comments);
+                logger.debug("Inserted comments {}", comments.size());
             }
 
             comments.clear();

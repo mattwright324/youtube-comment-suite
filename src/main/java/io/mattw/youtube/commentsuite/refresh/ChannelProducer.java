@@ -61,7 +61,7 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
                     channelIds.add(channelId);
                 }
 
-                if (channelIds.size() >= 50 || (elapsedTime.getElapsed().toMillis() > 500 && !channelIds.isEmpty())) {
+                if (channelIds.size() >= 50 || (elapsedTime.getElapsed().toMillis() > 3000 && !channelIds.isEmpty())) {
                     produceChannels(channelIds);
                 }
 

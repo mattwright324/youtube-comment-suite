@@ -1,13 +1,16 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.SQLLoader;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
+import io.mattw.youtube.commentsuite.events.TagsChangeEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import org.apache.logging.log4j.LogManager;
@@ -15,19 +18,20 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
-public class SCManageTagsModal extends VBox implements Cleanable {
+public class SCManageTagsModal extends VBox {
 
     private static final Logger logger = LogManager.getLogger();
 
     @FXML
-    private Label lblAbout, details;
+    private Label lblAbout;
+    @FXML
+    private ListView<String> allTags;
     @FXML
     private TextField tags;
     @FXML
@@ -41,6 +45,7 @@ public class SCManageTagsModal extends VBox implements Cleanable {
         logger.debug("Initialize SCShowMoreModal");
 
         database = CommentSuite.getDatabase();
+        CommentSuite.getEventBus().register(this);
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SCManageTagsModal.fxml"));
         loader.setController(this);
@@ -48,7 +53,7 @@ public class SCManageTagsModal extends VBox implements Cleanable {
         try {
             loader.load();
 
-            cleanUp();
+            refreshAllTags();
 
             btnAdd.setOnAction(ae -> {
                 try {
@@ -71,9 +76,26 @@ public class SCManageTagsModal extends VBox implements Cleanable {
         }
     }
 
+    @Subscribe
+    public void tagsChangeEvent(TagsChangeEvent tagsChangeEvent) {
+        refreshAllTags();
+    }
+
+    private void refreshAllTags() {
+        try {
+            final List<String> tags = database.comments().getAllTags();
+
+            runLater(() -> {
+                allTags.getItems().clear();
+                allTags.getItems().addAll(tags);
+            });
+        } catch (SQLException e) {
+            logger.error(e);
+        }
+    }
+
     public void withComments(List<SearchCommentsListItem> selected) {
         this.selected = selected;
-        //this.allTags = database.comments().getAllTags();
 
         runLater(() -> {
             lblAbout.setText(String.format("%s comments(s) selected", selected.size()));
@@ -88,11 +110,6 @@ public class SCManageTagsModal extends VBox implements Cleanable {
         return Stream.of(tags.getText().split(","))
                 .map(String::trim)
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public void cleanUp() {
-
     }
 
     public Button getBtnFinish() {

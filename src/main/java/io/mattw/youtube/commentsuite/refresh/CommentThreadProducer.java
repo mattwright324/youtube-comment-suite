@@ -1,12 +1,12 @@
 package io.mattw.youtube.commentsuite.refresh;
 
-import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadListResponse;
 import com.google.api.services.youtube.model.CommentThreadReplies;
-import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
@@ -64,15 +64,10 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
             return null;
         }
 
-        final YouTubeAccount account = configData.getAccount(channelId);
-        final String accessToken = Optional.ofNullable(account)
+        return Optional.ofNullable(configData.getAccount(channelId))
                 .map(YouTubeAccount::getTokens)
                 .map(OAuth2Tokens::getAccessToken)
                 .orElse(null);
-
-        logger.debug(accessToken);
-
-        return accessToken;
     }
 
     private void refreshOauth2(final String channelId) {
@@ -107,16 +102,17 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
             send(video.getChannelId());
 
-            int attempts = 1;
+            int attempt = 1;
             CommentThreadListResponse response;
             String pageToken = "";
             int page = 1;
             final int maxAttempts = 5;
+
+            threadLoop:
             do {
                 try {
-                    logger.info("{} - {} {}", video.getId(), moderationStatus, video.getTitle());
                     do {
-                        logger.debug("{} {}", moderationStatus, attempts);
+                        logger.info("{} Try #{} {} {}", moderationStatus, attempt, video.getId(), video.getTitle());
 
                         final String oauthToken = getOauthToken(video.getChannelId());
                         response = youTube.commentThreads()
@@ -130,7 +126,13 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .setModerationStatus(moderationStatus.getApiValue())
                                 .execute();
 
+                        logger.info("{} Response {} {}", moderationStatus, video.getId(), video.getTitle());
+
                         pageToken = response.getNextPageToken();
+
+                        if (moderationStatus != PUBLISHED) {
+                            logger.debug(response);
+                        }
 
                         try {
                             // Maybe comments were re-enabled if we got a 403 in the past.
@@ -185,10 +187,13 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         awaitMillis(50);
                     } while (pageToken != null && page++ < pages.getPageCount() && !isHardShutdown());
 
+                    logger.info("{} Completed {} {}", moderationStatus, video.getId(), video.getTitle());
+
                     break;
                 } catch (Exception e) {
                     if (e instanceof GoogleJsonResponseException) {
                         final GoogleJsonResponseException ge = (GoogleJsonResponseException) e;
+                        final String reasonCode = getFirstReasonCode(ge);
 
                         try {
                             database.videos().updateHttpCode(video.getId(), ge.getStatusCode());
@@ -196,60 +201,76 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                             logger.error("Failed to update video http response code", sqle);
                         }
 
-                        final GoogleJsonError.ErrorInfo firstError = ge.getDetails()
-                                .getErrors()
-                                .get(0);
+                        switch (reasonCode) {
+                            case "quotaExceeded":
+                                if (moderationStatus == PUBLISHED) {
+                                    sendMessage(Level.FATAL, "API Quota Exceeded");
+                                    break threadLoop;
+                                }
 
-                        if (ge.getStatusCode() == 400) {
-                            final String message = String.format("[%s/%s] %s %s [videoId=%s]", attempts, maxAttempts,
-                                    ge.getStatusCode(),
-                                    firstError.getReason(),
-                                    video.getId());
 
-                            sendMessage(Level.ERROR, e, message);
+                                final String authQuotaMsg = String.format("[%s/%s] Auth Quota Exceeded  [videoId=%s]",
+                                        attempt,
+                                        maxAttempts,
+                                        video.getId());
 
-                            attempts++;
-                        } else if (ge.getStatusCode() == 401 && moderationStatus != PUBLISHED) {
-                            final String message = String.format("[%s/%s] Authorization failed [videoId=%s]",
-                                    attempts,
-                                    maxAttempts,
-                                    video.getId());
+                                sendMessage(Level.ERROR, authQuotaMsg);
+                                awaitMillis(5000);
 
-                            sendMessage(Level.WARN, message);
-                            sendMessage(Level.WARN, "Trying to refresh Oauth2 access token");
+                                attempt++;
+                                break;
 
-                            refreshOauth2(video.getChannelId());
-                            CommentSuite.getConfig().save();
+                            case "authError":
+                                final String authMsg = String.format("[%s/%s] Authorization failed [videoId=%s]",
+                                        attempt,
+                                        maxAttempts,
+                                        video.getId());
 
-                            attempts++;
-                        } else if (ge.getStatusCode() == 403) {
-                            final String message = String.format("Comments Disabled [videoId=%s]", video.getId());
+                                sendMessage(Level.WARN, authMsg);
+                                sendMessage(Level.WARN, "Trying to refresh Oauth2 access token");
 
-                            sendMessage(Level.WARN, message);
+                                refreshOauth2(video.getChannelId());
+                                awaitMillis(5000);
 
-                            break;
-                        } else {
-                            final String message = String.format("Error %s %s [videoId=%s]",
-                                    ge.getStatusCode(),
-                                    firstError.getReason(),
-                                    video.getId());
+                                attempt++;
+                                break;
 
-                            sendMessage(Level.ERROR, e, message);
+                            case "commentsDisabled":
+                                final String disableMsg = String.format("Comments Disabled [videoId=%s]", video.getId());
+                                sendMessage(Level.WARN, disableMsg);
+                                break threadLoop;
 
-                            break;
+                            case "forbidden":
+                            case "channelNotFound":
+                            case "commentThreadNotFound":
+                            case "videoNotFound":
+                                final String notFound = String.format("%s [videoId=%s]", reasonCode, video.getId());
+                                sendMessage(Level.WARN, notFound);
+                                break threadLoop;
+
+                            default:
+                                final String otherMsg = String.format("[%s/%s] %s [videoId=%s]",
+                                        attempt,
+                                        maxAttempts,
+                                        reasonCode,
+                                        video.getId());
+
+                                sendMessage(Level.ERROR, e, otherMsg);
+                                attempt++;
+                                break;
                         }
                     } else {
                         final String message = String.format("[%s/%s] %s [videoId=%s]",
-                                attempts,
+                                attempt,
                                 maxAttempts,
                                 e.getClass().getSimpleName(),
                                 video.getId());
 
                         sendMessage(Level.ERROR, e, message);
-                        attempts++;
+                        attempt++;
                     }
                 }
-            } while (attempts <= maxAttempts && !isHardShutdown());
+            } while (attempt <= maxAttempts && !isHardShutdown());
 
             addProcessed(1);
             awaitMillis(500);
