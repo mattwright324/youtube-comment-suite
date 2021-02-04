@@ -230,7 +230,10 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 sendMessage(Level.WARN, "Trying to refresh Oauth2 access token");
 
                                 refreshOauth2(video.getChannelId());
-                                awaitMillis(5000);
+
+                                // For some reason without a few seconds wait the 'Auth Quota Exceeded'
+                                // error above will occur on the next request despite using the new token.
+                                awaitMillis(10000);
 
                                 attempt++;
                                 break;
