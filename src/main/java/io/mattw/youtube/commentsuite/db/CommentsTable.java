@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_IGNORE_COMMENTS;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class CommentsTable extends TableHelper<YouTubeComment> {
 
@@ -125,6 +126,10 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
                 "INSERT OR IGNORE INTO comment_tags (comment_id, tag) VALUES (?, ?)")) {
             for (YouTubeComment comment : comments) {
                 for (String tag : tags) {
+                    if (isBlank(tag)) {
+                        continue;
+                    }
+
                     ps.setString(1, comment.getId());
                     ps.setString(2, tag);
                     ps.addBatch();

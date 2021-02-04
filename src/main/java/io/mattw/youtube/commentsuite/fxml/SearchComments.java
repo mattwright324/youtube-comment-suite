@@ -71,12 +71,13 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private ComboBox<CommentQuery.Order> comboOrderBy;
     @FXML private TextField nameLike, commentLike, hasTags;
     @FXML private DatePicker dateFrom, dateTo;
-    @FXML private Button btnSearch, btnClear, btnExport;
+    @FXML private Button btnSearch, btnClear, btnSelectTags, btnExport;
 
     @FXML private OverlayModal<SCVideoSelectModal> videoSelectModal;
     @FXML private OverlayModal<SCShowMoreModal> showMoreModal;
     @FXML private OverlayModal<SCExportModal> exportModal;
     @FXML private OverlayModal<SCManageTagsModal> tagsModal;
+    @FXML private OverlayModal<SCSelectTagsModal> selectTagsModal;
 
     private ChangeListener<Font> fontListener;
 
@@ -363,13 +364,31 @@ public class SearchComments implements Initializable, ImageCache {
             scExportModal.getBtnSubmit().setDefaultButton(exportModal.isVisible());
         });
 
+        tagsIcon.setImage(ImageLoader.TAGS.getImage());
+        ImageView tagsIcon2 = new ImageView(tagsIcon.getImage());
+        tagsIcon2.setFitHeight(20);
+        tagsIcon2.setFitWidth(20);
+        btnSelectTags.setGraphic(tagsIcon2);
+
         SCManageTagsModal scManageTagsModal = new SCManageTagsModal();
         tagsModal.setContent(scManageTagsModal);
         scManageTagsModal.getBtnFinish().setOnAction(ae -> tagsModal.setVisible(false));
-        tagsIcon.setImage(ImageLoader.TAGS.getImage());
         manageTags.setOnAction(ae -> {
             scManageTagsModal.withComments(resultsList.getSelectionModel().getSelectedItems());
             tagsModal.setVisible(true);
+        });
+
+        SCSelectTagsModal scSelectTagsModal = new SCSelectTagsModal();
+        selectTagsModal.setContent(scSelectTagsModal);
+        scSelectTagsModal.getBtnClose().setOnAction(ae -> selectTagsModal.setVisible(false));
+        scSelectTagsModal.getBtnSelect().setOnAction(ae -> {
+            runLater(() -> {
+                hasTags.setText(scSelectTagsModal.getSelectedString());
+                selectTagsModal.setVisible(false);
+            });
+        });
+        btnSelectTags.setOnAction(ae -> {
+            selectTagsModal.setVisible(true);
         });
     }
 

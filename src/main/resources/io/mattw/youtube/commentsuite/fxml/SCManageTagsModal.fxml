@@ -22,6 +22,7 @@
             <TextField fx:id="tags" promptText="tag1, tag2, tag3" />
             <Button fx:id="btnAdd" styleClass="btnPrimary" maxWidth="Infinity" text="Add to selected" />
             <Button fx:id="btnRemove" styleClass="btnLight" maxWidth="Infinity" text="Remove from selected" />
+            <Button fx:id="btnSelect" styleClass="btnLight" maxWidth="Infinity" text="Select from list" />
         </VBox>
     </HBox>
 

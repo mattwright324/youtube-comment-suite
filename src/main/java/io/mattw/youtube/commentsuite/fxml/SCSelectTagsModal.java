@@ -3,7 +3,6 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.SQLLoader;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.events.TagsChangeEvent;
 import javafx.fxml.FXML;
@@ -21,30 +20,26 @@ import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
-public class SCManageTagsModal extends VBox {
+public class SCSelectTagsModal extends VBox {
 
     private static final Logger logger = LogManager.getLogger();
 
     @FXML
-    private Label lblAbout;
-    @FXML
     private ListView<String> allTags;
     @FXML
-    private TextField tags;
-    @FXML
-    private Button btnAdd, btnRemove, btnSelect, btnFinish;
+    private Button btnClose, btnSelect;
 
     private final CommentDatabase database;
 
     private List<SearchCommentsListItem> selected;
 
-    public SCManageTagsModal() {
-        logger.debug("Initialize SCManageTagsModal");
+    public SCSelectTagsModal() {
+        logger.debug("Initialize SCSelectTagsModal");
 
         database = CommentSuite.getDatabase();
         CommentSuite.getEventBus().register(this);
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("SCManageTagsModal.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("SCSelectTagsModal.fxml"));
         loader.setController(this);
         loader.setRoot(this);
         try {
@@ -53,24 +48,6 @@ public class SCManageTagsModal extends VBox {
             allTags.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
             refreshAllTags();
-
-            btnAdd.setOnAction(ae -> {
-                try {
-                    database.comments().associateTags(toComments(), toTags());
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            });
-
-            btnRemove.setOnAction(ae -> {
-                try {
-                    database.comments().deassociateTags(toComments(), toTags());
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            });
-
-            btnSelect.setOnAction(ae -> runLater(() -> tags.setText(String.join(", ", allTags.getSelectionModel().getSelectedItems()))));
         } catch (IOException e) {
             logger.error(e);
             e.printStackTrace();
@@ -95,25 +72,16 @@ public class SCManageTagsModal extends VBox {
         }
     }
 
-    public void withComments(List<SearchCommentsListItem> selected) {
-        this.selected = selected;
-
-        runLater(() -> {
-            lblAbout.setText(String.format("%s comments(s) selected", selected.size()));
-        });
+    public String getSelectedString() {
+        return String.join(", ", allTags.getSelectionModel().getSelectedItems());
     }
 
-    public List<YouTubeComment> toComments() {
-        return selected.stream().map(SearchCommentsListItem::getComment).collect(Collectors.toList());
+    public Button getBtnClose() {
+        return btnClose;
     }
 
-    public List<String> toTags() {
-        return Stream.of(tags.getText().split(","))
-                .map(String::trim)
-                .collect(Collectors.toList());
+    public Button getBtnSelect() {
+        return btnSelect;
     }
 
-    public Button getBtnFinish() {
-        return btnFinish;
-    }
 }
