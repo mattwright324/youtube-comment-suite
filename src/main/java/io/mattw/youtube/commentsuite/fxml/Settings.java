@@ -145,12 +145,6 @@ public class Settings implements Initializable {
             config.setDataObject(data);
             config.save();
 
-            if (customKey.isSelected()) {
-                CommentSuite.setYouTubeApiKey(data.getYoutubeApiKey());
-            } else {
-                CommentSuite.setYouTubeApiKey(ConfigData.DEFAULT_API_KEY);
-            }
-
             logger.debug("Closing Settings");
             settingsPane.setManaged(false);
             settingsPane.setVisible(false);

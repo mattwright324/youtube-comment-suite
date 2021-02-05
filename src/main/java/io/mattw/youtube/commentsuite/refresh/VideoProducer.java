@@ -119,14 +119,14 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
 
         sendCollection(videos, YouTubeVideo.class);
 
-        final List<YouTubeVideo> videosMine = videos.stream()
-                .filter(video -> configData.isSignedIn(video.getChannelId()))
-                .collect(Collectors.toList());
-        logger.debug("Video(s) matches a signed in account {}",
-                videosMine.stream().map(YouTubeObject::getId).collect(Collectors.toList()));
-
         if (configData.isGrabHeldForReview()) {
-            logger.debug("Sending review?");
+            final List<YouTubeVideo> videosMine = videos.stream()
+                    .filter(video -> configData.isSignedIn(video.getChannelId()))
+                    .collect(Collectors.toList());
+
+            logger.debug("Video(s) matches a signed in account {}",
+                    videosMine.stream().map(YouTubeObject::getId).collect(Collectors.toList()));
+
             sendCollection(videosMine, YouTubeVideo.class, HELD_FOR_REVIEW.name());
         }
     }

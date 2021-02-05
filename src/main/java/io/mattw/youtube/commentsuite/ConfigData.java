@@ -131,4 +131,8 @@ public class ConfigData implements Serializable {
                 .orElse(null);
     }
 
+    public String getApiKeyOrDefault() {
+        return isCustomApiKey() ? getYoutubeApiKey() : DEFAULT_API_KEY;
+    }
+
 }

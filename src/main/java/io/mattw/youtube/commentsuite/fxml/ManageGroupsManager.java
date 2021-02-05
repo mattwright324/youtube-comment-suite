@@ -488,11 +488,11 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         final long nLikes, nDislikes;
         if (gcd != 0) {
             if (gcdLikes > gcdDislikes) {
-                nLikes = gcdLikes / gcdDislikes;
+                nLikes = gcdLikes / Math.max(1, gcdDislikes);
                 nDislikes = 1;
             } else {
                 nLikes = 1;
-                nDislikes = gcdDislikes / gcdLikes;
+                nDislikes = gcdDislikes / Math.max(1, gcdLikes);
             }
         } else {
             nLikes = 0;

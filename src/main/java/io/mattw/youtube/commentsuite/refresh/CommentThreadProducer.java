@@ -85,7 +85,14 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
     }
 
     private void produce() {
-        logger.debug("Starting CommentThreadProducer " + moderationStatus);
+        if (pages == RefreshCommentPages.NONE) {
+            logger.debug("Skipping CommentThreadProducer {} pages=NONE", moderationStatus);
+            addProcessed(getBlockingQueue().size());
+            getBlockingQueue().clear();
+            return;
+        }
+
+        logger.debug("Starting CommentThreadProducer {}", moderationStatus);
 
         while (shouldKeepAlive()) {
             final YouTubeVideo video = getBlockingQueue().poll();
@@ -117,7 +124,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         final String oauthToken = getOauthToken(video.getChannelId());
                         response = youTube.commentThreads()
                                 .list(moderationStatus.getPart())
-                                .setKey(isBlank(oauthToken) ? CommentSuite.getYouTubeApiKey() : null)
+                                .setKey(CommentSuite.getYouTubeApiKey())
                                 .setOauthToken(oauthToken)
                                 .setVideoId(video.getId())
                                 .setMaxResults(100L)
@@ -125,8 +132,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .setPageToken(pageToken)
                                 .setModerationStatus(moderationStatus.getApiValue())
                                 .execute();
-
-                        logger.info("{} Response {} {}", moderationStatus, video.getId(), video.getTitle());
 
                         pageToken = response.getNextPageToken();
 
@@ -148,22 +153,9 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
                         final List<YouTubeComment> comments = items.stream()
                                 .map(YouTubeComment::new)
-                                .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()) /* filter out G+ comments */)
+                                .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
                                 .collect(Collectors.toList());
                         sendCollection(comments, YouTubeComment.class);
-
-                        if (moderationStatus != PUBLISHED) {
-                            final List<YouTubeComment> replies = items.stream()
-                                    .map(CommentThread::getReplies)
-                                    .map(CommentThreadReplies::getComments)
-                                    .flatMap(List::stream)
-                                    .map(comment -> new YouTubeComment(comment, video.getId()))
-                                    .peek(comment -> comment.setModerationStatus(moderationStatus))
-                                    .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
-                                    .collect(Collectors.toList());
-
-                            sendCollection(replies, YouTubeComment.class);
-                        }
 
                         final List<String> channelIds = comments.stream()
                                 .map(YouTubeComment::getChannelId)
@@ -183,6 +175,24 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .map(comment -> new StringTuple(comment.getId(), video.getId()))
                                 .collect(Collectors.toList());
                         sendCollection(replyThreads, StringTuple.class);
+
+                        if (moderationStatus != PUBLISHED) {
+                            final List<YouTubeComment> replies = items.stream()
+                                    .map(CommentThread::getReplies)
+                                    .map(CommentThreadReplies::getComments)
+                                    .flatMap(List::stream)
+                                    .map(comment -> new YouTubeComment(comment, video.getId()))
+                                    .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
+                                    .collect(Collectors.toList());
+
+                            sendCollection(replies, YouTubeComment.class);
+
+                            final List<String> replyIds = replies.stream()
+                                    .map(YouTubeComment::getChannelId)
+                                    .distinct()
+                                    .collect(Collectors.toList());
+                            sendCollection(replyIds, String.class);
+                        }
 
                         awaitMillis(50);
                     } while (pageToken != null && page++ < pages.getPageCount() && !isHardShutdown());
@@ -215,7 +225,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                         video.getId());
 
                                 sendMessage(Level.ERROR, authQuotaMsg);
-                                awaitMillis(5000);
+                                awaitMillis(15000);
 
                                 attempt++;
                                 break;
@@ -233,7 +243,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
                                 // For some reason without a few seconds wait the 'Auth Quota Exceeded'
                                 // error above will occur on the next request despite using the new token.
-                                awaitMillis(10000);
+                                awaitMillis(15000);
 
                                 attempt++;
                                 break;

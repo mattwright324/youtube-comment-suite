@@ -52,6 +52,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
         this.commentText = snippet.getTextDisplay();
         setPublished(snippet.getPublishedAt().getValue());
         this.likes = snippet.getLikeCount();
+        this.moderationStatus = ModerationStatus.fromApiValue(snippet.getModerationStatus());
         this.parentId = snippet.getParentId();
 
         if (snippet.getAuthorChannelId() != null) {

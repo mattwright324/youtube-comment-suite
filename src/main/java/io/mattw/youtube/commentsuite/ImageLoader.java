@@ -25,6 +25,7 @@ public enum ImageLoader {
     PENCIL("pencil.png"),
     PLAYLIST("playlist.png"),
     PLUS("plus.png"),
+    QUOTA("quota.png"),
     REPLY("reply.png"),
     SAVE("save.png"),
     SEARCH("search.png"),

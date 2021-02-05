@@ -124,11 +124,7 @@ public class CommentSuite extends Application {
     }
 
     public static String getYouTubeApiKey() {
-        return youTubeApiKey;
-    }
-
-    public static void setYouTubeApiKey(String apiKey) {
-        youTubeApiKey = apiKey;
+        return getConfig().getDataObject().getApiKeyOrDefault();
     }
 
 }

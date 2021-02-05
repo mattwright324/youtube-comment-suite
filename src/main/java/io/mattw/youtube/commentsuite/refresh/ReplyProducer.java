@@ -41,6 +41,13 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
     }
 
     private void produce() {
+        if (options.getReplyPages() == RefreshCommentPages.NONE) {
+            logger.debug("Skipping ReplyProducer pages=NONE");
+            addProcessed(getBlockingQueue().size());
+            getBlockingQueue().clear();
+            return;
+        }
+
         logger.debug("Starting ReplyProducer");
 
         while (shouldKeepAlive()) {

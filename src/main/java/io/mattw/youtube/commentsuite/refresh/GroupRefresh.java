@@ -112,7 +112,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         replyProducer.setMessageFunc(this::postMessage);
 
         channelProducer.produceTo(channelConsumer, YouTubeChannel.class);
-        channelProducer.keepAliveWith(commentThreadProducer);
+        channelProducer.keepAliveWith(reviewThreadProducer, commentThreadProducer);
         channelProducer.setStartProduceOnFirstAccept(true);
         channelProducer.setMessageFunc(this::postMessage);
 
@@ -124,7 +124,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         moderatedCommentConsumer.setStartProduceOnFirstAccept(true);
         moderatedCommentConsumer.setMessageFunc(this::postMessage);
 
-        channelConsumer.keepAliveWith(commentThreadProducer, channelProducer, replyProducer);
+        channelConsumer.keepAliveWith(channelProducer, replyProducer);
         channelConsumer.setStartProduceOnFirstAccept(true);
         channelConsumer.setMessageFunc(this::postMessage);
 
@@ -146,7 +146,9 @@ public class GroupRefresh extends Thread implements RefreshInterface {
             // Parse Videos to CommentThreads, Replies, Channels
             runLater(() -> statusStepProperty.setValue("Grabbing Comments"));
             startProgressThread();
-            commentThreadProducer.startProducing();
+            if (!commentThreadProducer.getBlockingQueue().isEmpty()) {
+                commentThreadProducer.startProducing();
+            }
 
             if (!reviewThreadProducer.getBlockingQueue().isEmpty()) {
                 reviewThreadProducer.startProducing();
