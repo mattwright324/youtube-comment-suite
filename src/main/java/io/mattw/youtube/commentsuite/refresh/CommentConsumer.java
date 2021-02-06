@@ -51,12 +51,10 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
                 addProcessed(1);
             }
 
-            if (comments.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 3000 && !comments.isEmpty())) {
+            if (comments.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 2000 && !comments.isEmpty())) {
                 insertComments(comments);
                 elapsedTime.setNow();
             }
-
-            awaitMillis(5);
         }
 
         if (!comments.isEmpty()) {

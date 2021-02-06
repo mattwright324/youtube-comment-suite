@@ -50,12 +50,10 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
                 addProcessed(1);
             }
 
-            if (channels.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 3000 && !channels.isEmpty())) {
+            if (channels.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 2000 && !channels.isEmpty())) {
                 insertChannels(channels);
                 elapsedTime.setNow();
             }
-
-            awaitMillis(5);
         }
 
         if (!channels.isEmpty()) {

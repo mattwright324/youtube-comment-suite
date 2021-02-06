@@ -26,9 +26,6 @@
                     <tooltip><Tooltip wrapText="true" maxWidth="300" text="Create a new group." /></tooltip>
                 </Button>
             </HBox>
-            <Label minWidth="0" prefWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS"
-                   style="-fx-text-fill: lightgray"
-                   text="Groups can hold many channels, playlists, and videos at once."/>
         </HBox>
         <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
         <StackPane VBox.vgrow="ALWAYS" fx:id="content" />

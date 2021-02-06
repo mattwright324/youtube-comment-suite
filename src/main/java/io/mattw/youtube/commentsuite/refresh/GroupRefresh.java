@@ -97,11 +97,13 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         videoProducer.setMessageFunc(this::postMessage);
 
         commentThreadProducer.produceTo(commentConsumer, YouTubeComment.class);
+        commentThreadProducer.produceTo(channelConsumer, YouTubeChannel.class);
         commentThreadProducer.produceTo(channelProducer, String.class);
         commentThreadProducer.produceTo(replyProducer, StringTuple.class);
         commentThreadProducer.setMessageFunc(this::postMessage);
 
         reviewThreadProducer.produceTo(moderatedCommentConsumer, YouTubeComment.class);
+        reviewThreadProducer.produceTo(channelConsumer, YouTubeChannel.class);
         reviewThreadProducer.produceTo(channelProducer, String.class);
         reviewThreadProducer.setMessageFunc(this::postMessage);
 
@@ -124,7 +126,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         moderatedCommentConsumer.setStartProduceOnFirstAccept(true);
         moderatedCommentConsumer.setMessageFunc(this::postMessage);
 
-        channelConsumer.keepAliveWith(channelProducer, replyProducer);
+        channelConsumer.keepAliveWith(commentThreadProducer, reviewThreadProducer, channelProducer, replyProducer);
         channelConsumer.setStartProduceOnFirstAccept(true);
         channelConsumer.setMessageFunc(this::postMessage);
 

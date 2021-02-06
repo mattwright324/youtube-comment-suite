@@ -31,6 +31,14 @@ public class YouTubeChannel extends YouTubeObject {
     }
 
     /**
+     * Comment objects usually have enough detail about the poster to create our object.
+     */
+    public YouTubeChannel(CommentThread item) {
+        this(item.getSnippet().getTopLevelComment());
+        setTypeId(YType.CHANNEL);
+    }
+
+    /**
      * Constructor used for initialization from the database.
      */
     public YouTubeChannel(String channelId, String name, String thumbUrl) {

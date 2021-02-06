@@ -151,7 +151,9 @@ public class ManageGroups implements Initializable {
     @Subscribe
     public void groupDeleteEvent(final GroupDeleteEvent deleteEvent) {
         logger.debug("Group Delete Event");
-        managerCache.invalidate(deleteEvent.getGroup().getGroupId());
+        for (Group group : deleteEvent.getGroups()) {
+            managerCache.invalidate(group.getGroupId());
+        }
         runLater(this::rebuildGroupSelect);
     }
 

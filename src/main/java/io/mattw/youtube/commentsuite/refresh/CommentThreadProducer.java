@@ -2,12 +2,14 @@ package io.mattw.youtube.commentsuite.refresh;
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadListResponse;
 import com.google.api.services.youtube.model.CommentThreadReplies;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
 import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
@@ -157,11 +159,11 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .collect(Collectors.toList());
                         sendCollection(comments, YouTubeComment.class);
 
-                        final List<String> channelIds = comments.stream()
-                                .map(YouTubeComment::getChannelId)
-                                .distinct()
+                        final List<YouTubeChannel> channels = items.stream()
+                                .filter(distinctByKey(CommentThread::getId))
+                                .map(YouTubeChannel::new)
                                 .collect(Collectors.toList());
-                        sendCollection(channelIds, String.class);
+                        sendCollection(channels, YouTubeChannel.class);
 
                         /*
                          * Tuple to hold commentThreadId and videoId for consuming threads.
@@ -177,21 +179,24 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         sendCollection(replyThreads, StringTuple.class);
 
                         if (moderationStatus != PUBLISHED) {
-                            final List<YouTubeComment> replies = items.stream()
+                            final List<Comment> threadReplies = items.stream()
                                     .map(CommentThread::getReplies)
                                     .map(CommentThreadReplies::getComments)
                                     .flatMap(List::stream)
+                                    .collect(Collectors.toList());
+
+                            final List<YouTubeComment> replies = threadReplies.stream()
                                     .map(comment -> new YouTubeComment(comment, video.getId()))
                                     .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
                                     .collect(Collectors.toList());
 
                             sendCollection(replies, YouTubeComment.class);
 
-                            final List<String> replyIds = replies.stream()
-                                    .map(YouTubeComment::getChannelId)
-                                    .distinct()
+                            final List<YouTubeChannel> channels2 = threadReplies.stream()
+                                    .filter(distinctByKey(Comment::getId))
+                                    .map(YouTubeChannel::new)
                                     .collect(Collectors.toList());
-                            sendCollection(replyIds, String.class);
+                            sendCollection(channels2, YouTubeChannel.class);
                         }
 
                         awaitMillis(50);

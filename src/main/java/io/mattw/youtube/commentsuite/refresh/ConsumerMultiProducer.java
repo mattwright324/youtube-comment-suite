@@ -11,8 +11,11 @@ import org.apache.logging.log4j.util.TriConsumer;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * The ConsumerMultiProducer is always a consumer of one type and optionally can
@@ -221,6 +224,11 @@ public abstract class ConsumerMultiProducer<C> {
 
     public void setStartProduceOnFirstAccept(boolean startProduceOnFirstAccept) {
         this.startProduceOnFirstAccept = startProduceOnFirstAccept;
+    }
+
+    public <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
     }
 
     public static String getFirstReasonCode(GoogleJsonResponseException e) {

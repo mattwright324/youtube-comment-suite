@@ -100,11 +100,6 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
         logger.debug("Ending ReplyProducer");
     }
 
-    private <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
-        Set<Object> seen = ConcurrentHashMap.newKeySet();
-        return t -> seen.add(keyExtractor.apply(t));
-    }
-
     @Override
     public ExecutorGroup getExecutorGroup() {
         return executorGroup;

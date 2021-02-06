@@ -14,10 +14,8 @@ import java.io.IOException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
-import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +37,7 @@ public class MainQuotaModal extends VBox {
     private Button btnClose;
 
     public MainQuotaModal() {
-        logger.debug("Initialize SCSelectTagsModal");
+        logger.debug("Initialize MainQuotaModal");
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MainQuotaModal.fxml"));
         loader.setController(this);

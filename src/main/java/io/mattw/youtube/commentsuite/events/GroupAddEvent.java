@@ -2,16 +2,18 @@ package io.mattw.youtube.commentsuite.events;
 
 import io.mattw.youtube.commentsuite.db.Group;
 
+import java.util.List;
+
 public class GroupAddEvent {
 
-    private Group group;
+    private List<Group> groups;
 
-    public GroupAddEvent(Group group) {
-        this.group = group;
+    public GroupAddEvent(List<Group> groups) {
+        this.groups = groups;
     }
 
-    public Group getGroup() {
-        return group;
+    public List<Group> getGroups() {
+        return groups;
     }
 
 }

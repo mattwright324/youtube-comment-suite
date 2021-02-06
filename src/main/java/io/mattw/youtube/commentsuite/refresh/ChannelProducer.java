@@ -22,7 +22,7 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private final ExecutorGroup executorGroup = new ExecutorGroup(40);
+    private final ExecutorGroup executorGroup = new ExecutorGroup(5);
 
     private final Set<String> concurrentChannelSet = ConcurrentHashMap.newKeySet();
     private final AtomicLong duplicateSkipped = new AtomicLong();

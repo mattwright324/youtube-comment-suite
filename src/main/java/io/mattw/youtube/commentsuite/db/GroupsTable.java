@@ -119,7 +119,7 @@ public class GroupsTable extends TableHelper<Group> {
             database.commit();
 
             refreshAllGroups();
-            postEvent(new GroupAddEvent(null));
+            postEvent(new GroupAddEvent(objects));
         }
     }
 
@@ -141,7 +141,7 @@ public class GroupsTable extends TableHelper<Group> {
             database.cleanUp();
 
             refreshAllGroups();
-            postEvent(new GroupDeleteEvent(null));
+            postEvent(new GroupDeleteEvent(objects));
         }
     }
 
