@@ -13,7 +13,6 @@ import java.lang.reflect.Type;
 /**
  * @param <T> LocationProvider
  * @param <K> return data object
- * @author mattwright324
  */
 public class Location<T extends LocationProvider, K> {
 

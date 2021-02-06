@@ -1,12 +1,10 @@
 package io.mattw.youtube.commentsuite.db;
 
-import com.google.api.services.youtube.model.Channel;
-import com.google.api.services.youtube.model.Comment;
+import com.google.api.services.youtube.model.*;
 import org.apache.commons.text.StringEscapeUtils;
 
-/**
- * @author mattwright324
- */
+import java.util.Optional;
+
 public class YouTubeChannel extends YouTubeObject {
 
     /**
@@ -14,7 +12,11 @@ public class YouTubeChannel extends YouTubeObject {
      */
     public YouTubeChannel(Channel item) {
         super(item.getId(), StringEscapeUtils.unescapeHtml4(item.getSnippet().getTitle()),
-                item.getSnippet().getThumbnails().getDefault().getUrl());
+                Optional.ofNullable(item.getSnippet())
+                        .map(ChannelSnippet::getThumbnails)
+                        .map(ThumbnailDetails::getDefault)
+                        .map(Thumbnail::getUrl)
+                        .orElse(null));
         setTypeId(YType.CHANNEL);
     }
 
@@ -25,6 +27,14 @@ public class YouTubeChannel extends YouTubeObject {
         this(getChannelIdFromObject(item.getSnippet().getAuthorChannelId()),
                 StringEscapeUtils.unescapeHtml4(item.getSnippet().getAuthorDisplayName()),
                 item.getSnippet().getAuthorProfileImageUrl());
+        setTypeId(YType.CHANNEL);
+    }
+
+    /**
+     * Comment objects usually have enough detail about the poster to create our object.
+     */
+    public YouTubeChannel(CommentThread item) {
+        this(item.getSnippet().getTopLevelComment());
         setTypeId(YType.CHANNEL);
     }
 

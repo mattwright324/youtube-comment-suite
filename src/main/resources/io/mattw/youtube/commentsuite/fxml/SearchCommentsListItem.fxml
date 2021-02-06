@@ -28,6 +28,12 @@
             <Hyperlink fx:id="showMore" text="Show more" />
             <Hyperlink fx:id="viewTree" visible="false" managed="false" text="View Thread" />
             <Hyperlink fx:id="reply" visible="false" managed="false" text="Reply" />
+            <HBox fx:id="systemTagsPane" spacing="10" alignment="CENTER_LEFT">
+
+            </HBox>
+            <HBox fx:id="userTagsPane" spacing="10" alignment="CENTER_LEFT">
+
+            </HBox>
         </HBox>
     </VBox>
 </fx:root>

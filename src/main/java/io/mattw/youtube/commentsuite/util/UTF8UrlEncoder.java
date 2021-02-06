@@ -8,7 +8,6 @@ import java.net.URLEncoder;
  * <p>
  * That exception should never ever be thrown, if it does, the world must be ending.
  *
- * @author mattwright324
  */
 public class UTF8UrlEncoder {
 

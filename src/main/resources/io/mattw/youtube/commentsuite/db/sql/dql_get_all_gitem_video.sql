@@ -1,1 +1,0 @@
-SELECT * from gitem_video;

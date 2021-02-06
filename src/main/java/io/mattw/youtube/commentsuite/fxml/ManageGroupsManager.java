@@ -1,7 +1,10 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.eventbus.Subscribe;
-import io.mattw.youtube.commentsuite.*;
+import io.mattw.youtube.commentsuite.ConfigData;
+import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.ImageCache;
+import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
@@ -14,12 +17,14 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
@@ -48,21 +53,33 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
  * <p>
  * Loads template FXML and displays info from database.
  *
- * @author mattwright324
  */
 public class ManageGroupsManager extends StackPane implements ImageCache, Cleanable {
 
+    private static final Logger logger = LogManager.getLogger();
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yy");
 
-    private static final Logger logger = LogManager.getLogger();
     private final Image edit = ImageLoader.PENCIL.getImage();
     private final Image close = ImageLoader.CLOSE.getImage();
     private final Image save = ImageLoader.SAVE.getImage();
+
+    private static final String STAT_TOTAL_COMMENTS = "STAT_TOTAL_COMMENTS";
+    private static final String STAT_GRABBED_COMMENTS = "STAT_GRABBED_COMMENTS";
+    private static final String STAT_MODERATED_COMMENTS = "STAT_MODERATED_COMMENTS";
+    private static final String STAT_TOTAL_LIKES = "STAT_TOTAL_LIKES";
+    private static final String STAT_UNIQUE_VIEWERS = "STAT_UNIQUE_VIEWERS";
+    private static final String STAT_TOTAL_VIDEOS = "STAT_TOTAL_VIDEOS";
+    private static final String STAT_TOTAL_VIEWS = "STAT_TOTAL_VIEWS";
+    private static final String STAT_VIDEO_LIKES = "STAT_VIDEO_LIKES";
+    private static final String STAT_VIDEO_DISLIKES = "STAT_VIDEO_DISLIKES";
+    private static final String STAT_LIKE_RATIO = "STAT_LIKE_RATIO";
+    private static final String STAT_RATIO_NORM = "STAT_RATIO_NORM";
 
     private final Group group;
     private final CommentDatabase database;
     private final ConfigData configData;
 
+    private final Map<String, Label> statLabel = new HashMap<>();
     private ChangeListener<Font> fontListener;
 
     @FXML private OverlayModal<MGMVRefreshModal> refreshModal;
@@ -85,10 +102,11 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     @FXML private LineChart<String, Number> commentsLineChart, videosLineChart;
     private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
-    @FXML private Label totalComments, grabbedComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
-            likeDislikeRatio, normalizedRatio;
+//    @FXML private Label totalComments, grabbedComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
+//            likeDislikeRatio, normalizedRatio;
     @FXML private ListView<MGMVYouTubeObjectItem> popularVideosList, dislikedVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
+    @FXML private GridPane commentStatPane, videoStatPane;
 
     @FXML private Accordion accordion;
     @FXML private TitledPane generalPane, videoPane, viewerPane;
@@ -96,10 +114,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     public ManageGroupsManager(final Group group) throws IOException {
         logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
-        database = FXMLSuite.getDatabase();
-        configData = FXMLSuite.getConfig().getDataObject();
+        database = CommentSuite.getDatabase();
+        configData = CommentSuite.getConfig().getDataObject();
 
-        FXMLSuite.getEventBus().register(this);
+        CommentSuite.getEventBus().register(this);
 
         this.group = group;
 
@@ -122,6 +140,22 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         videosLineChartData = new LineChart.Series<>();
         videosLineChart.getData().add(videosLineChartData);
 
+        int cIndex = 1, vIndex = 1;
+        createGridRow(commentStatPane, STAT_TOTAL_COMMENTS, cIndex++, "Total Comments");
+        createGridRow(commentStatPane, STAT_GRABBED_COMMENTS, cIndex++, "Grabbed Comments");
+        createGridRow(commentStatPane, STAT_MODERATED_COMMENTS, cIndex++, "Moderated Comments");
+        createGridRow(commentStatPane, STAT_TOTAL_LIKES, cIndex++, "Total Likes");
+        statLabel.get(STAT_TOTAL_LIKES).setStyle("-fx-text-fill:cornflowerblue");
+        createGridRow(commentStatPane, STAT_UNIQUE_VIEWERS, cIndex++, "Unique Viewers");
+        createGridRow(videoStatPane, STAT_TOTAL_VIDEOS, vIndex++, "Total Videos");
+        createGridRow(videoStatPane, STAT_TOTAL_VIEWS, vIndex++, "Total Views");
+        createGridRow(videoStatPane, STAT_VIDEO_LIKES, vIndex++, "Total Video Likes");
+        statLabel.get(STAT_VIDEO_LIKES).setStyle("-fx-text-fill:cornflowerblue");
+        createGridRow(videoStatPane, STAT_VIDEO_DISLIKES, vIndex++, "Total Video Dislikes");
+        statLabel.get(STAT_VIDEO_DISLIKES).setStyle("-fx-text-fill:orangered");
+        createGridRow(videoStatPane, STAT_LIKE_RATIO, vIndex++, "Like:Dislike Ratio");
+        createGridRow(videoStatPane, STAT_RATIO_NORM, vIndex++, "Normalized Ratio");
+
         editIcon.setImage(edit);
         closeIcon.setImage(close);
 
@@ -131,12 +165,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         groupTitle.setMinWidth(Region.USE_PREF_SIZE);
         groupTitle.setMaxWidth(Region.USE_PREF_SIZE);
         groupTitle.textProperty().addListener((ov, prevText, currText) -> {
-            runLater(() -> {
-                int caretPosition = groupTitle.getCaretPosition();
-                groupTitle.setText(trimToEmpty(currText));
-                groupTitle.positionCaret(caretPosition);
-                rename.setDisable(isBlank(groupTitle.getText()));
-            });
+            runLater(() -> rename.setDisable(isBlank(groupTitle.getText())));
 
             FXUtils.adjustTextFieldWidthByContent(groupTitle);
         });
@@ -160,9 +189,11 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         rename.setOnAction(ae -> new Thread(() -> {
             if (editIcon.getImage().equals(save)) {
                 try {
-                    database.renameGroup(group, groupTitle.getText());
+                    final String newTitle = trimToEmpty(groupTitle.getText());
+                    database.groups().rename(group, newTitle);
+                    runLater(() -> groupTitle.setText(newTitle));
                 } catch (SQLException e) {
-                    groupTitle.setText(group.getName());
+                    runLater(() -> groupTitle.setText(group.getName()));
                     logger.error(e);
                 }
             }
@@ -189,22 +220,20 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             });
         }).start());
 
-        renameCancel.setOnAction(ae -> new Thread(() -> {
-            runLater(() -> {
-                editIcon.setImage(edit);
-                groupTitle.getStyleClass().add("clearTextField");
-                groupTitle.setEditable(false);
-                rename.setTooltip(new Tooltip("Rename"));
+        renameCancel.setOnAction(ae -> new Thread(() -> runLater(() -> {
+            editIcon.setImage(edit);
+            groupTitle.getStyleClass().add("clearTextField");
+            groupTitle.setEditable(false);
+            rename.setTooltip(new Tooltip("Rename"));
 
-                renameCancel.setVisible(false);
-                renameCancel.setManaged(false);
-                renameCancel.setDisable(true);
+            renameCancel.setVisible(false);
+            renameCancel.setManaged(false);
+            renameCancel.setDisable(true);
 
-                groupTitle.setText(group.getName());
+            groupTitle.setText(group.getName());
 
-                FXUtils.adjustTextFieldWidthByContent(groupTitle);
-            });
-        }).start());
+            FXUtils.adjustTextFieldWidthByContent(groupTitle);
+        })).start());
         renameCancel.setTooltip(new Tooltip("Cancel"));
 
         SelectionModel selectionModel = groupItemList.getSelectionModel();
@@ -271,9 +300,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal();
         deleteModal.setContent(mgmvDelete);
         deleteModal.setDividerClass("dividerDanger");
-        btnDelete.setOnAction(ae -> runLater(() -> {
-            deleteModal.setVisible(true);
-        }));
+        btnDelete.setOnAction(ae -> runLater(() -> deleteModal.setVisible(true)));
         deleteModal.visibleProperty().addListener((cl) -> {
             mgmvDelete.getBtnClose().setCancelButton(deleteModal.isVisible());
             mgmvDelete.getBtnDelete().setDefaultButton(deleteModal.isVisible());
@@ -290,7 +317,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
             try {
                 logger.warn("Deleting Group[id={},name={}]", group.getGroupId(), group.getName());
-                database.deleteGroup(this.group);
+                database.groups().delete(this.group);
             } catch (SQLException e) {
                 logger.error("Failed to delete group.", e);
             }
@@ -302,9 +329,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 btnReload.fire();
             });
         }).start());
-        mgmvDelete.getBtnClose().setOnAction(ae -> {
-            deleteModal.setVisible(false);
-        });
+        mgmvDelete.getBtnClose().setOnAction(ae -> deleteModal.setVisible(false));
 
         /*
           Add Item Modal
@@ -354,6 +379,18 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         mgmvRemoveAll.getBtnClose().setOnAction(ae -> removeAllModal.setVisible(false));
     }
 
+    private void createGridRow(final GridPane gridPane, final String statKey, final int rowNum, final String displayName) {
+        final Label name = new Label(displayName);
+        name.getStyleClass().addAll("bold");
+        name.setAlignment(Pos.TOP_RIGHT);
+
+        final Label value = new Label("...");
+        statLabel.put(statKey, value);
+
+        gridPane.add(name, 1, rowNum);
+        gridPane.add(value, 2, rowNum);
+    }
+
     /**
      * Reloads displayed timestamp and group stats information. Information displayed is queried from the database
      * and formatted and processed before being added to the labels, lists, and charts.
@@ -368,7 +405,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         final String previousName = group.getName();
         final String previousId = group.getGroupId();
-        final Group newGroup = database.getGroup(group.getGroupId());
+        final Group newGroup = database.groups().get(group.getGroupId());
 
         if (newGroup == null) {
             ManageGroups.getManagerCache().invalidate(previousId);
@@ -441,11 +478,11 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         final long nLikes, nDislikes;
         if (gcd != 0) {
             if (gcdLikes > gcdDislikes) {
-                nLikes = gcdLikes / gcdDislikes;
+                nLikes = gcdLikes / Math.max(1, gcdDislikes);
                 nDislikes = 1;
             } else {
                 nLikes = 1;
-                nDislikes = gcdDislikes / gcdLikes;
+                nDislikes = gcdDislikes / Math.max(1, gcdLikes);
             }
         } else {
             nLikes = 0;
@@ -459,7 +496,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 .map(video -> new MGMVYouTubeObjectItem(video, video.getDislikes(), "dislikes"))
                 .collect(Collectors.toList());
         final List<MGMVYouTubeObjectItem> commentedVideos = groupStats.getMostCommented().stream()
-                .map(video -> new MGMVYouTubeObjectItem(video, video.getCommentCount(), "comments"))
+                .map(video -> new MGMVYouTubeObjectItem(video, video.getComments(), "comments"))
                 .collect(Collectors.toList());
         final List<MGMVYouTubeObjectItem> disabledVideos = groupStats.getCommentsDisabled().stream()
                 .map(video -> new MGMVYouTubeObjectItem(video, 0L, "Comments Disabled", true))
@@ -478,20 +515,21 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         runLater(() -> {
             commentsLineChartData.getData().addAll(commentChartData);
-            totalComments.setText(String.format("%,d", comments));
-            grabbedComments.setText(String.format("%,d (%,.2f%%)", grabbed, percentGrabbed));
-            totalLikes.setText(String.format("+%,d", groupStats.getTotalCommentLikes()));
-            totalViewers.setText(String.format("%,d", groupStats.getUniqueViewers()));
+            statLabel.get(STAT_TOTAL_COMMENTS).setText(String.format("%,d", comments));
+            statLabel.get(STAT_GRABBED_COMMENTS).setText(String.format("%,d (%,.2f%%)", grabbed, percentGrabbed));
+            statLabel.get(STAT_MODERATED_COMMENTS).setText(String.format("%,d", groupStats.getTotalModeratedComments()));
+            statLabel.get(STAT_TOTAL_LIKES).setText(String.format("+%,d", groupStats.getTotalCommentLikes()));
+            statLabel.get(STAT_UNIQUE_VIEWERS).setText(String.format("%,d", groupStats.getUniqueViewers()));
 
             videosLineChartData.getData().addAll(videoChartData);
-            totalVideos.setText(String.format("%,d", groupStats.getTotalVideos()));
-            totalViews.setText(String.format("%,d", groupStats.getTotalViews()));
-            totalVideoLikes.setText(String.format("+%,d", groupStats.getTotalLikes()));
-            totalVideoDislikes.setText(String.format("-%,d", groupStats.getTotalDislikes()));
-            likeDislikeRatio.setText(String.format("+%,d : -%,d", gcdLikes, gcdDislikes));
-            likeDislikeRatio.setStyle(String.format("-fx-text-fill:%s", gcdStyle));
-            normalizedRatio.setText(String.format("+%,d : -%,d", nLikes, nDislikes));
-            normalizedRatio.setStyle(String.format("-fx-text-fill:%s", gcdStyle));
+            statLabel.get(STAT_TOTAL_VIDEOS).setText(String.format("%,d", groupStats.getTotalVideos()));
+            statLabel.get(STAT_TOTAL_VIEWS).setText(String.format("%,d", groupStats.getTotalViews()));
+            statLabel.get(STAT_VIDEO_LIKES).setText(String.format("+%,d", groupStats.getTotalLikes()));
+            statLabel.get(STAT_VIDEO_DISLIKES).setText(String.format("-%,d", groupStats.getTotalDislikes()));
+            statLabel.get(STAT_LIKE_RATIO).setText(String.format("+%,d : -%,d", gcdLikes, gcdDislikes));
+            statLabel.get(STAT_LIKE_RATIO).setStyle(String.format("-fx-text-fill:%s", gcdStyle));
+            statLabel.get(STAT_RATIO_NORM).setText(String.format("+%,d : -%,d", nLikes, nDislikes));
+            statLabel.get(STAT_RATIO_NORM).setStyle(String.format("-fx-text-fill:%s", gcdStyle));
             generalPane.setDisable(false);
 
             popularVideosList.getItems().addAll(popularVideos);
@@ -534,7 +572,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
      */
     private void reloadGroupItems(final String caller) {
         logger.debug("[Load] Grabbing GroupItems {}", caller);
-        final List<GroupItem> groupItems = database.getGroupItems(this.group);
+        final List<GroupItem> groupItems = database.groupItems().byGroup(this.group);
         logger.debug("[Load] Found " + groupItems.size() + " GroupItem(s)");
 
         runLater(() -> groupItemList.getItems().clear());
@@ -610,9 +648,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         runLater(() -> {
             commentsLineChartData.getData().clear();
             videosLineChartData.getData().clear();
-            Stream.of(totalComments, grabbedComments, totalLikes, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
-                    likeDislikeRatio, normalizedRatio)
-                    .forEach(label -> label.setText("..."));
+
+            statLabel.values().forEach(label -> label.setText("..."));
+
             Stream.of(generalPane, videoPane, viewerPane)
                     .forEach(pane -> pane.setDisable(true));
             Stream.of(popularVideosList, dislikedVideosList, commentedVideosList,

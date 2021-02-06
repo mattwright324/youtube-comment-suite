@@ -54,30 +54,11 @@
                                     <xAxis><CategoryAxis animated="false" label="Week Of" /></xAxis>
                                     <yAxis><NumberAxis label="New Comments" /></yAxis>
                                 </LineChart>
-                                <GridPane vgap="10" hgap="10">
+                                <GridPane fx:id="commentStatPane" vgap="10" hgap="10">
                                     <columnConstraints>
                                         <ColumnConstraints/>
-                                        <ColumnConstraints halignment="RIGHT" maxWidth="150" prefWidth="150"/>
+                                        <ColumnConstraints halignment="RIGHT" />
                                     </columnConstraints>
-                                    <Label GridPane.rowIndex="1" GridPane.columnIndex="1"
-                                           text="Total Comments" styleClass="bold" />
-                                    <Label GridPane.rowIndex="1" GridPane.columnIndex="2"
-                                           text="..." fx:id="totalComments" />
-
-                                    <Label GridPane.rowIndex="2" GridPane.columnIndex="1"
-                                           text="Grabbed Comments" styleClass="bold" />
-                                    <Label GridPane.rowIndex="2" GridPane.columnIndex="2"
-                                           text="..." fx:id="grabbedComments" />
-
-                                    <Label GridPane.rowIndex="3" GridPane.columnIndex="1"
-                                           text="Total Likes" styleClass="bold" />
-                                    <Label GridPane.rowIndex="3" GridPane.columnIndex="2"
-                                           text="..." fx:id="totalLikes" style="-fx-text-fill:cornflowerblue" />
-
-                                    <Label GridPane.rowIndex="4" GridPane.columnIndex="1"
-                                           text="Unique Viewers" styleClass="bold" />
-                                    <Label GridPane.rowIndex="4" GridPane.columnIndex="2"
-                                           text="..." fx:id="totalViewers"  />
                                 </GridPane>
 
                                 <LineChart fx:id="videosLineChart" minHeight="250" maxHeight="300" title="Videos By Week"
@@ -85,42 +66,11 @@
                                     <xAxis><CategoryAxis animated="false" label="Week Of" /></xAxis>
                                     <yAxis><NumberAxis label="Published Videos" /></yAxis>
                                 </LineChart>
-                                <GridPane vgap="10" hgap="10">
+                                <GridPane fx:id="videoStatPane" vgap="10" hgap="10">
                                     <columnConstraints>
                                         <ColumnConstraints/>
-                                        <ColumnConstraints halignment="RIGHT" maxWidth="150" prefWidth="150"/>
+                                        <ColumnConstraints halignment="RIGHT" />
                                     </columnConstraints>
-                                    <Label text="Total Videos" GridPane.columnIndex="1" GridPane.rowIndex="1"
-                                           styleClass="bold"/>
-                                    <Label text="..." fx:id="totalVideos" GridPane.columnIndex="2"
-                                           GridPane.rowIndex="1"/>
-
-                                    <Label text="Total Views" GridPane.columnIndex="1" GridPane.rowIndex="2"
-                                           styleClass="bold"/>
-                                    <Label text="..." fx:id="totalViews" GridPane.columnIndex="2"
-                                           GridPane.rowIndex="2"/>
-
-                                    <Label text="Total Video Likes" GridPane.columnIndex="1" GridPane.rowIndex="3"
-                                           styleClass="bold"/>
-                                    <Label text="..." fx:id="totalVideoLikes" GridPane.columnIndex="2"
-                                           GridPane.rowIndex="3"
-                                           style="-fx-text-fill:cornflowerblue"/>
-
-                                    <Label text="Total Video Dislikes" GridPane.columnIndex="1" GridPane.rowIndex="4"
-                                           styleClass="bold"/>
-                                    <Label text="..." fx:id="totalVideoDislikes" GridPane.columnIndex="2"
-                                           GridPane.rowIndex="4"
-                                           style="-fx-text-fill:orangered"/>
-
-                                    <Label text="Like/Dislike Ratio" GridPane.columnIndex="1" GridPane.rowIndex="5"
-                                           styleClass="bold"/>
-                                    <Label text="+... : -..." fx:id="likeDislikeRatio" GridPane.columnIndex="2"
-                                           GridPane.rowIndex="5"/>
-
-                                    <Label text="Normalized Ratio" GridPane.columnIndex="1" GridPane.rowIndex="6"
-                                           styleClass="bold"/>
-                                    <Label text="+... : -..." fx:id="normalizedRatio" GridPane.columnIndex="2"
-                                           GridPane.rowIndex="6"/>
                                 </GridPane>
                             </VBox>
                         </ScrollPane>

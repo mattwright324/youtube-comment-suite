@@ -2,23 +2,20 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ConfigData;
-import io.mattw.youtube.commentsuite.FXMLSuite;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Database entry for searched YouTube entries (Video, Channel, Playlist).
  * getYouTubeId() from YouTubeObject represents the GroupItem ID.
- *
- * @author mattwright324
  */
 public class GroupItem extends YouTubeObject {
 
@@ -37,7 +34,7 @@ public class GroupItem extends YouTubeObject {
     /**
      * Used for converting selected search items for inserting into database.
      */
-    public GroupItem(SearchResult item) {
+    public GroupItem(final SearchResult item) {
         super(item.getId(), item.getSnippet().getTitle(),
                 item.getSnippet().getThumbnails().getMedium().getUrl());
 
@@ -55,7 +52,7 @@ public class GroupItem extends YouTubeObject {
      *
      * @param item VideosList.Item
      */
-    public GroupItem(Video item) {
+    public GroupItem(final Video item) {
         this(item.getId(), YType.VIDEO, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
                 item.getSnippet().getThumbnails().getMedium().getUrl(), item.getSnippet().getPublishedAt().getValue(), 0);
     }
@@ -65,7 +62,7 @@ public class GroupItem extends YouTubeObject {
      *
      * @param item ChannelsList.Item
      */
-    public GroupItem(Channel item) {
+    public GroupItem(final Channel item) {
         this(item.getId(), YType.CHANNEL, item.getSnippet().getTitle(), item.getSnippet().getTitle(),
                 item.getSnippet().getThumbnails().getMedium().getUrl(), item.getSnippet().getPublishedAt().getValue(), 0);
     }
@@ -75,7 +72,7 @@ public class GroupItem extends YouTubeObject {
      *
      * @param item PlaylistItemsList.Item
      */
-    public GroupItem(Playlist item) {
+    public GroupItem(final Playlist item) {
         this(item.getId(), YType.PLAYLIST, item.getSnippet().getTitle(), item.getSnippet().getChannelTitle(),
                 item.getSnippet().getThumbnails().getMedium().getUrl(), item.getSnippet().getPublishedAt().getValue(), 0);
     }
@@ -83,14 +80,14 @@ public class GroupItem extends YouTubeObject {
     /**
      * Used for "All Items (#)" and "No items" display in the "Comment Search" and "Group Manager" ComboBoxes.
      */
-    public GroupItem(String gitemId, String title) {
+    public GroupItem(final String gitemId, final String title) {
         super(gitemId, title, null);
     }
 
     /**
      * Used by the database when querying for group items.
      */
-    public GroupItem(String gitemId, YType typeId, String title, String channelTitle, String thumbUrl, long published, long lastChecked) {
+    public GroupItem(final String gitemId, final YType typeId, final String title, final String channelTitle, final String thumbUrl, final long published, final long lastChecked) {
         super(gitemId, title, thumbUrl);
         setTypeId(typeId);
         this.channelTitle = channelTitle;
@@ -104,26 +101,26 @@ public class GroupItem extends YouTubeObject {
      * @param link a video, playlist, or channel link
      * @throws IOException there was a problem parsing the link
      */
-    public GroupItem(String link) throws IOException {
+    public GroupItem(final String link) throws IOException {
         ofLink(link);
     }
 
-    public GroupItem(String link, boolean fastAdd) throws IOException {
+    public GroupItem(final String link, final boolean fastAdd) throws IOException {
         this.fastAdd = fastAdd;
         ofLink(link);
     }
 
-    private void ofLink(String fullLink) throws IOException {
+    private void ofLink(final String fullLink) throws IOException {
         logger.debug("Matching link to type [fullLink={}]", fullLink);
 
-        youtube = FXMLSuite.getYouTube();
-        database = FXMLSuite.getDatabase();
+        youtube = CommentSuite.getYouTube();
+        database = CommentSuite.getDatabase();
 
-        Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
-        Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
-        Pattern playlist = Pattern.compile("(?:http[s]?://www.youtube.com/playlist\\?list=)([\\w_\\-]+)");
-        Pattern channel1 = Pattern.compile("(?:http[s]?://www.youtube.com/channel/)([\\w_\\-]+)");
-        Pattern channel2 = Pattern.compile("(?:http[s]?://www.youtube.com/user/)([\\w_\\-]+)");
+        final Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
+        final Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
+        final Pattern playlist = Pattern.compile("(?:http[s]?://www.youtube.com/playlist\\?list=)([\\w_\\-]+)");
+        final Pattern channel1 = Pattern.compile("(?:http[s]?://www.youtube.com/channel/)([\\w_\\-]+)");
+        final Pattern channel2 = Pattern.compile("(?:http[s]?://www.youtube.com/user/)([\\w_\\-]+)");
 
         Matcher m;
         YType type = YType.UNKNOWN;
@@ -164,18 +161,18 @@ public class GroupItem extends YouTubeObject {
         }
 
 
-        YouTube youtube = FXMLSuite.getYouTube();
+        final YouTube youtube = CommentSuite.getYouTube();
         if (result.isEmpty()) {
             throw new IOException(String.format("Input did not match expected formats [fullLink=%s]", fullLink));
         } else {
             if (type == YType.VIDEO) {
-                VideoListResponse vl = youtube.videos().list("snippet")
-                        .setKey(FXMLSuite.getYouTubeApiKey())
+                final VideoListResponse vl = youtube.videos().list("snippet")
+                        .setKey(CommentSuite.getYouTubeApiKey())
                         .setId(result)
                         .execute();
 
                 if (!vl.getItems().isEmpty()) {
-                    Video item = vl.getItems().get(0);
+                    final Video item = vl.getItems().get(0);
 
                     duplicate(new GroupItem(item));
 
@@ -183,7 +180,7 @@ public class GroupItem extends YouTubeObject {
                 }
             } else if (type == YType.CHANNEL) {
                 YouTube.Channels.List cl = youtube.channels().list("snippet")
-                        .setKey(FXMLSuite.getYouTubeApiKey());
+                        .setKey(CommentSuite.getYouTubeApiKey());
 
                 if (!channelUsername) {
                     cl = cl.setId(result);
@@ -191,23 +188,23 @@ public class GroupItem extends YouTubeObject {
                     cl = cl.setForUsername(result);
                 }
 
-                ChannelListResponse clr = cl.execute();
+                final ChannelListResponse clr = cl.execute();
 
                 if (!clr.getItems().isEmpty()) {
-                    Channel item = clr.getItems().get(0);
+                    final Channel item = clr.getItems().get(0);
 
                     duplicate(new GroupItem(item));
 
                     checkForNewChannel(item.getId());
                 }
             } else {
-                PlaylistListResponse pl = youtube.playlists().list("snippet")
-                        .setKey(FXMLSuite.getYouTubeApiKey())
+                final PlaylistListResponse pl = youtube.playlists().list("snippet")
+                        .setKey(CommentSuite.getYouTubeApiKey())
                         .setId(result)
                         .execute();
 
                 if (!pl.getItems().isEmpty()) {
-                    Playlist item = pl.getItems().get(0);
+                    final Playlist item = pl.getItems().get(0);
 
                     duplicate(new GroupItem(item));
 
@@ -220,22 +217,22 @@ public class GroupItem extends YouTubeObject {
     /**
      * Makes sure the channel associated with this GroupItem is in the database.
      */
-    private void checkForNewChannel(String channelId) {
-        if(database.doesChannelNotExist(channelId)) {
-            try {
-                ChannelListResponse clr = youtube.channels().list("snippet")
-                        .setKey(FXMLSuite.getYouTubeApiKey())
+    private void checkForNewChannel(final String channelId) {
+        try {
+            if (database.channels().notExists(channelId)) {
+                final ChannelListResponse clr = youtube.channels().list("snippet")
+                        .setKey(CommentSuite.getYouTubeApiKey())
                         .setId(channelId)
                         .execute();
 
-                YouTubeChannel channel = new YouTubeChannel(clr.getItems().get(0));
+                final YouTubeChannel channel = new YouTubeChannel(clr.getItems().get(0));
 
-                database.insertChannels(Collections.singletonList(channel));
-            } catch (IOException e) {
-                logger.error("Failed to get channel [id={}]", channelId);
-            } catch (SQLException e) {
-                logger.error("Failed to insert new channel [id={}]", channelId);
+                database.channels().insert(channel);
             }
+        } catch (IOException e) {
+            logger.error("Failed to get channel [id={}]", channelId);
+        } catch (SQLException e) {
+            logger.error("Failed to insert new channel [id={}]", channelId);
         }
     }
 

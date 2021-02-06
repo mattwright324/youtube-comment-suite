@@ -10,8 +10,6 @@ import javafx.scene.layout.Region;
  * Option to display tooltip on all cells to find preferred dummy cell height.
  * <p>
  * https://stackoverflow.com/a/46261347/2650847
- *
- * @author mattwright324
  */
 public class ListViewEmptyCellFactory<T extends Node> extends ListCell<T> {
 
@@ -23,17 +21,17 @@ public class ListViewEmptyCellFactory<T extends Node> extends ListCell<T> {
         tool.textProperty().bind(heightProperty().asString());
     }
 
-    public ListViewEmptyCellFactory(double height) {
+    public ListViewEmptyCellFactory(final double height) {
         this(height, false);
     }
 
-    public ListViewEmptyCellFactory(double height, boolean tooltipHeight) {
+    public ListViewEmptyCellFactory(final double height, final boolean tooltipHeight) {
         this();
         this.height = height;
         this.tooltipHeight = tooltipHeight;
     }
 
-    protected void updateItem(T item, boolean empty) {
+    protected void updateItem(final T item, final boolean empty) {
         super.updateItem(item, empty);
         setTooltip(tooltipHeight ? tool : null);
         if (empty) {

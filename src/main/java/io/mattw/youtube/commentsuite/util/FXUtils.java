@@ -18,11 +18,11 @@ public class FXUtils {
     private static final Map<TextField, Font> size = new HashMap<>();
     private static final Map<TextField, Double> padding = new HashMap<>();
 
-    public static void registerToSize(TextField field, int fontSize) {
+    public static void registerToSize(final TextField field, final int fontSize) {
         size.put(field, new Font(fontSize));
     }
 
-    public static void registerToPadding(TextField field, double paddingSize) {
+    public static void registerToPadding(final TextField field, final double paddingSize) {
         padding.put(field, paddingSize);
     }
 
@@ -32,7 +32,7 @@ public class FXUtils {
      * @param field TextField element
      * @link https://stackoverflow.com/a/25643696/2650847
      */
-    public static void adjustTextFieldWidthByContent(TextField field) {
+    public static void adjustTextFieldWidthByContent(final TextField field) {
         runLater(() -> {
             final Text text = new Text(field.getText());
             text.setFont(size.getOrDefault(field, field.getFont()));

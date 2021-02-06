@@ -1,10 +1,16 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.model.Comment;
+import com.google.api.services.youtube.model.CommentSnippet;
+import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
+import io.mattw.youtube.commentsuite.events.AccountAddEvent;
+import io.mattw.youtube.commentsuite.events.AccountDeleteEvent;
+import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
+import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -19,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collections;
 
 import static javafx.application.Platform.runLater;
 
@@ -28,7 +33,6 @@ import static javafx.application.Platform.runLater;
  * in its entirety. It also allows the user to reply to the comment with any of currently signed-into accounts
  * if they exist.
  *
- * @author mattwright324
  * @see SearchComments
  */
 public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
@@ -50,19 +54,21 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
     private YouTubeComment loadedComment;
 
-    private CommentDatabase database;
-    private BrowserUtil browserUtil = new BrowserUtil();
-    private OAuth2Handler oAuth2Handler;
-    private ConfigFile<ConfigData> config;
-    private ConfigData configData;
+    private final CommentDatabase database;
+    private final BrowserUtil browserUtil = new BrowserUtil();
+    private final OAuth2Manager oAuth2Manager;
+    private final ConfigFile<ConfigData> config;
+    private final ConfigData configData;
 
     public SCShowMoreModal() {
         logger.debug("Initialize SCShowMoreModal");
 
-        database = FXMLSuite.getDatabase();
-        oAuth2Handler = FXMLSuite.getOauth2();
-        config = FXMLSuite.getConfig();
+        database = CommentSuite.getDatabase();
+        oAuth2Manager = CommentSuite.getOauth2Manager();
+        config = CommentSuite.getConfig();
         configData = config.getDataObject();
+
+        CommentSuite.getEventBus().register(this);
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SCShowMoreModal.fxml"));
         loader.setController(this);
@@ -96,11 +102,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                 }
             });
 
-            configData.accountListChangedProperty().addListener((o, ov, nv) -> runLater(() -> {
-                comboAccountSelect.getItems().clear();
-                comboAccountSelect.getItems().addAll(configData.getAccounts());
-                comboAccountSelect.getSelectionModel().select(0);
-            }));
+            reloadAccountList();
 
             btnReply.visibleProperty().bind(btnReply.managedProperty());
             btnReply.managedProperty().bind(replyPane.visibleProperty());
@@ -117,21 +119,13 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                 });
 
                 try {
-                    oAuth2Handler.setTokens(comboAccountSelect.getValue().getTokens());
-
-                    String parentId = loadedComment.isReply() ?
+                    final YouTubeAccount selectedAccount = comboAccountSelect.getValue();
+                    final String parentId = loadedComment.isReply() ?
                             loadedComment.getParentId() : loadedComment.getId();
+                    final Comment yourReply = postReply(selectedAccount, parentId, replyText.getText());
+                    final YouTubeComment comment = new YouTubeComment(yourReply, loadedComment.getVideoId());
 
-                    Comment yourReply = oAuth2Handler.postReply(parentId, replyText.getText());
-
-                    YouTubeComment comment = new YouTubeComment(yourReply, loadedComment.getVideoId());
-
-                    // Update tokens on reply in case we have refreshed them.
-                    // TODO: Better way to refresh tokens on YouTubeAccount and update config?
-                    comboAccountSelect.getValue().setTokens(oAuth2Handler.getTokens());
-                    config.save();
-
-                    database.insertComments(Collections.singletonList(comment));
+                    database.comments().insert(comment);
                     database.commit();
 
                     if (openReply.isSelected()) {
@@ -163,6 +157,22 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
         }
     }
 
+    private void reloadAccountList() {
+        comboAccountSelect.getItems().clear();
+        comboAccountSelect.getItems().addAll(configData.getAccounts());
+        comboAccountSelect.getSelectionModel().select(0);
+    }
+
+    @Subscribe
+    public void accountAddEvent(final AccountAddEvent accountAddEvent) {
+        reloadAccountList();
+    }
+
+    @Subscribe
+    public void accountDeleteEvent(final AccountDeleteEvent accountDeleteEvent) {
+        reloadAccountList();
+    }
+
     void setError(String error) {
         errorMsg.setText(error);
         errorMsg.setVisible(true);
@@ -191,6 +201,47 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
 
             enableReplyMode(replyMode);
         });
+    }
+
+    /**
+     * Attempts to send a reply to the parent comment id and text supplied. It will attempt to send to reply 5 times
+     * after failure and throwing an error. On each failure, if it detects the tokens used by the account have
+     * expired, it will attempt to refresh them and use and newly updated tokens.
+     *
+     * @param parentId     id of comment or parentId of reply-comment to reply to
+     * @param textOriginal text to reply to the comment with
+     * @throws IOException failed to reply
+     */
+    public Comment postReply(final YouTubeAccount account, final String parentId, final String textOriginal) throws IOException {
+        final CommentSnippet snippet = new CommentSnippet();
+        snippet.setParentId(parentId);
+        snippet.setTextOriginal(textOriginal);
+
+        final Comment comment = new Comment();
+        comment.setSnippet(snippet);
+
+        int attempt = 0;
+        do {
+            try {
+                final Comment result = CommentSuite.getYouTube().comments()
+                        .insert("snippet", comment)
+                        .setOauthToken(account.getTokens().getAccessToken())
+                        .execute();
+
+                logger.debug("Successfully replied [id={}]", result.getId());
+
+                return result;
+            } catch (IOException e) {
+                logger.warn("Failed on comment reply, {}", e.getLocalizedMessage());
+                logger.debug("Refreshing tokens and trying again [attempt={}]", attempt);
+
+                oAuth2Manager.getNewAccessToken(account);
+            }
+
+            attempt++;
+        } while (attempt < 5);
+
+        throw new IOException("Could not reply and failed to refresh tokens.");
     }
 
     public void enableReplyMode(boolean enable) {

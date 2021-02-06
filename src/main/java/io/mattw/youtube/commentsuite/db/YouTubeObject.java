@@ -6,11 +6,12 @@ import io.mattw.youtube.commentsuite.ImageCache;
 import javafx.scene.image.Image;
 
 import java.io.Serializable;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * Similarities between GroupItem, YouTubeChannel, YouTubeComment, and YouTubeVideo.
  *
- * @author mattwright324
  */
 public abstract class YouTubeObject implements ImageCache, Serializable {
 
@@ -36,7 +37,7 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
      * @param title    video title, playlist name, channel name
      * @param thumbUrl url of thumbnail, profile picture
      */
-    public YouTubeObject(String id, String title, String thumbUrl) {
+    public YouTubeObject(final String id, final String title, final String thumbUrl) {
         this.id = id;
         this.title = title;
         this.thumbUrl = thumbUrl;
@@ -49,7 +50,7 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
      * @param title    video title, playlist name, channel name
      * @param thumbUrl url of thumbnail, profile picture
      */
-    public YouTubeObject(ResourceId id, String title, String thumbUrl) {
+    public YouTubeObject(final ResourceId id, final String title, final String thumbUrl) {
         this.id = getIdFromResource(id);
         this.title = title;
         this.thumbUrl = thumbUrl;
@@ -149,7 +150,7 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
      *
      * @return channelId
      */
-    static String getChannelIdFromObject(Object authorChannelId) {
+    public static String getChannelIdFromObject(final Object authorChannelId) {
         if (authorChannelId instanceof ArrayMap) {
             ArrayMap<String, String> value = (ArrayMap) authorChannelId;
 
@@ -161,14 +162,10 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
     /**
      * @return id of video, channel, or playlist
      */
-    protected static String getIdFromResource(ResourceId resourceId) {
-        if (resourceId.getVideoId() != null) {
-            return resourceId.getVideoId();
-        } else if (resourceId.getChannelId() != null) {
-            return resourceId.getChannelId();
-        } else if (resourceId.getPlaylistId() != null) {
-            return resourceId.getPlaylistId();
-        }
-        return null;
+    public static String getIdFromResource(final ResourceId resourceId) {
+        return Stream.of(resourceId.getVideoId(), resourceId.getChannelId(), resourceId.getPlaylistId())
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 }

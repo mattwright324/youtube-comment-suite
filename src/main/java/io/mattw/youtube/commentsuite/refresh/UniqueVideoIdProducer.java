@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.refresh;
 
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +22,7 @@ public class UniqueVideoIdProducer extends ConsumerMultiProducer<String> {
     private long newVideos;
 
     public UniqueVideoIdProducer() {
-        this.database = FXMLSuite.getDatabase();
+        this.database = CommentSuite.getDatabase();
     }
 
     @Override

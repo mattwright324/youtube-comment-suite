@@ -1,10 +1,8 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.ConfigData;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.*;
@@ -38,23 +36,14 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
-/**
- * @author mattwright324
- */
 public class SearchComments implements Initializable, ImageCache {
 
     private static final Logger logger = LogManager.getLogger();
-
-    private Cache<Object, YouTubeVideo> videoCache = CacheBuilder.newBuilder()
-            .maximumSize(500)
-            .expireAfterAccess(5, TimeUnit.MINUTES)
-            .build();
 
     @FXML private VBox contextPane, resultsPane, queryPane;
     @FXML private ImageView videoThumb, authorThumb, toggleContextIcon, toggleQueryIcon;
@@ -66,7 +55,8 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private TextArea videoDescription;
 
     @FXML private ImageView browserIcon;
-    @FXML private MenuItem openInBrowser, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks, copyCommentIds, copyChannelIds;
+    @FXML private ImageView tagsIcon;
+    @FXML private MenuItem openInBrowser, manageTags, copyNames, copyComments, copyChannelLinks, copyVideoLinks, copyCommentLinks, copyCommentIds, copyChannelIds;
     @FXML private ListView<SearchCommentsListItem> resultsList;
     @FXML private TextField pageValue;
     @FXML private Label displayCount, lblMaxPage;
@@ -79,13 +69,15 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private Hyperlink videoSelect;
     @FXML private ComboBox<CommentQuery.CommentsType> comboCommentType;
     @FXML private ComboBox<CommentQuery.Order> comboOrderBy;
-    @FXML private TextField nameLike, commentLike;
+    @FXML private TextField nameLike, commentLike, hasTags;
     @FXML private DatePicker dateFrom, dateTo;
-    @FXML private Button btnSearch, btnClear, btnExport;
+    @FXML private Button btnSearch, btnClear, btnSelectTags, btnExport;
 
     @FXML private OverlayModal<SCVideoSelectModal> videoSelectModal;
     @FXML private OverlayModal<SCShowMoreModal> showMoreModal;
     @FXML private OverlayModal<SCExportModal> exportModal;
+    @FXML private OverlayModal<SCManageTagsModal> tagsModal;
+    @FXML private OverlayModal<SCSelectTagsModal> selectTagsModal;
 
     private ChangeListener<Font> fontListener;
 
@@ -94,23 +86,22 @@ public class SearchComments implements Initializable, ImageCache {
     private SimpleIntegerProperty pageProperty = new SimpleIntegerProperty();
     private SimpleIntegerProperty maxPageProperty = new SimpleIntegerProperty();
     private ElapsedTime elapsedTime = new ElapsedTime();
-    private ChangeListener<Number> cl;
 
     private CommentDatabase database;
     private CommentQuery commentQuery;
     private List<YouTubeComment> lastResultsList;
-    private SearchCommentsListItem actionComment;
+    private SearchCommentsListItem originalTreeComment;
     private ClipboardUtil clipboardUtil = new ClipboardUtil();
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigData configData;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
         commentQuery = database.commentQuery();
-        configData = FXMLSuite.getConfig().getDataObject();
+        configData = CommentSuite.getConfig().getDataObject();
 
-        FXMLSuite.getEventBus().register(this);
+        CommentSuite.getEventBus().register(this);
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
@@ -219,7 +210,7 @@ public class SearchComments implements Initializable, ImageCache {
         MultipleSelectionModel<SearchCommentsListItem> scSelection = resultsList.getSelectionModel();
         scSelection.selectedItemProperty().addListener((o, ov, nv) -> new Thread(() -> {
             if (nv != null) {
-                loadCommentContext(nv);
+                showListItemContext(nv);
             }
         }).start());
 
@@ -318,7 +309,7 @@ public class SearchComments implements Initializable, ImageCache {
 
             runLater(() -> {
                 Optional<SearchCommentsListItem> toSelect = resultsList.getItems().stream()
-                        .filter(scli -> scli.getComment().getId().equals(actionComment.getComment().getId()))
+                        .filter(scli -> scli.getComment().getId().equals(originalTreeComment.getComment().getId()))
                         .findFirst();
 
                 SearchCommentsListItem scli = toSelect.orElse(null);
@@ -372,61 +363,78 @@ public class SearchComments implements Initializable, ImageCache {
             scExportModal.getBtnClose().setCancelButton(exportModal.isVisible());
             scExportModal.getBtnSubmit().setDefaultButton(exportModal.isVisible());
         });
+
+        tagsIcon.setImage(ImageLoader.TAGS.getImage());
+        ImageView tagsIcon2 = new ImageView(tagsIcon.getImage());
+        tagsIcon2.setFitHeight(20);
+        tagsIcon2.setFitWidth(20);
+        btnSelectTags.setGraphic(tagsIcon2);
+
+        SCManageTagsModal scManageTagsModal = new SCManageTagsModal();
+        tagsModal.setContent(scManageTagsModal);
+        scManageTagsModal.getBtnFinish().setOnAction(ae -> tagsModal.setVisible(false));
+        manageTags.setOnAction(ae -> {
+            scManageTagsModal.withComments(resultsList.getSelectionModel().getSelectedItems());
+            tagsModal.setVisible(true);
+        });
+
+        SCSelectTagsModal scSelectTagsModal = new SCSelectTagsModal();
+        selectTagsModal.setContent(scSelectTagsModal);
+        scSelectTagsModal.getBtnClose().setOnAction(ae -> selectTagsModal.setVisible(false));
+        scSelectTagsModal.getBtnSelect().setOnAction(ae -> runLater(() -> {
+            hasTags.setText(scSelectTagsModal.getSelectedString());
+            selectTagsModal.setVisible(false);
+        }));
+        btnSelectTags.setOnAction(ae -> selectTagsModal.setVisible(true));
     }
 
     /**
      * Load video context and comment author profiles on comment interaction: on selection, show more, reply, view thread
      */
-    private void loadCommentContext(SearchCommentsListItem commentItem) {
-        YouTubeComment comment = commentItem.getComment();
+    private void showListItemContext(final SearchCommentsListItem commentItem) {
+        final YouTubeComment comment = commentItem.getComment();
 
         commentItem.loadProfileThumb();
 
-        for (SearchCommentsListItem scli : resultsList.getItems()) {
+        for (final SearchCommentsListItem scli : resultsList.getItems()) {
             scli.checkProfileThumb();
         }
 
         try {
-            String videoId = comment.getVideoId();
-            YouTubeVideo video = videoCache.getIfPresent(videoId);
-            if (video == null) {
-                video = database.getVideo(videoId);
-                videoCache.put(videoId, video);
-            }
+            final String videoId = comment.getVideoId();
+            final YouTubeVideo video = database.videos().get(videoId);
 
-            final YouTubeVideo fVideo = video;
-            final Image fVideoThumb = ImageCache.findOrGetImage(video);
+            final Image vThumb = ImageCache.findOrGetImage(video);
             runLater(() -> {
-                videoTitle.setText(fVideo.getTitle());
-                videoLikes.setText(trunc(fVideo.getLikes()));
-                videoDislikes.setText(trunc(fVideo.getDislikes()));
-                videoViews.setText(String.format("%s views", trunc(fVideo.getViewCount())));
+                videoTitle.setText(video.getTitle());
+                videoLikes.setText(readableNumber(video.getLikes()));
+                videoDislikes.setText(readableNumber(video.getDislikes()));
+                videoViews.setText(String.format("%s views", readableNumber(video.getViewCount())));
                 videoDescription.setText(String.format("Published %s • %s",
-                        formatter.format(DateUtils.epochMillisToDateTime(fVideo.getPublishedDate())),
-                        StringEscapeUtils.unescapeHtml4(fVideo.getDescription())));
+                        formatter.format(DateUtils.epochMillisToDateTime(video.getPublished())),
+                        StringEscapeUtils.unescapeHtml4(video.getDescription())));
 
                 videoThumb.setCursor(Cursor.HAND);
-                videoThumb.setOnMouseClicked(me -> browserUtil.open(fVideo.buildYouTubeLink()));
-                videoThumb.setImage(fVideoThumb);
+                videoThumb.setOnMouseClicked(me -> browserUtil.open(video.buildYouTubeLink()));
+                videoThumb.setImage(vThumb);
             });
 
-
-            final YouTubeChannel fVideoAuthor = database.getChannel(video.getChannelId());
-            final Image fAuthorThumb = fVideoAuthor != null ?
-                    ImageCache.findOrGetImage(fVideoAuthor) : ImageCache.toLetterAvatar(' ');
+            final YouTubeChannel author = database.channels().getOrNull(video.getChannelId());
+            final Image aThumb = author != null ?
+                    ImageCache.findOrGetImage(author) : ImageCache.toLetterAvatar(' ');
             runLater(() -> {
-                if (fVideoAuthor != null) {
-                    author.setText(fVideoAuthor.getTitle());
+                if (author != null) {
+                    this.author.setText(author.getTitle());
                     authorThumb.setCursor(Cursor.HAND);
-                    authorThumb.setOnMouseClicked(me -> browserUtil.open(fVideoAuthor.buildYouTubeLink()));
-                    authorThumb.setImage(fAuthorThumb);
+                    authorThumb.setOnMouseClicked(me -> browserUtil.open(author.buildYouTubeLink()));
+                    authorThumb.setImage(aThumb);
                 } else {
-                    author.setText("Error: Null Channel");
+                    this.author.setText("Error: Null Channel");
                     authorThumb.setCursor(Cursor.DEFAULT);
                     authorThumb.setOnMouseClicked(null);
-                    authorThumb.setImage(fAuthorThumb);
+                    authorThumb.setImage(aThumb);
 
-                    logger.error("Channel for video was null [id={}]", fVideo.getChannelId());
+                    logger.error("Channel for video was null [id={}]", video.getChannelId());
                 }
             });
         } catch (SQLException e) {
@@ -521,6 +529,7 @@ public class SearchComments implements Initializable, ImageCache {
                     .setOrder(comboOrderBy.getValue())
                     .setNameLike(nameLike.getText())
                     .setTextLike(commentLike.getText())
+                    .setHasTags(hasTags.getText())
                     .setDateFrom(dateFrom.getValue())
                     .setDateTo(dateTo.getValue())
                     .getByPage(pageNum - 1, 500); // 1 in app = 0 in query
@@ -554,12 +563,6 @@ public class SearchComments implements Initializable, ImageCache {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        commentListItems.forEach(comment -> {
-            comment.getShowMore().setOnAction(ae -> showMore(comment));
-            comment.getReply().setOnAction(ae -> reply(comment));
-            comment.getViewTree().setOnAction(ae -> viewTree(comment));
-        });
-
         runLater(() -> {
             resultsList.getItems().clear();
             resultsList.getItems().addAll(commentListItems);
@@ -581,7 +584,7 @@ public class SearchComments implements Initializable, ImageCache {
                 resultsList.scrollTo(0);
 
                 Optional<SearchCommentsListItem> toSelect = resultsList.getItems().stream()
-                        .filter(scli -> scli.getComment().getId().equals(actionComment.getComment().getId()))
+                        .filter(scli -> scli.getComment().getId().equals(originalTreeComment.getComment().getId()))
                         .findFirst();
 
                 resultsList.getSelectionModel().select(toSelect.orElse(null));
@@ -589,38 +592,40 @@ public class SearchComments implements Initializable, ImageCache {
         });
     }
 
-    private void selectAndShowContext(SearchCommentsListItem item) {
+    private void selectListItem(SearchCommentsListItem item) {
         resultsList.getSelectionModel().clearSelection();
         resultsList.getSelectionModel().select(item);
     }
 
-    private void showMore(SearchCommentsListItem scli) {
-        selectAndShowContext(scli);
-
-        YouTubeComment comment = scli.getComment();
+    @Subscribe
+    public void showMoreEvent(final ShowMoreEvent showMoreEvent) {
+        final SearchCommentsListItem listItem = showMoreEvent.getCommentListItem();
+        final YouTubeComment comment = listItem.getComment();
 
         logger.debug("Showing more window for commment [videoId={},commentId={}]",
                 comment.getVideoId(),
                 comment.getId());
 
-        loadCommentContext(scli);
-        commentModal(comment, false);
+        selectListItem(listItem);
+        openReplyModal(comment, false);
+        showListItemContext(listItem);
     }
 
-    private void reply(SearchCommentsListItem scli) {
-        selectAndShowContext(scli);
-
-        YouTubeComment comment = scli.getComment();
+    @Subscribe
+    private void replyEvent(final ReplyEvent replyEvent) {
+        final SearchCommentsListItem listItem = replyEvent.getCommentListItem();
+        final YouTubeComment comment = listItem.getComment();
 
         logger.debug("Showing reply window for commment [videoId={},commentId={}]",
                 comment.getVideoId(),
                 comment.getId());
 
-        loadCommentContext(scli);
-        commentModal(comment, true);
+        selectListItem(listItem);
+        openReplyModal(comment, true);
+        showListItemContext(listItem);
     }
 
-    private void commentModal(YouTubeComment comment, boolean replyMode) {
+    private void openReplyModal(final YouTubeComment comment, final boolean replyMode) {
         runLater(() -> {
             showMoreModal.setVisible(true);
             showMoreModal.setManaged(true);
@@ -631,28 +636,24 @@ public class SearchComments implements Initializable, ImageCache {
         });
     }
 
-    private void viewTree(SearchCommentsListItem scli) {
-        selectAndShowContext(scli);
-
-        runLater(() -> searchingProperty.setValue(true));
-
-        actionComment = scli;
-
-        loadCommentContext(scli);
-
-        YouTubeComment comment = scli.getComment();
-
-        String parentId = comment.isReply() ? comment.getParentId() : comment.getId();
+    @Subscribe
+    public void viewTreeEvent(final ViewTreeEvent viewTreeEvent) {
+        final SearchCommentsListItem listItem = originalTreeComment = viewTreeEvent.getCommentListItem();
+        final YouTubeComment comment = listItem.getComment();
+        final String parentId = comment.isReply() ? comment.getParentId() : comment.getId();
 
         logger.debug("Viewing comment reply tree [videoId={},commentId={},parentId={}]",
                 comment.getVideoId(),
                 comment.getId(),
                 parentId);
 
-        try {
-            List<YouTubeComment> comments = database.getCommentTree(parentId);
+        selectListItem(listItem);
+        showListItemContext(listItem);
 
-            setResultsList(comments, true);
+        runLater(() -> searchingProperty.setValue(true));
+
+        try {
+            setResultsList(database.getCommentTree(parentId, comboCommentType.getValue() == CommentQuery.CommentsType.MODERATED_ONLY), true);
         } catch (SQLException e) {
             logger.debug("Failed to view comment tree [commentId={},parentId={}]", comment.getId(),
                     parentId);
@@ -676,13 +677,12 @@ public class SearchComments implements Initializable, ImageCache {
     @Subscribe
     public void groupRenameEvent(final GroupRenameEvent renameEvent) {
         logger.debug("Group Rename Event");
-        //runLater(this::refreshGroupSelect);
         runLater(this::rebuildGroupSelect);
     }
 
     private void rebuildGroupSelect() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.groups().getAllGroups());
         comboGroupSelect.setItems(FXCollections.emptyObservableList());
         comboGroupSelect.setItems(groups);
 
@@ -707,7 +707,7 @@ public class SearchComments implements Initializable, ImageCache {
 
     private void reloadGroupItems() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final List<GroupItem> groupItems = database.getGroupItems(selectedGroup);
+        final List<GroupItem> groupItems = database.groupItems().byGroup(selectedGroup);
 
         final GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
         runLater(() -> {
@@ -718,17 +718,9 @@ public class SearchComments implements Initializable, ImageCache {
             comboGroupItemSelect.getSelectionModel().select(0);
             videoSelect.setDisable(false);
         });
-
     }
 
-    /**
-     * Truncates a number with shorthand:
-     * 2000       -> 2.0k
-     * 5422000    -> 54.2k
-     * 123456789  -> 123.5m
-     * 1234567890 -> 1.2b
-     */
-    public String trunc(double value) {
+    public String readableNumber(double value) {
         char[] suffix = new char[]{'k', 'm', 'b', 't'};
         int pos = 0;
         while (value > 1000) {

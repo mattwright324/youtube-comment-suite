@@ -4,19 +4,19 @@ import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadSnippet;
-import io.mattw.youtube.commentsuite.Exportable;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.refresh.ModerationStatus;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-/**
- * @author mattwright324
- */
 public class YouTubeComment extends YouTubeObject implements Exportable {
 
     public static final Logger logger = LogManager.getLogger();
@@ -24,11 +24,14 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
     private String commentText;
     private String channelId;
     private transient long published;
+    private transient LocalDateTime publishedDateTime;
     private String commentDate;
     private String videoId;
     private long likes, replyCount;
     private boolean isReply;
     private String parentId;
+    private ModerationStatus moderationStatus;
+    private List<String> tags;
 
     // Field(s) used just for export to make things pretty.
     private YouTubeChannel author;
@@ -47,8 +50,9 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
         CommentSnippet snippet = item.getSnippet();
         this.commentText = snippet.getTextDisplay();
-        this.published = snippet.getPublishedAt().getValue();
+        setPublished(snippet.getPublishedAt().getValue());
         this.likes = snippet.getLikeCount();
+        this.moderationStatus = ModerationStatus.fromApiValue(snippet.getModerationStatus());
         this.parentId = snippet.getParentId();
 
         if (snippet.getAuthorChannelId() != null) {
@@ -74,8 +78,9 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
         CommentSnippet tlcSnippet = snippet.getTopLevelComment().getSnippet();
         this.commentText = tlcSnippet.getTextDisplay();
-        this.published = tlcSnippet.getPublishedAt().getValue();
+        setPublished(tlcSnippet.getPublishedAt().getValue());
         this.likes = tlcSnippet.getLikeCount();
+        this.moderationStatus = ModerationStatus.fromApiValue(tlcSnippet.getModerationStatus());
 
         if (tlcSnippet.getAuthorChannelId() != null) {
             this.channelId = getChannelIdFromObject(tlcSnippet.getAuthorChannelId());
@@ -84,66 +89,132 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
         }
     }
 
-    /**
-     * Constructor used for initialization from the database.
-     */
-    public YouTubeComment(String commentId, String text, long published, String videoId, String channelId, int likes, int replies, boolean isReply, String parentId) {
+    public YouTubeComment(String commentId) {
         super(commentId, null, null);
-        this.setTypeId(YType.COMMENT);
+        setTypeId(YType.COMMENT);
+        setModerationStatus(ModerationStatus.PUBLISHED);
+    }
 
-        this.commentText = text;
-        this.published = published;
-        this.videoId = videoId;
-        this.channelId = channelId;
-        this.likes = likes;
-        this.replyCount = replies;
-        this.isReply = isReply;
-        this.parentId = parentId;
+    public YouTubeChannel getChannel() {
+        return CommentSuite.getDatabase().channels().getOrNull(channelId);
     }
 
     @Override
     public void prepForExport() {
-        commentDate = DateUtils.epochMillisToDateTime(published).toString();
+        commentDate = publishedDateTime.toString();
     }
 
     public String getCommentText() {
         return commentText;
     }
 
-    public long getPublished() {
-        return published;
-    }
-
-    public String getVideoId() {
-        return videoId;
+    public YouTubeComment setCommentText(String commentText) {
+        this.commentText = commentText;
+        return this;
     }
 
     public String getChannelId() {
         return channelId;
     }
 
-    public YouTubeChannel getChannel() {
-        return FXMLSuite.getDatabase().getChannel(channelId);
+    public YouTubeComment setChannelId(String channelId) {
+        this.channelId = channelId;
+        return this;
+    }
+
+    public long getPublished() {
+        return published;
+    }
+
+    public YouTubeComment setPublished(long published) {
+        this.published = published;
+        setPublishedDateTime(DateUtils.epochMillisToDateTime(published));
+        return this;
+    }
+
+    public LocalDateTime getPublishedDateTime() {
+        return publishedDateTime;
+    }
+
+    public YouTubeComment setPublishedDateTime(LocalDateTime publishedDateTime) {
+        this.publishedDateTime = publishedDateTime;
+        return this;
+    }
+
+    public String getCommentDate() {
+        return commentDate;
+    }
+
+    public YouTubeComment setCommentDate(String commentDate) {
+        this.commentDate = commentDate;
+        return this;
+    }
+
+    public String getVideoId() {
+        return videoId;
+    }
+
+    public YouTubeComment setVideoId(String videoId) {
+        this.videoId = videoId;
+        return this;
     }
 
     public long getLikes() {
         return likes;
     }
 
+    public YouTubeComment setLikes(long likes) {
+        this.likes = likes;
+        return this;
+    }
+
     public long getReplyCount() {
         return replyCount;
+    }
+
+    public YouTubeComment setReplyCount(long replyCount) {
+        this.replyCount = replyCount;
+        return this;
     }
 
     public boolean isReply() {
         return isReply;
     }
 
+    public YouTubeComment setReply(boolean reply) {
+        isReply = reply;
+        return this;
+    }
+
     public String getParentId() {
         return parentId;
     }
 
+    public YouTubeComment setParentId(String parentId) {
+        this.parentId = parentId;
+        return this;
+    }
+
+    public ModerationStatus getModerationStatus() {
+        return moderationStatus;
+    }
+
+    public YouTubeComment setModerationStatus(String moderationStatus) {
+        this.moderationStatus = ModerationStatus.fromName(moderationStatus);
+        return this;
+    }
+
+    public YouTubeComment setModerationStatus(ModerationStatus moderationStatus) {
+        this.moderationStatus = moderationStatus;
+        return this;
+    }
+
     public YouTubeChannel getAuthor() {
         return author;
+    }
+
+    public List<YouTubeComment> getReplies() {
+        return replies;
     }
 
     /**
@@ -160,6 +231,23 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
      */
     public YouTubeComment setReplies(List<YouTubeComment> replies) {
         this.replies = replies;
+        return this;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public YouTubeComment setTags(String tags) {
+        if (tags != null) {
+            this.tags = new ArrayList<>();
+            this.tags.addAll(Arrays.asList(tags.split(",")));
+        }
+        return this;
+    }
+
+    public YouTubeComment setTags(List<String> tags) {
+        this.tags = tags;
         return this;
     }
 

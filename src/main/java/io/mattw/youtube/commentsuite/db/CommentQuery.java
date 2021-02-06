@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-import io.mattw.youtube.commentsuite.Exportable;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -15,10 +14,11 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.mattw.youtube.commentsuite.db.CommentQuery.CommentsType.*;
+
 /**
  * Queries the database for comments.
  *
- * @author mattwright324
  */
 public class CommentQuery implements Serializable, Exportable {
 
@@ -44,6 +44,7 @@ public class CommentQuery implements Serializable, Exportable {
     private CommentsType commentsType;
     private String nameLike;
     private String textLike;
+    private String hasTags;
     private LocalDate dateFrom = LocalDate.MIN;
     private LocalDate dateTo = LocalDate.MAX;
 
@@ -88,10 +89,18 @@ public class CommentQuery implements Serializable, Exportable {
             }
         }
 
-        List<String> queryLines = new ArrayList<>();
-        queryLines.add("SELECT * FROM comments");
+        final String commentsTable = commentsType == MODERATED_ONLY ? "comments_moderated" : "comments";
+        final List<String> queryLines = new ArrayList<>();
+        queryLines.add("WITH tag2 AS (");
+        queryLines.add("SELECT t.comment_id, group_concat(t.tag, ',') AS tags");
+        queryLines.add("FROM comment_tags t");
+        queryLines.add("GROUP BY t.comment_id");
+        queryLines.add(")");
+        queryLines.add("SELECT *, tag2.tags FROM");
+        queryLines.add(commentsTable);
         queryLines.add("LEFT JOIN channels USING (channel_id)");
-        queryLines.add("WHERE comments.video_id IN (:videoSubquery)".replace(":videoSubquery", videoSubquery));
+        queryLines.add("LEFT JOIN tag2 USING (comment_id)");
+        queryLines.add("WHERE " + commentsTable + ".video_id IN (:videoSubquery)".replace(":videoSubquery", videoSubquery));
         if (StringUtils.isNotEmpty(nameLike)) {
             queryLines.add("AND (channels.channel_name LIKE :nameLike OR channels.channel_id = :channelId)");
 
@@ -99,18 +108,35 @@ public class CommentQuery implements Serializable, Exportable {
             queryParams.put("channelId", nameLike);
         }
         if (StringUtils.isNotEmpty(textLike)) {
-            queryLines.add("AND (comments.comment_text LIKE :textLike OR comments.comment_id = :commentId)");
+            queryLines.add("AND (" + commentsTable + ".comment_text LIKE :textLike OR " + commentsTable + ".comment_id = :commentId)");
 
             queryParams.put("textLike", '%' + textLike + '%');
             queryParams.put("commentId", textLike);
         }
-        if (commentsType != CommentsType.ALL) {
+        if (StringUtils.isNotEmpty(hasTags)) {
+            final String[] tags = hasTags.split(",");
+            final List<String> named = new ArrayList<>();
+
+            for (int i = 0; i < tags.length; i++) {
+                final String param = "tag" + i;
+                final String trimmed = tags[i].trim();
+
+                named.add("(tag2.tags LIKE :" + param + "0 OR tag2.tags LIKE :" + param + "1 OR tag2.tags LIKE :" + param + "2 OR tag2.tags LIKE :" + param + "3)");
+                queryParams.put(param + "0", trimmed);
+                queryParams.put(param + "1", trimmed + ",%");
+                queryParams.put(param + "2", "%," + trimmed + ",%");
+                queryParams.put(param + "3", "%," + trimmed);
+            }
+
+            queryLines.add("AND (" + String.join(" OR ", named) + ")");
+        }
+        if (commentsType == REPLIES_ONLY || commentsType == COMMENTS_ONLY) {
             queryLines.add("AND is_reply = :isReply");
 
-            queryParams.put("isReply", commentsType == CommentsType.REPLIES_ONLY);
+            queryParams.put("isReply", commentsType == REPLIES_ONLY);
         }
 
-        queryLines.add("AND comments.comment_date > :dateFrom AND comments.comment_date < :dateTo");
+        queryLines.add("AND " + commentsTable + ".comment_date > :dateFrom AND " + commentsTable + ".comment_date < :dateTo");
         queryParams.put("dateFrom", localDateToEpochMillis(dateFrom, false));
         queryParams.put("dateTo", localDateToEpochMillis(dateTo, true));
 
@@ -141,9 +167,10 @@ public class CommentQuery implements Serializable, Exportable {
      * results directly to a JSON file without storing it in memory in the event of a massive result.
      */
     public NamedParameterStatement toStatement() throws SQLException {
-        String queryString = buildQueryStringAndParams();
+        final String queryString = buildQueryStringAndParams();
+        logger.debug(queryString);
 
-        NamedParameterStatement namedParamStatement = new NamedParameterStatement(database.getConnection(), queryString);
+        final NamedParameterStatement namedParamStatement = new NamedParameterStatement(database.getConnection(), queryString);
 
         for (String key : queryParams.keySet()) {
             Object value = queryParams.get(key);
@@ -168,7 +195,7 @@ public class CommentQuery implements Serializable, Exportable {
      * @param pageSize number of comments to return
      */
     public List<YouTubeComment> getByPage(int page, int pageSize) throws SQLException {
-        List<YouTubeComment> comments = new ArrayList<>();
+        final List<YouTubeComment> comments = new ArrayList<>();
 
         logger.debug("Searching Comments [page={},pageSize={}] {}", page, pageSize, queryParams);
 
@@ -177,8 +204,8 @@ public class CommentQuery implements Serializable, Exportable {
 
         totalResults = 0;
 
-        try (NamedParameterStatement statement = toStatement();
-             ResultSet resultSet = statement.executeQuery()) {
+        try (final NamedParameterStatement statement = toStatement();
+             final ResultSet resultSet = statement.executeQuery()) {
 
             int indexStart = pageSize * page;
             int indexEnd = indexStart + pageSize;
@@ -188,9 +215,9 @@ public class CommentQuery implements Serializable, Exportable {
 
             while (resultSet.next()) {
                 if (index >= indexStart && index < indexEnd) {
-                    database.checkChannel(resultSet);
+                    database.channels().check(resultSet.getString("channel_id"));
 
-                    comments.add(database.resultSetToComment(resultSet));
+                    comments.add(database.comments().to(resultSet));
                 }
 
                 index++;
@@ -219,9 +246,9 @@ public class CommentQuery implements Serializable, Exportable {
                     .collect(Collectors.toList()));
         } else {
             if (groupItem.isPresent()) {
-                items.addAll(database.getVideoIds(groupItem.get()));
+                items.addAll(database.videos().idsByGroupItem(groupItem.get()));
             } else {
-                items.addAll(database.getVideoIds(group));
+                items.addAll(database.videos().idsByGroup(group));
             }
         }
 
@@ -279,6 +306,15 @@ public class CommentQuery implements Serializable, Exportable {
 
     public CommentQuery setTextLike(String textLike) {
         this.textLike = textLike;
+        return this;
+    }
+
+    public String getHasTags() {
+        return hasTags;
+    }
+
+    public CommentQuery setHasTags(String hasTags) {
+        this.hasTags = hasTags;
         return this;
     }
 
@@ -395,6 +431,7 @@ public class CommentQuery implements Serializable, Exportable {
         ALL("Comments and Replies"),
         COMMENTS_ONLY("Comments Only"),
         REPLIES_ONLY("Replies Only"),
+        MODERATED_ONLY("Moderated Only")
         ;
 
         private String title;

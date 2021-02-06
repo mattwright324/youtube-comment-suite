@@ -2,17 +2,18 @@ package io.mattw.youtube.commentsuite.refresh;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.commentsuite.db.GroupItemVideo;
 import io.mattw.youtube.commentsuite.db.YType;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
@@ -27,8 +28,8 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
     private final CommentDatabase database;
 
     public VideoIdProducer() {
-        this.youTube = FXMLSuite.getYouTube();
-        this.database = FXMLSuite.getDatabase();
+        this.youTube = CommentSuite.getYouTube();
+        this.database = CommentSuite.getDatabase();
     }
 
     @Override
@@ -59,7 +60,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
 
                 updateGroupItem(item);
             } catch (IOException | SQLException e) {
-                logger.debug("Failed GroupItem {}", item, e);
+                sendMessage(Level.ERROR, e, String.format("Failed GroupItem %s", item));
             }
 
             addProcessed(1);
@@ -72,7 +73,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
         logger.debug("fromChannel {}", channel);
         final ChannelListResponse response = youTube.channels()
                 .list("contentDetails")
-                .setKey(FXMLSuite.getYouTubeApiKey())
+                .setKey(CommentSuite.getYouTubeApiKey())
                 .setId(channel.getId())
                 .execute();
 
@@ -101,7 +102,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
         do {
             response = youTube.playlistItems()
                     .list("snippet")
-                    .setKey(FXMLSuite.getYouTubeApiKey())
+                    .setKey(CommentSuite.getYouTubeApiKey())
                     .setMaxResults(50L)
                     .setPlaylistId(playlistId)
                     .setPageToken(pageToken)
@@ -121,10 +122,7 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                         .map(ResourceId::getVideoId)
                         .collect(Collectors.toList());
 
-                final List<GroupItemVideo> groupItemVideos = videoIds.stream()
-                        .map(videoId -> new GroupItemVideo(item.getId(), videoId))
-                        .collect(Collectors.toList());
-                database.insertGroupItemVideo(groupItemVideos);
+                database.groupItems().associateVideos(item, videoIds);
 
                 sendCollection(videoIds, String.class);
 
@@ -141,13 +139,13 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
     private void fromVideo(final GroupItem video) throws SQLException {
         logger.debug("fromVideo {}", video);
 
-        database.insertGroupItemVideo(new GroupItemVideo(video.getId(), video.getId()));
+        database.groupItems().associateVideos(video, Collections.singletonList(video.getId()));
 
         send(video.getId());
     }
 
     private void updateGroupItem(GroupItem gitem) throws SQLException {
-        database.updateGroupItem(gitem);
+        database.groupItems().update(gitem);
     }
 
     @Override

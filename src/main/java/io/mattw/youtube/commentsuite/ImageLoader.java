@@ -4,9 +4,6 @@ import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- * @author mattwright324
- */
 public enum ImageLoader {
     ANGLE_DOUBLE_LEFT("angle-double-left.png"),
     ANGLE_DOUBLE_RIGHT("angle-double-right.png"),
@@ -20,7 +17,6 @@ public enum ImageLoader {
     GITHUB("github.png"),
     GROUP("group.png"),
     GROUP_ICON("groupIcon.png"),
-    YCS_ICON("icon.png"),
     LOADING("loading.png"),
     LOCATION("location.png"),
     MANAGE("manage.png"),
@@ -29,10 +25,12 @@ public enum ImageLoader {
     PENCIL("pencil.png"),
     PLAYLIST("playlist.png"),
     PLUS("plus.png"),
+    QUOTA("quota.png"),
     REPLY("reply.png"),
     SAVE("save.png"),
     SEARCH("search.png"),
     SETTINGS("settings.png"),
+    TAGS("tag.png"),
     THUMBNAIL("thumbnail.png"),
     THUMBS_DOWN("thumbs-down.png"),
     THUMBS_UP("thumbs-up.png"),
@@ -41,11 +39,12 @@ public enum ImageLoader {
     TOGGLE_QUERY("toggleQuery.png"),
     VIDEO("video.png"),
     VIDEO_PLACEHOLDER("videoPlaceholder.png"),
+    YCS_ICON("icon.png"),
     YOUTUBE("youtube.png");
 
     private final Logger logger = LogManager.getLogger();
 
-    private String basePath = "/io/mattw/youtube/commentsuite/img";
+    private final String basePath = "/io/mattw/youtube/commentsuite/img";
     private Image image;
 
     ImageLoader(String fileName) {

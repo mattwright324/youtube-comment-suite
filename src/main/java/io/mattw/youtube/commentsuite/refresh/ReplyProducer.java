@@ -3,21 +3,18 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentListResponse;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import io.mattw.youtube.commentsuite.util.StringTuple;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
@@ -31,7 +28,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
 
     public ReplyProducer(final RefreshOptions options) {
         this.options = options;
-        this.youTube = FXMLSuite.getYouTube();
+        this.youTube = CommentSuite.getYouTube();
     }
 
     @Override
@@ -40,6 +37,13 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
     }
 
     private void produce() {
+        if (options.getReplyPages() == RefreshCommentPages.NONE) {
+            logger.debug("Skipping ReplyProducer pages=NONE");
+            addProcessed(getBlockingQueue().size());
+            getBlockingQueue().clear();
+            return;
+        }
+
         logger.debug("Starting ReplyProducer");
 
         while (shouldKeepAlive()) {
@@ -53,13 +57,14 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                 CommentListResponse response;
                 String pageToken = "";
                 int page = 1;
-                RefreshReplyPages replyPages = options.getReplyPages();
+                RefreshCommentPages replyPages = options.getReplyPages();
                 do {
                     response = youTube.comments()
                             .list("snippet")
-                            .setKey(FXMLSuite.getYouTubeApiKey())
+                            .setKey(CommentSuite.getYouTubeApiKey())
                             .setParentId(tuple.getFirst())
                             .setPageToken(pageToken)
+                            .setMaxResults(100L)
                             .execute();
 
                     pageToken = response.getNextPageToken();
@@ -81,8 +86,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                     awaitMillis(50);
                 } while (pageToken != null && page++ < replyPages.getPageCount() && !isHardShutdown());
             } catch (IOException e) {
-                e.printStackTrace();
-                logger.error("Couldn't grab commentThread[id={}]", tuple.getFirst(), e);
+                sendMessage(Level.ERROR, e, String.format("Couldn't grab commentThread[id=%s]", tuple.getFirst()));
             }
 
             addProcessed(1);
@@ -90,11 +94,6 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
         }
 
         logger.debug("Ending ReplyProducer");
-    }
-
-    private <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
-        Set<Object> seen = ConcurrentHashMap.newKeySet();
-        return t -> seen.add(keyExtractor.apply(t));
     }
 
     @Override

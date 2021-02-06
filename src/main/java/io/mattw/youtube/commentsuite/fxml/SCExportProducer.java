@@ -3,7 +3,7 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonWriter;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.refresh.ConsumerMultiProducer;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
@@ -39,7 +39,7 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
     public SCExportProducer(final CommentQuery commentQuery, final boolean condensed) {
         this.commentQuery = commentQuery;
         this.condensedMode = condensed;
-        this.database = FXMLSuite.getDatabase();
+        this.database = CommentSuite.getDatabase();
 
         this.thisExportFolder = new File(EXPORT_FOLDER, formatter.format(LocalDateTime.now()) + "/");
         this.thisExportFolder.mkdirs();
@@ -61,7 +61,7 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
             }
 
             try {
-                final YouTubeVideo video = database.getVideo(videoId);
+                final YouTubeVideo video = database.videos().get(videoId);
                 if (video == null) {
                     logger.debug("Couldn't find video {}", videoId);
                     continue;
@@ -85,7 +85,7 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
              final OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
              final BufferedWriter bw = new BufferedWriter(writer)) {
 
-            video.setAuthor(database.getChannel(video.getChannelId()));
+            video.setAuthor(database.channels().getOrNull(video.getChannelId()));
             video.prepForExport();
 
             logger.debug("Writing file {}", videoFile.getName());
@@ -124,14 +124,14 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
 
                 // starting with flattened mode (easier)
                 while (resultSet.next() && !isHardShutdown()) {
-                    final YouTubeComment comment = database.resultSetToComment(resultSet);
-                    comment.setAuthor(database.getChannel(comment.getChannelId()));
+                    final YouTubeComment comment = database.comments().to(resultSet);
+                    comment.setAuthor(database.channels().getOrNull(comment.getChannelId()));
                     comment.prepForExport();
 
                     if (condensedMode && comment.getReplyCount() > 0 && !comment.isReply()) {
-                        final List<YouTubeComment> replyList = database.getCommentTree(comment.getId());
+                        final List<YouTubeComment> replyList = database.getCommentTree(comment.getId(), false);
                         for (final YouTubeComment reply : replyList) {
-                            reply.setAuthor(database.getChannel(reply.getChannelId()));
+                            reply.setAuthor(database.channels().getOrNull(reply.getChannelId()));
                             reply.prepForExport();
                         }
 

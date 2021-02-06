@@ -3,7 +3,7 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.eventbus.Subscribe;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
@@ -24,15 +24,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 import static javafx.application.Platform.runLater;
 
 /**
  * Manages group selection, creation, and content switching.
- *
- * @author mattwright324
  */
 public class ManageGroups implements Initializable {
 
@@ -43,21 +40,26 @@ public class ManageGroups implements Initializable {
 
     private CommentDatabase database;
 
-    @FXML private OverlayModal<MGCreateGroupModal> overlayModal;
+    @FXML
+    private OverlayModal<MGCreateGroupModal> overlayModal;
 
-    @FXML private ImageView plusIcon;
-    @FXML private ComboBox<Group> comboGroupSelect;
-    @FXML private Button btnCreateGroup;
-    @FXML private Pane content;
+    @FXML
+    private ImageView plusIcon;
+    @FXML
+    private ComboBox<Group> comboGroupSelect;
+    @FXML
+    private Button btnCreateGroup;
+    @FXML
+    private Pane content;
 
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize ManageGroups");
 
         instance = this;
 
-        FXMLSuite.getEventBus().register(this);
+        CommentSuite.getEventBus().register(this);
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         /*
          * Logic for main pane.
@@ -109,36 +111,6 @@ public class ManageGroups implements Initializable {
         modal.getBtnClose().setOnAction(ae -> runLater(() ->
                 overlayModal.setVisible(false))
         );
-        modal.getBtnSubmit().setOnAction(ae -> new Thread(() -> {
-            logger.debug("Attempting to create group");
-            runLater(() -> overlayModal.setDisable(true));
-            String name = modal.getNameField().getText();
-            if (!name.isEmpty()) {
-                try {
-                    Group g = database.createGroup(name);
-                    logger.debug("Created new group [id={},name={}]", g.getGroupId(), g.getName());
-                    runLater(() -> {
-                        comboGroupSelect.getSelectionModel().select(g);
-                        overlayModal.setDisable(false);
-                        overlayModal.setVisible(false);
-                        modal.getErrorMsg().setManaged(false);
-                    });
-                } catch (SQLException e) {
-                    logger.error(e);
-                    runLater(() -> {
-                        overlayModal.setDisable(false);
-                        modal.getErrorMsg().setManaged(true);
-                        modal.getErrorMsg().setText("Name already exists, try another!");
-                    });
-                }
-            } else {
-                runLater(() -> {
-                    overlayModal.setDisable(false);
-                    modal.getErrorMsg().setManaged(true);
-                    modal.getErrorMsg().setText("Name must not be empty.");
-                });
-            }
-        }).start());
     }
 
     public static Cache<String, ManageGroupsManager> getManagerCache() {
@@ -152,7 +124,9 @@ public class ManageGroups implements Initializable {
     @Subscribe
     public void groupDeleteEvent(final GroupDeleteEvent deleteEvent) {
         logger.debug("Group Delete Event");
-        managerCache.invalidate(deleteEvent.getGroup().getGroupId());
+        for (Group group : deleteEvent.getGroups()) {
+            managerCache.invalidate(group.getGroupId());
+        }
         runLater(this::rebuildGroupSelect);
     }
 
@@ -165,13 +139,12 @@ public class ManageGroups implements Initializable {
     @Subscribe
     public void groupRenameEvent(final GroupRenameEvent renameEvent) {
         logger.debug("Group Rename Event");
-        //runLater(this::refreshGroupSelect);
         runLater(this::rebuildGroupSelect);
     }
 
     private void rebuildGroupSelect() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.groups().getAllGroups());
         comboGroupSelect.setItems(FXCollections.emptyObservableList());
         comboGroupSelect.setItems(groups);
 

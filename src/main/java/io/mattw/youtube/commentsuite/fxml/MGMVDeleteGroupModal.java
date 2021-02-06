@@ -15,7 +15,6 @@ import java.io.IOException;
  * vacuum option is selected before deletion. Alternatively, the user could do a manual vacuum from {@link Settings}
  * if they did not select vacuum when deleting.
  *
- * @author mattwright324
  * @see ManageGroupsManager
  */
 public class MGMVDeleteGroupModal extends VBox {

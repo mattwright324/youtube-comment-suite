@@ -3,9 +3,12 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.util.*;
+import io.mattw.youtube.commentsuite.util.BrowserUtil;
+import io.mattw.youtube.commentsuite.util.ClipboardUtil;
+import io.mattw.youtube.commentsuite.util.IpApiProvider;
+import io.mattw.youtube.commentsuite.util.Location;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
@@ -28,17 +31,15 @@ import java.util.stream.Collectors;
 
 import static javafx.application.Platform.runLater;
 
-/**
- * @author mattwright324
- */
 public class SearchYouTube implements Initializable {
 
     private static final Logger logger = LogManager.getLogger();
+    private static final String TOKEN_FOO = "TOKEN_FOO";
 
     private Location<IpApiProvider, IpApiProvider.Location> location;
-    private YouTube youtubeApi;
-    private ClipboardUtil clipboardUtil = new ClipboardUtil();
-    private BrowserUtil browserUtil = new BrowserUtil();
+    private YouTube youTube;
+    private final ClipboardUtil clipboardUtil = new ClipboardUtil();
+    private final BrowserUtil browserUtil = new BrowserUtil();
 
     @FXML private Pane form;
     @FXML private ImageView searchIcon;
@@ -68,8 +69,7 @@ public class SearchYouTube implements Initializable {
 
     private int total = 0;
     private int number = 0;
-    private String emptyToken = "emptyToken";
-    private String pageToken = emptyToken;
+    private String pageToken = TOKEN_FOO;
 
     private YouTube.Search.List searchList;
     private SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
@@ -80,8 +80,8 @@ public class SearchYouTube implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize SearchYouTube");
 
-        youtubeApi = FXMLSuite.getYouTube();
-        this.location = FXMLSuite.getLocation();
+        this.youTube = CommentSuite.getYouTube();
+        this.location = CommentSuite.getLocation();
 
         MultipleSelectionModel selectionModel = resultsList.getSelectionModel();
 
@@ -93,18 +93,16 @@ public class SearchYouTube implements Initializable {
         locationBox.visibleProperty().bind(isLocation);
         searchRadius.managedProperty().bind(isLocation);
         searchRadius.visibleProperty().bind(isLocation);
-        isLocation.addListener((o, ov, nv) -> {
-            runLater(() -> {
-                if (nv) {
-                    previousType = resultType.getValue();
-                    resultType.setValue("Video");
-                    resultType.setDisable(true);
-                } else {
-                    resultType.setValue(previousType);
-                    resultType.setDisable(false);
-                }
-            });
-        });
+        isLocation.addListener((o, ov, nv) -> runLater(() -> {
+            if (nv) {
+                previousType = resultType.getValue();
+                resultType.setValue("Video");
+                resultType.setDisable(true);
+            } else {
+                resultType.setValue(previousType);
+                resultType.setDisable(false);
+            }
+        }));
 
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -161,7 +159,7 @@ public class SearchYouTube implements Initializable {
         submit.setOnAction(ae -> {
             total = 0;
             number = 0;
-            pageToken = emptyToken;
+            pageToken = TOKEN_FOO;
             resultsList.getItems().clear();
             runLater(() -> searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total)));
             logger.debug("Submit New Search [pageToken={},type={},text={},locText={},locRadius={},order={},result={}]",
@@ -204,7 +202,7 @@ public class SearchYouTube implements Initializable {
             String encodedText = URLEncoder.encode(text, "UTF-8");
             String searchType = types[resultType];
 
-            if (pageToken.equals(emptyToken)) {
+            if (pageToken.equals(TOKEN_FOO)) {
                 pageToken = "";
             }
 
@@ -214,8 +212,8 @@ public class SearchYouTube implements Initializable {
                 order = "viewCount";
             }
 
-            searchList = youtubeApi.search().list("snippet")
-                    .setKey(FXMLSuite.getYouTubeApiKey())
+            searchList = youTube.search().list("snippet")
+                    .setKey(CommentSuite.getYouTubeApiKey())
                     .setMaxResults(50L)
                     .setPageToken(pageToken)
                     .setQ(encodedText)
@@ -225,12 +223,12 @@ public class SearchYouTube implements Initializable {
             SearchListResponse sl;
             if (type.equals("Normal")) {
                 logger.debug("Normal Search [key={},part=snippet,text={},type={},order={},token={}]",
-                        FXMLSuite.getYouTubeApiKey(), encodedText, searchType, order.toLowerCase(), pageToken);
+                        CommentSuite.getYouTubeApiKey(), encodedText, searchType, order.toLowerCase(), pageToken);
 
                 sl = searchList.execute();
             } else {
                 logger.debug("Location Search [key={},part=snippet,text={},loc={},radius={},type={},order={},token={}]",
-                        FXMLSuite.getYouTubeApiKey(), encodedText, locText, locRadius, searchType, order.toLowerCase(), pageToken);
+                        CommentSuite.getYouTubeApiKey(), encodedText, locText, locRadius, searchType, order.toLowerCase(), pageToken);
 
                 sl = searchList
                         .setType("video")
@@ -239,7 +237,7 @@ public class SearchYouTube implements Initializable {
                         .execute();
             }
 
-            this.pageToken = sl.getNextPageToken() == null ? emptyToken : sl.getNextPageToken();
+            this.pageToken = sl.getNextPageToken() == null ? TOKEN_FOO : sl.getNextPageToken();
             this.total = sl.getPageInfo().getTotalResults();
 
             logger.debug("Search [videos={}]", sl.getItems().size());
@@ -259,7 +257,7 @@ public class SearchYouTube implements Initializable {
             e.printStackTrace();
         }
         runLater(() -> {
-            if (this.pageToken != null && !this.pageToken.equals(emptyToken)) {
+            if (this.pageToken != null && !this.pageToken.equals(TOKEN_FOO)) {
                 btnNextPage.setDisable(false);
             }
             searching.setValue(false);

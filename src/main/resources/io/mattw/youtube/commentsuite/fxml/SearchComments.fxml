@@ -17,6 +17,7 @@
         <ImageView fx:id="nextPageIcon" fitWidth="20" fitHeight="20" />
         <ImageView fx:id="lastPageIcon" fitWidth="20" fitHeight="20" />
         <ImageView fx:id="toggleQueryIcon" fitWidth="15" fitHeight="100" />
+        <ImageView fx:id="tagsIcon" fitHeight="20" fitWidth="20" />
     </fx:define>
     <HBox alignment="TOP_CENTER">
         <VBox fx:id="contextPane" minWidth="320" maxWidth="320" spacing="10" alignment="TOP_CENTER">
@@ -58,6 +59,7 @@
                             <MenuItem fx:id="openInBrowser" text="Open in Browser">
                                 <graphic><ImageView fx:id="browserIcon" fitHeight="24" fitWidth="24"/></graphic>
                             </MenuItem>
+                            <MenuItem fx:id="manageTags" text="Manage tags" graphic="$tagsIcon" />
                             <MenuItem fx:id="copyNames" text="Copy Name(s)" />
                             <MenuItem fx:id="copyComments" text="Copy Comment(s)" />
                             <MenuItem fx:id="copyChannelLinks" text="Copy Channel Link(s)" />
@@ -111,11 +113,18 @@
                 <Label text="Text like" styleClass="font16" GridPane.rowIndex="3" GridPane.columnIndex="0" />
                 <TextField fx:id="commentLike" promptText="Comment contains or id..." GridPane.rowIndex="3" GridPane.columnIndex="1" />
 
-                <Label text="Date from" styleClass="font16" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-                <DatePicker fx:id="dateFrom" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+                <Label text="Has tag(s)" styleClass="font16" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                <HBox GridPane.rowIndex="4" GridPane.columnIndex="1">
+                    <TextField fx:id="hasTags" promptText="tag1, tag2, tag3" styleClass="control, noRadiusRight" />
+                    <Button fx:id="btnSelectTags" styleClass="control, noRadiusLeft" style="-fx-padding: 5px" graphic="$tagsIcon" />
+                </HBox>
 
-                <Label text="Date to" styleClass="font16" GridPane.rowIndex="5" GridPane.columnIndex="0" />
-                <DatePicker fx:id="dateTo" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+
+                <Label text="Date from" styleClass="font16" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+                <DatePicker fx:id="dateFrom" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+
+                <Label text="Date to" styleClass="font16" GridPane.rowIndex="6" GridPane.columnIndex="0" />
+                <DatePicker fx:id="dateTo" GridPane.rowIndex="6" GridPane.columnIndex="1" />
             </GridPane>
             <HBox spacing="10">
                 <Button fx:id="btnSearch" text="Search" prefWidth="140" styleClass="btnPrimary" />
@@ -140,5 +149,15 @@
     <!-- Overlay: Export Comment Results -->
     <OverlayModal visible="false" fx:id="exportModal">
         <title><String fx:value="Export search results " /></title>
+    </OverlayModal>
+
+    <!-- Overlay: Manage Comment Tags -->
+    <OverlayModal visible="false" fx:id="tagsModal">
+        <title><String fx:value="Manage comment tags" /></title>
+    </OverlayModal>
+
+    <!-- Overlay: Select Comment Tags -->
+    <OverlayModal visible="false" fx:id="selectTagsModal">
+        <title><String fx:value="Select comment tags" /></title>
     </OverlayModal>
 </StackPane>

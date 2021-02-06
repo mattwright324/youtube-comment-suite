@@ -9,9 +9,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author mattwright324
- */
 public class ClipboardUtil {
 
     private Clipboard systemClipboard;

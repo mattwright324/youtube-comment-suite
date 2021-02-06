@@ -1,32 +1,41 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.*;
-import io.mattw.youtube.commentsuite.refresh.*;
+import io.mattw.youtube.commentsuite.ConfigData;
+import io.mattw.youtube.commentsuite.ConfigFile;
+import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.Group;
+import io.mattw.youtube.commentsuite.refresh.*;
 import io.mattw.youtube.commentsuite.util.ClipboardUtil;
+import io.mattw.youtube.commentsuite.util.Threads;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-import static io.mattw.youtube.commentsuite.refresh.RefreshStyle.*;
+import static io.mattw.youtube.commentsuite.refresh.RefreshStyle.CUSTOM;
+import static io.mattw.youtube.commentsuite.refresh.RefreshStyle.values;
 import static javafx.application.Platform.runLater;
 
 /**
  * This modal allows the user to start a group refresh. The group refresh will use the YouTube API to download
  * videos under the GroupItems of the Group in the ManageGroupsManager.
  *
- * @author mattwright324
  * @see RefreshInterface
  * @see GroupRefresh
  * @see ManageGroupsManager
@@ -36,8 +45,11 @@ public class MGMVRefreshModal extends HBox {
     private static final Logger logger = LogManager.getLogger();
 
     public static final int WIDTH = 500;
-
-    private ClipboardUtil clipboard = new ClipboardUtil();
+    private static final String STAT_ELAPSED = "STAT_ELAPSED";
+    private static final String STAT_VIDEO = "STAT_NEW_VIDEO";
+    private static final String STAT_COMMENT = "STAT_NEW_COMMENT";
+    private static final String STAT_MODERATED = "STAT_MODERATED";
+    private static final String STAT_VIEWER = "STAT_NEW_VIEWER";
 
     @FXML private Label alert;
     @FXML private Label statusStep;
@@ -49,28 +61,34 @@ public class MGMVRefreshModal extends HBox {
     @FXML private VBox optionsPane;
     @FXML private ComboBox<RefreshStyle> refreshStyle;
     @FXML private ComboBox<RefreshTimeframe> refreshTimeframe;
-    @FXML private ComboBox<RefreshCommentPages> refreshCommentPages;
+    @FXML private ComboBox<RefreshCommentPages> refreshCommentPages, refreshReviewPages;
     @FXML private ComboBox<RefreshCommentOrder> refreshCommentOrder;
-    @FXML private ComboBox<RefreshReplyPages> refreshReplyPages;
+    @FXML private ComboBox<RefreshCommentPages> refreshReplyPages;
+    @FXML private HBox reviewOption;
 
     @FXML private HBox warningsPane;
-    @FXML private Label warnings, elapsedTime, newVideos, totalVideos, newComments, totalComments, newViewers, totalViewers;
+    @FXML private Label warnings;
+    @FXML private GridPane refreshStatsPane;
     @FXML private ImageView expandIcon;
     @FXML private ListView<String> errorList;
     @FXML private Hyperlink expand;
     @FXML private ImageView endStatus;
     @FXML private ProgressIndicator statusIndicator;
 
-    private Group group;
+    private final Group group;
     private RefreshInterface refreshThread;
     private boolean running = false;
     private boolean hasBeenStarted = false;
     private boolean expanded = false;
 
-    private ConfigFile<ConfigData> configFile = FXMLSuite.getConfig();
-    private ConfigData configData = configFile.getDataObject();
+    private final Map<String, Label> statNewValue = new HashMap<>();
+    private final Map<String, Label> statTotalValue = new HashMap<>();
 
-    public MGMVRefreshModal(Group group) {
+    private final ClipboardUtil clipboard = new ClipboardUtil();
+    private final ConfigFile<ConfigData> configFile = CommentSuite.getConfig();
+    private final ConfigData configData = configFile.getDataObject();
+
+    public MGMVRefreshModal(final Group group) {
         logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         this.group = group;
@@ -89,8 +107,10 @@ public class MGMVRefreshModal extends HBox {
             refreshStyle.setItems(FXCollections.observableArrayList(values()));
             refreshTimeframe.setItems(FXCollections.observableArrayList(RefreshTimeframe.values()));
             refreshCommentPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
+            refreshReviewPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
             refreshCommentOrder.setItems(FXCollections.observableArrayList(RefreshCommentOrder.values()));
-            refreshReplyPages.setItems(FXCollections.observableArrayList(RefreshReplyPages.values()));
+            refreshReplyPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
+            refreshReviewPages.setValue(RefreshCommentPages.ALL);
 
             refreshStyle.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
                 logger.debug("Style {}", nv);
@@ -109,6 +129,7 @@ public class MGMVRefreshModal extends HBox {
                 refreshStyle.setValue(CUSTOM);
                 refreshTimeframe.setValue(refreshOptions.getTimeframe());
                 refreshCommentPages.setValue(refreshOptions.getCommentPages());
+                refreshReviewPages.setValue(refreshOptions.getReviewPages());
                 refreshCommentOrder.setValue(refreshOptions.getCommentOrder());
                 refreshReplyPages.setValue(refreshOptions.getReplyPages());
             } else {
@@ -150,10 +171,7 @@ public class MGMVRefreshModal extends HBox {
                     });
                     refreshThread.hardShutdown();
                     while (refreshThread.isAlive()) {
-                        try {
-                            Thread.sleep(97);
-                        } catch (Exception ignored) {
-                        }
+                        Threads.awaitMillis(97);
                     }
                     running = false;
                     runLater(() -> btnClose.setDisable(false));
@@ -175,6 +193,7 @@ public class MGMVRefreshModal extends HBox {
                     options.setStyle(refreshStyle.getValue());
                     options.setTimeframe(refreshTimeframe.getValue());
                     options.setCommentPages(refreshCommentPages.getValue());
+                    options.setReviewPages(refreshReviewPages.getValue());
                     options.setReplyPages(refreshReplyPages.getValue());
 
                     configData.setRefreshOptions(options);
@@ -183,31 +202,49 @@ public class MGMVRefreshModal extends HBox {
                     refreshThread = new GroupRefresh(group, options);
 
                     runLater(() -> {
+                        int rowIndex = 1;
+                        createGridRow(STAT_ELAPSED, rowIndex++, "Elapsed time");
+                        createGridRowNewTotal(STAT_VIDEO, rowIndex++,"New videos");
+                        createGridRowNewTotal(STAT_COMMENT, rowIndex++,"New comments");
+                        if (configData.isGrabHeldForReview()) {
+                            createGridRowNewTotal(STAT_MODERATED, rowIndex++,"New moderated");
+                        }
+                        createGridRowNewTotal(STAT_VIEWER, rowIndex++,"New viewers");
+
                         refreshThread.getObservableErrorList().addListener((ListChangeListener<String>) (lcl) -> runLater(() -> {
                             int items = lcl.getList().size();
                             warningsPane.setManaged(items > 0);
                             warningsPane.setVisible(items > 0);
                             warnings.setText(items + " message(s)");
                         }));
+
                         errorList.setItems(refreshThread.getObservableErrorList());
-                        elapsedTime.textProperty().bind(refreshThread.elapsedTimeProperty());
+                        statNewValue.get(STAT_ELAPSED).textProperty().bind(refreshThread.elapsedTimeProperty());
                         progressBar.progressProperty().bind(refreshThread.progressProperty());
                         statusStep.textProperty().bind(refreshThread.statusStepProperty());
 
-                        newVideos.textProperty().bind(Bindings.format("%,d", refreshThread.newVideosProperty()));
-                        totalVideos.textProperty().bind(
+                        statNewValue.get(STAT_VIDEO).textProperty().bind(Bindings.format("%,d", refreshThread.newVideosProperty()));
+                        statTotalValue.get(STAT_VIDEO).textProperty().bind(
                                 Bindings.concat("of ")
                                         .concat(Bindings.format("%,d", refreshThread.totalVideosProperty()))
                                         .concat(" total"));
 
-                        newComments.textProperty().bind(Bindings.format("%,d", refreshThread.newCommentsProperty()));
-                        totalComments.textProperty().bind(
+                        statNewValue.get(STAT_COMMENT).textProperty().bind(Bindings.format("%,d", refreshThread.newCommentsProperty()));
+                        statTotalValue.get(STAT_COMMENT).textProperty().bind(
                                 Bindings.concat("of ")
                                         .concat(Bindings.format("%,d", refreshThread.totalCommentsProperty()))
                                         .concat(" total"));
 
-                        newViewers.textProperty().bind(Bindings.format("%,d", refreshThread.newViewersProperty()));
-                        totalViewers.textProperty().bind(
+                        if (statNewValue.containsKey(STAT_MODERATED)) {
+                            statNewValue.get(STAT_MODERATED).textProperty().bind(Bindings.format("%,d", refreshThread.newModeratedProperty()));
+                            statTotalValue.get(STAT_MODERATED).textProperty().bind(
+                                    Bindings.concat("of ")
+                                            .concat(Bindings.format("%,d", refreshThread.totalModeratedProperty()))
+                                            .concat(" total"));
+                        }
+
+                        statNewValue.get(STAT_VIEWER).textProperty().bind(Bindings.format("%,d", refreshThread.newViewersProperty()));
+                        statTotalValue.get(STAT_VIEWER).textProperty().bind(
                                 Bindings.concat("of ")
                                         .concat(Bindings.format("%,d", refreshThread.totalViewersProperty()))
                                         .concat(" total"));
@@ -235,6 +272,42 @@ public class MGMVRefreshModal extends HBox {
         }
     }
 
+    private void createGridRow(final String statKey, final int rowNum, final String displayName) {
+        final Label name = new Label(displayName);
+        name.getStyleClass().addAll("bold", "font14");
+        name.setAlignment(Pos.TOP_RIGHT);
+
+        final Label newValue = new Label("0");
+        newValue.setMinWidth(0);
+        newValue.setPrefWidth(0);
+        newValue.setMaxWidth(Double.MAX_VALUE);
+        GridPane.setHgrow(newValue, Priority.ALWAYS);
+        statNewValue.put(statKey, newValue);
+
+        refreshStatsPane.addRow(rowNum, name, newValue);
+    }
+
+    private void createGridRowNewTotal(final String statKey, final int rowNum, final String displayName) {
+        final Label name = new Label(displayName);
+        name.getStyleClass().addAll("bold", "font14");
+        name.setAlignment(Pos.TOP_RIGHT);
+
+        final Label newValue = new Label("0");
+        newValue.setMinWidth(0);
+        newValue.setPrefWidth(0);
+        newValue.setMaxWidth(Double.MAX_VALUE);
+        GridPane.setHgrow(newValue, Priority.ALWAYS);
+
+        final Label totalValue = new Label("0 total");
+        totalValue.getStyleClass().addAll("textMutedLight", "font14");
+        totalValue.setAlignment(Pos.TOP_RIGHT);
+
+        statNewValue.put(statKey, newValue);
+        statTotalValue.put(statKey, totalValue);
+
+        refreshStatsPane.addRow(rowNum, name, newValue, totalValue);
+    }
+
     /**
      * Reset the modal back to its original state when being opened.
      */
@@ -242,10 +315,15 @@ public class MGMVRefreshModal extends HBox {
         logger.debug("Resetting state of Refresh Modal");
         running = false;
         hasBeenStarted = false;
+        statNewValue.clear();
+        statTotalValue.clear();
         runLater(() -> {
             if (expanded) {
                 expand.fire();
             }
+            reviewOption.setVisible(configData.isGrabHeldForReview());
+            reviewOption.setManaged(configData.isGrabHeldForReview());
+            refreshStatsPane.getChildren().clear();
             endStatus.setManaged(false);
             endStatus.setVisible(false);
             statusIndicator.setManaged(true);

@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.refresh;
 
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.util.ElapsedTime;
@@ -27,7 +27,7 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
     private final Set<String> concurrentNewChannelSet = ConcurrentHashMap.newKeySet();
 
     public ChannelConsumer() {
-        this.database = FXMLSuite.getDatabase();
+        this.database = CommentSuite.getDatabase();
     }
 
     @Override
@@ -50,12 +50,10 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
                 addProcessed(1);
             }
 
-            if (channels.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 1200 && !channels.isEmpty())) {
+            if (channels.size() >= 1000 || (elapsedTime.getElapsed().toMillis() >= 2000 && !channels.isEmpty())) {
                 insertChannels(channels);
                 elapsedTime.setNow();
             }
-
-            awaitMillis(5);
         }
 
         if (!channels.isEmpty()) {
@@ -79,7 +77,7 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
             concurrentNewChannelSet.addAll(notYetExisting);
             concurrentTotalChannelSet.addAll(channelIds);
 
-            database.insertChannels(channels);
+            database.channels().insertAll(channels);
             channels.clear();
         } catch (SQLException e) {
             logger.error("Error on channel submit", e);

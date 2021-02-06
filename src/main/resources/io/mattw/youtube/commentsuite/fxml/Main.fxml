@@ -4,6 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
+<?import java.lang.String?>
+<?import io.mattw.youtube.commentsuite.fxml.OverlayModal?>
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="io.mattw.youtube.commentsuite.fxml.Main"
@@ -14,6 +16,7 @@
         <fx:include fx:id="manageGroups" source="ManageGroups.fxml" />
         <fx:include fx:id="searchYoutube" source="SearchYouTube.fxml" />
         <ImageView fx:id="settingsIcon" fitHeight="25" fitWidth="25" />
+        <ImageView fx:id="quotaIcon" fitHeight="25" fitWidth="25" />
         <ToggleGroup fx:id="headerToggleGroup" />
     </fx:define>
     <VBox alignment="TOP_CENTER">
@@ -33,10 +36,16 @@
                               maxHeight="33.0" prefHeight="33" minHeight="33"
                               toggleGroup="$headerToggleGroup"/>
             </HBox>
+            <Button fx:id="btnQuota" styleClass="settingsBtn" style="-fx-padding:0" graphic="$quotaIcon" />
             <Button fx:id="btnSettings" styleClass="settingsBtn" graphic="$settingsIcon" />
         </HBox>
         <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4" />
         <StackPane VBox.vgrow="ALWAYS" fx:id="content" />
     </VBox>
     <fx:include fx:id="settings" source="Settings.fxml" />
+    <!-- Overlay: Remove All GroupItem(s) -->
+
+    <OverlayModal visible="false" fx:id="quotaInfoModal">
+        <title><String fx:value="YouTube API Quota" /></title>
+    </OverlayModal>
 </StackPane>

@@ -1,7 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
-import io.mattw.youtube.commentsuite.Cleanable;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
@@ -25,7 +24,6 @@ import static javafx.application.Platform.runLater;
 /**
  * This modal allows the user to remove all GroupItems from the Group of its ManageGroupManager.
  *
- * @author mattwright324
  * @see ManageGroupsManager
  */
 public class MGMVRemoveAllModal extends VBox implements Cleanable {
@@ -39,16 +37,16 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
     @FXML private Button btnClose;
     @FXML private Button btnSubmit;
 
-    private Group group;
-    private ObservableList<MGMVGroupItemView> groupItems;
+    private final Group group;
+    private final ObservableList<MGMVGroupItemView> groupItems;
 
-    public MGMVRemoveAllModal(Group group, ObservableList<MGMVGroupItemView> groupItems) {
+    public MGMVRemoveAllModal(final Group group, final ObservableList<MGMVGroupItemView> groupItems) {
         logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
 
         this.group = group;
         this.groupItems = groupItems;
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MGMVRemoveAllModal.fxml"));
         loader.setController(this);
@@ -67,11 +65,9 @@ public class MGMVRemoveAllModal extends VBox implements Cleanable {
                                 .map(MGMVGroupItemView::getGroupItem)
                                 .collect(Collectors.toList());
 
-                        database.deleteGroupItemLinks(group, items);
+                        database.groupItems().deleteAssociations(group, items);
                         database.cleanUp();
-                        runLater(() -> {
-                            btnClose.fire();
-                        });
+                        runLater(() -> btnClose.fire());
                     } catch (SQLException e) {
                         runLater(() -> setError(e.getLocalizedMessage()));
                         logger.error(e);

@@ -1,7 +1,11 @@
 package io.mattw.youtube.commentsuite.fxml;
 
+import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.*;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
+import io.mattw.youtube.commentsuite.events.AccountAddEvent;
+import io.mattw.youtube.commentsuite.events.AccountDeleteEvent;
+import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
@@ -27,16 +31,14 @@ import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
 
-/**
- * @author mattwright324
- */
 public class Settings implements Initializable {
 
     private static final Logger logger = LogManager.getLogger();
 
     private BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;
-    private OAuth2Handler oauth2;
+    private ConfigData configData;
+    private OAuth2Manager oAuth2Manager;
     private CommentDatabase database;
 
     @FXML private Pane settingsPane;
@@ -58,6 +60,7 @@ public class Settings implements Initializable {
     @FXML private TextField youtubeApiKey;
     @FXML private Button btnAddAccount;
     @FXML private ListView<SettingsAccountItemView> accountList;
+    @FXML private CheckBox grabHeldForReview;
 
     @FXML private ProgressIndicator cleanProgress;
     @FXML private Button btnClean;
@@ -74,41 +77,39 @@ public class Settings implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize Settings");
 
-        oauth2 = FXMLSuite.getOauth2();
-        config = FXMLSuite.getConfig();
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
+        oAuth2Manager = CommentSuite.getOauth2Manager();
+        config = CommentSuite.getConfig();
+        configData = config.getDataObject();
+        CommentSuite.getEventBus().register(this);
 
-        ConfigData configData = config.getDataObject();
-        configData.refreshAccounts();
         autoLoadStats.setSelected(configData.isAutoLoadStats());
         prefixReply.setSelected(configData.isPrefixReplies());
         downloadThumbs.setSelected(configData.isArchiveThumbs());
         customKey.setSelected(configData.isCustomApiKey());
         youtubeApiKey.setText(configData.getYoutubeApiKey());
         filterDuplicatesOnCopy.setSelected(configData.isFilterDuplicatesOnCopy());
+        grabHeldForReview.setSelected(configData.isGrabHeldForReview());
 
-        CookieManager cm = new CookieManager();
-        CookieHandler.setDefault(cm);
+        CookieHandler.setDefault(new CookieManager());
+
         WebEngine webEngine = webView.getEngine();
         webEngine.setJavaScriptEnabled(true);
         webEngine.titleProperty().addListener((o, ov, nv) -> {
             if (nv != null) {
                 logger.debug("YouTubeSignIn [loading-page={}]", nv);
                 if (nv.contains("code=")) {
-                    configData.refreshAccounts();
+                    //configData.refreshAccounts();
 
-                    String code = Stream.of(nv.split("&"))
+                    final String authorizationCode = Stream.of(nv.split("&"))
                             .filter(query -> query.startsWith("Success code="))
-                            .collect(Collectors.joining()).substring(13);
+                            .collect(Collectors.joining())
+                            .substring(13);
 
-                    logger.debug("YouTubeSignIn [returned-code={}]", code);
+                    logger.debug("YouTubeSignIn [returned-code={}]", authorizationCode);
+
                     try {
-                        OAuth2Tokens tokens = oauth2.getAccessTokens(code);
-                        oauth2.setTokens(tokens);
-
-                        YouTubeAccount account = new YouTubeAccount(tokens);
-
-                        configData.addAccount(account);
+                        oAuth2Manager.addAccount(authorizationCode);
 
                         btnExitSignIn.fire();
                     } catch (Exception e) {
@@ -124,46 +125,25 @@ public class Settings implements Initializable {
         });
         webViewLoading.visibleProperty().bind(webEngine.getLoadWorker().stateProperty().isEqualTo(Worker.State.SUCCEEDED).not());
 
-        configData.accountListChangedProperty().addListener((lcl) -> {
-            config.save();
-
-            List<SettingsAccountItemView> listItems = configData.getAccounts()
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .filter(account -> account.getChannelId() != null && account.getThumbUrl() != null
-                            && account.getUsername() != null)
-                    .map(SettingsAccountItemView::new)
-                    .collect(Collectors.toList());
-
-            runLater(() -> {
-                accountList.getItems().clear();
-                accountList.getItems().addAll(listItems);
-            });
-        });
-
-        configData.triggerAccountListChanged();
+        reloadAccountList();
 
         btnSave.setOnAction(ae -> runLater(() -> btnClose.fire()));
 
         closeIcon.setImage(ImageLoader.CLOSE.getImage());
         btnClose.setOnAction(ae -> runLater(() -> {
             logger.debug("Saving Settings");
+
             ConfigData data = config.getDataObject();
-            data.setAutoLoadStats(autoLoadStats.isSelected());
-            data.setPrefixReplies(prefixReply.isSelected());
             data.setArchiveThumbs(downloadThumbs.isSelected());
+            data.setAutoLoadStats(autoLoadStats.isSelected());
             data.setCustomApiKey(customKey.isSelected());
-            data.setYoutubeApiKey(youtubeApiKey.getText());
             data.setFilterDuplicatesOnCopy(filterDuplicatesOnCopy.isSelected());
+            data.setGrabHeldForReview(grabHeldForReview.isSelected());
+            data.setPrefixReplies(prefixReply.isSelected());
+            data.setYoutubeApiKey(youtubeApiKey.getText());
 
             config.setDataObject(data);
             config.save();
-
-            if (customKey.isSelected()) {
-                FXMLSuite.setYouTubeApiKey(data.getYoutubeApiKey());
-            } else {
-                FXMLSuite.setYouTubeApiKey(data.getDefaultApiKey());
-            }
 
             logger.debug("Closing Settings");
             settingsPane.setManaged(false);
@@ -178,7 +158,7 @@ public class Settings implements Initializable {
             vboxSignIn.setManaged(true);
             vboxSignIn.setVisible(true);
             vboxSettings.setDisable(true);
-            webView.getEngine().load(oauth2.getAuthUrl());
+            webView.getEngine().load(OAuth2Manager.WEB_LOGIN_URL);
         }));
 
         btnExitSignIn.setOnAction(ae -> runLater(() -> {
@@ -241,6 +221,33 @@ public class Settings implements Initializable {
         }).start());
 
         github.setOnAction(ae -> browserUtil.open("https://github.com/mattwright324/youtube-comment-suite"));
+    }
+
+    private void reloadAccountList() {
+        config.save();
+
+        List<SettingsAccountItemView> listItems = configData.getAccounts()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(account -> account.getChannelId() != null && account.getThumbUrl() != null
+                        && account.getUsername() != null)
+                .map(SettingsAccountItemView::new)
+                .collect(Collectors.toList());
+
+        runLater(() -> {
+            accountList.getItems().clear();
+            accountList.getItems().addAll(listItems);
+        });
+    }
+
+    @Subscribe
+    public void accountAddEvent(final AccountAddEvent accountAddEvent) {
+        reloadAccountList();
+    }
+
+    @Subscribe
+    public void accountDeleteEvent(final AccountDeleteEvent accountDeleteEvent) {
+        reloadAccountList();
     }
 
     private void deleteDirectoryContents(String dir) {

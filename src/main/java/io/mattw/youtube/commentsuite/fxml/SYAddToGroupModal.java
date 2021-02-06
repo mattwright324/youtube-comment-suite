@@ -1,8 +1,7 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.eventbus.Subscribe;
-import io.mattw.youtube.commentsuite.Cleanable;
-import io.mattw.youtube.commentsuite.FXMLSuite;
+import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.db.GroupItem;
@@ -31,7 +30,6 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to add selected items (Videos, Channels, Playlists) from the Search YouTube section to an
  * already existing group or create an entirely new group to add the selection to.
  *
- * @author mattwright324
  * @see SearchYouTube
  */
 public class SYAddToGroupModal extends VBox implements Cleanable {
@@ -46,18 +44,18 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
     @FXML private Button btnClose;
     @FXML private Button btnSubmit;
 
-    private CommentDatabase database;
+    private final CommentDatabase database;
 
-    private ListView<SearchYouTubeListItem> listView;
+    private final ListView<SearchYouTubeListItem> listView;
 
-    public SYAddToGroupModal(ListView<SearchYouTubeListItem> listView) {
+    public SYAddToGroupModal(final ListView<SearchYouTubeListItem> listView) {
         this.listView = listView;
 
         logger.debug("Initialize SYAddToGroupModal");
 
-        FXMLSuite.getEventBus().register(this);
+        CommentSuite.getEventBus().register(this);
 
-        database = FXMLSuite.getDatabase();
+        database = CommentSuite.getDatabase();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SYAddToGroupModal.fxml"));
         loader.setController(this);
@@ -90,7 +88,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
                     }
                 } else if (addToNew.isSelected()) {
                     try {
-                        Group group = database.createGroup(groupName.getText());
+                        Group group = database.groups().create(groupName.getText());
 
                         if (group != null) {
                             submitItemsToGroup(items, group);
@@ -110,7 +108,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
         }
     }
 
-    private void submitItemsToGroup(List<SearchYouTubeListItem> items, Group group) {
+    private void submitItemsToGroup(final List<SearchYouTubeListItem> items, final Group group) {
         List<GroupItem> list = items.stream()
                 .map(SearchYouTubeListItem::getYoutubeURL)
                 .map(link -> {
@@ -129,14 +127,12 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
         if (!list.isEmpty()) {
             try {
-                database.insertGroupItems(group, list);
+                database.groupItems().insertAll(group, list);
                 database.commit();
 
                 logger.debug("GroupItems were successfully added to group");
 
-                runLater(() -> {
-                    btnClose.fire();
-                });
+                runLater(() -> btnClose.fire());
             } catch (SQLException e) {
                 logger.error("Failed to insert group items to group [id={}]", group.getGroupId());
 
@@ -152,7 +148,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
     }
 
-    void setError(String error) {
+    void setError(final String error) {
         lblWarn.setText(error);
         lblWarn.setVisible(true);
         lblWarn.setManaged(true);
@@ -205,7 +201,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
     private void rebuildGroupSelect() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final ObservableList<Group> groups = FXCollections.observableArrayList(database.getAllGroups());
+        final ObservableList<Group> groups = FXCollections.observableArrayList(database.groups().getAllGroups());
         comboGroupSelect.setItems(FXCollections.emptyObservableList());
         comboGroupSelect.setItems(groups);
 

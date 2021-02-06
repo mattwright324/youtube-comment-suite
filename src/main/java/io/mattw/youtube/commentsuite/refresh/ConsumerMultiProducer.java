@@ -1,6 +1,9 @@
 package io.mattw.youtube.commentsuite.refresh;
 
+import com.google.api.client.googleapis.json.GoogleJsonError;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,8 +11,11 @@ import org.apache.logging.log4j.util.TriConsumer;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * The ConsumerMultiProducer is always a consumer of one type and optionally can
@@ -26,6 +32,7 @@ public abstract class ConsumerMultiProducer<C> {
 
     private List<ConsumerMultiProducer<?>> keepAliveWith = new ArrayList<>();
     private Map<Class<?>, List<ConsumerMultiProducer<?>>> consumersByClass = new HashMap<>();
+    private Map<String, List<ConsumerMultiProducer<?>>> consumersByKey = new HashMap<>();
     private BlockingQueue<C> blockingQueue = new LinkedBlockingQueue<>();
     private boolean startProduceOnFirstAccept = false;
     private boolean didProduceOnFirstAccept = false;
@@ -53,6 +60,23 @@ public abstract class ConsumerMultiProducer<C> {
     }
 
     /**
+     * @param consumer consuemr
+     * @param clazz needed for sendCollection()
+     * @param <P> consumer must consume type of clazz
+     */
+    public <P> void produceTo(ConsumerMultiProducer<P> consumer, Class<P> clazz, String key) {
+        consumersByKey.computeIfPresent(key, (key1, value) -> {
+            value.add(consumer);
+            return value;
+        });
+        consumersByKey.computeIfAbsent(key, (key1) -> {
+            List<ConsumerMultiProducer<?>> list = new ArrayList<>();
+            list.add(consumer);
+            return list;
+        });
+    }
+
+    /**
      * Start producing using the ExecutorGroup
      */
     public abstract void startProducing();
@@ -60,22 +84,31 @@ public abstract class ConsumerMultiProducer<C> {
     public abstract ExecutorGroup getExecutorGroup();
 
     public void accept(Collection<C> objects) {
-        totalAccepted.addAndGet(objects.size());
+        if (objects == null || objects.isEmpty()) {
+            return;
+        }
 
+        totalAccepted.addAndGet(objects.size());
         blockingQueue.addAll(objects);
 
-        produceOnFirstAccept();
+        produceOnFirstMeaningfulAccept();
     }
 
     public void accept(C object) {
-        totalAccepted.addAndGet(1);
+        if (object == null) {
+            return;
+        }
 
+        totalAccepted.addAndGet(1);
         blockingQueue.add(object);
 
-        produceOnFirstAccept();
+        produceOnFirstMeaningfulAccept();
     }
 
-    private synchronized void produceOnFirstAccept() {
+    /**
+     * Will only start producing on the first non-null non-empty accept,
+     */
+    private synchronized void produceOnFirstMeaningfulAccept() {
         if (startProduceOnFirstAccept && !didProduceOnFirstAccept) {
             didProduceOnFirstAccept = true;
             startProducing();
@@ -134,6 +167,24 @@ public abstract class ConsumerMultiProducer<C> {
         }
     }
 
+    public <P> void sendCollection(Collection<P> objects, Class<P> clazz, String key) {
+        if (!consumersByKey.containsKey(key) || objects.isEmpty()) {
+            return;
+        }
+        for (ConsumerMultiProducer<?> consumer : consumersByKey.get(key)) {
+            ((ConsumerMultiProducer<P>) consumer).accept(objects);
+        }
+    }
+
+    public <P> void send(P object, String key) {
+        if (!consumersByKey.containsKey(key)) {
+            return;
+        }
+        for (ConsumerMultiProducer<?> consumer : consumersByKey.get(key)) {
+            ((ConsumerMultiProducer<P>) consumer).accept(object);
+        }
+    }
+
     public void setMessageFunc(TriConsumer<Level, Throwable, String> messageFunc) {
         this.messageFunc = messageFunc;
     }
@@ -182,6 +233,22 @@ public abstract class ConsumerMultiProducer<C> {
 
     public void setStartProduceOnFirstAccept(boolean startProduceOnFirstAccept) {
         this.startProduceOnFirstAccept = startProduceOnFirstAccept;
+    }
+
+    public <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
+    }
+
+    public static String getFirstReasonCode(GoogleJsonResponseException e) {
+        return Optional.ofNullable(e)
+                .map(GoogleJsonResponseException::getDetails)
+                .map(GoogleJsonError::getErrors)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(GoogleJsonError.ErrorInfo::getReason)
+                .findFirst()
+                .orElse(StringUtils.EMPTY);
     }
 
     @Override

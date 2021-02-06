@@ -12,14 +12,14 @@ public class DateUtils {
     /**
      * Uses the current timezone.
      */
-    public static LocalDateTime epochMillisToDateTime(long epochMillis) {
+    public static LocalDateTime epochMillisToDateTime(final long epochMillis) {
         return epochMillisToDateTime(epochMillis, ZoneId.systemDefault());
     }
 
     /**
      * Pass in custom timeZone
      */
-    public static LocalDateTime epochMillisToDateTime(long epochMillis, ZoneId zoneId) {
+    public static LocalDateTime epochMillisToDateTime(final long epochMillis, final ZoneId zoneId) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), zoneId);
     }
 

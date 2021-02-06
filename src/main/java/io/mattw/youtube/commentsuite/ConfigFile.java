@@ -13,19 +13,18 @@ import java.nio.charset.StandardCharsets;
  * Can take any object as long as it has fields that Gson is configured to read.
  *
  * @param <T> data object JSON (de)serialized
- * @author mattwright324
  */
 public class ConfigFile<T> {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
 
-    private T defaultObject;
+    private final File file;
+    private final T defaultObject;
     private T dataObject;
-    private File file;
 
-    public ConfigFile(String fileName, T defaultObject) {
+    public ConfigFile(final String fileName, final T defaultObject) {
         logger.debug("Initialize ConfigFile<{}> [fileName={}]", defaultObject.getClass().getSimpleName(), fileName);
         this.defaultObject = defaultObject;
         this.dataObject = defaultObject;
@@ -39,8 +38,8 @@ public class ConfigFile<T> {
 
     public void load() {
         logger.debug("Loading Config File");
-        try (FileReader fr = new FileReader(file);
-             BufferedReader br = new BufferedReader(fr)) {
+        try (final FileReader fr = new FileReader(file);
+             final BufferedReader br = new BufferedReader(fr)) {
             String line;
             StringBuilder data = new StringBuilder();
             while ((line = br.readLine()) != null) {
@@ -60,8 +59,8 @@ public class ConfigFile<T> {
 
     public void save() {
         logger.debug("Saving Config File");
-        try (FileOutputStream fos = new FileOutputStream(file);
-             OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+        try (final FileOutputStream fos = new FileOutputStream(file);
+             final OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
             writer.write(gson.toJson(dataObject));
         } catch (Exception e) {
             logger.error(e);

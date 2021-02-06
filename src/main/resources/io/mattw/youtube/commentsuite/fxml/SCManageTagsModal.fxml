@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<fx:root type="VBox"
+         xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         spacing="10">
+
+    <fx:include source="AlertLabel.fxml" styleClass="alertPrimary" fx:id="lblAbout"
+                alignment="CENTER"
+                text="0 item(s) selected" />
+
+    <HBox spacing="10">
+        <VBox spacing="10" HBox.hgrow="ALWAYS">
+            <Label text="All existing tag(s)" />
+            <ListView fx:id="allTags" minHeight="200" prefHeight="200" maxHeight="200" maxWidth="Infinity" />
+        </VBox>
+        <VBox spacing="10" HBox.hgrow="ALWAYS">
+            <Label text="Input tag(s)" />
+            <TextField fx:id="tags" promptText="tag1, tag2, tag3" />
+            <Button fx:id="btnAdd" styleClass="btnPrimary" maxWidth="Infinity" text="Add to selected" />
+            <Button fx:id="btnRemove" styleClass="btnLight" maxWidth="Infinity" text="Remove from selected" />
+            <Button fx:id="btnSelect" styleClass="btnLight" maxWidth="Infinity" text="Select from list" />
+        </VBox>
+    </HBox>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button fx:id="btnFinish" styleClass="btnLight" text="Finish" />
+    </HBox>
+</fx:root>

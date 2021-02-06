@@ -20,9 +20,6 @@ import java.io.IOException;
 
 import static javafx.application.Platform.runLater;
 
-/**
- * @author mattwright324
- */
 public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
 
     private static final Logger logger = LogManager.getLogger();
@@ -30,7 +27,7 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
     @FXML private ImageView thumbnail;
     @FXML private Label title, subtitle;
 
-    private YouTubeObject object;
+    private final YouTubeObject object;
     private Long value;
     private String subtitleText;
     private String subtitleSuffix;
@@ -38,9 +35,9 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
     private boolean isVideo = true;
     private boolean justSubtitle = false;
 
-    private BrowserUtil browserUtil = new BrowserUtil();
+    private final BrowserUtil browserUtil = new BrowserUtil();
 
-    public MGMVYouTubeObjectItem(YouTubeVideo video, String subtitle) {
+    public MGMVYouTubeObjectItem(final YouTubeVideo video, final String subtitle) {
         this.object = video;
         this.subtitleText = subtitle;
         this.justSubtitle = true;
@@ -48,11 +45,11 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
         initialize();
     }
 
-    public MGMVYouTubeObjectItem(YouTubeVideo video, Long value, String subtitleSuffix) {
+    public MGMVYouTubeObjectItem(final YouTubeVideo video, final Long value, final String subtitleSuffix) {
         this(video, value, subtitleSuffix, false);
     }
 
-    public MGMVYouTubeObjectItem(YouTubeVideo video, Long value, String subtitleSuffix, boolean commentsDisabled) {
+    public MGMVYouTubeObjectItem(final YouTubeVideo video, final Long value, final String subtitleSuffix, final boolean commentsDisabled) {
         this.object = video;
         this.value = value;
         this.subtitleSuffix = subtitleSuffix;
@@ -61,7 +58,7 @@ public class MGMVYouTubeObjectItem extends HBox implements ImageCache {
         initialize();
     }
 
-    public MGMVYouTubeObjectItem(YouTubeChannel channel, Long value, String subtitleSuffix) {
+    public MGMVYouTubeObjectItem(final YouTubeChannel channel, final Long value, final String subtitleSuffix) {
         this.object = channel;
         this.value = value;
         this.subtitleSuffix = subtitleSuffix;

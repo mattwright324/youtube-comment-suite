@@ -40,7 +40,7 @@ Maven will also insert these values into `Settings.fxml` during the build.
 
 There are two ways to run this application from your IDE
 
-1. **From in IDE** Right click on file and run `src/main/java/io.mattw.youtube.commentsuite/FXMLSuite.java`
+1. **From in IDE** Right click on file and run `src/main/java/io.mattw.youtube.commentsuite/CommentSuite.java`
 2. **From package** Double click the jar at `target/package/youtube-comment-suite-#.#.#.jar` 
 
 *Note: My YouTube API key provided in the application is not restricted at all given it isn't a website.

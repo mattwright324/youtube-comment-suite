@@ -23,7 +23,6 @@ import static javafx.application.Platform.runLater;
 /**
  * Controls the header: switching content and opening the settings view.
  *
- * @author mattwright324
  */
 public class Main implements Initializable {
 
@@ -36,13 +35,15 @@ public class Main implements Initializable {
     @FXML private ToggleButton btnSearchYoutube;
     @FXML private StackPane content;
 
-    @FXML private Button btnSettings;
-    @FXML private ImageView settingsIcon;
+    @FXML private Button btnQuota, btnSettings;
+    @FXML private ImageView settingsIcon, quotaIcon;
 
     @FXML private Pane searchComments;
     @FXML private Pane manageGroups;
     @FXML private Pane searchYoutube;
     @FXML private Pane settings;
+
+    @FXML private OverlayModal<MainQuotaModal> quotaInfoModal;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -58,6 +59,9 @@ public class Main implements Initializable {
                 }
             }
         });
+
+        quotaIcon.setImage(ImageLoader.QUOTA.getImage());
+        btnQuota.setOnAction(ae -> runLater(() -> logger.debug("Open Quota info")));
 
         settingsIcon.setImage(ImageLoader.SETTINGS.getImage());
         btnSettings.setOnAction(ae -> runLater(() -> {
@@ -81,6 +85,11 @@ public class Main implements Initializable {
             content.getChildren().clear();
             content.getChildren().add(searchYoutube);
         }));
+
+        MainQuotaModal quotaModal = new MainQuotaModal();
+        quotaInfoModal.setContent(quotaModal);
+        quotaModal.getBtnClose().setOnAction(ae -> quotaInfoModal.setVisible(false));
+        btnQuota.setOnAction(ae -> quotaInfoModal.setVisible(true));
 
         btnManageGroups.fire();
     }
