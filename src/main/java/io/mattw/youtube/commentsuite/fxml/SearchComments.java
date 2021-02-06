@@ -381,15 +381,11 @@ public class SearchComments implements Initializable, ImageCache {
         SCSelectTagsModal scSelectTagsModal = new SCSelectTagsModal();
         selectTagsModal.setContent(scSelectTagsModal);
         scSelectTagsModal.getBtnClose().setOnAction(ae -> selectTagsModal.setVisible(false));
-        scSelectTagsModal.getBtnSelect().setOnAction(ae -> {
-            runLater(() -> {
-                hasTags.setText(scSelectTagsModal.getSelectedString());
-                selectTagsModal.setVisible(false);
-            });
-        });
-        btnSelectTags.setOnAction(ae -> {
-            selectTagsModal.setVisible(true);
-        });
+        scSelectTagsModal.getBtnSelect().setOnAction(ae -> runLater(() -> {
+            hasTags.setText(scSelectTagsModal.getSelectedString());
+            selectTagsModal.setVisible(false);
+        }));
+        btnSelectTags.setOnAction(ae -> selectTagsModal.setVisible(true));
     }
 
     /**

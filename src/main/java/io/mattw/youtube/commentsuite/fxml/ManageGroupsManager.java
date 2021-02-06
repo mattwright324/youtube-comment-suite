@@ -25,7 +25,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
@@ -166,12 +165,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         groupTitle.setMinWidth(Region.USE_PREF_SIZE);
         groupTitle.setMaxWidth(Region.USE_PREF_SIZE);
         groupTitle.textProperty().addListener((ov, prevText, currText) -> {
-            runLater(() -> {
-                int caretPosition = groupTitle.getCaretPosition();
-                groupTitle.setText(trimToEmpty(currText));
-                groupTitle.positionCaret(caretPosition);
-                rename.setDisable(isBlank(groupTitle.getText()));
-            });
+            runLater(() -> rename.setDisable(isBlank(groupTitle.getText())));
 
             FXUtils.adjustTextFieldWidthByContent(groupTitle);
         });
@@ -195,9 +189,11 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         rename.setOnAction(ae -> new Thread(() -> {
             if (editIcon.getImage().equals(save)) {
                 try {
-                    database.groups().rename(group, groupTitle.getText());
+                    final String newTitle = trimToEmpty(groupTitle.getText());
+                    database.groups().rename(group, newTitle);
+                    runLater(() -> groupTitle.setText(newTitle));
                 } catch (SQLException e) {
-                    groupTitle.setText(group.getName());
+                    runLater(() -> groupTitle.setText(group.getName()));
                     logger.error(e);
                 }
             }
@@ -224,22 +220,20 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             });
         }).start());
 
-        renameCancel.setOnAction(ae -> new Thread(() -> {
-            runLater(() -> {
-                editIcon.setImage(edit);
-                groupTitle.getStyleClass().add("clearTextField");
-                groupTitle.setEditable(false);
-                rename.setTooltip(new Tooltip("Rename"));
+        renameCancel.setOnAction(ae -> new Thread(() -> runLater(() -> {
+            editIcon.setImage(edit);
+            groupTitle.getStyleClass().add("clearTextField");
+            groupTitle.setEditable(false);
+            rename.setTooltip(new Tooltip("Rename"));
 
-                renameCancel.setVisible(false);
-                renameCancel.setManaged(false);
-                renameCancel.setDisable(true);
+            renameCancel.setVisible(false);
+            renameCancel.setManaged(false);
+            renameCancel.setDisable(true);
 
-                groupTitle.setText(group.getName());
+            groupTitle.setText(group.getName());
 
-                FXUtils.adjustTextFieldWidthByContent(groupTitle);
-            });
-        }).start());
+            FXUtils.adjustTextFieldWidthByContent(groupTitle);
+        })).start());
         renameCancel.setTooltip(new Tooltip("Cancel"));
 
         SelectionModel selectionModel = groupItemList.getSelectionModel();
@@ -306,9 +300,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         MGMVDeleteGroupModal mgmvDelete = new MGMVDeleteGroupModal();
         deleteModal.setContent(mgmvDelete);
         deleteModal.setDividerClass("dividerDanger");
-        btnDelete.setOnAction(ae -> runLater(() -> {
-            deleteModal.setVisible(true);
-        }));
+        btnDelete.setOnAction(ae -> runLater(() -> deleteModal.setVisible(true)));
         deleteModal.visibleProperty().addListener((cl) -> {
             mgmvDelete.getBtnClose().setCancelButton(deleteModal.isVisible());
             mgmvDelete.getBtnDelete().setDefaultButton(deleteModal.isVisible());
@@ -337,9 +329,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 btnReload.fire();
             });
         }).start());
-        mgmvDelete.getBtnClose().setOnAction(ae -> {
-            deleteModal.setVisible(false);
-        });
+        mgmvDelete.getBtnClose().setOnAction(ae -> deleteModal.setVisible(false));
 
         /*
           Add Item Modal

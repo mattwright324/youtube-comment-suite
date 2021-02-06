@@ -3,7 +3,6 @@ package io.mattw.youtube.commentsuite.fxml;
 import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.SQLLoader;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.events.TagsChangeEvent;
 import javafx.fxml.FXML;
@@ -98,9 +97,7 @@ public class SCManageTagsModal extends VBox {
     public void withComments(List<SearchCommentsListItem> selected) {
         this.selected = selected;
 
-        runLater(() -> {
-            lblAbout.setText(String.format("%s comments(s) selected", selected.size()));
-        });
+        runLater(() -> lblAbout.setText(String.format("%s comments(s) selected", selected.size())));
     }
 
     public List<YouTubeComment> toComments() {

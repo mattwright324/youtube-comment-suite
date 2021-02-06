@@ -20,7 +20,6 @@ import org.jsoup.nodes.Document;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.Optional;
 
 public class OAuth2Manager {

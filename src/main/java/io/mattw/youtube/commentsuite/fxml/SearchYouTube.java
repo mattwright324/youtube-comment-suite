@@ -93,18 +93,16 @@ public class SearchYouTube implements Initializable {
         locationBox.visibleProperty().bind(isLocation);
         searchRadius.managedProperty().bind(isLocation);
         searchRadius.visibleProperty().bind(isLocation);
-        isLocation.addListener((o, ov, nv) -> {
-            runLater(() -> {
-                if (nv) {
-                    previousType = resultType.getValue();
-                    resultType.setValue("Video");
-                    resultType.setDisable(true);
-                } else {
-                    resultType.setValue(previousType);
-                    resultType.setDisable(false);
-                }
-            });
-        });
+        isLocation.addListener((o, ov, nv) -> runLater(() -> {
+            if (nv) {
+                previousType = resultType.getValue();
+                resultType.setValue("Video");
+                resultType.setDisable(true);
+            } else {
+                resultType.setValue(previousType);
+                resultType.setDisable(false);
+            }
+        }));
 
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 

@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 

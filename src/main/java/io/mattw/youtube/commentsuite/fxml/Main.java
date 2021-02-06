@@ -61,9 +61,7 @@ public class Main implements Initializable {
         });
 
         quotaIcon.setImage(ImageLoader.QUOTA.getImage());
-        btnQuota.setOnAction(ae -> runLater(() -> {
-            logger.debug("Open Quota info");
-        }));
+        btnQuota.setOnAction(ae -> runLater(() -> logger.debug("Open Quota info")));
 
         settingsIcon.setImage(ImageLoader.SETTINGS.getImage());
         btnSettings.setOnAction(ae -> runLater(() -> {

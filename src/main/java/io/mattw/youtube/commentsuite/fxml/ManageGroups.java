@@ -24,14 +24,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 import static javafx.application.Platform.runLater;
 
 /**
  * Manages group selection, creation, and content switching.
- *
  */
 public class ManageGroups implements Initializable {
 
@@ -42,12 +40,17 @@ public class ManageGroups implements Initializable {
 
     private CommentDatabase database;
 
-    @FXML private OverlayModal<MGCreateGroupModal> overlayModal;
+    @FXML
+    private OverlayModal<MGCreateGroupModal> overlayModal;
 
-    @FXML private ImageView plusIcon;
-    @FXML private ComboBox<Group> comboGroupSelect;
-    @FXML private Button btnCreateGroup;
-    @FXML private Pane content;
+    @FXML
+    private ImageView plusIcon;
+    @FXML
+    private ComboBox<Group> comboGroupSelect;
+    @FXML
+    private Button btnCreateGroup;
+    @FXML
+    private Pane content;
 
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize ManageGroups");
@@ -108,36 +111,6 @@ public class ManageGroups implements Initializable {
         modal.getBtnClose().setOnAction(ae -> runLater(() ->
                 overlayModal.setVisible(false))
         );
-        modal.getBtnSubmit().setOnAction(ae -> new Thread(() -> {
-            logger.debug("Attempting to create group");
-            runLater(() -> overlayModal.setDisable(true));
-            String name = modal.getNameField().getText();
-            if (!name.isEmpty()) {
-                try {
-                    Group g = database.groups().create(name);
-                    logger.debug("Created new group [id={},name={}]", g.getGroupId(), g.getName());
-                    runLater(() -> {
-                        comboGroupSelect.getSelectionModel().select(g);
-                        overlayModal.setDisable(false);
-                        overlayModal.setVisible(false);
-                        modal.getErrorMsg().setManaged(false);
-                    });
-                } catch (SQLException e) {
-                    logger.error(e);
-                    runLater(() -> {
-                        overlayModal.setDisable(false);
-                        modal.getErrorMsg().setManaged(true);
-                        modal.getErrorMsg().setText("Name already exists, try another!");
-                    });
-                }
-            } else {
-                runLater(() -> {
-                    overlayModal.setDisable(false);
-                    modal.getErrorMsg().setManaged(true);
-                    modal.getErrorMsg().setText("Name must not be empty.");
-                });
-            }
-        }).start());
     }
 
     public static Cache<String, ManageGroupsManager> getManagerCache() {

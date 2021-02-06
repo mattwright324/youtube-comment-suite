@@ -132,9 +132,7 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
 
                 logger.debug("GroupItems were successfully added to group");
 
-                runLater(() -> {
-                    btnClose.fire();
-                });
+                runLater(() -> btnClose.fire());
             } catch (SQLException e) {
                 logger.error("Failed to insert group items to group [id={}]", group.getGroupId());
 

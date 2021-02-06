@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collections;
 
 import static javafx.application.Platform.runLater;
 
