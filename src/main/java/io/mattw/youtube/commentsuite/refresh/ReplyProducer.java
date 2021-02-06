@@ -90,7 +90,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                     awaitMillis(50);
                 } while (pageToken != null && page++ < replyPages.getPageCount() && !isHardShutdown());
             } catch (IOException e) {
-                sendMessage(Level.ERROR, e, String.format("Couldn't grab commentThread[id={}]", tuple.getFirst()));
+                sendMessage(Level.ERROR, e, String.format("Couldn't grab commentThread[id=%s]", tuple.getFirst()));
             }
 
             addProcessed(1);

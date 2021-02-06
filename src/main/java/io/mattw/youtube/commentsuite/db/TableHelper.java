@@ -1,11 +1,16 @@
 package io.mattw.youtube.commentsuite.db;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public abstract class TableHelper<T> {
+
+    private static final Logger logger = LogManager.getLogger();
 
     private final Connection connection;
 
@@ -91,9 +96,9 @@ public abstract class TableHelper<T> {
 
     public abstract void updateAll(List<T> objects) throws SQLException;
 
-    public String columnOrDefault(ResultSet rs, String columnName, String def) throws SQLException {
-        ResultSetMetaData rsmd = rs.getMetaData();
-        int columns = rsmd.getColumnCount();
+    public String columnOrDefault(final ResultSet rs, final String columnName, final String def) throws SQLException {
+        final ResultSetMetaData rsmd = rs.getMetaData();
+        final int columns = rsmd.getColumnCount();
         for (int x = 1; x <= columns; x++) {
             if (columnName.equals(rsmd.getColumnName(x))) {
                 return rs.getString(columnName);

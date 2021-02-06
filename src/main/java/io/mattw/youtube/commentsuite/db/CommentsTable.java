@@ -33,7 +33,7 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
                 .setReplyCount(resultSet.getLong("reply_count"))
                 .setReply(resultSet.getBoolean("is_reply"))
                 .setParentId(resultSet.getString("parent_id"))
-                .setModerationStatus(columnOrDefault(resultSet, "moderation_status", null))
+                .setModerationStatus(columnOrDefault(resultSet, "moderation_status", "published"))
                 .setTags(columnOrDefault(resultSet, "tags", null));
     }
 

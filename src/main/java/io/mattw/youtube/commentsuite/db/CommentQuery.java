@@ -168,11 +168,10 @@ public class CommentQuery implements Serializable, Exportable {
      * results directly to a JSON file without storing it in memory in the event of a massive result.
      */
     public NamedParameterStatement toStatement() throws SQLException {
-        String queryString = buildQueryStringAndParams();
-
+        final String queryString = buildQueryStringAndParams();
         logger.debug(queryString);
 
-        NamedParameterStatement namedParamStatement = new NamedParameterStatement(database.getConnection(), queryString);
+        final NamedParameterStatement namedParamStatement = new NamedParameterStatement(database.getConnection(), queryString);
 
         for (String key : queryParams.keySet()) {
             Object value = queryParams.get(key);
@@ -197,7 +196,7 @@ public class CommentQuery implements Serializable, Exportable {
      * @param pageSize number of comments to return
      */
     public List<YouTubeComment> getByPage(int page, int pageSize) throws SQLException {
-        List<YouTubeComment> comments = new ArrayList<>();
+        final List<YouTubeComment> comments = new ArrayList<>();
 
         logger.debug("Searching Comments [page={},pageSize={}] {}", page, pageSize, queryParams);
 
@@ -206,8 +205,8 @@ public class CommentQuery implements Serializable, Exportable {
 
         totalResults = 0;
 
-        try (NamedParameterStatement statement = toStatement();
-             ResultSet resultSet = statement.executeQuery()) {
+        try (final NamedParameterStatement statement = toStatement();
+             final ResultSet resultSet = statement.executeQuery()) {
 
             int indexStart = pageSize * page;
             int indexEnd = indexStart + pageSize;

@@ -84,22 +84,31 @@ public abstract class ConsumerMultiProducer<C> {
     public abstract ExecutorGroup getExecutorGroup();
 
     public void accept(Collection<C> objects) {
-        totalAccepted.addAndGet(objects.size());
+        if (objects == null || objects.isEmpty()) {
+            return;
+        }
 
+        totalAccepted.addAndGet(objects.size());
         blockingQueue.addAll(objects);
 
-        produceOnFirstAccept();
+        produceOnFirstMeaningfulAccept();
     }
 
     public void accept(C object) {
-        totalAccepted.addAndGet(1);
+        if (object == null) {
+            return;
+        }
 
+        totalAccepted.addAndGet(1);
         blockingQueue.add(object);
 
-        produceOnFirstAccept();
+        produceOnFirstMeaningfulAccept();
     }
 
-    private synchronized void produceOnFirstAccept() {
+    /**
+     * Will only start producing on the first non-null non-empty accept,
+     */
+    private synchronized void produceOnFirstMeaningfulAccept() {
         if (startProduceOnFirstAccept && !didProduceOnFirstAccept) {
             didProduceOnFirstAccept = true;
             startProducing();

@@ -173,7 +173,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                          */
                         final List<StringTuple> replyThreads = comments.stream()
                                 .filter(comment -> comment.getReplyCount() > 0)
-                                .filter(comment -> options.getReplyPages() != RefreshCommentPages.NONE)
                                 .map(comment -> new StringTuple(comment.getId(), video.getId()))
                                 .collect(Collectors.toList());
                         sendCollection(replyThreads, StringTuple.class);
