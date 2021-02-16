@@ -36,9 +36,6 @@ public class ManageGroups implements Initializable {
     private static final Logger logger = LogManager.getLogger();
 
     private static final Cache<String, ManageGroupsManager> managerCache = CacheBuilder.newBuilder().build();
-    private static ManageGroups instance;
-
-    private CommentDatabase database;
 
     @FXML
     private OverlayModal<MGCreateGroupModal> overlayModal;
@@ -55,11 +52,7 @@ public class ManageGroups implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize ManageGroups");
 
-        instance = this;
-
         CommentSuite.getEventBus().register(this);
-
-        database = CommentSuite.getDatabase();
 
         /*
          * Logic for main pane.
@@ -134,6 +127,10 @@ public class ManageGroups implements Initializable {
     public void groupAddEvent(final GroupAddEvent addEvent) {
         logger.debug("Group Add Event");
         runLater(this::rebuildGroupSelect);
+        addEvent.getGroups()
+                .stream()
+                .findFirst()
+                .ifPresent(group -> runLater(() -> comboGroupSelect.setValue(group)));
     }
 
     @Subscribe
@@ -144,7 +141,7 @@ public class ManageGroups implements Initializable {
 
     private void rebuildGroupSelect() {
         final Group selectedGroup = comboGroupSelect.getValue();
-        final ObservableList<Group> groups = FXCollections.observableArrayList(database.groups().getAllGroups());
+        final ObservableList<Group> groups = FXCollections.observableArrayList(CommentSuite.getDatabase().groups().getAllGroups());
         comboGroupSelect.setItems(FXCollections.emptyObservableList());
         comboGroupSelect.setItems(groups);
 
