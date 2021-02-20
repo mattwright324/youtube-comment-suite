@@ -187,7 +187,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
                 channelProducer.getDuplicateSkipped());
     }
 
-    private void await(ConsumerMultiProducer<?> consumer, String message) throws InterruptedException {
+    private void await(final ConsumerMultiProducer<?> consumer, final String message) throws InterruptedException {
         if (consumer.getExecutorGroup().isStillWorking()) {
             consumer.getExecutorGroup().await();
             consumer.onCompletion();

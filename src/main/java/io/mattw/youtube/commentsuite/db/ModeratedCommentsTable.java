@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_IGNORE_MODERATED_COMMENTS;
+import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_REPLACE_MODERATED_COMMENTS;
 
 public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {
 
@@ -69,7 +69,7 @@ public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {
 
     @Override
     public void insertAll(List<YouTubeComment> objects) throws SQLException {
-        try (PreparedStatement ps = preparedStatement(INSERT_IGNORE_MODERATED_COMMENTS.toString())) {
+        try (PreparedStatement ps = preparedStatement(INSERT_REPLACE_MODERATED_COMMENTS.toString())) {
             for (YouTubeComment ct : objects) {
                 ps.setString(1, ct.getId());
                 ps.setString(2, ct.getChannelId());

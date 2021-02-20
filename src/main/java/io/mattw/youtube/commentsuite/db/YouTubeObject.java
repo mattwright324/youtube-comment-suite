@@ -153,9 +153,7 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
      */
     public static String getChannelIdFromObject(final Object authorChannelId) {
         if (authorChannelId instanceof ArrayMap) {
-            ArrayMap<String, String> value = (ArrayMap) authorChannelId;
-
-            return value.get("value");
+            return ((ArrayMap<String, String>) authorChannelId).get("value");
         }
 
         return Optional.ofNullable(authorChannelId)

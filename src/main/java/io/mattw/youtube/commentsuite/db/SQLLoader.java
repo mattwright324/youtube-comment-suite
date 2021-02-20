@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Loads various resource SQL scripts for definition, query, and manipulation.
@@ -49,7 +51,7 @@ public enum SQLLoader {
     INSERT_REPLACE_CHANNELS("dml_insert_replace_channels.sql"),
     INSERT_REPLACE_COMMENTS("dml_insert_replace_comments.sql"),
     INSERT_IGNORE_GITEM_VIDEO("dml_insert_ignore_gitem_video.sql"),
-    INSERT_IGNORE_MODERATED_COMMENTS("dml_insert_ignore_moderated_comments.sql"),
+    INSERT_REPLACE_MODERATED_COMMENTS("dml_insert_replace_moderated_comments.sql"),
     INSERT_REPLACE_VIDEOS("dml_insert_replace_videos.sql"),
     RESET_DB("ddl_reset_db.sql"),
     UPDATE_GITEM("dml_update_gitem.sql"),
@@ -58,25 +60,25 @@ public enum SQLLoader {
 
     private final Logger logger = LogManager.getLogger();
 
-    private String basePath = "/io/mattw/youtube/commentsuite/db/sql/";
-    private String fileName;
-    private String fileData = "";
+    private final String fileName;
+    private final String fileData;
 
-    SQLLoader(String fileName) {
+    SQLLoader(final String fileName) {
         this.fileName = fileName;
+
+        final List<String> lines = new ArrayList<>();
         try {
             String line;
-            StringBuilder sb = new StringBuilder();
-            try (InputStreamReader isr = new InputStreamReader(getClass().getResource(basePath + fileName).openStream());
-                 BufferedReader br = new BufferedReader(isr)) {
+            try (final InputStreamReader isr = new InputStreamReader(getClass().getResourceAsStream("/io/mattw/youtube/commentsuite/db/sql/" + fileName));
+                 final BufferedReader br = new BufferedReader(isr)) {
                 while ((line = br.readLine()) != null) {
-                    sb.append(line);
-                    sb.append(' ');
+                    lines.add(line);
                 }
-                this.fileData = sb.toString();
             }
         } catch (IOException e) {
             logger.error("Failed to load resource sql file [fileKey={}]", getFileName());
+        } finally {
+            this.fileData = String.join(" ", lines);
         }
     }
 

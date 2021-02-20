@@ -10,6 +10,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -110,17 +112,46 @@ public class GroupItem extends YouTubeObject {
         ofLink(link);
     }
 
+    enum LinkType {
+        VIDEO,
+        PLAYLIST,
+        CHANNEL_USER,
+        CHANNEL_ID,
+        CHANNEL_CUSTOM
+    }
+
     private void ofLink(final String fullLink) throws IOException {
         logger.debug("Matching link to type [fullLink={}]", fullLink);
 
         youtube = CommentSuite.getYouTube();
         database = CommentSuite.getDatabase();
 
-        final Pattern video1 = Pattern.compile("(?:http[s]?://youtu.be/)([\\w_\\-]+)");
-        final Pattern video2 = Pattern.compile("(?:http[s]?://www.youtube.com/watch\\?v=)([\\w_\\-]+)");
-        final Pattern playlist = Pattern.compile("(?:http[s]?://www.youtube.com/playlist\\?list=)([\\w_\\-]+)");
-        final Pattern channel1 = Pattern.compile("(?:http[s]?://www.youtube.com/channel/)([\\w_\\-]+)");
-        final Pattern channel2 = Pattern.compile("(?:http[s]?://www.youtube.com/user/)([\\w_\\-]+)");
+        final Pattern video1 = Pattern.compile("(?:http[s]?://)?(?:\\w+\\.)?youtube.com/watch\\?v=([\\w_-]+)(?:&.*)?");
+        final Pattern video2 = Pattern.compile("(?:http[s]?://)?youtu.be/([\\w_-]+)(?:\\?.*)?");
+        final Pattern playlist = Pattern.compile("(?:http[s]?://)?(?:\\w+\\.)?youtube.com/playlist\\?list=([\\w_-]+)(?:&.*)?");
+        final Pattern channelUser = Pattern.compile("(?:http[s]?://)?(?:\\w+\\.)?youtube.com/user/([\\w_-]+)(?:\\?.*)?");
+        final Pattern channelId = Pattern.compile("(?:http[s]?://)?(?:\\w+\\.)?youtube.com/channel/([\\w_-]+)(?:\\?.*)?");
+        final Pattern channelCustom1 = Pattern.compile("(?:http[s]?://)?(?:\\w+\\.)?youtube.com/c/([\\w_-]+)(?:\\?.*)?");
+        final Pattern channelCustom2 = Pattern.compile("(?:http[s]?://)?(?:\\w+\\.)?youtube.com/([\\w_-]+)(?:\\?.*)?");
+
+        final Map<Pattern, LinkType> patterns = new HashMap<>();
+        patterns.put(video1, LinkType.VIDEO);
+        patterns.put(video2, LinkType.VIDEO);
+        patterns.put(playlist, LinkType.PLAYLIST);
+        patterns.put(channelUser, LinkType.CHANNEL_USER);
+        patterns.put(channelId, LinkType.CHANNEL_ID);
+        patterns.put(channelCustom1, LinkType.CHANNEL_CUSTOM);
+        patterns.put(channelCustom2, LinkType.CHANNEL_CUSTOM);
+
+        String linkId = null;
+        LinkType linkType = null;
+        for (final Pattern pattern : patterns.keySet()) {
+            final Matcher matcher = pattern.matcher(fullLink);
+            if (matcher.matches()) {
+                linkId = matcher.group(1);
+                linkType = patterns.get(pattern);
+            }
+        }
 
         Matcher m;
         YType type = YType.UNKNOWN;
@@ -135,10 +166,10 @@ public class GroupItem extends YouTubeObject {
         } else if ((m = playlist.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.PLAYLIST;
-        } else if ((m = channel1.matcher(fullLink)).matches()) {
+        } else if ((m = channelUser.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.CHANNEL;
-        } else if ((m = channel2.matcher(fullLink)).matches()) {
+        } else if ((m = channelId.matcher(fullLink)).matches()) {
             result = m.group(1);
             type = YType.CHANNEL;
             channelUsername = true;
