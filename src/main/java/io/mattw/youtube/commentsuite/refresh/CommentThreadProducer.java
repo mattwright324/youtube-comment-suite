@@ -154,13 +154,14 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
                         final List<YouTubeComment> comments = items.stream()
                                 .map(YouTubeComment::new)
-                                .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
+                                .filter(comment -> StringUtils.isNotBlank(comment.getChannelId()))
                                 .collect(Collectors.toList());
                         sendCollection(comments, YouTubeComment.class);
 
                         final List<YouTubeChannel> channels = items.stream()
                                 .filter(distinctByKey(CommentThread::getId))
                                 .map(YouTubeChannel::new)
+                                .filter(channel -> StringUtils.isNotBlank(channel.getId()))
                                 .collect(Collectors.toList());
                         sendCollection(channels, YouTubeChannel.class);
 
@@ -185,7 +186,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
                             final List<YouTubeComment> replies = threadReplies.stream()
                                     .map(comment -> new YouTubeComment(comment, video.getId()))
-                                    .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
+                                    .filter(comment -> StringUtils.isNotBlank(comment.getChannelId()))
                                     .collect(Collectors.toList());
 
                             sendCollection(replies, YouTubeComment.class);
@@ -193,6 +194,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                             final List<YouTubeChannel> channels2 = threadReplies.stream()
                                     .filter(distinctByKey(Comment::getId))
                                     .map(YouTubeChannel::new)
+                                    .filter(channel -> StringUtils.isNotBlank(channel.getId()))
                                     .collect(Collectors.toList());
                             sendCollection(channels2, YouTubeChannel.class);
                         }

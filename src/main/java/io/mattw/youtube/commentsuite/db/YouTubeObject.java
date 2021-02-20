@@ -7,6 +7,7 @@ import javafx.scene.image.Image;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -156,7 +157,10 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
 
             return value.get("value");
         }
-        return authorChannelId.toString();
+
+        return Optional.ofNullable(authorChannelId)
+                .map(Object::toString)
+                .orElse(null);
     }
 
     /**

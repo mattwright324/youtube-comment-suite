@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_IGNORE_CHANNELS;
+import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_REPLACE_CHANNELS;
 
 public class ChannelsTable extends TableHelper<YouTubeChannel> {
 
@@ -95,7 +95,7 @@ public class ChannelsTable extends TableHelper<YouTubeChannel> {
 
     @Override
     public void insertAll(List<YouTubeChannel> objects) throws SQLException {
-        try (PreparedStatement ps = preparedStatement(INSERT_IGNORE_CHANNELS.toString())) {
+        try (PreparedStatement ps = preparedStatement(INSERT_REPLACE_CHANNELS.toString())) {
             for (YouTubeChannel c : objects) {
                 ps.setString(1, c.getId());
                 ps.setString(2, c.getTitle());
