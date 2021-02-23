@@ -4,7 +4,7 @@ package io.mattw.youtube.commentsuite.db;
  * Type definition for YouTubeObjects
  *
  */
-public enum YType {
+public enum GroupItemType {
     UNKNOWN("Unknown"),
     VIDEO("Video"),
     CHANNEL("Channel"),
@@ -13,7 +13,7 @@ public enum YType {
 
     private String display;
 
-    YType(String display) {
+    GroupItemType(String display) {
         this.display = display;
     }
 

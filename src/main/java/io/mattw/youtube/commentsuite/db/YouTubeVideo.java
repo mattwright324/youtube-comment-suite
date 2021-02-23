@@ -31,7 +31,7 @@ public class YouTubeVideo extends YouTubeObject implements Exportable {
 
     public YouTubeVideo(String id, String title, String thumbUrl) {
         super(id, title, thumbUrl);
-        setTypeId(YType.VIDEO);
+        setTypeId(GroupItemType.VIDEO);
     }
 
     /**
@@ -41,7 +41,7 @@ public class YouTubeVideo extends YouTubeObject implements Exportable {
      */
     public YouTubeVideo(Video item) {
         super(item.getId(), item.getSnippet().getTitle(), item.getSnippet().getThumbnails().getMedium().getUrl());
-        setTypeId(YType.VIDEO);
+        setTypeId(GroupItemType.VIDEO);
 
         if (item.getSnippet() != null) {
             VideoSnippet snippet = item.getSnippet();

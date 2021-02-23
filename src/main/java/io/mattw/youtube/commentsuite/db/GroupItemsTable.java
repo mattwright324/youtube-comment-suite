@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.mattw.youtube.commentsuite.CommentSuite.*;
+import static io.mattw.youtube.commentsuite.CommentSuite.postEvent;
 import static io.mattw.youtube.commentsuite.db.SQLLoader.*;
 
 public class GroupItemsTable extends TableHelper<GroupItem> {
@@ -22,13 +22,14 @@ public class GroupItemsTable extends TableHelper<GroupItem> {
 
     @Override
     public GroupItem to(ResultSet resultSet) throws SQLException {
-        return new GroupItem(resultSet.getString("gitem_id"),
-                YType.values()[resultSet.getInt("type_id") + 1],
-                resultSet.getString("title"),
-                resultSet.getString("channel_title"),
-                resultSet.getString("thumb_url"),
-                resultSet.getLong("published"),
-                resultSet.getLong("last_checked"));
+        return new GroupItem()
+                .setId(resultSet.getString("gitem_id"))
+                .setType(GroupItemType.values()[resultSet.getInt("type_id") + 1])
+                .setDisplayName(resultSet.getString("title"))
+                .setChannelTitle(resultSet.getString("channel_title"))
+                .setThumbUrl(resultSet.getString("thumb_url"))
+                .setPublished(resultSet.getLong("published"))
+                .setLastChecked(resultSet.getLong("last_checked"));
     }
 
     @Override
@@ -105,8 +106,8 @@ public class GroupItemsTable extends TableHelper<GroupItem> {
         try (PreparedStatement psCG = preparedStatement(CREATE_GITEM.toString())) {
             for (GroupItem gi : objects) {
                 psCG.setString(1, gi.getId());
-                psCG.setInt(2, gi.getTypeId().id());
-                psCG.setString(3, gi.getTitle());
+                psCG.setInt(2, gi.getType().id());
+                psCG.setString(3, gi.getDisplayName());
                 psCG.setString(4, gi.getChannelTitle());
                 psCG.setLong(5, gi.getPublished());
                 psCG.setLong(6, gi.getLastChecked());
@@ -153,7 +154,7 @@ public class GroupItemsTable extends TableHelper<GroupItem> {
     public void updateAll(List<GroupItem> objects) throws SQLException {
         try (PreparedStatement ps = preparedStatement(UPDATE_GITEM.toString())) {
             for (GroupItem item : objects) {
-                ps.setString(1, item.getTitle());
+                ps.setString(1, item.getDisplayName());
                 ps.setString(2, item.getChannelTitle());
                 ps.setLong(3, item.getPublished());
                 ps.setLong(4, System.currentTimeMillis());

@@ -42,7 +42,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
      */
     public YouTubeComment(Comment item, String videoId) {
         super(item.getId(), null, null);
-        this.setTypeId(YType.COMMENT);
+        this.setTypeId(GroupItemType.COMMENT);
 
         this.videoId = videoId;
         this.isReply = true;
@@ -67,7 +67,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
      */
     public YouTubeComment(CommentThread item) {
         super(item.getId(), null, null);
-        this.setTypeId(YType.COMMENT);
+        this.setTypeId(GroupItemType.COMMENT);
 
         this.isReply = false;
         this.parentId = null;
@@ -91,7 +91,7 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
 
     public YouTubeComment(String commentId) {
         super(commentId, null, null);
-        setTypeId(YType.COMMENT);
+        setTypeId(GroupItemType.COMMENT);
         setModerationStatus(ModerationStatus.PUBLISHED);
     }
 

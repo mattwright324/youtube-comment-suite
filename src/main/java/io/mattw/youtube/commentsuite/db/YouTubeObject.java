@@ -21,7 +21,7 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
     private String thumbUrl;
 
     // Transient, we don't want this in export file.
-    private transient YType typeId;
+    private transient GroupItemType typeId;
 
     /**
      * This field differs from what's returned by  {@link #buildYouTubeLink()} because it is used solely by
@@ -30,7 +30,7 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
     private transient String youTubeLink;
 
     public YouTubeObject() {
-        typeId = YType.UNKNOWN;
+        typeId = GroupItemType.UNKNOWN;
     }
 
     /**
@@ -57,44 +57,49 @@ public abstract class YouTubeObject implements ImageCache, Serializable {
         this.thumbUrl = thumbUrl;
     }
 
-    public YType getTypeId() {
-        return typeId;
-    }
-
-    public void setTypeId(YType typeId) {
-        this.typeId = typeId;
-    }
-
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public YouTubeObject setId(String id) {
         this.id = id;
+        return this;
     }
 
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
+    public YouTubeObject setTitle(String title) {
         this.title = title;
+        return this;
     }
 
     public String getThumbUrl() {
         return thumbUrl;
     }
 
-    public void setThumbUrl(String thumbUrl) {
+    public YouTubeObject setThumbUrl(String thumbUrl) {
         this.thumbUrl = thumbUrl;
+        return this;
+    }
+
+    public GroupItemType getTypeId() {
+        return typeId;
+    }
+
+    public YouTubeObject setTypeId(GroupItemType typeId) {
+        this.typeId = typeId;
+        return this;
     }
 
     public String getYouTubeLink() {
         return youTubeLink;
     }
 
-    public void setYouTubeLink(String youTubeLink) {
+    public YouTubeObject setYouTubeLink(String youTubeLink) {
         this.youTubeLink = youTubeLink;
+        return this;
     }
 
     public String getTypeName() {

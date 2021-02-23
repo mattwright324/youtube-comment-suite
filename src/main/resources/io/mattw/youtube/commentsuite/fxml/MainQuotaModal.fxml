@@ -14,10 +14,8 @@
             <Label text="As per Google, &quot;Daily quotas reset at midnight Pacific Time (PT).&quot;" />
             <Label />
             <Label text="When is that?" styleClass="font18" />
-            <VBox spacing="6" alignment="CENTER_LEFT" style="-fx-padding: 0 10 0 20">
-                <Label fx:id="timeZone" text="..." />
-                <Label fx:id="timeUntil" text="..." />
-            </VBox>
+            <Label fx:id="timeZone" text="..." />
+            <Label fx:id="timeUntil" text="..." />
             <Label />
             <HBox spacing="5" alignment="CENTER_LEFT">
                 <Label styleClass="bold" text="See here for more detail: " />

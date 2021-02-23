@@ -709,7 +709,9 @@ public class SearchComments implements Initializable, ImageCache {
         final Group selectedGroup = comboGroupSelect.getValue();
         final List<GroupItem> groupItems = database.groupItems().byGroup(selectedGroup);
 
-        final GroupItem all = new GroupItem(GroupItem.ALL_ITEMS, String.format("All Items (%s)", groupItems.size()));
+        final GroupItem all = new GroupItem()
+                .setId(GroupItem.ALL_ITEMS)
+                .setDisplayName(String.format("All Items (%s)", groupItems.size()));
         runLater(() -> {
             comboGroupItemSelect.getItems().clear();
             comboGroupItemSelect.getItems().add(all);

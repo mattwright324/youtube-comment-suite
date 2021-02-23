@@ -40,20 +40,20 @@ public class MGMVGroupItemView extends HBox {
                 icon.setManaged(false);
                 icon.setVisible(false);
             } else {
-                icon.setImage(groupItem.getDefaultThumb());
+                icon.setImage(ImageCache.findOrGetImage(groupItem.getId(), groupItem.getThumbUrl()));
                 icon.setManaged(true);
                 icon.setVisible(true);
             }
 
-            title.setText(groupItem.getTitle());
+            title.setText(groupItem.getDisplayName());
             author.setText(groupItem.getChannelTitle());
-            type.setText(groupItem.getTypeName());
+            type.setText(groupItem.getType().getDisplay());
 
             icon.setCursor(Cursor.HAND);
-            icon.setOnMouseClicked(me -> browserUtil.open(groupItem.buildYouTubeLink()));
+            icon.setOnMouseClicked(me -> browserUtil.open(groupItem.toYouTubeLink()));
 
             new Thread(() -> {
-                Image image = ImageCache.findOrGetImage(groupItem);
+                Image image = ImageCache.findOrGetImage(groupItem.getId(), groupItem.getThumbUrl());
                 runLater(() -> icon.setImage(image));
             }).start();
 

@@ -17,7 +17,7 @@ public class YouTubeChannel extends YouTubeObject {
                         .map(ThumbnailDetails::getDefault)
                         .map(Thumbnail::getUrl)
                         .orElse(null));
-        setTypeId(YType.CHANNEL);
+        setTypeId(GroupItemType.CHANNEL);
     }
 
     /**
@@ -27,7 +27,7 @@ public class YouTubeChannel extends YouTubeObject {
         this(getChannelIdFromObject(item.getSnippet().getAuthorChannelId()),
                 StringEscapeUtils.unescapeHtml4(item.getSnippet().getAuthorDisplayName()),
                 item.getSnippet().getAuthorProfileImageUrl());
-        setTypeId(YType.CHANNEL);
+        setTypeId(GroupItemType.CHANNEL);
     }
 
     /**
@@ -35,7 +35,7 @@ public class YouTubeChannel extends YouTubeObject {
      */
     public YouTubeChannel(CommentThread item) {
         this(item.getSnippet().getTopLevelComment());
-        setTypeId(YType.CHANNEL);
+        setTypeId(GroupItemType.CHANNEL);
     }
 
     /**
@@ -43,7 +43,7 @@ public class YouTubeChannel extends YouTubeObject {
      */
     public YouTubeChannel(String channelId, String name, String thumbUrl) {
         super(channelId, name, thumbUrl);
-        setTypeId(YType.CHANNEL);
+        setTypeId(GroupItemType.CHANNEL);
     }
 
     public String toString() {

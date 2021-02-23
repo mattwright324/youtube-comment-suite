@@ -141,7 +141,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
         btnReset.setDisable(selectedVideo == null);
         lblSelection.setText(String.format("%s > %s > %s",
                 group != null ? group.getName() : "$group",
-                groupItem != null ? groupItem.getTitle() : "$groupItem",
+                groupItem != null ? groupItem.getDisplayName() : "$groupItem",
                 selectedVideo != null ? selectedVideo.getTitle() : ALL_VIDEOS));
     }
 

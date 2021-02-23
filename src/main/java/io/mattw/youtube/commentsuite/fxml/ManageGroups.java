@@ -64,8 +64,6 @@ public class ManageGroups implements Initializable {
 
         SelectionModel<Group> selectionModel = comboGroupSelect.getSelectionModel();
         selectionModel.selectedItemProperty().addListener((o, ov, nv) -> {
-            logger.debug("selectedItemProperty({}, {}, {})", ov, nv, selectionModel.getSelectedIndex());
-
             if (nv != null) {
                 ManageGroupsManager manager = managerCache.getIfPresent(nv.getGroupId());
                 if (manager != null) {
