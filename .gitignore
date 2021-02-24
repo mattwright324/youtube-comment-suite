@@ -10,3 +10,4 @@ target/
 *.sqlite3-journal
 exports/
 *.~vsdx
+*.log

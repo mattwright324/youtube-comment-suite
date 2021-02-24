@@ -1,19 +1,19 @@
 package io.mattw.youtube.commentsuite.db;
 
 public enum LinkType {
-    VIDEO(GroupItemType.VIDEO),
-    PLAYLIST(GroupItemType.PLAYLIST),
-    CHANNEL_USER(GroupItemType.CHANNEL),
-    CHANNEL_ID(GroupItemType.CHANNEL),
-    CHANNEL_CUSTOM(GroupItemType.CHANNEL);
+    VIDEO(YouTubeType.VIDEO),
+    PLAYLIST(YouTubeType.PLAYLIST),
+    CHANNEL_USER(YouTubeType.CHANNEL),
+    CHANNEL_ID(YouTubeType.CHANNEL),
+    CHANNEL_CUSTOM(YouTubeType.CHANNEL);
 
-    private GroupItemType itemType;
+    private YouTubeType itemType;
 
-    LinkType(GroupItemType itemType) {
+    LinkType(YouTubeType itemType) {
         this.itemType = itemType;
     }
 
-    public GroupItemType getItemType() {
+    public YouTubeType getItemType() {
         return itemType;
     }
 }

@@ -74,8 +74,8 @@ public class SearchYouTubeListItem extends HBox {
             description.setText(data.getSnippet().getDescription());
 
             new Thread(() -> {
-                final YouTubeSearchItem obj = new YouTubeSearchItem(data);
-                final Image thumb = ImageCache.findOrGetImage(obj);
+                final YouTubeSearchItem searchItem = new YouTubeSearchItem(data);
+                final Image thumb = searchItem.findOrGetThumb();
                 thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
                 thumbnail.setImage(thumb);
             }).start();

@@ -5,7 +5,7 @@ import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.commentsuite.db.GroupItemType;
+import io.mattw.youtube.commentsuite.db.YouTubeType;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -49,12 +49,12 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
             }
 
             try {
-                final GroupItemType type = item.getType();
-                if (type == GroupItemType.CHANNEL) {
+                final YouTubeType type = item.getType();
+                if (type == YouTubeType.CHANNEL) {
                     fromChannel(item);
-                } else if (type == GroupItemType.PLAYLIST) {
+                } else if (type == YouTubeType.PLAYLIST) {
                     fromPlaylist(item);
-                } else if (type == GroupItemType.VIDEO) {
+                } else if (type == YouTubeType.VIDEO) {
                     fromVideo(item);
                 }
 

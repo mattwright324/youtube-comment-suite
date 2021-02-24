@@ -1,5 +1,7 @@
 package io.mattw.youtube.commentsuite.db;
 
+import com.google.api.client.util.ArrayMap;
+import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.api.services.youtube.model.CommentThread;
@@ -7,7 +9,6 @@ import com.google.api.services.youtube.model.CommentThreadSnippet;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.refresh.ModerationStatus;
 import io.mattw.youtube.commentsuite.util.DateUtils;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,11 +17,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
-public class YouTubeComment extends YouTubeObject implements Exportable {
+import static org.apache.commons.lang3.StringUtils.*;
+
+public class YouTubeComment implements Linkable, Exportable {
 
     public static final Logger logger = LogManager.getLogger();
 
+    private String id;
+    private YouTubeType type = YouTubeType.COMMENT;
     private String commentText;
     private String channelId;
     private transient long published;
@@ -37,64 +43,6 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
     private YouTubeChannel author;
     private List<YouTubeComment> replies;
 
-    /**
-     * Constructor meant for replies.
-     */
-    public YouTubeComment(Comment item, String videoId) {
-        super(item.getId(), null, null);
-        this.setTypeId(GroupItemType.COMMENT);
-
-        this.videoId = videoId;
-        this.isReply = true;
-        this.replyCount = -1;
-
-        CommentSnippet snippet = item.getSnippet();
-        this.commentText = snippet.getTextDisplay();
-        setPublished(snippet.getPublishedAt().getValue());
-        this.likes = snippet.getLikeCount();
-        this.moderationStatus = ModerationStatus.fromApiValue(snippet.getModerationStatus());
-        this.parentId = snippet.getParentId();
-
-        if (snippet.getAuthorChannelId() != null) {
-            this.channelId = getChannelIdFromObject(snippet.getAuthorChannelId());
-        } else {
-            logger.warn("There was no authorChannelId {}", ReflectionToStringBuilder.toString(item));
-        }
-    }
-
-    /**
-     * Constructor mean for top-level comments.
-     */
-    public YouTubeComment(CommentThread item) {
-        super(item.getId(), null, null);
-        this.setTypeId(GroupItemType.COMMENT);
-
-        this.isReply = false;
-        this.parentId = null;
-
-        CommentThreadSnippet snippet = item.getSnippet();
-        this.videoId = snippet.getVideoId();
-        this.replyCount = snippet.getTotalReplyCount();
-
-        CommentSnippet tlcSnippet = snippet.getTopLevelComment().getSnippet();
-        this.commentText = tlcSnippet.getTextDisplay();
-        setPublished(tlcSnippet.getPublishedAt().getValue());
-        this.likes = tlcSnippet.getLikeCount();
-        this.moderationStatus = ModerationStatus.fromApiValue(tlcSnippet.getModerationStatus());
-
-        if (tlcSnippet.getAuthorChannelId() != null) {
-            this.channelId = getChannelIdFromObject(tlcSnippet.getAuthorChannelId());
-        } else {
-            logger.warn("There was no authorChannelId {}", ReflectionToStringBuilder.toString(item));
-        }
-    }
-
-    public YouTubeComment(String commentId) {
-        super(commentId, null, null);
-        setTypeId(GroupItemType.COMMENT);
-        setModerationStatus(ModerationStatus.PUBLISHED);
-    }
-
     public YouTubeChannel getChannel() {
         return CommentSuite.getDatabase().channels().getOrNull(channelId);
     }
@@ -102,6 +50,24 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
     @Override
     public void prepForExport() {
         commentDate = publishedDateTime.toString();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public YouTubeComment setId(String id) {
+        this.id = id;
+        return this;
+    }
+
+    public YouTubeType getType() {
+        return type;
+    }
+
+    public YouTubeComment setType(YouTubeType type) {
+        this.type = type;
+        return this;
     }
 
     public String getCommentText() {
@@ -264,4 +230,73 @@ public class YouTubeComment extends YouTubeObject implements Exportable {
                 .replace("<br />", withNewLines ? "\r\n" : " ")
                 .replaceAll("[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︠-︯]", "");
     }
+
+    @Override
+    public String toYouTubeLink() {
+        return String.format("https://www.youtube.com/watch?v=%s&lc=%s", videoId, id);
+    }
+
+    public static Optional<YouTubeComment> from(final CommentThread commentThread) {
+        final Comment topLevelComment = Optional.ofNullable(commentThread)
+                .map(CommentThread::getSnippet)
+                .map(CommentThreadSnippet::getTopLevelComment)
+                .orElse(null);
+
+        return from(commentThread, topLevelComment, null);
+    }
+
+    public static Optional<YouTubeComment> from(final Comment comment, final String videoId) {
+        return from(null, comment, videoId);
+    }
+
+    private static Optional<YouTubeComment> from(final CommentThread commentThread, final Comment comment, final String videoId) {
+        final String id = Optional.ofNullable(commentThread)
+                .map(CommentThread::getId)
+                .orElse(Optional.ofNullable(comment)
+                        .map(Comment::getId)
+                        .orElse(null));
+
+        final String video = Optional.ofNullable(videoId)
+                .orElse(Optional.ofNullable(commentThread)
+                        .map(CommentThread::getSnippet)
+                        .map(CommentThreadSnippet::getVideoId)
+                        .orElse(null));
+        final long replyCount = Optional.ofNullable(commentThread)
+                .map(CommentThread::getSnippet)
+                .map(CommentThreadSnippet::getTotalReplyCount)
+                .orElse(-1L);
+        final Optional<CommentSnippet> snippet = Optional.ofNullable(comment)
+                .map(Comment::getSnippet);
+        final String commentText = snippet.map(CommentSnippet::getTextDisplay).orElse(null);
+        final long likes = snippet.map(CommentSnippet::getLikeCount).orElse(0L);
+        final ModerationStatus moderationStatus = snippet.map(CommentSnippet::getModerationStatus)
+                .map(ModerationStatus::fromApiValue)
+                .orElse(ModerationStatus.PUBLISHED);
+        final String parentId = snippet.map(CommentSnippet::getParentId).orElse(null);
+        final String channelId = snippet.map(CommentSnippet::getAuthorChannelId)
+                .map(YouTubeChannel::getChannelIdFromObject)
+                .orElse(null);
+        final long published = snippet.map(CommentSnippet::getPublishedAt)
+                .map(DateTime::getValue)
+                .orElse(0L);
+
+        if (isAnyBlank(id, channelId)) {
+            logger.debug("Invalid commentThread={} comment={} videoId={}", commentThread, comment, videoId);
+            return Optional.empty();
+        }
+
+        return Optional.of(new YouTubeComment()
+                .setId(id)
+                .setType(YouTubeType.COMMENT)
+                .setCommentText(commentText)
+                .setPublished(published)
+                .setLikes(likes)
+                .setModerationStatus(moderationStatus)
+                .setParentId(parentId)
+                .setChannelId(channelId)
+                .setVideoId(video)
+                .setReplyCount(replyCount)
+        );
+    }
+
 }

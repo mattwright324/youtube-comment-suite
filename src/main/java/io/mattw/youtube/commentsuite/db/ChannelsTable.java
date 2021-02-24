@@ -25,9 +25,11 @@ public class ChannelsTable extends TableHelper<YouTubeChannel> {
 
     @Override
     public YouTubeChannel to(ResultSet resultSet) throws SQLException {
-        return new YouTubeChannel(resultSet.getString("channel_id"),
-                resultSet.getString("channel_name"),
-                resultSet.getString("channel_profile_url"));
+        return new YouTubeChannel()
+                .setId(resultSet.getString("channel_id"))
+                .setTitle(resultSet.getString("channel_name"))
+                .setThumbUrl(resultSet.getString("channel_profile_url"))
+                .setType(YouTubeType.CHANNEL);
     }
 
     public void check(String id) {

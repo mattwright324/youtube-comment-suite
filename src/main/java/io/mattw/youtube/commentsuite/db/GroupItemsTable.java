@@ -24,7 +24,7 @@ public class GroupItemsTable extends TableHelper<GroupItem> {
     public GroupItem to(ResultSet resultSet) throws SQLException {
         return new GroupItem()
                 .setId(resultSet.getString("gitem_id"))
-                .setType(GroupItemType.values()[resultSet.getInt("type_id") + 1])
+                .setType(YouTubeType.values()[resultSet.getInt("type_id") + 1])
                 .setDisplayName(resultSet.getString("title"))
                 .setChannelTitle(resultSet.getString("channel_title"))
                 .setThumbUrl(resultSet.getString("thumb_url"))

@@ -3,6 +3,7 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +17,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
 /**
  * The ConsumerMultiProducer is always a consumer of one type and optionally can
@@ -159,6 +162,9 @@ public abstract class ConsumerMultiProducer<C> {
     }
 
     public <P> void send(P object) {
+        if (object == null) {
+            return;
+        }
         if (!consumersByClass.containsKey(object.getClass())) {
             return;
         }
@@ -168,6 +174,9 @@ public abstract class ConsumerMultiProducer<C> {
     }
 
     public <P> void sendCollection(Collection<P> objects, Class<P> clazz, String key) {
+        if (anyNull(objects, clazz, key)) {
+            return;
+        }
         if (!consumersByKey.containsKey(key) || objects.isEmpty()) {
             return;
         }

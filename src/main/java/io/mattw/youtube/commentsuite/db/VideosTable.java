@@ -14,7 +14,10 @@ public class VideosTable extends TableHelper<YouTubeVideo> {
 
     @Override
     public YouTubeVideo to(ResultSet resultSet) throws SQLException {
-        return new YouTubeVideo(resultSet.getString("video_id"), resultSet.getString("video_title"), resultSet.getString("thumb_url"))
+        return new YouTubeVideo()
+                .setId(resultSet.getString("video_id"))
+                .setTitle(resultSet.getString("video_title"))
+                .setThumbUrl(resultSet.getString("thumb_url"))
                 .setChannelId(resultSet.getString("channel_id"))
                 .setDescription(resultSet.getString("video_desc"))
                 .setPublished(resultSet.getLong("publish_date"))

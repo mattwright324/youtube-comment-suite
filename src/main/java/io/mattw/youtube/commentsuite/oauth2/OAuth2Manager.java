@@ -149,9 +149,13 @@ public class OAuth2Manager {
                     .orElse("https://placehold.it/128x128"));
 
             try {
-                final YouTubeChannel channel = new YouTubeChannel(channelItem);
-                database.channels().insert(channel);
-                database.commit();
+                final Optional<YouTubeChannel> channel = YouTubeChannel.from(channelItem);
+                if (channel.isPresent()) {
+                    database.channels().insert(channel.get());
+                    database.commit();
+                } else {
+                    logger.error("Could not resolve channel from response");
+                }
             } catch (SQLException e) {
                 logger.error("Unable to insert account channel into database.", e);
             }

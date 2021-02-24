@@ -6,10 +6,10 @@ import java.util.Map;
 
 public interface Linkable {
 
-    Map<GroupItemType, String> GROUP_ITEM_FORMATS = ImmutableMap.of(
-            GroupItemType.VIDEO, "https://youtu.be/%s",
-            GroupItemType.CHANNEL, "https://www.youtube.com/channel/%s",
-            GroupItemType.PLAYLIST, "https://www.youtube.com/playlist?list=%s"
+    Map<YouTubeType, String> GROUP_ITEM_FORMATS = ImmutableMap.of(
+            YouTubeType.VIDEO, "https://youtu.be/%s",
+            YouTubeType.CHANNEL, "https://www.youtube.com/channel/%s",
+            YouTubeType.PLAYLIST, "https://www.youtube.com/playlist?list=%s"
     );
 
     String toYouTubeLink();

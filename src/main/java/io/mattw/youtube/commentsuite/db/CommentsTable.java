@@ -24,7 +24,8 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
 
     @Override
     public YouTubeComment to(ResultSet resultSet) throws SQLException {
-        return new YouTubeComment(resultSet.getString("comment_id"))
+        return new YouTubeComment()
+                .setId(resultSet.getString("comment_id"))
                 .setCommentText(resultSet.getString("comment_text"))
                 .setPublished(resultSet.getLong("comment_date"))
                 .setVideoId(resultSet.getString("video_id"))

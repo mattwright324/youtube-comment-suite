@@ -18,7 +18,7 @@ public class GroupItemResolver {
     private static final Logger logger = LogManager.getLogger();
 
     public Optional<GroupItem> to(
-            final String id, final GroupItemType type, final String displayName,
+            final String id, final YouTubeType type, final String displayName,
             final String thumbUrl, final String channelTitle, final long publishedAt
     ) {
         if (isBlank(id) || type == null) {
@@ -37,11 +37,11 @@ public class GroupItemResolver {
     public Optional<GroupItem> from(final SearchResult searchResult) {
         final String id = Optional.ofNullable(searchResult)
                 .map(SearchResult::getId)
-                .map(this::getIdFromResource)
+                .map(GroupItemResolver::getIdFromResource)
                 .orElse(null);
-        final GroupItemType type = Optional.ofNullable(searchResult)
+        final YouTubeType type = Optional.ofNullable(searchResult)
                 .map(SearchResult::getId)
-                .map(this::getTypeFromResource)
+                .map(GroupItemResolver::getTypeFromResource)
                 .orElse(null);
         final String displayName = Optional.ofNullable(searchResult)
                 .map(SearchResult::getSnippet)
@@ -90,7 +90,7 @@ public class GroupItemResolver {
                 .map(DateTime::getValue)
                 .orElse(0L);
 
-        return to(id, GroupItemType.VIDEO, displayName, thumbUrl, channelTitle, published);
+        return to(id, YouTubeType.VIDEO, displayName, thumbUrl, channelTitle, published);
     }
 
     public Optional<GroupItem> from(final Channel channel) {
@@ -113,7 +113,7 @@ public class GroupItemResolver {
                 .map(DateTime::getValue)
                 .orElse(0L);
 
-        return to(id, GroupItemType.CHANNEL, displayName, thumbUrl, displayName, published);
+        return to(id, YouTubeType.CHANNEL, displayName, thumbUrl, displayName, published);
     }
 
     public Optional<GroupItem> from(final Playlist playlist) {
@@ -140,13 +140,13 @@ public class GroupItemResolver {
                 .map(DateTime::getValue)
                 .orElse(0L);
 
-        return to(id, GroupItemType.PLAYLIST, displayName, thumbUrl, channelTitle, published);
+        return to(id, YouTubeType.PLAYLIST, displayName, thumbUrl, channelTitle, published);
     }
 
     /**
      * @return id of video, channel, or playlist
      */
-    private String getIdFromResource(final ResourceId resourceId) {
+    public static String getIdFromResource(final ResourceId resourceId) {
         return Optional.ofNullable(resourceId)
                 .map(resource -> Stream.of(resource.getVideoId(), resource.getChannelId(), resource.getPlaylistId()))
                 .orElseGet(Stream::empty)
@@ -158,15 +158,15 @@ public class GroupItemResolver {
     /**
      * @return id of video, channel, or playlist
      */
-    private GroupItemType getTypeFromResource(final ResourceId resourceId) {
+    public static YouTubeType getTypeFromResource(final ResourceId resourceId) {
         return Optional.ofNullable(resourceId)
                 .map(resource -> {
                     if (resource.getVideoId() != null) {
-                        return GroupItemType.VIDEO;
+                        return YouTubeType.VIDEO;
                     } else if (resource.getPlaylistId() != null) {
-                        return GroupItemType.PLAYLIST;
+                        return YouTubeType.PLAYLIST;
                     } else if (resource.getChannelId() != null) {
-                        return GroupItemType.CHANNEL;
+                        return YouTubeType.CHANNEL;
                     }
                     return null;
                 })

@@ -102,27 +102,25 @@ public class MGMVAddItemModal extends VBox implements Cleanable {
                 } else if (selectedTab.equals(tabBulk)) {
                     final List<String> uniqueLinks = Stream.of(multiLink.getText().split("\n"))
                             .map(String::trim)
-                            .filter(StringUtils::isNotBlank)
                             .distinct()
+                            .filter(StringUtils::isNotBlank)
                             .collect(Collectors.toList());
 
-                    if (uniqueLinks.isEmpty()) {
-                        return;
-                    }
-
-                    final List<GroupItem> resolvedItems = resolver.from(uniqueLinks);
-                    if (!resolvedItems.isEmpty()) {
-                        try {
-                            database.groupItems().insertAll(this.group, resolvedItems);
-                            database.commit();
-                            runLater(() -> btnClose.fire());
-                        } catch (SQLException e1) {
-                            runLater(() -> setError(e1.getClass().getSimpleName()));
+                    if (!uniqueLinks.isEmpty()) {
+                        final List<GroupItem> resolvedItems = resolver.from(uniqueLinks);
+                        if (!resolvedItems.isEmpty()) {
+                            try {
+                                database.groupItems().insertAll(this.group, resolvedItems);
+                                database.commit();
+                                runLater(() -> btnClose.fire());
+                            } catch (SQLException e1) {
+                                runLater(() -> setError(e1.getClass().getSimpleName()));
+                            }
+                        } else {
+                            String message = "There was a problem, could not resolve links.";
+                            runLater(() -> setError(message));
+                            logger.error(message);
                         }
-                    } else {
-                        String message = "There was a problem, could not resolve links.";
-                        runLater(() -> setError(message));
-                        logger.error(message);
                     }
                 }
 

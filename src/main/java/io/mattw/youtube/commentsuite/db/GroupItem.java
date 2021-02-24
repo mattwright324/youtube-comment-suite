@@ -14,7 +14,7 @@ public class GroupItem implements Linkable {
     private String id;
     private String displayName;
     private String thumbUrl;
-    private GroupItemType type;
+    private YouTubeType type;
     private String channelTitle;
     private long published;
     private long lastChecked;
@@ -46,11 +46,11 @@ public class GroupItem implements Linkable {
         return this;
     }
 
-    public GroupItemType getType() {
+    public YouTubeType getType() {
         return type;
     }
 
-    public GroupItem setType(GroupItemType type) {
+    public GroupItem setType(YouTubeType type) {
         this.type = type;
         return this;
     }

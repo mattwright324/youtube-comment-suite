@@ -102,6 +102,8 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                 continue;
             }
 
+            logger.debug(video);
+
             if (moderationStatus != PUBLISHED && !configData.isSignedIn(video.getChannelId())) {
                 logger.warn("Authorization required for {} commentThreads on {} but not signed in", moderationStatus, video.getId());
                 awaitMillis(100);
@@ -153,15 +155,17 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         }
 
                         final List<YouTubeComment> comments = items.stream()
-                                .map(YouTubeComment::new)
-                                .filter(comment -> StringUtils.isNotBlank(comment.getChannelId()))
+                                .map(YouTubeComment::from)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
                                 .collect(Collectors.toList());
                         sendCollection(comments, YouTubeComment.class);
 
                         final List<YouTubeChannel> channels = items.stream()
                                 .filter(distinctByKey(CommentThread::getId))
-                                .map(YouTubeChannel::new)
-                                .filter(channel -> StringUtils.isNotBlank(channel.getId()))
+                                .map(YouTubeChannel::from)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
                                 .collect(Collectors.toList());
                         sendCollection(channels, YouTubeChannel.class);
 
@@ -185,16 +189,18 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                     .collect(Collectors.toList());
 
                             final List<YouTubeComment> replies = threadReplies.stream()
-                                    .map(comment -> new YouTubeComment(comment, video.getId()))
-                                    .filter(comment -> StringUtils.isNotBlank(comment.getChannelId()))
+                                    .map(comment -> YouTubeComment.from(comment, video.getId()))
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
                                     .collect(Collectors.toList());
 
                             sendCollection(replies, YouTubeComment.class);
 
                             final List<YouTubeChannel> channels2 = threadReplies.stream()
                                     .filter(distinctByKey(Comment::getId))
-                                    .map(YouTubeChannel::new)
-                                    .filter(channel -> StringUtils.isNotBlank(channel.getId()))
+                                    .map(YouTubeChannel::from)
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
                                     .collect(Collectors.toList());
                             sendCollection(channels2, YouTubeChannel.class);
                         }

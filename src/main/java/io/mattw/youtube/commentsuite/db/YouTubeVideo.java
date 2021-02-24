@@ -1,19 +1,27 @@
 package io.mattw.youtube.commentsuite.db;
 
-import com.google.api.services.youtube.model.Video;
-import com.google.api.services.youtube.model.VideoSnippet;
-import com.google.api.services.youtube.model.VideoStatistics;
+import com.google.api.client.util.DateTime;
+import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-public class YouTubeVideo extends YouTubeObject implements Exportable {
+import static org.apache.commons.lang3.StringUtils.isAnyBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
+public class YouTubeVideo implements Linkable, HasImage, Exportable {
 
     private static final Logger logger = LogManager.getLogger();
 
+    private String id;
+    private String title;
+    private String thumbUrl;
+    private transient YouTubeType type = YouTubeType.VIDEO;
     private String channelId;
     private String description;
     private transient long published;
@@ -26,65 +34,45 @@ public class YouTubeVideo extends YouTubeObject implements Exportable {
     private long dislikes;
     private int responseCode;
 
-    // Field(s) used just for export to make things pretty.
+    // Field(s) used just for export
     private YouTubeChannel author;
 
-    public YouTubeVideo(String id, String title, String thumbUrl) {
-        super(id, title, thumbUrl);
-        setTypeId(GroupItemType.VIDEO);
+    @Override
+    public String getId() {
+        return id;
     }
 
-    /**
-     * Used for refreshing
-     *
-     * @param item YouTube video object with snippet and statistics parts present
-     */
-    public YouTubeVideo(Video item) {
-        super(item.getId(), item.getSnippet().getTitle(), item.getSnippet().getThumbnails().getMedium().getUrl());
-        setTypeId(GroupItemType.VIDEO);
+    public YouTubeVideo setId(String id) {
+        this.id = id;
+        return this;
+    }
 
-        if (item.getSnippet() != null) {
-            VideoSnippet snippet = item.getSnippet();
+    public String getTitle() {
+        return title;
+    }
 
-            this.channelId = snippet.getChannelId();
-            this.description = snippet.getDescription();
-            this.published = snippet.getPublishedAt().getValue();
-        } else {
-            logger.warn("Video snippet is null");
-        }
-
-        if (item.getStatistics() != null) {
-            VideoStatistics stats = item.getStatistics();
-
-            this.viewCount = Optional.ofNullable(stats.getViewCount())
-                    .orElse(BigInteger.ZERO)
-                    .longValue();
-
-            // Likes and dislikes may be disabled on the video
-            this.likes = Optional.ofNullable(stats.getLikeCount())
-                    .orElse(BigInteger.ZERO)
-                    .longValue();
-            this.dislikes = Optional.ofNullable(stats.getDislikeCount())
-                    .orElse(BigInteger.ZERO)
-                    .longValue();
-
-            // When comments are disabled, this value will be null on the video.
-            // responseCode should also be 403 when when comment threads are grabbed during refresh.
-            this.comments = Optional.ofNullable(stats.getCommentCount())
-                    .orElse(BigInteger.ZERO)
-                    .longValue();
-        } else {
-            logger.warn("Video statistics is null");
-        }
-
-        this.refreshedOn = System.currentTimeMillis();
+    public YouTubeVideo setTitle(String title) {
+        this.title = title;
+        return this;
     }
 
     @Override
-    public void prepForExport() {
-        channelId = null;
-        publishDate = DateUtils.epochMillisToDateTime(published).toString();
-        refreshedOnDate = DateUtils.epochMillisToDateTime(refreshedOn).toString();
+    public String getThumbUrl() {
+        return thumbUrl;
+    }
+
+    public YouTubeVideo setThumbUrl(String thumbUrl) {
+        this.thumbUrl = thumbUrl;
+        return this;
+    }
+
+    public YouTubeType getType() {
+        return type;
+    }
+
+    public YouTubeVideo setType(YouTubeType type) {
+        this.type = type;
+        return this;
     }
 
     public String getChannelId() {
@@ -195,10 +183,77 @@ public class YouTubeVideo extends YouTubeObject implements Exportable {
         return this;
     }
 
-    /**
-     * @return title of the video
-     */
-    public String toString() {
-        return getTitle();
+    @Override
+    public void prepForExport() {
+        channelId = null;
+        publishDate = DateUtils.epochMillisToDateTime(published).toString();
+        refreshedOnDate = DateUtils.epochMillisToDateTime(refreshedOn).toString();
     }
+
+    @Override
+    public String toString() {
+        return Stream.of(title, id)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(super.toString());
+    }
+
+    @Override
+    public String toYouTubeLink() {
+        return String.format(GROUP_ITEM_FORMATS.get(this.type), this.id);
+    }
+
+    public static Optional<YouTubeVideo> from(final Video video) {
+        final String id = Optional.ofNullable(video)
+                .map(Video::getId)
+                .orElse(null);
+        final Optional<VideoSnippet> snippet = Optional.ofNullable(video).map(Video::getSnippet);
+        final String channelId = snippet.map(VideoSnippet::getChannelId).orElse(null);
+        final String title = snippet.map(VideoSnippet::getTitle).orElse(null);
+        final String thumb = snippet
+                .map(VideoSnippet::getThumbnails)
+                .map(ThumbnailDetails::getDefault)
+                .map(Thumbnail::getUrl)
+                .orElse(null);
+        final String description = snippet.map(VideoSnippet::getTitle).orElse(null);
+        final long published = snippet
+                .map(VideoSnippet::getPublishedAt)
+                .map(DateTime::getValue)
+                .orElse(0L);
+
+        final Optional<VideoStatistics> statistics = Optional.ofNullable(video).map(Video::getStatistics);
+        final long viewCount = statistics.map(VideoStatistics::getViewCount)
+                    .orElse(BigInteger.ZERO)
+                    .longValue();
+        final long likes = statistics.map(VideoStatistics::getLikeCount)
+                .orElse(BigInteger.ZERO)
+                .longValue();
+        final long dislikes = statistics.map(VideoStatistics::getDislikeCount)
+                .orElse(BigInteger.ZERO)
+                .longValue();
+        final long commentCount = statistics.map(VideoStatistics::getCommentCount)
+                .orElse(BigInteger.ZERO)
+                .longValue();
+
+        if (isAnyBlank(id, channelId)) {
+            logger.debug("Invalid {}", video);
+            return Optional.empty();
+        }
+
+        return Optional.of(new YouTubeVideo()
+                .setId(id)
+                .setChannelId(channelId)
+                .setTitle(title)
+                .setThumbUrl(thumb)
+                .setType(YouTubeType.VIDEO)
+                .setDescription(description)
+                .setPublished(published)
+                .setViewCount(viewCount)
+                .setLikes(likes)
+                .setDislikes(dislikes)
+                .setComments(commentCount)
+                .setRefreshedOn(System.currentTimeMillis())
+        );
+    }
+
 }

@@ -218,7 +218,7 @@ public class SearchComments implements Initializable, ImageCache {
         openInBrowser.setOnAction(ae -> {
             String link = scSelection.getSelectedItem()
                     .getComment()
-                    .buildYouTubeLink();
+                    .toYouTubeLink();
             browserUtil.open(link);
         });
         copyNames.setOnAction(ae -> {
@@ -247,7 +247,7 @@ public class SearchComments implements Initializable, ImageCache {
                     .stream()
                     .map(SearchCommentsListItem::getComment)
                     .map(YouTubeComment::getChannel)
-                    .map(YouTubeChannel::buildYouTubeLink);
+                    .map(YouTubeChannel::toYouTubeLink);
 
             if (configData.isFilterDuplicatesOnCopy()) {
                 toCopy = toCopy.distinct();
@@ -259,7 +259,7 @@ public class SearchComments implements Initializable, ImageCache {
             Stream<String> toCopy = scSelection.getSelectedItems()
                     .stream()
                     .map(SearchCommentsListItem::getComment)
-                    .map(YouTubeComment::buildYouTubeLink);
+                    .map(YouTubeComment::toYouTubeLink);
 
             if (configData.isFilterDuplicatesOnCopy()) {
                 toCopy = toCopy.distinct();
@@ -404,7 +404,7 @@ public class SearchComments implements Initializable, ImageCache {
             final String videoId = comment.getVideoId();
             final YouTubeVideo video = database.videos().get(videoId);
 
-            final Image vThumb = ImageCache.findOrGetImage(video);
+            final Image vThumb = video.findOrGetThumb();
             runLater(() -> {
                 videoTitle.setText(video.getTitle());
                 videoLikes.setText(readableNumber(video.getLikes()));
@@ -415,18 +415,19 @@ public class SearchComments implements Initializable, ImageCache {
                         StringEscapeUtils.unescapeHtml4(video.getDescription())));
 
                 videoThumb.setCursor(Cursor.HAND);
-                videoThumb.setOnMouseClicked(me -> browserUtil.open(video.buildYouTubeLink()));
+                videoThumb.setOnMouseClicked(me -> browserUtil.open(video.toYouTubeLink()));
                 videoThumb.setImage(vThumb);
             });
 
             final YouTubeChannel author = database.channels().getOrNull(video.getChannelId());
-            final Image aThumb = author != null ?
-                    ImageCache.findOrGetImage(author) : ImageCache.toLetterAvatar(' ');
+            final Image aThumb = Optional.ofNullable(author)
+                    .map(HasImage::findOrGetThumb)
+                    .orElse(ImageCache.toLetterAvatar(' '));
             runLater(() -> {
                 if (author != null) {
                     this.author.setText(author.getTitle());
                     authorThumb.setCursor(Cursor.HAND);
-                    authorThumb.setOnMouseClicked(me -> browserUtil.open(author.buildYouTubeLink()));
+                    authorThumb.setOnMouseClicked(me -> browserUtil.open(author.toYouTubeLink()));
                     authorThumb.setImage(aThumb);
                 } else {
                     this.author.setText("Error: Null Channel");
