@@ -66,7 +66,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         loader.setRoot(this);
         loader.load();
 
-        thumbnail.setImage(channel.findOrGetThumb());
         checkProfileThumb();
 
         author.setText(channel.getTitle());
@@ -190,6 +189,8 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     public void checkProfileThumb() {
         if (channel.isThumbLoaded()) {
             loadProfileThumb();
+        } else {
+            runLater(() -> thumbnail.setImage(ImageCache.toLetterAvatar(channel.getTitle())));
         }
     }
 

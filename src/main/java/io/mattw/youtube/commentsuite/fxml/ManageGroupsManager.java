@@ -429,7 +429,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         final List<LineChart.Data<String, Number>> commentChartData = groupStats.getWeeklyCommentHistogram().entrySet().stream()
                 .map(entry -> {
                     final LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
-                    String beginningOfWeekStr = formatter.format(beginningOfWeek);
+                    final String beginningOfWeekStr = formatter.format(beginningOfWeek);
 
                     final LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
                     final String endOfWeekStr = formatter.format(endOfWeek);

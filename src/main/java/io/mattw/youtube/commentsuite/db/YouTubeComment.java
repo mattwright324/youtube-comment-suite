@@ -256,6 +256,7 @@ public class YouTubeComment implements Linkable, Exportable {
                         .map(Comment::getId)
                         .orElse(null));
 
+        final boolean isReply = isNotBlank(videoId);
         final String video = Optional.ofNullable(videoId)
                 .orElse(Optional.ofNullable(commentThread)
                         .map(CommentThread::getSnippet)
@@ -296,6 +297,7 @@ public class YouTubeComment implements Linkable, Exportable {
                 .setChannelId(channelId)
                 .setVideoId(video)
                 .setReplyCount(replyCount)
+                .setReply(isReply)
         );
     }
 

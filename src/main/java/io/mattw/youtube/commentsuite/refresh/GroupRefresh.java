@@ -17,8 +17,7 @@ import org.apache.logging.log4j.Logger;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -57,6 +56,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     private final ChannelProducer channelProducer;
     private final CommentConsumer commentConsumer, moderatedCommentConsumer;
     private final ChannelConsumer channelConsumer;
+    private final Map<String, ConsumerMultiProducer<?>> consumerProducers;
 
     private boolean hardShutdown = false;
     private boolean endedOnError = false;
@@ -76,6 +76,22 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         this.commentConsumer = new CommentConsumer(false);
         this.moderatedCommentConsumer = new CommentConsumer(true);
         this.channelConsumer = new ChannelConsumer();
+
+        this.consumerProducers = new LinkedHashMap<>();
+        this.consumerProducers.put("videoIdProducer", videoIdProducer);
+        this.consumerProducers.put("uniqueVideoIdProducer", uniqueVideoIdProducer);
+        this.consumerProducers.put("videoProducer", videoProducer);
+        this.consumerProducers.put("commentThreadProducer", commentThreadProducer);
+        this.consumerProducers.put("reviewThreadProducer", reviewThreadProducer);
+        this.consumerProducers.put("replyProducer", replyProducer);
+        this.consumerProducers.put("channelProducer", channelProducer);
+        this.consumerProducers.put("commentConsumer", commentConsumer);
+        this.consumerProducers.put("moderatedCommentConsumer", moderatedCommentConsumer);
+        this.consumerProducers.put("channelConsumer", channelConsumer);
+    }
+
+    public Map<String, ConsumerMultiProducer<?>> getConsumerProducers() {
+        return this.consumerProducers;
     }
 
     @Override
@@ -240,7 +256,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
             logger.debug("Starting Progress Thread");
 
             final List<ConsumerMultiProducer<?>> trackProgress = Arrays.asList(commentThreadProducer, replyProducer, channelProducer, commentConsumer, channelConsumer);
-            commentThreadProducer.getProgressWeight().set(100);
+            commentThreadProducer.getProgressWeight().set(10000);
             while (!endedProperty.getValue()) {
                 double totalAccepted = 0d;
                 double totalProcessed = 0d;

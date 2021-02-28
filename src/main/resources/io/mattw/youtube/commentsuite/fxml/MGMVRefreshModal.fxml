@@ -49,6 +49,7 @@
 
             <ProgressBar fx:id="progressBar" progress="0.0" maxWidth="Infinity" />
             <GridPane fx:id="refreshStatsPane" vgap="10" hgap="20" />
+            <GridPane fx:id="debugStatsPane" vgap="10" hgap="20" />
             <HBox fx:id="warningsPane" alignment="CENTER_RIGHT" managed="false" visible="false">
                 <fx:define>
                     <ImageView fx:id="expandIcon" fitWidth="30" fitHeight="30" />
