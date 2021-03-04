@@ -77,6 +77,8 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                 .setId(channel.getId())
                 .execute();
 
+        getEstimatedQuota().incrementAndGet();
+
         final String uploadsPlaylistId = response.getItems()
                 .stream()
                 .map(Channel::getContentDetails)
@@ -107,6 +109,8 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                     .setPlaylistId(playlistId)
                     .setPageToken(pageToken)
                     .execute();
+
+            getEstimatedQuota().incrementAndGet();
 
             pageToken = response.getNextPageToken();
 

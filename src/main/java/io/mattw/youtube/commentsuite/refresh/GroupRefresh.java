@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.HELD_FOR_REVIEW;
 import static javafx.application.Platform.runLater;
@@ -178,6 +179,8 @@ public class GroupRefresh extends Thread implements RefreshInterface {
             await(commentConsumer, "Await commentConsumer over");
             await(moderatedCommentConsumer, "Await moderatedCommentConsumer over");
             await(channelConsumer, "Await channelConsumer over");
+
+            postMessage(Level.INFO, null, String.format("Est. %s quota units used", getEstimatedQuota()));
 
             try {
                 database.commit();
@@ -404,6 +407,15 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     @Override
     public Boolean isHardShutdown() {
         return hardShutdown;
+    }
+
+    @Override
+    public long getEstimatedQuota() {
+        return consumerProducers.values().stream()
+                .map(ConsumerMultiProducer::getEstimatedQuota)
+                .map(AtomicLong::get)
+                .mapToLong(Long::longValue)
+                .sum();
     }
 
 }

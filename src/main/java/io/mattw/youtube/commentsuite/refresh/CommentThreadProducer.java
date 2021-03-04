@@ -137,6 +137,8 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .setModerationStatus(moderationStatus.getApiValue())
                                 .execute();
 
+                        getEstimatedQuota().incrementAndGet();
+
                         pageToken = response.getNextPageToken();
 
                         if (moderationStatus != PUBLISHED) {
@@ -232,6 +234,17 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                             sendCollection(channels2, YouTubeChannel.class);
                         }
 
+                        if (moderationStatus == PUBLISHED && options.isCommentPagesSmart()) {
+                            final List<String> threadIds = comments.stream()
+                                    .map(YouTubeComment::getId)
+                                    .collect(Collectors.toList());
+                            if (RefreshCommentOrder.TIME == options.getCommentOrder() &&
+                                    database.countCommentsNotExisting(threadIds) == 0) {
+                                logger.info("No new comment threads, stopping pagination early {}", video.getId());
+                                break;
+                            }
+                        }
+
                         awaitMillis(50);
                     } while (pageToken != null && page++ < pages.getPageCount() && !isHardShutdown());
 
@@ -255,7 +268,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                     sendMessage(Level.FATAL, "API Quota Exceeded");
                                     break threadLoop;
                                 }
-
 
                                 final String authQuotaMsg = String.format("[%s/%s] Auth Quota Exceeded  [videoId=%s]",
                                         attempt,

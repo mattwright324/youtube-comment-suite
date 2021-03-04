@@ -46,7 +46,7 @@ public class MGMVRefreshModal extends HBox {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public static final int WIDTH = 500;
+    public static final int WIDTH = 550;
     private static final String STAT_ELAPSED = "STAT_ELAPSED";
     private static final String STAT_VIDEO = "STAT_NEW_VIDEO";
     private static final String STAT_COMMENT = "STAT_NEW_COMMENT";
@@ -69,7 +69,8 @@ public class MGMVRefreshModal extends HBox {
     @FXML private ComboBox<RefreshCommentPages> refreshCommentPages, refreshReviewPages;
     @FXML private ComboBox<RefreshCommentOrder> refreshCommentOrder;
     @FXML private ComboBox<RefreshCommentPages> refreshReplyPages;
-    @FXML private HBox reviewOption;
+    @FXML private CheckBox smartCommentPages;
+    //@FXML private HBox reviewOption;
 
     @FXML private HBox warningsPane;
     @FXML private Label warnings;
@@ -134,6 +135,7 @@ public class MGMVRefreshModal extends HBox {
             });
 
             RefreshOptions refreshOptions = configData.getRefreshOptions();
+            smartCommentPages.setSelected(refreshOptions.isCommentPagesSmart());
             if (refreshOptions.getStyle() == CUSTOM) {
                 refreshStyle.setValue(CUSTOM);
                 refreshTimeframe.setValue(refreshOptions.getTimeframe());
@@ -202,6 +204,7 @@ public class MGMVRefreshModal extends HBox {
                     options.setStyle(refreshStyle.getValue());
                     options.setTimeframe(refreshTimeframe.getValue());
                     options.setCommentPages(refreshCommentPages.getValue());
+                    options.setCommentPagesSmart(smartCommentPages.isSelected());
                     options.setReviewPages(refreshReviewPages.getValue());
                     options.setReplyPages(refreshReplyPages.getValue());
 
@@ -353,8 +356,8 @@ public class MGMVRefreshModal extends HBox {
             if (expanded) {
                 expand.fire();
             }
-            reviewOption.setVisible(configData.isGrabHeldForReview());
-            reviewOption.setManaged(configData.isGrabHeldForReview());
+//            reviewOption.setVisible(configData.isGrabHeldForReview());
+//            reviewOption.setManaged(configData.isGrabHeldForReview());
             refreshStatsPane.getChildren().clear();
             debugStatsPane.getChildren().clear();
             endStatus.setManaged(false);
@@ -364,8 +367,8 @@ public class MGMVRefreshModal extends HBox {
             errorList.getItems().clear();
             alert.getStyleClass().remove("alertSuccess");
             alert.getStyleClass().add("alertWarning");
-            alert.setVisible(true);
-            alert.setManaged(true);
+            alert.setVisible(false);
+            alert.setManaged(false);
             optionsPane.setVisible(true);
             optionsPane.setManaged(true);
             statusPane.setVisible(false);

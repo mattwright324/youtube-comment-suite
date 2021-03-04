@@ -88,6 +88,8 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
                     .setMaxResults(50L)
                     .execute();
 
+            getEstimatedQuota().incrementAndGet();
+
             if (cl == null || cl.getItems() == null) {
                 // This seems to occur when a 'Show Channel' is input
                 // as the api returns no info about the channel id.

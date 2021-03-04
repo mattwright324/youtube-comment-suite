@@ -53,4 +53,7 @@ public interface RefreshInterface {
     Boolean isEndedOnError();
 
     Boolean isHardShutdown();
+
+    long getEstimatedQuota();
+
 }

@@ -68,6 +68,8 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                             .setMaxResults(100L)
                             .execute();
 
+                    getEstimatedQuota().incrementAndGet();
+
                     pageToken = response.getNextPageToken();
 
                     final List<Comment> comments = response.getItems();

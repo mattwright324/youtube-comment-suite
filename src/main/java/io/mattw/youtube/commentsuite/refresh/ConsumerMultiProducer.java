@@ -43,6 +43,7 @@ public abstract class ConsumerMultiProducer<C> {
     private AtomicLong totalAccepted = new AtomicLong();
     private AtomicLong totalProcessed = new AtomicLong();
     private AtomicLong progressWeight = new AtomicLong(1);
+    private AtomicLong estimatedQuota = new AtomicLong();
     private TriConsumer<Level, Throwable, String> messageFunc;
 
     /**
@@ -226,6 +227,10 @@ public abstract class ConsumerMultiProducer<C> {
 
     public AtomicLong getProgressWeight() {
         return progressWeight;
+    }
+
+    public AtomicLong getEstimatedQuota() {
+        return estimatedQuota;
     }
 
     public void addProcessed(long amount) {

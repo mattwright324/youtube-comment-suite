@@ -159,6 +159,15 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         editIcon.setImage(edit);
         closeIcon.setImage(close);
 
+        new Timer().schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        updateLastRefreshed();
+                    }
+                }, 0, Duration.ofSeconds(30).toMillis()
+        );
+
         FXUtils.registerToSize(groupTitle, 18);
         FXUtils.registerToPadding(groupTitle, 10.5);
 
@@ -415,14 +424,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             runLater(() -> groupTitle.setText(group.getName()));
         }
 
-        new Timer().schedule(
-                new TimerTask() {
-                    @Override
-                    public void run() {
-                        updateLastRefreshed();
-                    }
-                }, 0, Duration.ofSeconds(30).toMillis()
-        );
+        updateLastRefreshed();
 
         final GroupStats groupStats = database.getGroupStats(this.group);
 

@@ -85,6 +85,8 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
                 .setMaxResults(50L)
                 .setId(String.join(",", videoIds));
 
+        getEstimatedQuota().incrementAndGet();
+
         final VideoListResponse vl = response.execute();
         if (vl.getItems().isEmpty()) {
             return;

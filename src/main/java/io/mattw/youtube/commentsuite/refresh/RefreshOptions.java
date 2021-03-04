@@ -9,6 +9,7 @@ public class RefreshOptions {
     private RefreshStyle style = RefreshStyle.MODERATE;
     private RefreshTimeframe timeframe = style.getTimeframe();
     private RefreshCommentPages commentPages = style.getCommentPages();
+    private boolean commentPagesSmart = true;
     private RefreshCommentOrder commentOrder = style.getCommentOrder();
     private RefreshCommentPages replyPages = style.getReplyPages();
     private RefreshCommentPages reviewPages = RefreshCommentPages.ALL;
@@ -17,48 +18,63 @@ public class RefreshOptions {
         return style;
     }
 
-    public void setStyle(RefreshStyle style) {
+    public RefreshOptions setStyle(RefreshStyle style) {
         this.style = style;
+        return this;
     }
 
     public RefreshTimeframe getTimeframe() {
         return timeframe;
     }
 
-    public void setTimeframe(RefreshTimeframe timeframe) {
+    public RefreshOptions setTimeframe(RefreshTimeframe timeframe) {
         this.timeframe = timeframe;
+        return this;
     }
 
     public RefreshCommentPages getCommentPages() {
         return commentPages;
     }
 
-    public void setCommentPages(RefreshCommentPages commentPages) {
+    public RefreshOptions setCommentPages(RefreshCommentPages commentPages) {
         this.commentPages = commentPages;
+        return this;
+    }
+
+    public boolean isCommentPagesSmart() {
+        return commentPagesSmart;
+    }
+
+    public RefreshOptions setCommentPagesSmart(boolean commentPagesSmart) {
+        this.commentPagesSmart = commentPagesSmart;
+        return this;
     }
 
     public RefreshCommentOrder getCommentOrder() {
         return commentOrder;
     }
 
-    public void setCommentOrder(RefreshCommentOrder commentOrder) {
+    public RefreshOptions setCommentOrder(RefreshCommentOrder commentOrder) {
         this.commentOrder = commentOrder;
+        return this;
     }
 
     public RefreshCommentPages getReplyPages() {
         return replyPages;
     }
 
-    public void setReplyPages(RefreshCommentPages replyPages) {
+    public RefreshOptions setReplyPages(RefreshCommentPages replyPages) {
         this.replyPages = replyPages;
+        return this;
     }
 
     public RefreshCommentPages getReviewPages() {
         return reviewPages;
     }
 
-    public void setReviewPages(RefreshCommentPages reviewPages) {
+    public RefreshOptions setReviewPages(RefreshCommentPages reviewPages) {
         this.reviewPages = reviewPages;
+        return this;
     }
 
     @Override
