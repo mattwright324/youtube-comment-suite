@@ -12,6 +12,7 @@ public interface HasImage extends ImageCache {
     default Image findOrGetThumb() {
         return ImageCache.findOrGetImage(getId(), getThumbUrl());
     }
+
     default boolean isThumbLoaded() { return ImageCache.hasImageCached(getId()); }
 
 }

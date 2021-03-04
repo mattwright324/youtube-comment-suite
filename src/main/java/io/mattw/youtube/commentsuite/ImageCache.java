@@ -26,8 +26,8 @@ public interface ImageCache {
     String thumbFormat = "jpg";
 
     Cache<Object, Image> thumbCache = CacheBuilder.newBuilder()
-            .maximumSize(500)
-            .expireAfterAccess(5, TimeUnit.MINUTES)
+            .maximumSize(1000)
+            .expireAfterAccess(30, TimeUnit.MINUTES)
             .build();
 
     static Image toLetterAvatar(final String s) {
