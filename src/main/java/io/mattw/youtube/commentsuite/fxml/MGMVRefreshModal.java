@@ -70,6 +70,7 @@ public class MGMVRefreshModal extends HBox {
     @FXML private ComboBox<RefreshCommentOrder> refreshCommentOrder;
     @FXML private ComboBox<RefreshCommentPages> refreshReplyPages;
     @FXML private CheckBox smartCommentPages;
+    @FXML private CheckBox updateIgnore;
     //@FXML private HBox reviewOption;
 
     @FXML private HBox warningsPane;
@@ -136,6 +137,7 @@ public class MGMVRefreshModal extends HBox {
 
             RefreshOptions refreshOptions = configData.getRefreshOptions();
             smartCommentPages.setSelected(refreshOptions.isCommentPagesSmart());
+            updateIgnore.setSelected(refreshOptions.isUpdateCommentsChannels());
             if (refreshOptions.getStyle() == CUSTOM) {
                 refreshStyle.setValue(CUSTOM);
                 refreshTimeframe.setValue(refreshOptions.getTimeframe());
@@ -207,6 +209,7 @@ public class MGMVRefreshModal extends HBox {
                     options.setCommentPagesSmart(smartCommentPages.isSelected());
                     options.setReviewPages(refreshReviewPages.getValue());
                     options.setReplyPages(refreshReplyPages.getValue());
+                    options.setUpdateCommentsChannels(updateIgnore.isSelected());
 
                     configData.setRefreshOptions(options);
                     configFile.save();

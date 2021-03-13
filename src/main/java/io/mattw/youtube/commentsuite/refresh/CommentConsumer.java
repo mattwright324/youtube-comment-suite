@@ -20,13 +20,15 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
 
     private final ExecutorGroup executorGroup = new ExecutorGroup(10);
 
+    private final RefreshOptions options;
     private final boolean moderated;
     private final CommentDatabase database;
 
     private AtomicLong totalComments = new AtomicLong();
     private AtomicLong newComments = new AtomicLong();
 
-    public CommentConsumer(final boolean moderated) {
+    public CommentConsumer(final RefreshOptions options, final boolean moderated) {
+        this.options = options;
         this.moderated = moderated;
         this.database = CommentSuite.getDatabase();
     }
@@ -75,8 +77,8 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
                     comment.getModerationStatus() == ModerationStatus.PUBLISHED));
 
             final List<String> commentIds = comments.stream()
-                .map(YouTubeComment::getId)
-                .collect(Collectors.toList());
+                    .map(YouTubeComment::getId)
+                    .collect(Collectors.toList());
 
             totalComments.addAndGet(comments.size());
 
@@ -85,11 +87,22 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
 
                 comments.removeIf(comment -> comment.getModerationStatus() == null || comment.getModerationStatus() == ModerationStatus.PUBLISHED);
 
-                database.moderatedComments().insertAll(comments);
+                if (options.isUpdateCommentsChannels()) {
+                    database.moderatedComments().updateAll(comments);
+                } else {
+                    database.moderatedComments().insertAll(comments);
+                }
+
                 logger.debug("Inserted moderated comments {}", comments.size());
             } else {
                 newComments.addAndGet(database.countCommentsNotExisting(commentIds));
-                database.comments().insertAll(comments);
+
+                if (options.isUpdateCommentsChannels()) {
+                    database.comments().updateAll(comments);
+                } else {
+                    database.comments().insertAll(comments);
+                }
+
                 logger.debug("Inserted comments {}", comments.size());
             }
 

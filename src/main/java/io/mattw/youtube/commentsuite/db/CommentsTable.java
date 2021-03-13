@@ -2,6 +2,8 @@ package io.mattw.youtube.commentsuite.db;
 
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.events.TagsChangeEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,10 +12,15 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_REPLACE_COMMENTS;
+import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_OR_COMMENTS;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class CommentsTable extends TableHelper<YouTubeComment> {
+
+    private static final Logger logger = LogManager.getLogger();
+
+    private static final String INSERT_IGNORE = INSERT_OR_COMMENTS.toString().replace(":method", "IGNORE");
+    private static final String INSERT_REPLACE = INSERT_OR_COMMENTS.toString().replace(":method", "REPLACE");
 
     private CommentDatabase database;
 
@@ -84,24 +91,7 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
 
     @Override
     public void insertAll(List<YouTubeComment> objects) throws SQLException {
-        try (PreparedStatement ps = preparedStatement(INSERT_REPLACE_COMMENTS.toString())) {
-            for (YouTubeComment ct : objects) {
-                ps.setString(1, ct.getId());
-                ps.setString(2, ct.getChannelId());
-                ps.setString(3, ct.getVideoId());
-                ps.setLong(4, ct.getPublished());
-                ps.setString(5, ct.getCommentText());
-                ps.setLong(6, ct.getLikes());
-                ps.setLong(7, ct.getReplyCount());
-                ps.setBoolean(8, ct.isReply());
-                ps.setString(9, ct.getParentId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-
-        // Delete from moderated if it is now approved
-        database.moderatedComments().deleteAll(objects);
+        insert(objects, INSERT_IGNORE);
     }
 
     @Override
@@ -119,7 +109,28 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
 
     @Override
     public void updateAll(List<YouTubeComment> objects) throws SQLException {
-        // not updating, ignoring if exists
+        insert(objects, INSERT_REPLACE);
+    }
+
+    private void insert(List<YouTubeComment> objects, String insertSql) throws SQLException {
+        try (PreparedStatement ps = preparedStatement(insertSql)) {
+            for (YouTubeComment ct : objects) {
+                ps.setString(1, ct.getId());
+                ps.setString(2, ct.getChannelId());
+                ps.setString(3, ct.getVideoId());
+                ps.setLong(4, ct.getPublished());
+                ps.setString(5, ct.getCommentText());
+                ps.setLong(6, ct.getLikes());
+                ps.setLong(7, ct.getReplyCount());
+                ps.setBoolean(8, ct.isReply());
+                ps.setString(9, ct.getParentId());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+
+        // Delete from moderated if it is now approved
+        database.moderatedComments().deleteAll(objects);
     }
 
     public void associateTags(List<YouTubeComment> comments, List<String> tags)throws SQLException {

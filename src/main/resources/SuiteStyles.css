@@ -151,6 +151,15 @@
     -fx-text-fill: derive(lightgrey, -20%);
     -fx-border-color: lightgray;
 }
+.refreshLabel {
+    -fx-wrap-text: true;
+    -fx-pref-width: 400px;
+    -fx-max-width: 400px;
+}
+.h42 {
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
+}
 
 /* SearchComments.fxml */
 .toggleContext {

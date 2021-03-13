@@ -13,6 +13,7 @@ public class RefreshOptions {
     private RefreshCommentOrder commentOrder = style.getCommentOrder();
     private RefreshCommentPages replyPages = style.getReplyPages();
     private RefreshCommentPages reviewPages = RefreshCommentPages.ALL;
+    private boolean updateCommentsChannels = true;
 
     public RefreshStyle getStyle() {
         return style;
@@ -74,6 +75,15 @@ public class RefreshOptions {
 
     public RefreshOptions setReviewPages(RefreshCommentPages reviewPages) {
         this.reviewPages = reviewPages;
+        return this;
+    }
+
+    public boolean isUpdateCommentsChannels() {
+        return updateCommentsChannels;
+    }
+
+    public RefreshOptions setUpdateCommentsChannels(boolean updateCommentsChannels) {
+        this.updateCommentsChannels = updateCommentsChannels;
         return this;
     }
 

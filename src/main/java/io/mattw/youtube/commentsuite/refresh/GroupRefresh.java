@@ -74,9 +74,9 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         this.reviewThreadProducer = new CommentThreadProducer(options, options.getReviewPages(), HELD_FOR_REVIEW);
         this.replyProducer = new ReplyProducer(options);
         this.channelProducer = new ChannelProducer();
-        this.commentConsumer = new CommentConsumer(false);
-        this.moderatedCommentConsumer = new CommentConsumer(true);
-        this.channelConsumer = new ChannelConsumer();
+        this.commentConsumer = new CommentConsumer(options, false);
+        this.moderatedCommentConsumer = new CommentConsumer(options, true);
+        this.channelConsumer = new ChannelConsumer(options);
 
         this.consumerProducers = new LinkedHashMap<>();
         this.consumerProducers.put("videoIdProducer", videoIdProducer);
