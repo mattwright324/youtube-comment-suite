@@ -7,9 +7,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_IGNORE_MODERATED_COMMENTS;
+import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_OR_COMMENTS;
+import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_OR_MODERATED_COMMENTS;
 
 public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {
+
+    private static final String INSERT_IGNORE = INSERT_OR_MODERATED_COMMENTS.toString().replace(":method", "IGNORE");
+    private static final String INSERT_REPLACE = INSERT_OR_MODERATED_COMMENTS.toString().replace(":method", "REPLACE");
 
     private CommentDatabase database;
 
@@ -69,7 +73,29 @@ public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {
 
     @Override
     public void insertAll(List<YouTubeComment> objects) throws SQLException {
-        try (PreparedStatement ps = preparedStatement(INSERT_IGNORE_MODERATED_COMMENTS.toString())) {
+        insert(objects, INSERT_IGNORE);
+    }
+
+    @Override
+    public void deleteAll(List<YouTubeComment> objects) throws SQLException {
+        try (PreparedStatement ps = preparedStatement(
+                "DELETE FROM comments_moderated WHERE comment_id = ?")) {
+            for (YouTubeComment comment : objects) {
+                ps.setString(1, comment.getId());
+                ps.addBatch();
+            }
+
+            ps.executeBatch();
+        }
+    }
+
+    @Override
+    public void updateAll(List<YouTubeComment> objects) throws SQLException {
+        insert(objects, INSERT_REPLACE);
+    }
+
+    private void insert(List<YouTubeComment> objects, String insertSql) throws SQLException {
+        try (PreparedStatement ps = preparedStatement(INSERT_OR_MODERATED_COMMENTS.toString())) {
             for (YouTubeComment ct : objects) {
                 ps.setString(1, ct.getId());
                 ps.setString(2, ct.getChannelId());
@@ -88,24 +114,6 @@ public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {
 
         // Delete from comments if actually moderated usually made from in-app reply
         database.comments().deleteAll(objects);
-    }
-
-    @Override
-    public void deleteAll(List<YouTubeComment> objects) throws SQLException {
-        try (PreparedStatement ps = preparedStatement(
-                "DELETE FROM comments_moderated WHERE comment_id = ?")) {
-            for (YouTubeComment comment : objects) {
-                ps.setString(1, comment.getId());
-                ps.addBatch();
-            }
-
-            ps.executeBatch();
-        }
-    }
-
-    @Override
-    public void updateAll(List<YouTubeComment> objects) throws SQLException {
-        // not updating, ignoring if exists
     }
 
 }

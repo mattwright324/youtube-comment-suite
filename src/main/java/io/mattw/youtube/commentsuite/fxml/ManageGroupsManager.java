@@ -104,7 +104,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
 //    @FXML private Label totalComments, grabbedComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
 //            likeDislikeRatio, normalizedRatio;
-    @FXML private ListView<MGMVYouTubeObjectItem> popularVideosList, dislikedVideosList, commentedVideosList,
+    @FXML private ListView<MGMVStatItem> popularVideosList, dislikedVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
     @FXML private GridPane commentStatPane, videoStatPane;
 
@@ -158,6 +158,15 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         editIcon.setImage(edit);
         closeIcon.setImage(close);
+
+        new Timer().schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        updateLastRefreshed();
+                    }
+                }, 0, Duration.ofSeconds(30).toMillis()
+        );
 
         FXUtils.registerToSize(groupTitle, 18);
         FXUtils.registerToPadding(groupTitle, 10.5);
@@ -415,21 +424,14 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             runLater(() -> groupTitle.setText(group.getName()));
         }
 
-        new Timer().schedule(
-                new TimerTask() {
-                    @Override
-                    public void run() {
-                        updateLastRefreshed();
-                    }
-                }, 0, Duration.ofSeconds(30).toMillis()
-        );
+        updateLastRefreshed();
 
         final GroupStats groupStats = database.getGroupStats(this.group);
 
         final List<LineChart.Data<String, Number>> commentChartData = groupStats.getWeeklyCommentHistogram().entrySet().stream()
                 .map(entry -> {
                     final LocalDateTime beginningOfWeek = DateUtils.epochMillisToDateTime(entry.getKey());
-                    String beginningOfWeekStr = formatter.format(beginningOfWeek);
+                    final String beginningOfWeekStr = formatter.format(beginningOfWeek);
 
                     final LocalDateTime endOfWeek = beginningOfWeek.plusDays(7);
                     final String endOfWeekStr = formatter.format(endOfWeek);
@@ -489,24 +491,24 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             nDislikes = 0;
         }
 
-        final List<MGMVYouTubeObjectItem> popularVideos = groupStats.getMostViewed().stream()
-                .map(video -> new MGMVYouTubeObjectItem(video, video.getViewCount(), "views"))
+        final List<MGMVStatItem> popularVideos = groupStats.getMostViewed().stream()
+                .map(video -> new MGMVStatItem(video, video.getViewCount(), "views"))
                 .collect(Collectors.toList());
-        final List<MGMVYouTubeObjectItem> dislikedVideos = groupStats.getMostDisliked().stream()
-                .map(video -> new MGMVYouTubeObjectItem(video, video.getDislikes(), "dislikes"))
+        final List<MGMVStatItem> dislikedVideos = groupStats.getMostDisliked().stream()
+                .map(video -> new MGMVStatItem(video, video.getDislikes(), "dislikes"))
                 .collect(Collectors.toList());
-        final List<MGMVYouTubeObjectItem> commentedVideos = groupStats.getMostCommented().stream()
-                .map(video -> new MGMVYouTubeObjectItem(video, video.getComments(), "comments"))
+        final List<MGMVStatItem> commentedVideos = groupStats.getMostCommented().stream()
+                .map(video -> new MGMVStatItem(video, video.getComments(), "comments"))
                 .collect(Collectors.toList());
-        final List<MGMVYouTubeObjectItem> disabledVideos = groupStats.getCommentsDisabled().stream()
-                .map(video -> new MGMVYouTubeObjectItem(video, 0L, "Comments Disabled", true))
+        final List<MGMVStatItem> disabledVideos = groupStats.getCommentsDisabled().stream()
+                .map(video -> new MGMVStatItem(video, 0L, "Comments Disabled", true))
                 .collect(Collectors.toList());
 
-        final List<MGMVYouTubeObjectItem> mostLikedViewers = groupStats.getMostLikedViewers().entrySet().stream()
-                .map(entry -> new MGMVYouTubeObjectItem(entry.getKey(), entry.getValue(), "likes"))
+        final List<MGMVStatItem> mostLikedViewers = groupStats.getMostLikedViewers().entrySet().stream()
+                .map(entry -> new MGMVStatItem(entry.getKey(), entry.getValue(), "likes"))
                 .collect(Collectors.toList());
-        final List<MGMVYouTubeObjectItem> mostActiveViewers = groupStats.getMostActiveViewers().entrySet().stream()
-                .map(entry -> new MGMVYouTubeObjectItem(entry.getKey(), entry.getValue(), "comments"))
+        final List<MGMVStatItem> mostActiveViewers = groupStats.getMostActiveViewers().entrySet().stream()
+                .map(entry -> new MGMVStatItem(entry.getKey(), entry.getValue(), "comments"))
                 .collect(Collectors.toList());
 
         final long comments = groupStats.getTotalComments();

@@ -46,7 +46,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
     @FXML private Button btnSearch;
     @FXML private TextField keywords;
     @FXML private ComboBox<String> orderBy;
-    @FXML private ListView<MGMVYouTubeObjectItem> videoList;
+    @FXML private ListView<MGMVStatItem> videoList;
     @FXML private ImageView btnReset;
     @FXML private Button btnClose, btnSubmit;
 
@@ -98,7 +98,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
 
             videoList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
                 if (nv != null) {
-                    selectedVideo = (YouTubeVideo) nv.getObject();
+                    selectedVideo = nv.getVideo();
 
                     runLater(() -> {
                         setValueProperty(selectedVideo == null ? ALL_VIDEOS : selectedVideo.getTitle());
@@ -141,7 +141,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
         btnReset.setDisable(selectedVideo == null);
         lblSelection.setText(String.format("%s > %s > %s",
                 group != null ? group.getName() : "$group",
-                groupItem != null ? groupItem.getTitle() : "$groupItem",
+                groupItem != null ? groupItem.getDisplayName() : "$groupItem",
                 selectedVideo != null ? selectedVideo.getTitle() : ALL_VIDEOS));
     }
 
@@ -168,7 +168,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
                                         video.getViewCount(),
                                         video.getComments());
 
-                                return new MGMVYouTubeObjectItem(video, subtitle);
+                                return new MGMVStatItem(video, subtitle);
                             })
                             .collect(Collectors.toList()));
                 });

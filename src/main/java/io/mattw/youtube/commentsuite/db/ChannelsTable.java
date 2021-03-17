@@ -2,6 +2,8 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,9 +13,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_IGNORE_CHANNELS;
+import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_OR_CHANNELS;
 
 public class ChannelsTable extends TableHelper<YouTubeChannel> {
+
+    private static final Logger logger = LogManager.getLogger();
+
+    private static final String INSERT_IGNORE = INSERT_OR_CHANNELS.toString().replace(":method", "IGNORE");
+    private static final String INSERT_REPLACE = INSERT_OR_CHANNELS.toString().replace(":method", "REPLACE");
 
     private final Cache<String, YouTubeChannel> cache = CacheBuilder.newBuilder()
             .expireAfterAccess(5, TimeUnit.MINUTES)
@@ -25,9 +32,11 @@ public class ChannelsTable extends TableHelper<YouTubeChannel> {
 
     @Override
     public YouTubeChannel to(ResultSet resultSet) throws SQLException {
-        return new YouTubeChannel(resultSet.getString("channel_id"),
-                resultSet.getString("channel_name"),
-                resultSet.getString("channel_profile_url"));
+        return new YouTubeChannel()
+                .setId(resultSet.getString("channel_id"))
+                .setTitle(resultSet.getString("channel_name"))
+                .setThumbUrl(resultSet.getString("channel_profile_url"))
+                .setType(YouTubeType.CHANNEL);
     }
 
     public void check(String id) {
@@ -95,16 +104,7 @@ public class ChannelsTable extends TableHelper<YouTubeChannel> {
 
     @Override
     public void insertAll(List<YouTubeChannel> objects) throws SQLException {
-        try (PreparedStatement ps = preparedStatement(INSERT_IGNORE_CHANNELS.toString())) {
-            for (YouTubeChannel c : objects) {
-                ps.setString(1, c.getId());
-                ps.setString(2, c.getTitle());
-                ps.setString(3, c.getThumbUrl());
-                ps.setBoolean(4, false);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
+        insert(objects, INSERT_IGNORE);
     }
 
     @Override
@@ -122,7 +122,20 @@ public class ChannelsTable extends TableHelper<YouTubeChannel> {
 
     @Override
     public void updateAll(List<YouTubeChannel> objects) throws SQLException {
-        // not updating, ignoring if exists
+        insert(objects, INSERT_REPLACE);
+    }
+
+    private void insert(List<YouTubeChannel> objects, String insertSql) throws SQLException {
+        try (PreparedStatement ps = preparedStatement(insertSql)) {
+            for (YouTubeChannel c : objects) {
+                ps.setString(1, c.getId());
+                ps.setString(2, c.getTitle());
+                ps.setString(3, c.getThumbUrl());
+                ps.setBoolean(4, false);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
     }
 
 }

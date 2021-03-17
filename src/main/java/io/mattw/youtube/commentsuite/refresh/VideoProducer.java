@@ -5,7 +5,6 @@ import com.google.api.services.youtube.model.VideoListResponse;
 import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.YouTubeObject;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import org.apache.logging.log4j.Level;
@@ -20,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -85,13 +85,17 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
                 .setMaxResults(50L)
                 .setId(String.join(",", videoIds));
 
+        getEstimatedQuota().incrementAndGet();
+
         final VideoListResponse vl = response.execute();
         if (vl.getItems().isEmpty()) {
             return;
         }
 
         final List<YouTubeVideo> videos = vl.getItems().stream()
-                .map(YouTubeVideo::new)
+                .map(YouTubeVideo::from)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
 
         database.videos().insertAll(videos);
@@ -125,7 +129,7 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
                     .collect(Collectors.toList());
 
             logger.debug("Video(s) matches a signed in account {}",
-                    videosMine.stream().map(YouTubeObject::getId).collect(Collectors.toList()));
+                    videosMine.stream().map(YouTubeVideo::getId).collect(Collectors.toList()));
 
             sendCollection(videosMine, YouTubeVideo.class, HELD_FOR_REVIEW.name());
         }

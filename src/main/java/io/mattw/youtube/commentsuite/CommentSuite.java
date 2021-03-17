@@ -35,7 +35,6 @@ public class CommentSuite extends Application {
 
     private static CommentDatabase database;
     private static YouTube youTube;
-    private static String youTubeApiKey;
     private static OAuth2Manager oauth2Manager;
 
     public static void main(String[] args) {
@@ -62,7 +61,6 @@ public class CommentSuite extends Application {
             youTube = new YouTube.Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), null)
                     .setApplicationName("youtube-comment-suite")
                     .build();
-            youTubeApiKey = config.getDataObject().getYoutubeApiKey();
             database = new CommentDatabase("commentsuite.sqlite3");
             oauth2Manager = new OAuth2Manager();
 

@@ -5,7 +5,7 @@ import com.google.api.services.youtube.model.*;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.GroupItem;
-import io.mattw.youtube.commentsuite.db.YType;
+import io.mattw.youtube.commentsuite.db.YouTubeType;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -49,12 +49,12 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
             }
 
             try {
-                final YType type = item.getTypeId();
-                if (type == YType.CHANNEL) {
+                final YouTubeType type = item.getType();
+                if (type == YouTubeType.CHANNEL) {
                     fromChannel(item);
-                } else if (type == YType.PLAYLIST) {
+                } else if (type == YouTubeType.PLAYLIST) {
                     fromPlaylist(item);
-                } else if (type == YType.VIDEO) {
+                } else if (type == YouTubeType.VIDEO) {
                     fromVideo(item);
                 }
 
@@ -76,6 +76,8 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                 .setKey(CommentSuite.getYouTubeApiKey())
                 .setId(channel.getId())
                 .execute();
+
+        getEstimatedQuota().incrementAndGet();
 
         final String uploadsPlaylistId = response.getItems()
                 .stream()
@@ -107,6 +109,8 @@ public class VideoIdProducer extends ConsumerMultiProducer<GroupItem> {
                     .setPlaylistId(playlistId)
                     .setPageToken(pageToken)
                     .execute();
+
+            getEstimatedQuota().incrementAndGet();
 
             pageToken = response.getNextPageToken();
 

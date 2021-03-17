@@ -386,7 +386,7 @@ public class CommentQuery implements Serializable, Exportable {
         if (groupItem.isPresent()) {
             GroupItem item = groupItem.get();
 
-            this.withGroupItem = String.format("%s / %s", item.getId(), item.getTitle());
+            this.withGroupItem = String.format("%s / %s", item.getId(), item.getDisplayName());
         } else {
             this.withGroupItem = "All Item(s)";
         }

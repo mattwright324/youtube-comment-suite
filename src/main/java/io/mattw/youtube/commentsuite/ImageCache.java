@@ -2,7 +2,6 @@ package io.mattw.youtube.commentsuite;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.mattw.youtube.commentsuite.db.YouTubeObject;
 import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
@@ -27,13 +26,9 @@ public interface ImageCache {
     String thumbFormat = "jpg";
 
     Cache<Object, Image> thumbCache = CacheBuilder.newBuilder()
-            .maximumSize(500)
-            .expireAfterAccess(5, TimeUnit.MINUTES)
+            .maximumSize(1000)
+            .expireAfterAccess(30, TimeUnit.MINUTES)
             .build();
-
-    static Image toLetterAvatar(final YouTubeObject object) {
-        return toLetterAvatar(object.getTitle());
-    }
 
     static Image toLetterAvatar(final String s) {
         if (s == null || s.isEmpty()) {
@@ -93,15 +88,12 @@ public interface ImageCache {
         return image;
     }
 
-    static Image findOrGetImage(final YouTubeObject object) {
-        return findOrGetImage(object.getId(), object.getThumbUrl());
-    }
-
     static Image findOrGetImage(final YouTubeAccount account) {
         return findOrGetImage(account.getChannelId(), account.getThumbUrl());
     }
 
-    static boolean hasImageCached(final YouTubeObject object) {
-        return thumbCache.getIfPresent(object.getId()) != null;
+    static boolean hasImageCached(final String id) {
+        return thumbCache.getIfPresent(id) != null;
     }
+
 }

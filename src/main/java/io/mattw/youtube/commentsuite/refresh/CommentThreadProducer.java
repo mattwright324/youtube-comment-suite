@@ -17,15 +17,16 @@ import io.mattw.youtube.commentsuite.oauth2.OAuth2Tokens;
 import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import io.mattw.youtube.commentsuite.util.StringTuple;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
 
@@ -33,7 +34,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private final ExecutorGroup executorGroup = new ExecutorGroup(10);
+    private final ExecutorGroup executorGroup = new ExecutorGroup(15);
 
     private final RefreshOptions options;
     private final RefreshCommentPages pages;
@@ -102,6 +103,8 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                 continue;
             }
 
+            logger.debug(video);
+
             if (moderationStatus != PUBLISHED && !configData.isSignedIn(video.getChannelId())) {
                 logger.warn("Authorization required for {} commentThreads on {} but not signed in", moderationStatus, video.getId());
                 awaitMillis(100);
@@ -124,7 +127,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
                         final String oauthToken = getOauthToken(video.getChannelId());
                         response = youTube.commentThreads()
-                                .list(moderationStatus.getPart())
+                                .list("snippet,replies")
                                 .setKey(CommentSuite.getYouTubeApiKey())
                                 .setOauthToken(oauthToken)
                                 .setVideoId(video.getId())
@@ -133,6 +136,8 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .setPageToken(pageToken)
                                 .setModerationStatus(moderationStatus.getApiValue())
                                 .execute();
+
+                        getEstimatedQuota().incrementAndGet();
 
                         pageToken = response.getNextPageToken();
 
@@ -153,29 +158,58 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         }
 
                         final List<YouTubeComment> comments = items.stream()
-                                .map(YouTubeComment::new)
-                                .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
+                                .map(YouTubeComment::from)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
                                 .collect(Collectors.toList());
                         sendCollection(comments, YouTubeComment.class);
 
                         final List<YouTubeChannel> channels = items.stream()
                                 .filter(distinctByKey(CommentThread::getId))
-                                .map(YouTubeChannel::new)
+                                .map(YouTubeChannel::from)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
                                 .collect(Collectors.toList());
                         sendCollection(channels, YouTubeChannel.class);
 
-                        /*
-                         * Tuple to hold commentThreadId and videoId for consuming threads.
-                         *
-                         * VideoId's are not included in comment thread / comments.list. Using tuple
-                         * to pair a comment thread id with the video it was found on.
-                         */
-                        final List<StringTuple> replyThreads = comments.stream()
-                                .filter(comment -> comment.getReplyCount() > 0)
-                                .map(comment -> new StringTuple(comment.getId(), video.getId()))
-                                .collect(Collectors.toList());
-                        sendCollection(replyThreads, StringTuple.class);
+                        // Published-thread replies work differently from moderated/review-thread replies
+                        if (moderationStatus == PUBLISHED) {
+                            // May or may not get all replies back, published threads should have up to 5 replies
+                            final List<Comment> someReplies = items.stream()
+                                    .flatMap(thread -> Optional.ofNullable(thread.getReplies())
+                                            .map(CommentThreadReplies::getComments)
+                                            .map(Collection::stream)
+                                            .orElse(Stream.empty()))
+                                    .collect(Collectors.toList());
 
+                            final List<YouTubeComment> someReplyComments = someReplies.stream()
+                                    .map(reply -> YouTubeComment.from(reply, video.getId()))
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
+                                    .collect(Collectors.toList());
+                            sendCollection(someReplyComments, YouTubeComment.class);
+
+                            final List<YouTubeChannel> someReplyChannels = someReplies.stream()
+                                    .map(YouTubeChannel::from)
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
+                                    .filter(distinctByKey(YouTubeChannel::getId))
+                                    .collect(Collectors.toList());
+                            sendCollection(someReplyChannels, YouTubeChannel.class);
+
+                            // Pass on the commentThreads that we couldn't get all replies from (threads with more than 5 replies)
+                            final List<StringTuple> replyThreads = items.stream()
+                                    .filter(thread -> !thread.getSnippet().getTotalReplyCount().equals(Optional.ofNullable(thread.getReplies())
+                                                    .map(CommentThreadReplies::getComments)
+                                                    .map(List::size)
+                                                    .map(Long::valueOf)
+                                                    .orElse(0L)))
+                                    .map(thread -> new StringTuple(thread.getId(), video.getId()))
+                                    .collect(Collectors.toList());
+                            sendCollection(replyThreads, StringTuple.class);
+                        }
+
+                        // Unclear on the max replies returned for moderated/review replies, does it return all?
                         if (moderationStatus != PUBLISHED) {
                             final List<Comment> threadReplies = items.stream()
                                     .map(CommentThread::getReplies)
@@ -184,17 +218,31 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                     .collect(Collectors.toList());
 
                             final List<YouTubeComment> replies = threadReplies.stream()
-                                    .map(comment -> new YouTubeComment(comment, video.getId()))
-                                    .filter(comment -> StringUtils.isNotEmpty(comment.getChannelId()))
+                                    .map(comment -> YouTubeComment.from(comment, video.getId()))
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
                                     .collect(Collectors.toList());
 
                             sendCollection(replies, YouTubeComment.class);
 
                             final List<YouTubeChannel> channels2 = threadReplies.stream()
                                     .filter(distinctByKey(Comment::getId))
-                                    .map(YouTubeChannel::new)
+                                    .map(YouTubeChannel::from)
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
                                     .collect(Collectors.toList());
                             sendCollection(channels2, YouTubeChannel.class);
+                        }
+
+                        if (moderationStatus == PUBLISHED && options.isCommentPagesSmart()) {
+                            final List<String> threadIds = comments.stream()
+                                    .map(YouTubeComment::getId)
+                                    .collect(Collectors.toList());
+                            if (RefreshCommentOrder.TIME == options.getCommentOrder() &&
+                                    database.countCommentsNotExisting(threadIds) == 0) {
+                                logger.info("No new comment threads, stopping pagination early {}", video.getId());
+                                break;
+                            }
                         }
 
                         awaitMillis(50);
@@ -220,7 +268,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                     sendMessage(Level.FATAL, "API Quota Exceeded");
                                     break threadLoop;
                                 }
-
 
                                 final String authQuotaMsg = String.format("[%s/%s] Auth Quota Exceeded  [videoId=%s]",
                                         attempt,

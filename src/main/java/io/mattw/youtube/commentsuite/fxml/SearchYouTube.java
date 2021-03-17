@@ -35,9 +35,6 @@ public class SearchYouTube implements Initializable {
 
     private static final Logger logger = LogManager.getLogger();
     private static final String TOKEN_FOO = "TOKEN_FOO";
-
-    private Location<IpApiProvider, IpApiProvider.Location> location;
-    private YouTube youTube;
     private final ClipboardUtil clipboardUtil = new ClipboardUtil();
     private final BrowserUtil browserUtil = new BrowserUtil();
 
@@ -80,15 +77,12 @@ public class SearchYouTube implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         logger.debug("Initialize SearchYouTube");
 
-        this.youTube = CommentSuite.getYouTube();
-        this.location = CommentSuite.getLocation();
-
-        MultipleSelectionModel selectionModel = resultsList.getSelectionModel();
+        final MultipleSelectionModel<SearchYouTubeListItem> selectionModel = resultsList.getSelectionModel();
 
         searchIcon.setImage(ImageLoader.SEARCH.getImage());
         geoIcon.setImage(ImageLoader.LOCATION.getImage());
 
-        BooleanBinding isLocation = searchType.valueProperty().isEqualTo("Location");
+        final BooleanBinding isLocation = searchType.valueProperty().isEqualTo("Location");
         locationBox.managedProperty().bind(isLocation);
         locationBox.visibleProperty().bind(isLocation);
         searchRadius.managedProperty().bind(isLocation);
@@ -107,13 +101,14 @@ public class SearchYouTube implements Initializable {
         resultsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         menuCopyId.setOnAction(ae -> {
-            List<SearchYouTubeListItem> list = selectionModel.getSelectedItems();
-            List<String> ids = list.stream().map(SearchYouTubeListItem::getObjectId).collect(Collectors.toList());
+            final List<String> ids = selectionModel.getSelectedItems().stream()
+                    .map(SearchYouTubeListItem::getObjectId)
+                    .collect(Collectors.toList());
+
             clipboardUtil.setClipboard(ids);
         });
         menuOpenBrowser.setOnAction(ae -> {
-            List<SearchYouTubeListItem> list = selectionModel.getSelectedItems();
-            for (SearchYouTubeListItem view : list) {
+            for (final SearchYouTubeListItem view : selectionModel.getSelectedItems()) {
                 browserUtil.open(view.getYoutubeURL());
             }
         });
@@ -121,23 +116,20 @@ public class SearchYouTube implements Initializable {
         menuDeselectAll.setOnAction(ae -> selectionModel.clearSelection());
 
         btnAddToGroup.disableProperty().bind(selectionModel.selectedIndexProperty().isEqualTo(-1));
-        selectionModel.getSelectedItems().addListener((ListChangeListener) (c -> {
-            int items = selectionModel.getSelectedItems().size();
-            runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", items)));
-        }));
-        resultsList.itemsProperty().addListener((o, ov, nv) -> runLater(() -> {
-            int selectedCount = selectionModel.getSelectedItems().size();
-            btnAddToGroup.setText(String.format("Add to Group (%s)", selectedCount));
-        }));
+        selectionModel.getSelectedItems().addListener((ListChangeListener<SearchYouTubeListItem>) (c ->
+                runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", selectionModel.getSelectedItems().size())))
+        ));
+        resultsList.itemsProperty().addListener((o, ov, nv) ->
+                runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", selectionModel.getSelectedItems().size()))
+        ));
 
         btnClear.setOnAction(ae -> runLater(() -> resultsList.getItems().clear()));
 
         geolocate.setOnAction(ae -> new Thread(() -> {
             geolocate.setDisable(true);
             try {
-                IpApiProvider.Location myLocation = this.location.getMyLocation();
-
-                String coordinates = myLocation.lat + "," + myLocation.lon;
+                final IpApiProvider.Location myLocation = CommentSuite.getLocation().getMyLocation();
+                final String coordinates = myLocation.lat + "," + myLocation.lon;
 
                 runLater(() -> searchLocation.setText(coordinates));
             } catch (IOException e) {
@@ -151,17 +143,17 @@ public class SearchYouTube implements Initializable {
 
         form.setOnKeyPressed(ke -> {
             if (ke.getCode() == KeyCode.ENTER) {
-                runLater(() ->
-                        submit.fire()
-                );
+                runLater(submit::fire);
             }
         });
         submit.setOnAction(ae -> {
             total = 0;
             number = 0;
             pageToken = TOKEN_FOO;
-            resultsList.getItems().clear();
-            runLater(() -> searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total)));
+            runLater(() -> {
+                resultsList.getItems().clear();
+                searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total));
+            });
             logger.debug("Submit New Search [pageToken={},type={},text={},locText={},locRadius={},order={},result={}]",
                     pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
                     searchRadius.getValue(), searchOrder.getValue(), resultType.getValue());
@@ -179,7 +171,7 @@ public class SearchYouTube implements Initializable {
                 ).start()
         );
 
-        SYAddToGroupModal syAddToGroupModal = new SYAddToGroupModal(resultsList);
+        final SYAddToGroupModal syAddToGroupModal = new SYAddToGroupModal(resultsList);
         addToGroupModal.setContent(syAddToGroupModal);
         syAddToGroupModal.getBtnClose().setOnAction(ae -> {
             addToGroupModal.setVisible(false);
@@ -199,8 +191,8 @@ public class SearchYouTube implements Initializable {
     public void search(String pageToken, String type, String text, String locText, String locRadius, String order, int resultType) {
         runLater(() -> searching.setValue(true));
         try {
-            String encodedText = URLEncoder.encode(text, "UTF-8");
-            String searchType = types[resultType];
+            final String encodedText = URLEncoder.encode(text, "UTF-8");
+            final String searchType = types[resultType];
 
             if (pageToken.equals(TOKEN_FOO)) {
                 pageToken = "";
@@ -212,7 +204,7 @@ public class SearchYouTube implements Initializable {
                 order = "viewCount";
             }
 
-            searchList = youTube.search().list("snippet")
+            searchList = CommentSuite.getYouTube().search().list("snippet")
                     .setKey(CommentSuite.getYouTubeApiKey())
                     .setMaxResults(50L)
                     .setPageToken(pageToken)
@@ -220,7 +212,7 @@ public class SearchYouTube implements Initializable {
                     .setType(searchType)
                     .setOrder(order.toLowerCase());
 
-            SearchListResponse sl;
+            final SearchListResponse sl;
             if (type.equals("Normal")) {
                 logger.debug("Normal Search [key={},part=snippet,text={},type={},order={},token={}]",
                         CommentSuite.getYouTubeApiKey(), encodedText, searchType, order.toLowerCase(), pageToken);
@@ -241,18 +233,18 @@ public class SearchYouTube implements Initializable {
             this.total = sl.getPageInfo().getTotalResults();
 
             logger.debug("Search [videos={}]", sl.getItems().size());
-            for (SearchResult item : sl.getItems()) {
+            for (final SearchResult item : sl.getItems()) {
                 logger.debug("Video [id={},author={},title={}]",
                         item.getId(),
                         item.getSnippet().getChannelTitle(),
                         item.getSnippet().getTitle());
-                SearchYouTubeListItem view = new SearchYouTubeListItem(item, number++);
+                final SearchYouTubeListItem view = new SearchYouTubeListItem(item, number++);
                 runLater(() -> {
                     resultsList.getItems().add(view);
                     searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total));
                 });
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             logger.error(e);
             e.printStackTrace();
         }

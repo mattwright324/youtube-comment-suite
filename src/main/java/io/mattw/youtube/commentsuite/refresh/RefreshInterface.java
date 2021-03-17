@@ -6,6 +6,8 @@ import javafx.beans.property.LongProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
+import java.util.Map;
+
 /**
  * Common interface for group refreshing.
  *
@@ -46,7 +48,12 @@ public interface RefreshInterface {
 
     ObservableList<String> getObservableErrorList();
 
+    Map<String, ConsumerMultiProducer<?>> getConsumerProducers();
+
     Boolean isEndedOnError();
 
     Boolean isHardShutdown();
+
+    long getEstimatedQuota();
+
 }

@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
@@ -67,19 +68,24 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                             .setMaxResults(100L)
                             .execute();
 
+                    getEstimatedQuota().incrementAndGet();
+
                     pageToken = response.getNextPageToken();
 
                     final List<Comment> comments = response.getItems();
 
                     final List<YouTubeComment> replies = comments.stream()
-                            .map(item -> new YouTubeComment(item, tuple.getSecond()))
-                            .filter(yc -> StringUtils.isNotEmpty(yc.getChannelId()) /* filter out G+ comments */)
+                            .map(item -> YouTubeComment.from(item, tuple.getSecond()))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
                             .collect(Collectors.toList());
                     sendCollection(replies, YouTubeComment.class);
 
                     final List<YouTubeChannel> channels = response.getItems().stream()
                             .filter(distinctByKey(Comment::getId))
-                            .map(YouTubeChannel::new)
+                            .map(YouTubeChannel::from)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
                             .collect(Collectors.toList());
                     sendCollection(channels, YouTubeChannel.class);
 

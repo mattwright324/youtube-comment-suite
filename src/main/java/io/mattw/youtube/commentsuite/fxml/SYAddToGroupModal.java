@@ -2,9 +2,7 @@ package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.CommentSuite;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.db.Group;
-import io.mattw.youtube.commentsuite.db.GroupItem;
+import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.events.GroupAddEvent;
 import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;
 import io.mattw.youtube.commentsuite.events.GroupRenameEvent;
@@ -22,6 +20,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static javafx.application.Platform.runLater;
@@ -109,18 +108,12 @@ public class SYAddToGroupModal extends VBox implements Cleanable {
     }
 
     private void submitItemsToGroup(final List<SearchYouTubeListItem> items, final Group group) {
-        List<GroupItem> list = items.stream()
-                .map(SearchYouTubeListItem::getYoutubeURL)
-                .map(link -> {
-                    try {
-                        return new GroupItem(link);
-                    } catch (IOException e) {
-                        logger.error("Failed to parse to GroupItem", e);
-
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
+        final GroupItemResolver resolver = new GroupItemResolver();
+        final List<GroupItem> list = items.stream()
+                .map(SearchYouTubeListItem::getData)
+                .map(resolver::from)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
 
         logger.debug("Group Items to add [list={}]", list.toString());

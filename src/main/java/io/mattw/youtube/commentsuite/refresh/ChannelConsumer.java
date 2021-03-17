@@ -26,7 +26,10 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
     private final Set<String> concurrentTotalChannelSet = ConcurrentHashMap.newKeySet();
     private final Set<String> concurrentNewChannelSet = ConcurrentHashMap.newKeySet();
 
-    public ChannelConsumer() {
+    private final RefreshOptions options;
+
+    public ChannelConsumer(final RefreshOptions options) {
+        this.options = options;
         this.database = CommentSuite.getDatabase();
     }
 
@@ -77,7 +80,12 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
             concurrentNewChannelSet.addAll(notYetExisting);
             concurrentTotalChannelSet.addAll(channelIds);
 
-            database.channels().insertAll(channels);
+            if (options.isUpdateCommentsChannels()) {
+                database.channels().updateAll(channels);
+            } else {
+                database.channels().insertAll(channels);
+            }
+
             channels.clear();
         } catch (SQLException e) {
             logger.error("Error on channel submit", e);

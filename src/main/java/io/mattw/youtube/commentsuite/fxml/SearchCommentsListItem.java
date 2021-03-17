@@ -66,11 +66,10 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         loader.setRoot(this);
         loader.load();
 
-        thumbnail.setImage(channel.getDefaultThumb());
         checkProfileThumb();
 
         author.setText(channel.getTitle());
-        author.setOnAction(ae -> browserUtil.open(channel.buildYouTubeLink()));
+        author.setOnAction(ae -> browserUtil.open(channel.toYouTubeLink()));
         author.setBorder(Border.EMPTY);
 
         commentText.setText(comment.getCleanText(false).replace("\r\n", " "));
@@ -180,7 +179,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
      */
     public void loadProfileThumb() {
         runLater(() -> thumbnail.setImage(ImageLoader.LOADING.getImage()));
-        Image thumbImage = ImageCache.findOrGetImage(channel);
+        Image thumbImage = channel.findOrGetThumb();
         runLater(() -> thumbnail.setImage(thumbImage));
     }
 
@@ -188,8 +187,10 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
      * Checks if profile thumb loaded and loads if present.
      */
     public void checkProfileThumb() {
-        if (ImageCache.hasImageCached(channel)) {
+        if (channel.isThumbLoaded()) {
             loadProfileThumb();
+        } else {
+            runLater(() -> thumbnail.setImage(ImageCache.toLetterAvatar(channel.getTitle())));
         }
     }
 

@@ -27,6 +27,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static io.mattw.youtube.commentsuite.refresh.RefreshStyle.CUSTOM;
 import static io.mattw.youtube.commentsuite.refresh.RefreshStyle.values;
@@ -44,12 +46,15 @@ public class MGMVRefreshModal extends HBox {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public static final int WIDTH = 500;
+    public static final int WIDTH = 550;
     private static final String STAT_ELAPSED = "STAT_ELAPSED";
     private static final String STAT_VIDEO = "STAT_NEW_VIDEO";
     private static final String STAT_COMMENT = "STAT_NEW_COMMENT";
     private static final String STAT_MODERATED = "STAT_MODERATED";
     private static final String STAT_VIEWER = "STAT_NEW_VIEWER";
+
+    // Enables debug stats during refresh for in-queue amounts
+    public static final boolean DEBUG_MODE = false;
 
     @FXML private Label alert;
     @FXML private Label statusStep;
@@ -64,11 +69,14 @@ public class MGMVRefreshModal extends HBox {
     @FXML private ComboBox<RefreshCommentPages> refreshCommentPages, refreshReviewPages;
     @FXML private ComboBox<RefreshCommentOrder> refreshCommentOrder;
     @FXML private ComboBox<RefreshCommentPages> refreshReplyPages;
-    @FXML private HBox reviewOption;
+    @FXML private CheckBox smartCommentPages;
+    @FXML private CheckBox updateIgnore;
+    //@FXML private HBox reviewOption;
 
     @FXML private HBox warningsPane;
     @FXML private Label warnings;
     @FXML private GridPane refreshStatsPane;
+    @FXML private GridPane debugStatsPane;
     @FXML private ImageView expandIcon;
     @FXML private ListView<String> errorList;
     @FXML private Hyperlink expand;
@@ -99,6 +107,9 @@ public class MGMVRefreshModal extends HBox {
         try {
             loader.load();
 
+            debugStatsPane.setManaged(DEBUG_MODE);
+            debugStatsPane.setVisible(DEBUG_MODE);
+
             expandIcon.setImage(ImageLoader.ANGLE_RIGHT.getImage());
 
             errorList.prefHeightProperty().bind(statusPane.heightProperty());
@@ -125,6 +136,8 @@ public class MGMVRefreshModal extends HBox {
             });
 
             RefreshOptions refreshOptions = configData.getRefreshOptions();
+            smartCommentPages.setSelected(refreshOptions.isCommentPagesSmart());
+            updateIgnore.setSelected(refreshOptions.isUpdateCommentsChannels());
             if (refreshOptions.getStyle() == CUSTOM) {
                 refreshStyle.setValue(CUSTOM);
                 refreshTimeframe.setValue(refreshOptions.getTimeframe());
@@ -193,8 +206,10 @@ public class MGMVRefreshModal extends HBox {
                     options.setStyle(refreshStyle.getValue());
                     options.setTimeframe(refreshTimeframe.getValue());
                     options.setCommentPages(refreshCommentPages.getValue());
+                    options.setCommentPagesSmart(smartCommentPages.isSelected());
                     options.setReviewPages(refreshReviewPages.getValue());
                     options.setReplyPages(refreshReplyPages.getValue());
+                    options.setUpdateCommentsChannels(updateIgnore.isSelected());
 
                     configData.setRefreshOptions(options);
                     configFile.save();
@@ -203,13 +218,18 @@ public class MGMVRefreshModal extends HBox {
 
                     runLater(() -> {
                         int rowIndex = 1;
-                        createGridRow(STAT_ELAPSED, rowIndex++, "Elapsed time");
-                        createGridRowNewTotal(STAT_VIDEO, rowIndex++,"New videos");
-                        createGridRowNewTotal(STAT_COMMENT, rowIndex++,"New comments");
+                        createGridRow(refreshStatsPane, STAT_ELAPSED, rowIndex++, "Elapsed time");
+                        createGridRowNewTotal(refreshStatsPane, STAT_VIDEO, rowIndex++,"New videos");
+                        createGridRowNewTotal(refreshStatsPane, STAT_COMMENT, rowIndex++,"New comments");
                         if (configData.isGrabHeldForReview()) {
-                            createGridRowNewTotal(STAT_MODERATED, rowIndex++,"New moderated");
+                            createGridRowNewTotal(refreshStatsPane, STAT_MODERATED, rowIndex++,"New moderated");
                         }
-                        createGridRowNewTotal(STAT_VIEWER, rowIndex++,"New viewers");
+                        createGridRowNewTotal(refreshStatsPane, STAT_VIEWER, rowIndex++,"New viewers");
+
+                        rowIndex = 1;
+                        for (Map.Entry<String,ConsumerMultiProducer<?>> consumer : refreshThread.getConsumerProducers().entrySet()) {
+                            createGridRowNewTotal(debugStatsPane, consumer.getKey(), rowIndex++, consumer.getKey());
+                        }
 
                         refreshThread.getObservableErrorList().addListener((ListChangeListener<String>) (lcl) -> runLater(() -> {
                             int items = lcl.getList().size();
@@ -265,6 +285,24 @@ public class MGMVRefreshModal extends HBox {
                             statusIndicator.setVisible(false);
                         });
                     });
+
+                    final ExecutorService es = Executors.newSingleThreadExecutor();
+                    es.submit(() -> {
+                        logger.debug("Start Debug Progress Thread");
+
+                        while (refreshThread.isAlive()) {
+                            for (Map.Entry<String,ConsumerMultiProducer<?>> consumer : refreshThread.getConsumerProducers().entrySet()) {
+                                runLater(() -> {
+                                    statNewValue.get(consumer.getKey()).setText(consumer.getValue().getBlockingQueue().size() + " iq.");
+                                    statTotalValue.get(consumer.getKey()).setText("of " + consumer.getValue().getTotalAccepted().toString() + " a.");
+                                });
+                            }
+
+                            Threads.awaitMillis(100);
+                        }
+                        logger.debug("End Debug Progress Thread");
+                    });
+                    es.shutdown();
                 }
             }).start());
         } catch (IOException e) {
@@ -272,7 +310,7 @@ public class MGMVRefreshModal extends HBox {
         }
     }
 
-    private void createGridRow(final String statKey, final int rowNum, final String displayName) {
+    private void createGridRow(final GridPane gridPane, final String statKey, final int rowNum, final String displayName) {
         final Label name = new Label(displayName);
         name.getStyleClass().addAll("bold", "font14");
         name.setAlignment(Pos.TOP_RIGHT);
@@ -284,10 +322,10 @@ public class MGMVRefreshModal extends HBox {
         GridPane.setHgrow(newValue, Priority.ALWAYS);
         statNewValue.put(statKey, newValue);
 
-        refreshStatsPane.addRow(rowNum, name, newValue);
+        gridPane.addRow(rowNum, name, newValue);
     }
 
-    private void createGridRowNewTotal(final String statKey, final int rowNum, final String displayName) {
+    private void createGridRowNewTotal(final GridPane gridPane, final String statKey, final int rowNum, final String displayName) {
         final Label name = new Label(displayName);
         name.getStyleClass().addAll("bold", "font14");
         name.setAlignment(Pos.TOP_RIGHT);
@@ -305,7 +343,7 @@ public class MGMVRefreshModal extends HBox {
         statNewValue.put(statKey, newValue);
         statTotalValue.put(statKey, totalValue);
 
-        refreshStatsPane.addRow(rowNum, name, newValue, totalValue);
+        gridPane.addRow(rowNum, name, newValue, totalValue);
     }
 
     /**
@@ -321,9 +359,10 @@ public class MGMVRefreshModal extends HBox {
             if (expanded) {
                 expand.fire();
             }
-            reviewOption.setVisible(configData.isGrabHeldForReview());
-            reviewOption.setManaged(configData.isGrabHeldForReview());
+//            reviewOption.setVisible(configData.isGrabHeldForReview());
+//            reviewOption.setManaged(configData.isGrabHeldForReview());
             refreshStatsPane.getChildren().clear();
+            debugStatsPane.getChildren().clear();
             endStatus.setManaged(false);
             endStatus.setVisible(false);
             statusIndicator.setManaged(true);
@@ -331,8 +370,8 @@ public class MGMVRefreshModal extends HBox {
             errorList.getItems().clear();
             alert.getStyleClass().remove("alertSuccess");
             alert.getStyleClass().add("alertWarning");
-            alert.setVisible(true);
-            alert.setManaged(true);
+            alert.setVisible(false);
+            alert.setManaged(false);
             optionsPane.setVisible(true);
             optionsPane.setManaged(true);
             statusPane.setVisible(false);

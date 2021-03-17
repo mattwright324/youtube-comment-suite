@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import static javafx.application.Platform.runLater;
 
@@ -123,16 +124,18 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
                     final String parentId = loadedComment.isReply() ?
                             loadedComment.getParentId() : loadedComment.getId();
                     final Comment yourReply = postReply(selectedAccount, parentId, replyText.getText());
-                    final YouTubeComment comment = new YouTubeComment(yourReply, loadedComment.getVideoId());
+                    final Optional<YouTubeComment> comment = YouTubeComment.from(yourReply, loadedComment.getVideoId());
 
-                    database.comments().insert(comment);
-                    database.commit();
+                    if (comment.isPresent()) {
+                        database.comments().insert(comment.get());
+                        database.commit();
 
-                    if (openReply.isSelected()) {
-                        browserUtil.open(comment.buildYouTubeLink());
+                        if (openReply.isSelected()) {
+                            browserUtil.open(comment.get().toYouTubeLink());
+                        }
+
+                        runLater(() -> btnClose.fire());
                     }
-
-                    runLater(() -> btnClose.fire());
                 } catch (IOException e) {
                     logger.error("Failed to reply to comment", e);
 
@@ -189,9 +192,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
         this.loadedComment = comment;
 
         YouTubeChannel channel = comment.getChannel();
-
-        Image thumb = ImageCache.findOrGetImage(channel);
-
+        Image thumb = channel.findOrGetThumb();
         runLater(() -> {
             cleanUp();
 

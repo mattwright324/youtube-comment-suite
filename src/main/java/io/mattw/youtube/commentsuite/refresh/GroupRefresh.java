@@ -17,10 +17,10 @@ import org.apache.logging.log4j.Logger;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.HELD_FOR_REVIEW;
 import static javafx.application.Platform.runLater;
@@ -57,6 +57,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     private final ChannelProducer channelProducer;
     private final CommentConsumer commentConsumer, moderatedCommentConsumer;
     private final ChannelConsumer channelConsumer;
+    private final Map<String, ConsumerMultiProducer<?>> consumerProducers;
 
     private boolean hardShutdown = false;
     private boolean endedOnError = false;
@@ -73,9 +74,25 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         this.reviewThreadProducer = new CommentThreadProducer(options, options.getReviewPages(), HELD_FOR_REVIEW);
         this.replyProducer = new ReplyProducer(options);
         this.channelProducer = new ChannelProducer();
-        this.commentConsumer = new CommentConsumer(false);
-        this.moderatedCommentConsumer = new CommentConsumer(true);
-        this.channelConsumer = new ChannelConsumer();
+        this.commentConsumer = new CommentConsumer(options, false);
+        this.moderatedCommentConsumer = new CommentConsumer(options, true);
+        this.channelConsumer = new ChannelConsumer(options);
+
+        this.consumerProducers = new LinkedHashMap<>();
+        this.consumerProducers.put("videoIdProducer", videoIdProducer);
+        this.consumerProducers.put("uniqueVideoIdProducer", uniqueVideoIdProducer);
+        this.consumerProducers.put("videoProducer", videoProducer);
+        this.consumerProducers.put("commentThreadProducer", commentThreadProducer);
+        this.consumerProducers.put("reviewThreadProducer", reviewThreadProducer);
+        this.consumerProducers.put("replyProducer", replyProducer);
+        this.consumerProducers.put("channelProducer", channelProducer);
+        this.consumerProducers.put("commentConsumer", commentConsumer);
+        this.consumerProducers.put("moderatedCommentConsumer", moderatedCommentConsumer);
+        this.consumerProducers.put("channelConsumer", channelConsumer);
+    }
+
+    public Map<String, ConsumerMultiProducer<?>> getConsumerProducers() {
+        return this.consumerProducers;
     }
 
     @Override
@@ -163,6 +180,8 @@ public class GroupRefresh extends Thread implements RefreshInterface {
             await(moderatedCommentConsumer, "Await moderatedCommentConsumer over");
             await(channelConsumer, "Await channelConsumer over");
 
+            postMessage(Level.INFO, null, String.format("Est. %s quota units used", getEstimatedQuota()));
+
             try {
                 database.commit();
 
@@ -187,7 +206,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
                 channelProducer.getDuplicateSkipped());
     }
 
-    private void await(ConsumerMultiProducer<?> consumer, String message) throws InterruptedException {
+    private void await(final ConsumerMultiProducer<?> consumer, final String message) throws InterruptedException {
         if (consumer.getExecutorGroup().isStillWorking()) {
             consumer.getExecutorGroup().await();
             consumer.onCompletion();
@@ -240,7 +259,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
             logger.debug("Starting Progress Thread");
 
             final List<ConsumerMultiProducer<?>> trackProgress = Arrays.asList(commentThreadProducer, replyProducer, channelProducer, commentConsumer, channelConsumer);
-            commentThreadProducer.getProgressWeight().set(100);
+            commentThreadProducer.getProgressWeight().set(10000);
             while (!endedProperty.getValue()) {
                 double totalAccepted = 0d;
                 double totalProcessed = 0d;
@@ -388,6 +407,15 @@ public class GroupRefresh extends Thread implements RefreshInterface {
     @Override
     public Boolean isHardShutdown() {
         return hardShutdown;
+    }
+
+    @Override
+    public long getEstimatedQuota() {
+        return consumerProducers.values().stream()
+                .map(ConsumerMultiProducer::getEstimatedQuota)
+                .map(AtomicLong::get)
+                .mapToLong(Long::longValue)
+                .sum();
     }
 
 }

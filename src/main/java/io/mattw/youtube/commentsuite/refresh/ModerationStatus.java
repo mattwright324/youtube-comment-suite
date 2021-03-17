@@ -5,25 +5,19 @@ import org.apache.commons.lang3.EnumUtils;
 import java.util.Map;
 
 public enum ModerationStatus {
-    PUBLISHED("published", "snippet"),
-    HELD_FOR_REVIEW("heldForReview", "snippet,replies");
+    PUBLISHED("published"),
+    HELD_FOR_REVIEW("heldForReview");
 
     private static final Map<String, ModerationStatus> lookup = EnumUtils.getEnumMap(ModerationStatus.class);
 
     private final String apiValue;
-    private final String part;
 
-    ModerationStatus(final String apiValue, final String part) {
+    ModerationStatus(final String apiValue) {
         this.apiValue = apiValue;
-        this.part = part;
     }
 
     public String getApiValue() {
         return apiValue;
-    }
-
-    public String getPart() {
-        return part;
     }
 
     public static ModerationStatus fromName(final String name) {

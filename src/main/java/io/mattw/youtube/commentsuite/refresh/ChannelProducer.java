@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -87,6 +88,8 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
                     .setMaxResults(50L)
                     .execute();
 
+            getEstimatedQuota().incrementAndGet();
+
             if (cl == null || cl.getItems() == null) {
                 // This seems to occur when a 'Show Channel' is input
                 // as the api returns no info about the channel id.
@@ -96,7 +99,9 @@ public class ChannelProducer extends ConsumerMultiProducer<String> {
 
             final List<YouTubeChannel> channels = cl.getItems()
                     .stream()
-                    .map(YouTubeChannel::new)
+                    .map(YouTubeChannel::from)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
                     .collect(Collectors.toList());
 
             sendCollection(channels, YouTubeChannel.class);
