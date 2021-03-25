@@ -227,8 +227,7 @@ public class YouTubeComment implements Linkable, Exportable {
      */
     public String getCleanText(boolean withNewLines) {
         return StringEscapeUtils.unescapeHtml4(commentText)
-                .replace("<br />", withNewLines ? "\r\n" : " ")
-                .replaceAll("[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︠-︯]", "");
+                .replace("<br />", withNewLines ? "\r\n" : " ");
     }
 
     @Override

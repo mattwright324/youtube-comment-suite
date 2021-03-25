@@ -11,3 +11,5 @@ target/
 exports/
 *.~vsdx
 *.log
+build/
+.gradle/
