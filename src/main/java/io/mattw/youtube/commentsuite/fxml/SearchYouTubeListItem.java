@@ -1,7 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.model.SearchResult;
-import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

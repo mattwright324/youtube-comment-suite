@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-import com.google.api.client.util.ArrayMap;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentSnippet;

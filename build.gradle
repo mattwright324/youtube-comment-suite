@@ -23,19 +23,19 @@ application {
 }
 
 dependencies {
-    implementation group: 'com.google.apis', name: 'google-api-services-youtube', version: 'v3-rev222-1.25.0'
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
-    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
-    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
-    implementation group: 'com.google.guava', name: 'guava', version: '30.1.1-jre'
-    implementation group: 'org.jsoup', name: 'jsoup', version: '1.13.1'
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.34.0'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.14.1'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.14.1'
+    implementation 'com.google.apis:google-api-services-youtube:v3-rev222-1.25.0'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'org.apache.commons:commons-text:1.9'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.guava:guava:30.1.1-jre'
+    implementation 'org.jsoup:jsoup:1.13.1'
+    implementation 'org.xerial:sqlite-jdbc:3.34.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.14.1'
+    implementation 'org.apache.logging.log4j:log4j-core:2.14.1'
 
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.7.1'
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.8.0'
-    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.8.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
+    testImplementation 'org.mockito:mockito-core:3.8.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:3.8.0'
 }
 
 // Setup release
@@ -43,8 +43,12 @@ dependencies {
 runtime {
     addOptions("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages")
 
+    jpackage {
+        imageOptions = ["--icon", "src/main/resources/io/mattw/youtube/commentsuite/img/icon.ico"]
+    }
+
     // For Liberica JDK
-    addModules("javafx.base", "javafx.controls", "javafx.fxml")
+    addModules("javafx.base", "javafx.controls", "javafx.fxml", "javafx.graphics", "javafx.web")
 }
 
 tasks.runtime.doLast {

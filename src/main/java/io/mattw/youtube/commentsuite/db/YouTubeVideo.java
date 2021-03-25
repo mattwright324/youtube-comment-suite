@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class YouTubeVideo implements Linkable, HasImage, Exportable {
 
