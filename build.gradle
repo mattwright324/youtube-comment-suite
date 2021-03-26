@@ -8,15 +8,8 @@ repositories {
     mavenCentral()
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(16)
-        vendor = JvmVendorSpec.BELLSOFT
-    }
-}
-
 // Setup application, dependencies
-group = "io.mattw.youtube"
+group = "io.mattw.youtube.commentsuite"
 
 application {
     mainClassName = "io.mattw.youtube.commentsuite.CommentSuite"
@@ -48,7 +41,8 @@ runtime {
     }
 
     // For Liberica JDK
-    addModules("javafx.base", "javafx.controls", "javafx.fxml", "javafx.graphics", "javafx.web")
+    // addModules("javafx.base", "javafx.controls", "javafx.fxml", "javafx.graphics", "javafx.web")
+    addModules("ALL-MODULE-PATH")
 }
 
 tasks.runtime.doLast {
