@@ -67,10 +67,10 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
     private Button btnSubmit;
 
     private CommentQuery commentQuery;
-    private CommentDatabase database;
+    private final CommentDatabase database;
 
-    private AtomicLong atomicVideoProgress = new AtomicLong(0);
-    private long totalVideos = 0;
+    private final AtomicLong atomicVideoProgress = new AtomicLong(0);
+    private final long totalVideos = 0;
 
     private SCExportProducer exportProducer;
 

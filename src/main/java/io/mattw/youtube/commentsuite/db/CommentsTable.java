@@ -22,7 +22,7 @@ public class CommentsTable extends TableHelper<YouTubeComment> {
     private static final String INSERT_IGNORE = INSERT_OR_COMMENTS.toString().replace(":method", "IGNORE");
     private static final String INSERT_REPLACE = INSERT_OR_COMMENTS.toString().replace(":method", "REPLACE");
 
-    private CommentDatabase database;
+    private final CommentDatabase database;
 
     public CommentsTable(final Connection connection, final CommentDatabase database) {
         super(connection);

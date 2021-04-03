@@ -40,7 +40,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private static final String ALL_VIDEOS = "All Videos";
 
-    private CommentDatabase database;
+    private final CommentDatabase database;
 
     @FXML private Label lblSelection, errorMsg;
     @FXML private Button btnSearch;
@@ -50,7 +50,7 @@ public class SCVideoSelectModal extends VBox implements Cleanable {
     @FXML private ImageView btnReset;
     @FXML private Button btnClose, btnSubmit;
 
-    private StringProperty valueProperty = new SimpleStringProperty();
+    private final StringProperty valueProperty = new SimpleStringProperty();
     private final Map<String, String> orderTypes = new LinkedHashMap<>();
 
     private Group group;

@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
@@ -68,8 +69,8 @@ public class SearchYouTube implements Initializable {
     private String pageToken = TOKEN_FOO;
 
     private YouTube.Search.List searchList;
-    private SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
-    private String[] types = {"all", "video", "playlist", "channel"};
+    private final SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
+    private final String[] types = {"all", "video", "playlist", "channel"};
     private String previousType;
 
     @Override
@@ -190,7 +191,7 @@ public class SearchYouTube implements Initializable {
     public void search(String pageToken, String type, String text, String locText, String locRadius, String order, int resultType) {
         runLater(() -> searching.setValue(true));
         try {
-            final String encodedText = URLEncoder.encode(text, "UTF-8");
+            final String encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8);
             final String searchType = types[resultType];
 
             if (pageToken.equals(TOKEN_FOO)) {

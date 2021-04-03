@@ -77,7 +77,7 @@ public class MGMVStatItem extends HBox implements ImageCache {
 
             final String youTubeLink = Stream.of(video, channel)
                     .filter(Objects::nonNull)
-                    .map(linkable -> linkable.toYouTubeLink())
+                    .map(Linkable::toYouTubeLink)
                     .findFirst()
                     .orElse("https://placehold.it/64x64");
 
@@ -94,7 +94,7 @@ public class MGMVStatItem extends HBox implements ImageCache {
             new Thread(() -> {
                 final Image thumb = Stream.of(video, channel)
                         .filter(Objects::nonNull)
-                        .map(hasImage -> hasImage.findOrGetThumb())
+                        .map(HasImage::findOrGetThumb)
                         .findFirst()
                         .orElse(ImageCache.toLetterAvatar(' '));
 

@@ -4,7 +4,7 @@ import io.mattw.youtube.commentsuite.db.Group;
 
 public class GroupRenameEvent {
 
-    private Group group;
+    private final Group group;
 
     public GroupRenameEvent(Group group) {
         this.group = group;

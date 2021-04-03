@@ -15,7 +15,7 @@ public class ListViewEmptyCellFactory<T extends Node> extends ListCell<T> {
 
     private double height = 25;
     private boolean tooltipHeight = false;
-    private Tooltip tool = new Tooltip();
+    private final Tooltip tool = new Tooltip();
 
     public ListViewEmptyCellFactory() {
         tool.textProperty().bind(heightProperty().asString());

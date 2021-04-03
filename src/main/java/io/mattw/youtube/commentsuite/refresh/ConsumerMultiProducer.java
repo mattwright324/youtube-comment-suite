@@ -32,17 +32,17 @@ public abstract class ConsumerMultiProducer<C> {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private List<ConsumerMultiProducer<?>> keepAliveWith = new ArrayList<>();
-    private Map<Class<?>, List<ConsumerMultiProducer<?>>> consumersByClass = new HashMap<>();
-    private Map<String, List<ConsumerMultiProducer<?>>> consumersByKey = new HashMap<>();
-    private BlockingQueue<C> blockingQueue = new LinkedBlockingQueue<>();
+    private final List<ConsumerMultiProducer<?>> keepAliveWith = new ArrayList<>();
+    private final Map<Class<?>, List<ConsumerMultiProducer<?>>> consumersByClass = new HashMap<>();
+    private final Map<String, List<ConsumerMultiProducer<?>>> consumersByKey = new HashMap<>();
+    private final BlockingQueue<C> blockingQueue = new LinkedBlockingQueue<>();
     private boolean startProduceOnFirstAccept = false;
     private boolean didProduceOnFirstAccept = false;
     private boolean hardShutdown = false;
-    private AtomicLong totalAccepted = new AtomicLong();
-    private AtomicLong totalProcessed = new AtomicLong();
-    private AtomicLong progressWeight = new AtomicLong(1);
-    private AtomicLong estimatedQuota = new AtomicLong();
+    private final AtomicLong totalAccepted = new AtomicLong();
+    private final AtomicLong totalProcessed = new AtomicLong();
+    private final AtomicLong progressWeight = new AtomicLong(1);
+    private final AtomicLong estimatedQuota = new AtomicLong();
     private TriConsumer<Level, Throwable, String> messageFunc;
 
     /**

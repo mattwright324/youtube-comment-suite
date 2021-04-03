@@ -6,7 +6,7 @@ import java.util.List;
 
 public class GroupDeleteEvent {
 
-    private List<Group> groups;
+    private final List<Group> groups;
 
     public GroupDeleteEvent(List<Group> groups) {
         this.groups = groups;

@@ -7,7 +7,7 @@ public enum LinkType {
     CHANNEL_ID(YouTubeType.CHANNEL),
     CHANNEL_CUSTOM(YouTubeType.CHANNEL);
 
-    private YouTubeType itemType;
+    private final YouTubeType itemType;
 
     LinkType(YouTubeType itemType) {
         this.itemType = itemType;

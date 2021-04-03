@@ -18,14 +18,14 @@ import static javafx.application.Platform.runLater;
 
 public class MGMVGroupItemView extends HBox {
 
-    private GroupItem groupItem;
+    private final GroupItem groupItem;
 
     @FXML private ImageView icon;
     @FXML private Label title;
     @FXML private Label author;
     @FXML private Label type;
 
-    private BrowserUtil browserUtil = new BrowserUtil();
+    private final BrowserUtil browserUtil = new BrowserUtil();
 
     public MGMVGroupItemView(final GroupItem groupItem) {
         this.groupItem = groupItem;

@@ -16,7 +16,7 @@ public enum RefreshTimeframe {
     PAST_10_YEARS("past 10 years", Period.ofYears(10)),
     ;
 
-    private String displayText;
+    private final String displayText;
     private Period timeframe;
 
     RefreshTimeframe(String displayText) {

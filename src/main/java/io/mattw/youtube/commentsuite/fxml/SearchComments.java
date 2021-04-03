@@ -81,18 +81,18 @@ public class SearchComments implements Initializable, ImageCache {
 
     private ChangeListener<Font> fontListener;
 
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
-    private SimpleBooleanProperty searchingProperty = new SimpleBooleanProperty(false);
-    private SimpleIntegerProperty pageProperty = new SimpleIntegerProperty();
-    private SimpleIntegerProperty maxPageProperty = new SimpleIntegerProperty();
-    private ElapsedTime elapsedTime = new ElapsedTime();
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+    private final SimpleBooleanProperty searchingProperty = new SimpleBooleanProperty(false);
+    private final SimpleIntegerProperty pageProperty = new SimpleIntegerProperty();
+    private final SimpleIntegerProperty maxPageProperty = new SimpleIntegerProperty();
+    private final ElapsedTime elapsedTime = new ElapsedTime();
 
     private CommentDatabase database;
     private CommentQuery commentQuery;
     private List<YouTubeComment> lastResultsList;
     private SearchCommentsListItem originalTreeComment;
-    private ClipboardUtil clipboardUtil = new ClipboardUtil();
-    private BrowserUtil browserUtil = new BrowserUtil();
+    private final ClipboardUtil clipboardUtil = new ClipboardUtil();
+    private final BrowserUtil browserUtil = new BrowserUtil();
     private ConfigData configData;
 
     @Override

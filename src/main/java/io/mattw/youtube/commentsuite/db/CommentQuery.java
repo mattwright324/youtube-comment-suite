@@ -31,7 +31,7 @@ public class CommentQuery implements Serializable, Exportable {
     private transient Optional<List<YouTubeVideo>> videos = Optional.empty();
     private transient int pageSize = 500;
     private transient int pageNum = 0;
-    private transient Map<String, Object> queryParams = new HashMap<>();
+    private final transient Map<String, Object> queryParams = new HashMap<>();
 
     // Formatted values for export file.
     private String withGroup;
@@ -407,7 +407,8 @@ public class CommentQuery implements Serializable, Exportable {
         COMMENTS_A_TO_Z("Comments (A to Z)", "comment_text ASC"),
         ;
 
-        private String title, sql;
+        private final String title;
+        private final String sql;
 
         Order(String title, String sql) {
             this.title = title;
@@ -434,7 +435,7 @@ public class CommentQuery implements Serializable, Exportable {
         MODERATED_ONLY("Moderated Only")
         ;
 
-        private String title;
+        private final String title;
 
         CommentsType(String title) {
             this.title = title;

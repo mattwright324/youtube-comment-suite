@@ -11,10 +11,10 @@ import java.util.Optional;
 
 public class YouTubeSearchItem implements HasImage {
 
-    private String id;
-    private String title;
-    private String thumbUrl;
-    private SearchResult searchResult;
+    private final String id;
+    private final String title;
+    private final String thumbUrl;
+    private final SearchResult searchResult;
 
     public YouTubeSearchItem(final SearchResult searchResult) {
         this.searchResult = searchResult;

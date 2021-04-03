@@ -6,7 +6,7 @@ import java.util.List;
 
 public class GroupAddEvent {
 
-    private List<Group> groups;
+    private final List<Group> groups;
 
     public GroupAddEvent(List<Group> groups) {
         this.groups = groups;

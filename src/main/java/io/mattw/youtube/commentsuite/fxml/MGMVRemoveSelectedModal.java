@@ -30,7 +30,7 @@ public class MGMVRemoveSelectedModal extends VBox implements Cleanable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private CommentDatabase database;
+    private final CommentDatabase database;
 
     @FXML private Label alertError;
     @FXML private TextField link;

@@ -13,9 +13,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExecutorGroup {
 
-    private ExecutorService service;
-    private List<Future<?>> futures = new ArrayList<>();
-    private int threadCount;
+    private final ExecutorService service;
+    private final List<Future<?>> futures = new ArrayList<>();
+    private final int threadCount;
     private boolean began;
 
     /**

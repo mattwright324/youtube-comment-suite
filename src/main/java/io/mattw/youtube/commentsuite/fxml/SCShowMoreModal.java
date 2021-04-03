@@ -51,7 +51,7 @@ public class SCShowMoreModal extends VBox implements Cleanable, ImageCache {
     @FXML private Button btnClose;
     @FXML private Button btnSubmit, btnReply;
 
-    private SimpleBooleanProperty replyMode = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty replyMode = new SimpleBooleanProperty(false);
 
     private YouTubeComment loadedComment;
 

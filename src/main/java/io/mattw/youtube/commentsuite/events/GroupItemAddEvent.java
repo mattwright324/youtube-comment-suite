@@ -4,7 +4,7 @@ import io.mattw.youtube.commentsuite.db.Group;
 
 public class GroupItemAddEvent {
 
-    private Group group;
+    private final Group group;
 
     public GroupItemAddEvent(Group group) {
         this.group = group;

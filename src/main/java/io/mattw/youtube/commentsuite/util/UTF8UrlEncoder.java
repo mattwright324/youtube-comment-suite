@@ -2,6 +2,7 @@ package io.mattw.youtube.commentsuite.util;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Helper to encode strings to UTF-8 and ignoring the UnsupportedEncodingException.
@@ -12,11 +13,7 @@ import java.net.URLEncoder;
 public class UTF8UrlEncoder {
 
     public static String encode(String string) {
-        try {
-            return URLEncoder.encode(string, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("For some reason, we couldn't find UTF-8. This should never happen.");
-        }
+        return URLEncoder.encode(string, StandardCharsets.UTF_8);
     }
 
 }

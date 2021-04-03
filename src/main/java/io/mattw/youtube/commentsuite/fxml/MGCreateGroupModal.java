@@ -32,7 +32,7 @@ public class MGCreateGroupModal extends VBox implements Cleanable {
     @FXML private TextField nameField;
     @FXML private Button btnSubmit, btnClose;
 
-    private CommentDatabase database;
+    private final CommentDatabase database;
 
     public MGCreateGroupModal() {
         logger.debug("Initialize MGCreateGroupModal");

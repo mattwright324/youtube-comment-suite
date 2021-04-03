@@ -5,7 +5,7 @@ public enum RefreshCommentOrder {
     RELEVANCE("top comments")
     ;
 
-    private String displayText;
+    private final String displayText;
 
     RefreshCommentOrder(String displayText) {
         this.displayText = displayText;

@@ -25,8 +25,8 @@ public enum RefreshCommentPages {
     PAGES_500(500)
     ;
 
-    private String displayText;
-    private int pageCount;
+    private final String displayText;
+    private final int pageCount;
 
     RefreshCommentPages(String displayText, int pageCount) {
         this.displayText = displayText;

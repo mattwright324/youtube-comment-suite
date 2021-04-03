@@ -10,7 +10,7 @@ public enum RefreshStyle {
     CUSTOM("Custom")
     ;
 
-    private String displayText;
+    private final String displayText;
     private RefreshTimeframe timeframe;
     private RefreshCommentPages commentPages;
     private RefreshCommentOrder commentOrder;

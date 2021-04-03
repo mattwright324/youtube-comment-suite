@@ -24,8 +24,8 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
     private final boolean moderated;
     private final CommentDatabase database;
 
-    private AtomicLong totalComments = new AtomicLong();
-    private AtomicLong newComments = new AtomicLong();
+    private final AtomicLong totalComments = new AtomicLong();
+    private final AtomicLong newComments = new AtomicLong();
 
     public CommentConsumer(final RefreshOptions options, final boolean moderated) {
         this.options = options;

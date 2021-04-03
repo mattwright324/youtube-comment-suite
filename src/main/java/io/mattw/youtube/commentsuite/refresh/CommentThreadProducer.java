@@ -262,65 +262,50 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                             logger.error("Failed to update video http response code", sqle);
                         }
 
+                        // For some reason without a few seconds wait the 'Auth Quota Exceeded'
+                        // error above will occur on the next request despite using the new token.
                         switch (reasonCode) {
-                            case "quotaExceeded":
+                            case "quotaExceeded" -> {
                                 if (moderationStatus == PUBLISHED) {
                                     sendMessage(Level.FATAL, "API Quota Exceeded");
                                     break threadLoop;
                                 }
-
                                 final String authQuotaMsg = String.format("[%s/%s] Auth Quota Exceeded  [videoId=%s]",
                                         attempt,
                                         maxAttempts,
                                         video.getId());
-
                                 sendMessage(Level.ERROR, authQuotaMsg);
                                 awaitMillis(15000);
-
                                 attempt++;
-                                break;
-
-                            case "authError":
+                            }
+                            case "authError" -> {
                                 final String authMsg = String.format("[%s/%s] Authorization failed [videoId=%s]",
                                         attempt,
                                         maxAttempts,
                                         video.getId());
-
                                 sendMessage(Level.WARN, authMsg);
                                 sendMessage(Level.WARN, "Trying to refresh Oauth2 access token");
-
                                 refreshOauth2(video.getChannelId());
-
-                                // For some reason without a few seconds wait the 'Auth Quota Exceeded'
-                                // error above will occur on the next request despite using the new token.
                                 awaitMillis(15000);
-
                                 attempt++;
-                                break;
-
-                            case "commentsDisabled":
+                            }
+                            case "commentsDisabled" -> {
                                 final String disableMsg = String.format("Comments Disabled [videoId=%s]", video.getId());
                                 sendMessage(Level.WARN, disableMsg);
-                                break threadLoop;
-
-                            case "forbidden":
-                            case "channelNotFound":
-                            case "commentThreadNotFound":
-                            case "videoNotFound":
+                            }
+                            case "forbidden", "channelNotFound", "commentThreadNotFound", "videoNotFound" -> {
                                 final String notFound = String.format("%s [videoId=%s]", reasonCode, video.getId());
                                 sendMessage(Level.WARN, notFound);
-                                break threadLoop;
-
-                            default:
+                            }
+                            default -> {
                                 final String otherMsg = String.format("[%s/%s] %s [videoId=%s]",
                                         attempt,
                                         maxAttempts,
                                         reasonCode,
                                         video.getId());
-
                                 sendMessage(Level.ERROR, e, otherMsg);
                                 attempt++;
-                                break;
+                            }
                         }
                     } else {
                         final String message = String.format("[%s/%s] %s [videoId=%s]",

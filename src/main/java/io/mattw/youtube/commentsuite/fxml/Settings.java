@@ -35,7 +35,7 @@ public class Settings implements Initializable {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private BrowserUtil browserUtil = new BrowserUtil();
+    private final BrowserUtil browserUtil = new BrowserUtil();
     private ConfigFile<ConfigData> config;
     private ConfigData configData;
     private OAuth2Manager oAuth2Manager;

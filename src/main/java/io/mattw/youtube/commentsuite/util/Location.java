@@ -20,9 +20,9 @@ public class Location<T extends LocationProvider, K> {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private Gson gson = new Gson();
-    private T locationProvider;
-    private Type dataType;
+    private final Gson gson = new Gson();
+    private final T locationProvider;
+    private final Type dataType;
 
     /**
      * Default constructor uses the EurekaProvider

@@ -11,7 +11,7 @@ public enum YouTubeType {
     PLAYLIST("Playlist"),
     COMMENT("Comment");
 
-    private String display;
+    private final String display;
 
     YouTubeType(String display) {
         this.display = display;

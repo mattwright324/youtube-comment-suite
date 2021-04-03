@@ -17,7 +17,7 @@ import javafx.scene.text.TextAlignment;
  */
 public class LetterAvatar extends WritableImage {
 
-    private int scale = 32;
+    private final int scale = 32;
     private char character;
     private Color background;
 

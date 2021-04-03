@@ -101,10 +101,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     @FXML private Label refreshStatus;
 
     @FXML private LineChart<String, Number> commentsLineChart, videosLineChart;
-    private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
-//    @FXML private Label totalComments, grabbedComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
-//            likeDislikeRatio, normalizedRatio;
-    @FXML private ListView<MGMVStatItem> popularVideosList, dislikedVideosList, commentedVideosList,
+    private final LineChart.Series<String, Number> commentsLineChartData;
+    private final LineChart.Series<String, Number> videosLineChartData;
+@FXML private ListView<MGMVStatItem> popularVideosList, dislikedVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
     @FXML private GridPane commentStatPane, videoStatPane;
 

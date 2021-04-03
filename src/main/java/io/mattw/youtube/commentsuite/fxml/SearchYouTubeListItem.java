@@ -25,7 +25,7 @@ public class SearchYouTubeListItem extends HBox {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private static Image loading = ImageLoader.LOADING.getImage();
+    private static final Image loading = ImageLoader.LOADING.getImage();
 
     @FXML private Label type;
     @FXML private Label title;
@@ -37,7 +37,7 @@ public class SearchYouTubeListItem extends HBox {
     private final SearchResult data;
     private String objectId;
     private String youtubeURL;
-    private String typeStr;
+    private final String typeStr;
 
     public SearchYouTubeListItem(final SearchResult data, final int num) throws IOException {
         this.data = data;

@@ -19,8 +19,8 @@ public class GroupsTable extends TableHelper<Group> {
     private static final Logger logger = LogManager.getLogger();
     private static final Group DEFAULT_GROUP = new Group("28da132f5f5b48d881264d892aba790a", "Default");
 
-    private CommentDatabase database;
-    private List<Group> allGroups = new ArrayList<>();
+    private final CommentDatabase database;
+    private final List<Group> allGroups = new ArrayList<>();
 
     public GroupsTable(final Connection connection, final CommentDatabase database) {
         super(connection);
