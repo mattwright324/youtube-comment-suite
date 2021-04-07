@@ -32,7 +32,6 @@ dependencies {
 }
 
 // Setup release
-// https://simply-how.com/custom-java-runtime
 runtime {
     addOptions("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages")
 
@@ -40,9 +39,26 @@ runtime {
         imageOptions = ["--icon", "src/main/resources/io/mattw/youtube/commentsuite/img/icon.ico"]
     }
 
-    // For Liberica JDK
-    // addModules("javafx.base", "javafx.controls", "javafx.fxml", "javafx.graphics", "javafx.web")
-    addModules("ALL-MODULE-PATH")
+    // Until there is support for JDK 16 with beryx runtime plugin,
+    // switch to Liberica 15 to run suggestModules, then switch back
+    addModules(
+            "java.compiler",
+            "java.datatransfer",
+            "java.desktop",
+            "java.logging",
+            "java.management",
+            "java.naming",
+            "java.rmi",
+            "java.scripting",
+            "java.sql",
+            "java.xml",
+            "javafx.base",
+            "javafx.controls",
+            "javafx.fxml",
+            "javafx.graphics",
+            "javafx.web",
+            "jdk.unsupported"
+    )
 }
 
 tasks.runtime.doLast {
