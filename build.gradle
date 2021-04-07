@@ -39,6 +39,12 @@ runtime {
         imageOptions = ["--icon", "src/main/resources/io/mattw/youtube/commentsuite/img/icon.ico"]
     }
 
+    launcher {
+        // Fix handshake_failure on http calls
+        // https://github.com/beryx/badass-jlink-plugin/issues/21#issuecomment-472914695
+        jvmArgs = ['-Djdk.tls.client.protocols=TLSv1.2']
+    }
+
     // Until there is support for JDK 16 with beryx runtime plugin,
     // switch to Liberica 15 to run suggestModules, then switch back
     addModules(
