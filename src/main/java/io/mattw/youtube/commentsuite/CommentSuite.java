@@ -38,7 +38,7 @@ public class CommentSuite extends Application {
     private static OAuth2Manager oauth2Manager;
 
     public static void main(String[] args) {
-        logger.debug("Starting Application");
+        logger.info("Starting Application");
 
         /*
          * Setting this system property is a fix for the JavaFX Webview behaving improperly.
@@ -75,12 +75,12 @@ public class CommentSuite extends Application {
                 try {
                     database.commit();
 
-                    logger.debug("Closing - Closing DB Connection");
+                    logger.info("Closing - Closing DB Connection");
                     database.close();
                 } catch (SQLException | IOException e) {
                     logger.error(e);
                 }
-                logger.debug("Closing - Exiting Application");
+                logger.info("Closing - Exiting Application");
                 Platform.exit();
                 System.exit(0);
             });

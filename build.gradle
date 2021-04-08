@@ -46,7 +46,8 @@ runtime {
     }
 
     // Until there is support for JDK 16 with beryx runtime plugin,
-    // switch to Liberica 15 to run suggestModules, then switch back
+    // switch to Liberica 15 to run suggestModules, then switch back.
+    // Experiment with additive = true when fixed
     addModules(
             "java.compiler",
             "java.datatransfer",
@@ -66,11 +67,3 @@ runtime {
             "jdk.unsupported"
     )
 }
-
-tasks.runtime.doLast {
-    copy {
-        from("src/main/resources")
-        into("$buildDir/image/bin")
-    }
-}
-

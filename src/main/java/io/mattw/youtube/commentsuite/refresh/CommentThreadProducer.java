@@ -278,6 +278,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 awaitMillis(15000);
                                 attempt++;
                             }
+
                             case "authError" -> {
                                 final String authMsg = String.format("[%s/%s] Authorization failed [videoId=%s]",
                                         attempt,
@@ -289,14 +290,19 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 awaitMillis(15000);
                                 attempt++;
                             }
+
                             case "commentsDisabled" -> {
                                 final String disableMsg = String.format("Comments Disabled [videoId=%s]", video.getId());
                                 sendMessage(Level.WARN, disableMsg);
+                                break threadLoop;
                             }
+
                             case "forbidden", "channelNotFound", "commentThreadNotFound", "videoNotFound" -> {
                                 final String notFound = String.format("%s [videoId=%s]", reasonCode, video.getId());
                                 sendMessage(Level.WARN, notFound);
+                                break threadLoop;
                             }
+
                             default -> {
                                 final String otherMsg = String.format("[%s/%s] %s [videoId=%s]",
                                         attempt,
