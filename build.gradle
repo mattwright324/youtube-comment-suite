@@ -1,7 +1,7 @@
 // Setup Gradle
 plugins {
     id "application"
-    id "org.beryx.runtime" version "1.12.2"
+    id "org.beryx.runtime" version "1.12.4"
 }
 
 repositories {
@@ -45,25 +45,5 @@ runtime {
         jvmArgs = ['-Djdk.tls.client.protocols=TLSv1.2']
     }
 
-    // Until there is support for JDK 16 with beryx runtime plugin,
-    // switch to Liberica 15 to run suggestModules, then switch back.
-    // Experiment with additive = true when fixed
-    addModules(
-            "java.compiler",
-            "java.datatransfer",
-            "java.desktop",
-            "java.logging",
-            "java.management",
-            "java.naming",
-            "java.rmi",
-            "java.scripting",
-            "java.sql",
-            "java.xml",
-            "javafx.base",
-            "javafx.controls",
-            "javafx.fxml",
-            "javafx.graphics",
-            "javafx.web",
-            "jdk.unsupported"
-    )
+    additive = true
 }
