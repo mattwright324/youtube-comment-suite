@@ -52,17 +52,17 @@ When extracting the latest release zip, be sure to include the `lib` folder alon
 
 Simply extracting all zip contents to a folder will do this.
 
-### Getting Started
+## Getting Started
 
 Want to know more about how to use this
 program? [Check out the Wiki!](https://github.com/mattwright324/youtube-comment-suite/wiki/Overview-of-the-interface)
 
-### Building
+## Building
 
 Refer to [BUILD.md](https://github.com/mattwright324/youtube-comment-suite/blob/master/BUILD.md)
 for instructions on how to build and run `youtube-comment-suite` from source.
 
-### Contributing
+## Contributing
 
 Contributions are welcome, refer
 to [CONTRIBUTING.md](https://github.com/mattwright324/youtube-comment-suite/blob/master/CONTRIBUTING.md)

@@ -371,6 +371,19 @@ public class CommentQuery implements Serializable, Exportable {
         return this;
     }
 
+    public CommentQuery duplicate() {
+        return database.commentQuery()
+                .setGroup(this.getGroup())
+                .setGroupItem(this.getGroupItem())
+                .setCommentsType(this.getCommentsType())
+                .setVideos(this.getVideos())
+                .setNameLike(this.getNameLike())
+                .setOrder(this.getOrder())
+                .setTextLike(this.getTextLike())
+                .setDateFrom(this.getDateFrom())
+                .setDateTo(this.getDateTo());
+    }
+
     @Override
     public void prepForExport() {
         if(group != null) {

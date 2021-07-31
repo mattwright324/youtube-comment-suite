@@ -104,10 +104,12 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
         final File commentsFile = new File(thisExportFolder, String.format("%s-comments.json", video.getId()));
         final List<YouTubeVideo> videoList = Collections.singletonList(video);
 
-        if (condensedMode && commentQuery.getCommentsType() == CommentQuery.CommentsType.ALL) {
+        final CommentQuery duplicateQuery = commentQuery.duplicate();
+
+        if (condensedMode && duplicateQuery.getCommentsType() == CommentQuery.CommentsType.ALL) {
             // When condensed, we want base comments to be first.
             // We'll grab replies later if the replyCount > 0
-            commentQuery.setCommentsType(CommentQuery.CommentsType.COMMENTS_ONLY);
+            duplicateQuery.setCommentsType(CommentQuery.CommentsType.COMMENTS_ONLY);
         }
 
         try (final FileOutputStream fos = new FileOutputStream(commentsFile);
@@ -117,7 +119,7 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
 
             jsonWriter.beginArray();
 
-            try (final NamedParameterStatement namedParamStatement = commentQuery
+            try (final NamedParameterStatement namedParamStatement = duplicateQuery
                     .setVideos(Optional.of(videoList))
                     .toStatement();
                  final ResultSet resultSet = namedParamStatement.executeQuery()) {

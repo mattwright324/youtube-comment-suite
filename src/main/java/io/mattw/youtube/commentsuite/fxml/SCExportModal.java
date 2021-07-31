@@ -124,25 +124,14 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
             btnClose.setDisable(true);
         });
 
-        // Duplicate a new query object because it isn't threadsafe.
-        // ExecutorGroup should make export faster
-        final CommentQuery localQuery = database.commentQuery()
-                .setGroup(commentQuery.getGroup())
-                .setGroupItem(commentQuery.getGroupItem())
-                .setCommentsType(commentQuery.getCommentsType())
-                .setVideos(commentQuery.getVideos())
-                .setNameLike(commentQuery.getNameLike())
-                .setOrder(commentQuery.getOrder())
-                .setTextLike(commentQuery.getTextLike())
-                .setDateFrom(commentQuery.getDateFrom())
-                .setDateTo(commentQuery.getDateTo());
-
         try {
-            exportProducer = new SCExportProducer(localQuery, radioCondensed.isSelected());
-            createSearchSettingsFile(exportProducer.getThisExportFolder(), localQuery);
+            final CommentQuery duplicateQuery = commentQuery.duplicate();
+
+            exportProducer = new SCExportProducer(commentQuery, radioCondensed.isSelected());
+            createSearchSettingsFile(exportProducer.getThisExportFolder(), duplicateQuery);
 
             exportProducer.setMessageFunc(this::onMessage);
-            exportProducer.accept(localQuery.getUniqueVideoIds());
+            exportProducer.accept(duplicateQuery.getUniqueVideoIds());
             exportProducer.startProducing();
 
             new Thread(() -> {
