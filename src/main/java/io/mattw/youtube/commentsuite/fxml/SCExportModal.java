@@ -136,8 +136,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
             new Thread(() -> {
                 while (exportProducer.shouldKeepAlive()) {
-                    final double progress = exportProducer.getTotalProcessed().get() / (exportProducer.getTotalAccepted().get() * 1d);
-                    runLater(() -> exportProgress.setProgress(progress));
+                    updateProgress();
 
                     Threads.awaitMillis(100);
                 }
@@ -148,6 +147,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
             }).start();
 
             exportProducer.getExecutorGroup().await();
+            updateProgress();
             exportProducer.onCompletion();
         } catch (SQLException | InterruptedException e) {
             logger.error(e);
@@ -159,6 +159,11 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                 btnClose.setDisable(false);
             });
         }
+    }
+
+    private void updateProgress() {
+        final double progress = exportProducer.getTotalProcessed().get() / (exportProducer.getTotalAccepted().get() * 1d);
+        runLater(() -> exportProgress.setProgress(progress));
     }
 
     private void createSearchSettingsFile(final File exportFolder, final CommentQuery query) {
