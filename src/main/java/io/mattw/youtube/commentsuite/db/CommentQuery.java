@@ -233,22 +233,18 @@ public class CommentQuery implements Serializable, Exportable {
      * <p>
      * {@link io.mattw.youtube.commentsuite.fxml.SCExportModal}
      */
-    public Set<String> getUniqueVideoIds() throws SQLException {
+    public Set<YouTubeVideo> getUniqueVideos() throws SQLException {
         Objects.requireNonNull(group);
 
-        Set<String> items = new HashSet<>();
+        Set<YouTubeVideo> items = new HashSet<>();
 
         if (videos.isPresent()) {
-            items.addAll(videos.get()
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .map(YouTubeVideo::getId)
-                    .collect(Collectors.toList()));
+            items.addAll(videos.get());
         } else {
             if (groupItem.isPresent()) {
-                items.addAll(database.videos().idsByGroupItem(groupItem.get()));
+                items.addAll(database.videos().byGroupItem(groupItem.get()));
             } else {
-                items.addAll(database.videos().idsByGroup(group));
+                items.addAll(database.videos().byGroup(group));
             }
         }
 
@@ -354,6 +350,11 @@ public class CommentQuery implements Serializable, Exportable {
         return this;
     }
 
+    protected CommentQuery setTotalResults(long totalResults) {
+        this.totalResults = totalResults;
+        return this;
+    }
+
     public long getTotalResults() {
         return totalResults;
     }
@@ -381,7 +382,8 @@ public class CommentQuery implements Serializable, Exportable {
                 .setOrder(this.getOrder())
                 .setTextLike(this.getTextLike())
                 .setDateFrom(this.getDateFrom())
-                .setDateTo(this.getDateTo());
+                .setDateTo(this.getDateTo())
+                .setTotalResults(this.getTotalResults());
     }
 
     @Override

@@ -18,8 +18,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
+import java.util.Properties;
 
 /**
  * Application Window
@@ -36,6 +38,7 @@ public class CommentSuite extends Application {
     private static CommentDatabase database;
     private static YouTube youTube;
     private static OAuth2Manager oauth2Manager;
+    private static final Properties properties = new Properties();
 
     public static void main(String[] args) {
         logger.debug("Starting Application");
@@ -63,6 +66,9 @@ public class CommentSuite extends Application {
                     .build();
             database = new CommentDatabase("commentsuite.sqlite3");
             oauth2Manager = new OAuth2Manager();
+            try (InputStream is = CommentSuite.class.getResourceAsStream("/application.properties")) {
+                properties.load(is);
+            }
 
             final Parent parent = FXMLLoader.load(getClass().getResource("/io/mattw/youtube/commentsuite/fxml/Main.fxml"));
 
@@ -123,6 +129,10 @@ public class CommentSuite extends Application {
 
     public static String getYouTubeApiKey() {
         return getConfig().getDataObject().getApiKeyOrDefault();
+    }
+
+    public static Properties getProperties() {
+        return properties;
     }
 
 }

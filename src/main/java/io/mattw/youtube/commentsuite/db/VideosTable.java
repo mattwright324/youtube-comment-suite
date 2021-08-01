@@ -152,6 +152,10 @@ public class VideosTable extends TableHelper<YouTubeVideo> {
         }
     }
 
+    public List<YouTubeVideo> byGroup(Group group) throws SQLException {
+        return byGroupCriteria(group, "", "publish_date DESC", Integer.MAX_VALUE);
+    }
+
     public List<YouTubeVideo> byGroupCriteria(Group group, String keyword, String order, int limit) throws SQLException {
         try (PreparedStatement ps = preparedStatement(GET_VIDEOS_BY_CRITERIA_GROUP.toString().replace(":order", order))) {
             ps.setString(1, group.getGroupId());
@@ -161,6 +165,10 @@ public class VideosTable extends TableHelper<YouTubeVideo> {
 
             return toList(ps);
         }
+    }
+
+    public List<YouTubeVideo> byGroupItem(GroupItem groupItem) throws SQLException {
+        return byGroupItemCriteria(groupItem, "", "publish_date DESC", Integer.MAX_VALUE);
     }
 
     public List<YouTubeVideo> byGroupItemCriteria(GroupItem groupItem, String keyword, String order, int limit) throws SQLException {

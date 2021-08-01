@@ -7,8 +7,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
@@ -36,6 +39,13 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
 
     // Field(s) used just for export
     private YouTubeChannel author;
+
+    public static final String[] CSV_HEADER = {"id", "channelId", "title", "thumbUrl", "description", "publishDate", "viewCount", "comments", "likes", "dislikes", "responseCode"};
+
+    public Object[] getCsvRow() {
+        return new Object[] {id, channelId, title, thumbUrl, description.replaceAll("([\r]?\n)+", "<br>"), publishDate,
+                viewCount, comments, likes, dislikes, responseCode};
+    }
 
     @Override
     public String getId() {
@@ -215,7 +225,7 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
                 .map(ThumbnailDetails::getDefault)
                 .map(Thumbnail::getUrl)
                 .orElse(null);
-        final String description = snippet.map(VideoSnippet::getTitle).orElse(null);
+        final String description = snippet.map(VideoSnippet::getDescription).orElse(null);
         final long published = snippet
                 .map(VideoSnippet::getPublishedAt)
                 .map(DateTime::getValue)

@@ -7,6 +7,8 @@ import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.db.*;
 import io.mattw.youtube.commentsuite.refresh.ConsumerMultiProducer;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,33 +18,29 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-public class SCExportProducer extends ConsumerMultiProducer<String> {
+import static io.mattw.youtube.commentsuite.fxml.ExportFormat.*;
+
+public class SCExportProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
     private static final Logger logger = LogManager.getLogger();
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH.mm.ss");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static final File EXPORT_FOLDER = new File("exports/");
 
     private final ExecutorGroup executorGroup = new ExecutorGroup(15);
 
     private final CommentQuery commentQuery;
     private final CommentDatabase database;
-    private final boolean condensedMode;
-    private final File thisExportFolder;
+    private final File exportFolder;
+    private final ExportFormat format;
 
-    public SCExportProducer(final CommentQuery commentQuery, final boolean condensed) {
+    public SCExportProducer(final CommentQuery commentQuery, final File exportFolder, final ExportFormat format) {
         this.commentQuery = commentQuery;
-        this.condensedMode = condensed;
         this.database = CommentSuite.getDatabase();
-
-        this.thisExportFolder = new File(EXPORT_FOLDER, formatter.format(LocalDateTime.now()) + "/");
-        this.thisExportFolder.mkdirs();
+        this.exportFolder = exportFolder;
+        this.format = format;
     }
 
     @Override
@@ -54,114 +52,87 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
         logger.debug("Starting SCExportProducer");
 
         while (shouldKeepAlive()) {
-            final String videoId = getBlockingQueue().poll();
-            if (videoId == null) {
+            final YouTubeVideo video = getBlockingQueue().poll();
+            if (video == null) {
                 awaitMillis(5);
                 continue;
             }
 
-            try {
-                final YouTubeVideo video = database.videos().get(videoId);
-                if (video == null) {
-                    logger.debug("Couldn't find video {}", videoId);
-                    continue;
-                }
+            createCommentsFile(video);
 
-                createVideoMetaFile(video);
-                createCommentsFile(video);
-
-                addProcessed(1);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            addProcessed(1);
         }
 
         logger.debug("Ending SCExportProducer");
     }
 
-    private void createVideoMetaFile(final YouTubeVideo video) {
-        final File videoFile = new File(thisExportFolder, String.format("%s-meta.json", video.getId()));
-        try (final FileOutputStream fos = new FileOutputStream(videoFile);
-             final OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
-             final BufferedWriter bw = new BufferedWriter(writer)) {
-
-            video.setAuthor(database.channels().getOrNull(video.getChannelId()));
-            video.prepForExport();
-
-            logger.debug("Writing file {}", videoFile.getName());
-
-            gson.toJson(video, bw);
-
-            bw.flush();
-        } catch (Exception e) {
-            logger.error("Failed to write json file(s)", e);
-
-            sendMessage(Level.ERROR, "Error during export, check logs.");
-        }
-    }
-
     private void createCommentsFile(final YouTubeVideo video) {
-        final File commentsFile = new File(thisExportFolder, String.format("%s-comments.json", video.getId()));
+        final File commentsFile = new File(exportFolder, String.format("comments-%s.%s", video.getId(), format.getExtension()));
         final List<YouTubeVideo> videoList = Collections.singletonList(video);
 
-        final CommentQuery duplicateQuery = commentQuery.duplicate();
-
-        if (condensedMode && duplicateQuery.getCommentsType() == CommentQuery.CommentsType.ALL) {
-            // When condensed, we want base comments to be first.
-            // We'll grab replies later if the replyCount > 0
-            duplicateQuery.setCommentsType(CommentQuery.CommentsType.COMMENTS_ONLY);
-        }
+        boolean hasComments = false;
 
         try (final FileOutputStream fos = new FileOutputStream(commentsFile);
              final OutputStreamWriter writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
-             final JsonWriter jsonWriter = new JsonWriter(writer)) {
-            logger.debug("Writing file {}", commentsFile.getName());
+             final CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
+            final JsonWriter jsonWriter = new JsonWriter(writer);
+            try {
+                logger.debug("Writing file {}", commentsFile.getName());
 
-            jsonWriter.beginArray();
+                if (format == JSON) {
+                    jsonWriter.beginArray();
+                } else {
+                    printer.printRecord((Object[]) YouTubeVideo.CSV_HEADER);
+                }
 
-            try (final NamedParameterStatement namedParamStatement = duplicateQuery
-                    .setVideos(Optional.of(videoList))
-                    .toStatement();
-                 final ResultSet resultSet = namedParamStatement.executeQuery()) {
+                final CommentQuery duplicateQuery = commentQuery.duplicate();
+                try (final NamedParameterStatement namedParamStatement = duplicateQuery
+                        .setVideos(Optional.of(videoList))
+                        .toStatement();
+                     final ResultSet resultSet = namedParamStatement.executeQuery()) {
 
-                // starting with flattened mode (easier)
-                while (resultSet.next() && !isHardShutdown()) {
-                    final YouTubeComment comment = database.comments().to(resultSet);
-                    comment.setAuthor(database.channels().getOrNull(comment.getChannelId()));
-                    comment.prepForExport();
+                    while (resultSet.next() && !isHardShutdown()) {
+                        hasComments = true;
 
-                    if (condensedMode && comment.getReplyCount() > 0 && !comment.isReply()) {
-                        final List<YouTubeComment> replyList = database.getCommentTree(comment.getId(), false);
-                        for (final YouTubeComment reply : replyList) {
-                            reply.setAuthor(database.channels().getOrNull(reply.getChannelId()));
-                            reply.prepForExport();
+                        final YouTubeComment comment = database.comments().to(resultSet);
+                        comment.setAuthor(database.channels().getOrNull(comment.getChannelId()));
+                        comment.prepForExport();
+
+                        if (format == JSON) {
+                            gson.toJson(gson.toJsonTree(comment), jsonWriter);
+                        } else {
+                            printer.printRecord(comment.getCsvRow());
                         }
-
-                        comment.setReplies(replyList);
                     }
+                }
 
-                    gson.toJson(gson.toJsonTree(comment), jsonWriter);
+                if (format == JSON) {
+                    jsonWriter.endArray();
+                }
+            } finally {
+                if (format == JSON) {
+                    jsonWriter.close();
                 }
             }
-
-            jsonWriter.endArray();
-
         } catch (SQLException e) {
             logger.error("Error while grabbing comments", e);
 
             sendMessage(Level.ERROR, "Error during export, check logs.");
-            //runLater(() -> setError("Error during export, check logs."));
         } catch (IOException e) {
-            logger.error("Failed to write json file", e);
+            logger.error("Failed to write file(s)", e);
+        } finally {
+            if (!hasComments) {
+                commentsFile.delete();
+            }
         }
     }
 
     @Override
     public void onCompletion() {
         try {
-            logger.debug("Opening folder {}", thisExportFolder.getAbsolutePath());
+            logger.debug("Opening folder {}", exportFolder.getAbsolutePath());
 
-            Desktop.getDesktop().open(thisExportFolder);
+            Desktop.getDesktop().open(exportFolder);
         } catch (IOException e) {
             logger.warn("Failed to open export folder");
         }
@@ -170,9 +141,5 @@ public class SCExportProducer extends ConsumerMultiProducer<String> {
     @Override
     public ExecutorGroup getExecutorGroup() {
         return executorGroup;
-    }
-
-    public File getThisExportFolder() {
-        return thisExportFolder;
     }
 }
