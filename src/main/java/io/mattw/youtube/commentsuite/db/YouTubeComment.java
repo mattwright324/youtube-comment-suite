@@ -47,10 +47,10 @@ public class YouTubeComment implements Linkable, Exportable {
         commentDate = publishedDateTime.toString();
     }
 
-    public static final String[] CSV_HEADER = {"id", "parentId", "videoId", "channelId", "channelName", "commentDate", "commentText", "likes", "replyCount", "tags"};
+    public static final String[] CSV_HEADER = {"id", "parentId", "videoId", "channelId", "channelName", "channelThumb", "commentDate", "commentText", "likes", "replyCount", "tags"};
 
     public Object[] getCsvRow() {
-        return new Object[]{id, parentId, videoId, channelId, author.getTitle(), commentDate, commentText.replaceAll("[\r\n]*", ""),
+        return new Object[]{id, parentId, videoId, channelId, author.getTitle(), author.getThumbUrl(), commentDate, commentText.replaceAll("[\r\n]*", ""),
                 likes, replyCount, tags == null ? "" : tags.toString()
         };
     }

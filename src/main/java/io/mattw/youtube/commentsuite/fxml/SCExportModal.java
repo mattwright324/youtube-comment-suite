@@ -297,7 +297,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                         commentsProcessed++;
 
                         final long total = query.getTotalResults();
-                        if (total < 25000 || commentsProcessed % 100 == 0) {
+                        if (total < 25000 && commentsProcessed % 10 == 0 || commentsProcessed % 100 == 0) {
                             updateProgressSingle();
                         }
                     }
