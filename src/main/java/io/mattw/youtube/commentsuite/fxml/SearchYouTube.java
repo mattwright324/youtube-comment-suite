@@ -8,7 +8,6 @@ import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.ClipboardUtil;
 import io.mattw.youtube.commentsuite.util.IpApiProvider;
-import io.mattw.youtube.commentsuite.util.Location;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;

@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static javafx.application.Platform.runLater;
