@@ -36,26 +36,24 @@ public class MGMVGroupItemView extends HBox {
         try {
             loader.load();
 
-            if (ConfigData.FAST_GROUP_ADD_THUMB_PLACEHOLDER.equals(groupItem.getThumbUrl())) {
-                icon.setManaged(false);
-                icon.setVisible(false);
-            } else {
-                icon.setImage(ImageCache.findOrGetImage(groupItem.getId(), groupItem.getThumbUrl()));
-                icon.setManaged(true);
-                icon.setVisible(true);
-            }
-
             title.setText(groupItem.getDisplayName());
             author.setText(groupItem.getChannelTitle());
             type.setText(groupItem.getType().getDisplay());
 
-            icon.setCursor(Cursor.HAND);
-            icon.setOnMouseClicked(me -> browserUtil.open(groupItem.toYouTubeLink()));
+            if (ConfigData.FAST_GROUP_ADD_THUMB_PLACEHOLDER.equals(groupItem.getThumbUrl())) {
+                icon.setManaged(false);
+                icon.setVisible(false);
+            } else {
+                icon.setManaged(true);
+                icon.setVisible(true);
+                icon.setCursor(Cursor.HAND);
+                icon.setOnMouseClicked(me -> browserUtil.open(groupItem.toYouTubeLink()));
 
-            new Thread(() -> {
-                Image image = ImageCache.findOrGetImage(groupItem.getId(), groupItem.getThumbUrl());
-                runLater(() -> icon.setImage(image));
-            }).start();
+                new Thread(() -> {
+                    Image image = ImageCache.findOrGetImage(groupItem.getId(), groupItem.getThumbUrl());
+                    runLater(() -> icon.setImage(image));
+                }).start();
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
