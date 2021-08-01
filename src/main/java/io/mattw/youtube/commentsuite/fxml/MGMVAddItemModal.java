@@ -27,7 +27,7 @@ import static javafx.application.Platform.runLater;
  * This modal allows the user to add a GroupItem to the Group of the ManageGroupsManager with a YouTube link.
  * The YouTube link can be any of a video, channel, or playlist and should match the example formats to be accepted.
  *
- * @see GroupItem#GroupItem(String)
+ * @see GroupItem
  * @see ManageGroupsManager
  */
 public class MGMVAddItemModal extends VBox implements Cleanable {

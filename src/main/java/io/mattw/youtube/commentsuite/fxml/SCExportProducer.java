@@ -91,7 +91,7 @@ public class SCExportProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         .toStatement();
                      final ResultSet resultSet = namedParamStatement.executeQuery()) {
 
-                    while (resultSet.next() && !isHardShutdown()) {
+                    while (resultSet.next() && isNotHardShutdown()) {
                         hasComments = true;
 
                         final YouTubeComment comment = database.comments().to(resultSet);

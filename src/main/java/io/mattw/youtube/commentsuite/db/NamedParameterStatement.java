@@ -270,7 +270,7 @@ public class NamedParameterStatement implements AutoCloseable {
 
 
     /**
-     * Executes all of the batched statements.
+     * Executes all the batched statements.
      * <p>
      * See {@link Statement#executeBatch()} for details.
      *

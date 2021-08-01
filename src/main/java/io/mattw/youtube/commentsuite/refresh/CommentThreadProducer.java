@@ -246,7 +246,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         }
 
                         awaitMillis(50);
-                    } while (pageToken != null && page++ < pages.getPageCount() && !isHardShutdown());
+                    } while (pageToken != null && page++ < pages.getPageCount() && isNotHardShutdown());
 
                     logger.info("{} Completed {} {}", moderationStatus, video.getId(), video.getTitle());
 
@@ -333,7 +333,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         attempt++;
                     }
                 }
-            } while (attempt <= maxAttempts && !isHardShutdown());
+            } while (attempt <= maxAttempts && isNotHardShutdown());
 
             addProcessed(1);
             awaitMillis(500);

@@ -45,7 +45,7 @@ public class CommentSuite extends Application {
 
         /*
          * Setting this system property is a fix for the JavaFX Webview behaving improperly.
-         * The 'Tap Yes' authentication when signing in from {@link mattw.youtube.commentsuite.fxml.Settings)
+         * The 'Tap Yes' authentication when signing in from {@link io.mattw.youtube.commentsuite.fxml.Settings}
          * would do nothing and the icon would flicker when not set, requiring the user to use SMS
          * authentication instead.
          */

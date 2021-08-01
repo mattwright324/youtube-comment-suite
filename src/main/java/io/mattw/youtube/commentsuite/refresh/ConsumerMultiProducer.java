@@ -132,8 +132,8 @@ public abstract class ConsumerMultiProducer<C> {
         this.hardShutdown = hardShutdown;
     }
 
-    public boolean isHardShutdown() {
-        return hardShutdown;
+    public boolean isNotHardShutdown() {
+        return !hardShutdown;
     }
 
     /**

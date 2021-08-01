@@ -89,7 +89,7 @@ public class ReplyProducer extends ConsumerMultiProducer<StringTuple> {
                     sendCollection(channels, YouTubeChannel.class);
 
                     awaitMillis(50);
-                } while (pageToken != null && page++ < replyPages.getPageCount() && !isHardShutdown());
+                } while (pageToken != null && page++ < replyPages.getPageCount() && isNotHardShutdown());
             } catch (IOException e) {
                 sendMessage(Level.ERROR, e, String.format("Couldn't grab commentThread[id=%s]", tuple.getFirst()));
             }

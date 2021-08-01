@@ -171,7 +171,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                         Threads.awaitMillis(100);
                     }
 
-                    if (!exportProducer.isHardShutdown()) {
+                    if (exportProducer.isNotHardShutdown()) {
                         btnClose.fire();
                     }
                 }).start();

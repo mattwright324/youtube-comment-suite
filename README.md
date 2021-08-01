@@ -24,7 +24,7 @@ YouTube creators and more.
 * Display stats about videos: publishes per week, most popular, most disliked, most commented, and disabled.
 * Display stats about comments: posts per week, most active posters, most popular posters.
 * Option to save thumbnails and profiles for archival and offline viewing.
-* Sign into multiple YouTube accounts and choose which to reply with.
+* Sign in to multiple YouTube accounts and choose which to reply with.
 * View video context when selecting a comment.
 
 ## Install
