@@ -97,8 +97,8 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
             radioSeparate.setOnAction(ae -> updateExample());
             radioSingle.setOnAction(ae -> updateExample());
 
-            radioJSON.fire();
-            radioSeparate.fire();
+            radioCSV.fire();
+            radioSingle.fire();
 
             btnStop.setOnAction(ae -> {
                 shutdown = true;
@@ -363,5 +363,6 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
         btnClose.setDisable(false);
 
         commentsProcessed = 0;
+        shutdown = false;
     }
 }

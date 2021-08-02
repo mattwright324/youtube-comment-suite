@@ -21,12 +21,12 @@
         <HBox spacing="10">
             <VBox spacing="10" minWidth="150">
                 <Label text="Export format" styleClass="bold"/>
-                <RadioButton fx:id="radioJSON" text="JSON" toggleGroup="$toggleGroup"/>
                 <RadioButton fx:id="radioCSV" text="CSV" toggleGroup="$toggleGroup"/>
+                <RadioButton fx:id="radioJSON" text="JSON" toggleGroup="$toggleGroup"/>
                 <Label />
                 <Label text="Export comments" styleClass="bold"/>
-                <RadioButton fx:id="radioSeparate" text="File per video" toggleGroup="$toggleGroup2"/>
                 <RadioButton fx:id="radioSingle" text="Single file" toggleGroup="$toggleGroup2"/>
+                <RadioButton fx:id="radioSeparate" text="File per video" toggleGroup="$toggleGroup2"/>
             </VBox>
             <VBox spacing="10">
                 <Label text="Export structure" styleClass="bold"/>
