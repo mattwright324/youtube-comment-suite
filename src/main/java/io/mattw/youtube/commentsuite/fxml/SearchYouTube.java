@@ -9,7 +9,6 @@ import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.ClipboardUtil;
 import io.mattw.youtube.commentsuite.util.IpApiProvider;
 import javafx.beans.binding.BooleanBinding;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -37,38 +36,60 @@ public class SearchYouTube implements Initializable {
     private final ClipboardUtil clipboardUtil = new ClipboardUtil();
     private final BrowserUtil browserUtil = new BrowserUtil();
 
-    @FXML private Pane form;
-    @FXML private ImageView searchIcon;
-    @FXML private ImageView geoIcon;
-    @FXML private ComboBox<String> searchType;
-    @FXML private TextField searchText;
-    @FXML private Button submit;
-    @FXML private HBox locationBox;
-    @FXML private TextField searchLocation;
-    @FXML private Button geolocate;
-    @FXML private ComboBox<String> searchRadius;
-    @FXML private ComboBox<String> searchOrder;
-    @FXML private ComboBox<String> resultType;
-    @FXML private ListView<SearchYouTubeListItem> resultsList;
-    @FXML private HBox bottom;
-    @FXML private Button btnAddToGroup;
-    @FXML private Button btnClear;
-    @FXML private Button btnNextPage;
-    @FXML private Label searchInfo;
+    @FXML
+    private Pane form;
+    @FXML
+    private ImageView searchIcon;
+    @FXML
+    private ImageView geoIcon;
+    @FXML
+    private ComboBox<String> searchType;
+    @FXML
+    private TextField searchText;
+    @FXML
+    private Button submit;
+    @FXML
+    private HBox locationBox;
+    @FXML
+    private TextField searchLocation;
+    @FXML
+    private Button geolocate;
+    @FXML
+    private ComboBox<String> searchRadius;
+    @FXML
+    private ComboBox<String> searchOrder;
+    @FXML
+    private ComboBox<String> resultType;
+    @FXML
+    private ListView<SearchYouTubeListItem> resultsList;
+    @FXML
+    private HBox bottom;
+    @FXML
+    private Button btnAddToGroup;
+    @FXML
+    private Button btnClear;
+    @FXML
+    private Button btnNextPage;
+    @FXML
+    private Label searchInfo;
 
-    @FXML private MenuItem menuCopyId;
-    @FXML private MenuItem menuOpenBrowser;
-    @FXML private MenuItem menuAddToGroup;
-    @FXML private MenuItem menuDeselectAll;
+    @FXML
+    private MenuItem menuCopyId;
+    @FXML
+    private MenuItem menuOpenBrowser;
+    @FXML
+    private MenuItem menuAddToGroup;
+    @FXML
+    private MenuItem menuDeselectAll;
 
-    @FXML private OverlayModal<SYAddToGroupModal> addToGroupModal;
+    @FXML
+    private OverlayModal<SYAddToGroupModal> addToGroupModal;
 
     private int total = 0;
     private int number = 0;
     private String pageToken = TOKEN_FOO;
 
     private YouTube.Search.List searchList;
-    private SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
     private String[] types = {"all", "video", "playlist", "channel"};
     private String previousType;
 
@@ -112,15 +133,14 @@ public class SearchYouTube implements Initializable {
             }
         });
         menuAddToGroup.setOnAction(ae -> btnAddToGroup.fire());
-        menuDeselectAll.setOnAction(ae -> selectionModel.clearSelection());
+        menuDeselectAll.setOnAction(ae -> runLater(selectionModel::clearSelection));
 
         btnAddToGroup.disableProperty().bind(selectionModel.selectedIndexProperty().isEqualTo(-1));
         selectionModel.getSelectedItems().addListener((ListChangeListener<SearchYouTubeListItem>) (c ->
                 runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", selectionModel.getSelectedItems().size())))
         ));
         resultsList.itemsProperty().addListener((o, ov, nv) ->
-                runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", selectionModel.getSelectedItems().size()))
-        ));
+                runLater(() -> btnAddToGroup.setText(String.format("Add to Group (%s)", selectionModel.getSelectedItems().size()))));
 
         btnClear.setOnAction(ae -> runLater(() -> resultsList.getItems().clear()));
 
@@ -136,9 +156,6 @@ public class SearchYouTube implements Initializable {
             }
             geolocate.setDisable(false);
         }).start());
-
-        bottom.disableProperty().bind(searching);
-        form.disableProperty().bind(searching);
 
         form.setOnKeyPressed(ke -> {
             if (ke.getCode() == KeyCode.ENTER) {
@@ -162,33 +179,42 @@ public class SearchYouTube implements Initializable {
                             resultType.getSelectionModel().getSelectedIndex())
             ).start();
         });
-        btnNextPage.setOnAction(ae ->
-                new Thread(() ->
-                        search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
-                                searchRadius.getValue(), searchOrder.getValue(),
-                                resultType.getSelectionModel().getSelectedIndex())
-                ).start()
-        );
+        btnNextPage.setOnAction(ae -> new Thread(() ->
+                search(pageToken, searchType.getValue(), searchText.getText(), searchLocation.getText(),
+                        searchRadius.getValue(), searchOrder.getValue(),
+                        resultType.getSelectionModel().getSelectedIndex())
+        ).start());
 
         final SYAddToGroupModal syAddToGroupModal = new SYAddToGroupModal(resultsList);
         addToGroupModal.setContent(syAddToGroupModal);
-        syAddToGroupModal.getBtnClose().setOnAction(ae -> {
+        syAddToGroupModal.getBtnClose().setOnAction(ae -> runLater(() -> {
             addToGroupModal.setVisible(false);
             addToGroupModal.setManaged(false);
-        });
-        addToGroupModal.visibleProperty().addListener((cl) -> {
+        }));
+        addToGroupModal.visibleProperty().addListener((cl) -> runLater(() -> {
             syAddToGroupModal.getBtnClose().setCancelButton(addToGroupModal.isVisible());
             syAddToGroupModal.getBtnSubmit().setDefaultButton(addToGroupModal.isVisible());
-        });
-        btnAddToGroup.setOnAction(ae -> {
+        }));
+        btnAddToGroup.setOnAction(ae -> runLater(() -> {
             syAddToGroupModal.cleanUp();
             addToGroupModal.setVisible(true);
             addToGroupModal.setManaged(true);
-        });
+        }));
     }
 
-    public void search(String pageToken, String type, String text, String locText, String locRadius, String order, int resultType) {
-        runLater(() -> searching.setValue(true));
+    public void search(
+            String pageToken,
+            final String type,
+            final String text,
+            final String locText,
+            final String locRadius,
+            String order,
+            final int resultType
+    ) {
+        runLater(() -> {
+            bottom.setDisable(true);
+            form.setDisable(true);
+        });
         try {
             final String encodedText = URLEncoder.encode(text, "UTF-8");
             final String searchType = types[resultType];
@@ -240,6 +266,11 @@ public class SearchYouTube implements Initializable {
                 final SearchYouTubeListItem view = new SearchYouTubeListItem(item, number++);
                 runLater(() -> {
                     resultsList.getItems().add(view);
+
+                    if (TOKEN_FOO.equals(this.pageToken)) {
+                        this.total = resultsList.getItems().size();
+                    }
+
                     searchInfo.setText(String.format("Showing %s out of %s", resultsList.getItems().size(), total));
                 });
             }
@@ -248,10 +279,17 @@ public class SearchYouTube implements Initializable {
             e.printStackTrace();
         }
         runLater(() -> {
-            if (this.pageToken != null && !this.pageToken.equals(TOKEN_FOO)) {
+            if (this.pageToken != null && !TOKEN_FOO.equals(this.pageToken)) {
                 btnNextPage.setDisable(false);
             }
-            searching.setValue(false);
+            if (TOKEN_FOO.equals(this.pageToken)) {
+                btnNextPage.setDisable(true);
+                btnNextPage.setText("Out of pages");
+            } else {
+                btnNextPage.setText("Next Page >");
+            }
+            bottom.setDisable(false);
+            form.setDisable(false);
         });
     }
 }
