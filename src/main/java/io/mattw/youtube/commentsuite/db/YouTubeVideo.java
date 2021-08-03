@@ -39,7 +39,7 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
     public static final String[] CSV_HEADER = {"id", "channelId", "title", "thumbUrl", "description", "publishDate", "viewCount", "comments", "likes", "dislikes", "responseCode"};
 
     public Object[] getCsvRow() {
-        return new Object[] {id, channelId, title, thumbUrl, description.replaceAll("([\r]?\n)+", "<br>"),
+        return new Object[] {id, author.getId(), title, thumbUrl, description.replaceAll("([\r]?\n)+", "<br>"),
                 publishDate, viewCount, comments, likes, dislikes, responseCode};
     }
 
@@ -191,7 +191,6 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
 
     @Override
     public void prepForExport() {
-        channelId = null;
         publishDate = DateUtils.epochMillisToDateTime(published).toString();
         refreshedOnDate = DateUtils.epochMillisToDateTime(refreshedOn).toString();
     }

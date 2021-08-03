@@ -249,6 +249,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
 
             if (format == JSON) {
                 for (YouTubeVideo video : videos) {
+                    video.setAuthor(database.channels().getOrNull(video.getChannelId()));
                     video.prepForExport();
                 }
 
@@ -257,6 +258,7 @@ public class SCExportModal extends VBox implements Cleanable, ImageCache {
                 printer.printRecord((Object[]) YouTubeVideo.CSV_HEADER);
 
                 for (YouTubeVideo video : videos) {
+                    video.setAuthor(database.channels().getOrNull(video.getChannelId()));
                     video.prepForExport();
 
                     printer.printRecord(video.getCsvRow());
