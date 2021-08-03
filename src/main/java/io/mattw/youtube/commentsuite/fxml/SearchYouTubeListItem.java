@@ -1,7 +1,6 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.api.services.youtube.model.SearchResult;
-import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -48,43 +47,49 @@ public class SearchYouTubeListItem extends HBox {
         loader.setRoot(this);
         loader.load();
 
-        number.setText(String.format("# %s", num));
-        thumbnail.setFitWidth(thumbnail.getFitHeight() * loading.getWidth() / loading.getHeight());
-        thumbnail.setImage(loading);
+        runLater(() -> {
+            number.setText(String.format("# %s", num));
+            thumbnail.setFitWidth(thumbnail.getFitHeight() * loading.getWidth() / loading.getHeight());
+            thumbnail.setImage(loading);
 
-        if ((objectId = data.getId().getVideoId()) != null) {
-            youtubeURL = String.format("https://youtu.be/%s", objectId);
-            typeStr = "Video";
-        } else if ((objectId = data.getId().getChannelId()) != null) {
-            youtubeURL = String.format("https://www.youtube.com/channel/%s", objectId);
-            typeStr = "Channel";
-        } else if ((objectId = data.getId().getPlaylistId()) != null) {
-            youtubeURL = String.format("https://www.youtube.com/playlist?list=%s", objectId);
-            typeStr = "Playlist";
-        } else {
-            logger.error("A SearchList.Item object has been passed with no id.");
-            typeStr = "Error";
-        }
+            if ((objectId = data.getId().getVideoId()) != null) {
+                youtubeURL = String.format("https://youtu.be/%s", objectId);
+                typeStr = "Video";
+            } else if ((objectId = data.getId().getChannelId()) != null) {
+                youtubeURL = String.format("https://www.youtube.com/channel/%s", objectId);
+                typeStr = "Channel";
+            } else if ((objectId = data.getId().getPlaylistId()) != null) {
+                youtubeURL = String.format("https://www.youtube.com/playlist?list=%s", objectId);
+                typeStr = "Playlist";
+            } else {
+                logger.error("A SearchList.Item object has been passed with no id.");
+                typeStr = "Error";
+            }
 
-        type.setText(typeStr);
+            type.setText(typeStr);
+        });
 
         if (data.getSnippet() != null) {
-            title.setText(data.getSnippet().getTitle());
-            author.setText(data.getSnippet().getChannelTitle());
-            description.setText(data.getSnippet().getDescription());
+            runLater(() -> {
+                title.setText(data.getSnippet().getTitle());
+                author.setText(data.getSnippet().getChannelTitle());
+                description.setText(data.getSnippet().getDescription());
+            });
 
             new Thread(() -> {
                 final YouTubeSearchItem searchItem = new YouTubeSearchItem(data);
                 final Image thumb = searchItem.findOrGetThumb();
-                thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
-                thumbnail.setImage(thumb);
+                runLater(() -> {
+                    thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
+                    thumbnail.setImage(thumb);
+                });
             }).start();
         } else {
-            title.setText("SearchList.Item Error");
-            author.setText(data.getEtag());
-            description.setText("There was no snippet attached to this object.");
             final Image thumb = ImageLoader.OOPS.getImage();
             runLater(() -> {
+                title.setText("SearchList.Item Error");
+                author.setText(data.getEtag());
+                description.setText("There was no snippet attached to this object.");
                 thumbnail.setFitWidth(thumbnail.getFitHeight() * thumb.getWidth() / thumb.getHeight());
                 thumbnail.setImage(thumb);
             });

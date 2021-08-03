@@ -27,7 +27,7 @@ public class FXUtils {
     }
 
     /**
-     * Modifies a TextField's preferred width based on it's text content
+     * Modifies a TextField's preferred width based on its text content
      *
      * @param field TextField element
      * @link https://stackoverflow.com/a/25643696/2650847

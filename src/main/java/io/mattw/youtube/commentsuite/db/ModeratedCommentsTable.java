@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_OR_COMMENTS;
 import static io.mattw.youtube.commentsuite.db.SQLLoader.INSERT_OR_MODERATED_COMMENTS;
 
 public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {

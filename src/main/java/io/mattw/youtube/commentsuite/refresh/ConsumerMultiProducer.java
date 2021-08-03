@@ -3,7 +3,6 @@ package io.mattw.youtube.commentsuite.refresh;
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -133,8 +132,8 @@ public abstract class ConsumerMultiProducer<C> {
         this.hardShutdown = hardShutdown;
     }
 
-    public boolean isHardShutdown() {
-        return hardShutdown;
+    public boolean isNotHardShutdown() {
+        return !hardShutdown;
     }
 
     /**

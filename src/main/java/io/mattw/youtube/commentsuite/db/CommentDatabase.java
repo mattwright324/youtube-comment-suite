@@ -199,7 +199,7 @@ public class CommentDatabase implements Closeable {
     }
 
     /**
-     * Returns all of the comments associated with a comment parentId.
+     * Returns all the comments associated with a comment parentId.
      */
     public List<YouTubeComment> getCommentTree(String parentId, boolean includeModeration) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(GET_COMMENT_TREE.toString())) {

@@ -5,7 +5,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.eventbus.Subscribe;
 import io.mattw.youtube.commentsuite.CommentSuite;
 import io.mattw.youtube.commentsuite.ImageLoader;
-import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.Group;
 import io.mattw.youtube.commentsuite.events.GroupAddEvent;
 import io.mattw.youtube.commentsuite.events.GroupDeleteEvent;

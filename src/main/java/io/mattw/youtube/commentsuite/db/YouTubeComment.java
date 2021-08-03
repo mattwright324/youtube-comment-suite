@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-import com.google.api.client.util.ArrayMap;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.model.Comment;
 import com.google.api.services.youtube.model.CommentSnippet;
@@ -19,7 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.isAnyBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class YouTubeComment implements Linkable, Exportable {
 
@@ -41,15 +41,22 @@ public class YouTubeComment implements Linkable, Exportable {
 
     // Field(s) used just for export to make things pretty.
     private YouTubeChannel author;
-    private List<YouTubeComment> replies;
-
-    public YouTubeChannel getChannel() {
-        return CommentSuite.getDatabase().channels().getOrNull(channelId);
-    }
 
     @Override
     public void prepForExport() {
         commentDate = publishedDateTime.toString();
+    }
+
+    public static final String[] CSV_HEADER = {"id", "parentId", "videoId", "channelId", "channelName", "channelThumb", "commentDate", "commentText", "likes", "isReply", "replyCount", "tags"};
+
+    public Object[] getCsvRow() {
+        return new Object[]{id, parentId, videoId, author.getId(), author.getTitle(), author.getThumbUrl(), commentDate, commentText.replaceAll("[\r\n]*", ""),
+                likes, isReply, replyCount == -1 ? "" : replyCount, tags == null ? "" : tags.toString()
+        };
+    }
+
+    public YouTubeChannel getChannel() {
+        return CommentSuite.getDatabase().channels().getOrNull(channelId);
     }
 
     public String getId() {
@@ -179,24 +186,12 @@ public class YouTubeComment implements Linkable, Exportable {
         return author;
     }
 
-    public List<YouTubeComment> getReplies() {
-        return replies;
-    }
-
     /**
      * Overwrite channelId as null when set because it will be on the channel object for export.
      */
     public YouTubeComment setAuthor(YouTubeChannel author) {
         this.channelId = null;
         this.author = author;
-        return this;
-    }
-
-    /**
-     * List of comment replies to this parent comment.
-     */
-    public YouTubeComment setReplies(List<YouTubeComment> replies) {
-        this.replies = replies;
         return this;
     }
 
@@ -227,7 +222,7 @@ public class YouTubeComment implements Linkable, Exportable {
      */
     public String getCleanText(boolean withNewLines) {
         return StringEscapeUtils.unescapeHtml4(commentText)
-                .replace("<br />", withNewLines ? "\r\n" : " ")
+                .replaceAll("<br[ /]*>", withNewLines ? "\r\n" : " ")
                 .replaceAll("[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︠-︯]", "");
     }
 

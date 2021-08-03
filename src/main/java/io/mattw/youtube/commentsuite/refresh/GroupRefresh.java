@@ -232,15 +232,12 @@ public class GroupRefresh extends Thread implements RefreshInterface {
             final GoogleJsonResponseException googleError = (GoogleJsonResponseException) error;
             final String reasonCode = ConsumerMultiProducer.getFirstReasonCode(googleError);
 
-            switch (reasonCode) {
-                case "quotaExceeded":
-                    endedOnError = true;
-                    hardShutdown();
-                    runLater(() -> errorList.add(0, String.format("%s - %s", time, googleError)));
-                    break;
-
-                default:
-                    logger.warn(googleError);
+            if ("quotaExceeded".equals(reasonCode)) {
+                endedOnError = true;
+                hardShutdown();
+                runLater(() -> errorList.add(0, String.format("%s - %s", time, googleError)));
+            } else {
+                logger.warn(googleError);
             }
         }
 
