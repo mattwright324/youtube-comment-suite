@@ -39,8 +39,8 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
     public static final String[] CSV_HEADER = {"id", "channelId", "title", "thumbUrl", "description", "publishDate", "viewCount", "comments", "likes", "dislikes", "responseCode"};
 
     public Object[] getCsvRow() {
-        return new Object[] {id, channelId, title, thumbUrl, description.replaceAll("([\r]?\n)+", "<br>"), publishDate,
-                viewCount, comments, likes, dislikes, responseCode};
+        return new Object[] {id, channelId, title, thumbUrl, description.replaceAll("([\r]?\n)+", "<br>"),
+                publishDate, viewCount, comments, likes, dislikes, responseCode};
     }
 
     @Override

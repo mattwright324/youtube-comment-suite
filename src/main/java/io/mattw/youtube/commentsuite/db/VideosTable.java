@@ -21,7 +21,7 @@ public class VideosTable extends TableHelper<YouTubeVideo> {
                 .setChannelId(resultSet.getString("channel_id"))
                 .setDescription(resultSet.getString("video_desc"))
                 .setPublished(resultSet.getLong("publish_date"))
-                .setRefreshedOn(resultSet.getLong("publish_date"))
+                .setRefreshedOn(resultSet.getLong("grab_date"))
                 .setComments(resultSet.getLong("total_comments"))
                 .setLikes(resultSet.getLong("total_likes"))
                 .setDislikes(resultSet.getLong("total_dislikes"))
