@@ -234,12 +234,11 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                             sendCollection(channels2, YouTubeChannel.class);
                         }
 
-                        if (moderationStatus == PUBLISHED && options.isCommentPagesSmart()) {
+                        if (moderationStatus == PUBLISHED && RefreshCommentOrder.TIME == options.getCommentOrder() && options.isCommentPagesSmart()) {
                             final List<String> threadIds = comments.stream()
                                     .map(YouTubeComment::getId)
                                     .collect(Collectors.toList());
-                            if (RefreshCommentOrder.TIME == options.getCommentOrder() &&
-                                    database.countCommentsNotExisting(threadIds) == 0) {
+                            if (database.countCommentsNotExisting(threadIds) == 0) {
                                 logger.info("No new comment threads, stopping pagination early {}", video.getId());
                                 break;
                             }

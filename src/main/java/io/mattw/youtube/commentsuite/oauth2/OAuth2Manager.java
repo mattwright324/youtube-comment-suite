@@ -33,7 +33,7 @@ public class OAuth2Manager {
     private static final String CLIENT_SECRET = "QuTdoA-KArupKMWwDrrxOcoS";
     private static final String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
 
-    public static final String WEB_LOGIN_URL = String.format("https://accounts.google.com/o/oauth2/auth?client_id=%s&redirect_uri=%s&&response_type=code&&scope=%s",
+    public static final String WEB_LOGIN_URL = String.format("https://accounts.google.com/o/oauth2/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=%s",
             CLIENT_ID, UTF8UrlEncoder.encode(REDIRECT_URI), UTF8UrlEncoder.encode("https://www.googleapis.com/auth/youtube.force-ssl"));
 
     private final YouTube youTube;
