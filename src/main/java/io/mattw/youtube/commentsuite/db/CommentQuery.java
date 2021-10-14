@@ -383,6 +383,7 @@ public class CommentQuery implements Serializable, Exportable {
                 .setTextLike(this.getTextLike())
                 .setDateFrom(this.getDateFrom())
                 .setDateTo(this.getDateTo())
+                .setHasTags(this.getHasTags())
                 .setTotalResults(this.getTotalResults());
     }
 
