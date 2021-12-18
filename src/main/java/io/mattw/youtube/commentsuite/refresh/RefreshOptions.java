@@ -2,6 +2,7 @@ package io.mattw.youtube.commentsuite.refresh;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
+import static org.apache.commons.lang3.builder.ToStringStyle.DEFAULT_STYLE;
 import static org.apache.commons.lang3.builder.ToStringStyle.SIMPLE_STYLE;
 
 public class RefreshOptions {
@@ -14,6 +15,7 @@ public class RefreshOptions {
     private RefreshCommentPages replyPages = style.getReplyPages();
     private RefreshCommentPages reviewPages = RefreshCommentPages.ALL;
     private boolean updateCommentsChannels = true;
+    private int maxRetryAttempts = 5;
 
     public RefreshStyle getStyle() {
         return style;
@@ -87,8 +89,17 @@ public class RefreshOptions {
         return this;
     }
 
+    public int getMaxRetryAttempts() {
+        return maxRetryAttempts;
+    }
+
+    public RefreshOptions setMaxRetryAttempts(int maxRetryAttempts) {
+        this.maxRetryAttempts = maxRetryAttempts;
+        return this;
+    }
+
     @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this, SIMPLE_STYLE);
+        return ReflectionToStringBuilder.toString(this, DEFAULT_STYLE);
     }
 }

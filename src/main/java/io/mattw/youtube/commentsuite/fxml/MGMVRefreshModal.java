@@ -71,7 +71,7 @@ public class MGMVRefreshModal extends HBox {
     @FXML private ComboBox<RefreshCommentPages> refreshReplyPages;
     @FXML private CheckBox smartCommentPages;
     @FXML private CheckBox updateIgnore;
-    //@FXML private HBox reviewOption;
+    @FXML private Spinner<Integer> maxRetryAttempts;
 
     @FXML private HBox warningsPane;
     @FXML private Label warnings;
@@ -138,6 +138,7 @@ public class MGMVRefreshModal extends HBox {
             RefreshOptions refreshOptions = configData.getRefreshOptions();
             smartCommentPages.setSelected(refreshOptions.isCommentPagesSmart());
             updateIgnore.setSelected(refreshOptions.isUpdateCommentsChannels());
+            maxRetryAttempts.getValueFactory().setValue(refreshOptions.getMaxRetryAttempts());
             if (refreshOptions.getStyle() == CUSTOM) {
                 refreshStyle.setValue(CUSTOM);
                 refreshTimeframe.setValue(refreshOptions.getTimeframe());
@@ -210,6 +211,7 @@ public class MGMVRefreshModal extends HBox {
                     options.setReviewPages(refreshReviewPages.getValue());
                     options.setReplyPages(refreshReplyPages.getValue());
                     options.setUpdateCommentsChannels(updateIgnore.isSelected());
+                    options.setMaxRetryAttempts(maxRetryAttempts.getValue());
 
                     configData.setRefreshOptions(options);
                     configFile.save();

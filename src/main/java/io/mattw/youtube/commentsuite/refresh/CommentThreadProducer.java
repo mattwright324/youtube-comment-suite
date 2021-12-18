@@ -117,7 +117,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
             CommentThreadListResponse response;
             String pageToken = "";
             int page = 1;
-            final int maxAttempts = 5;
+            final int maxAttempts = options.getMaxRetryAttempts();
 
             threadLoop:
             do {
