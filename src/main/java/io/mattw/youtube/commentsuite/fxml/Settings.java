@@ -11,6 +11,7 @@ import io.mattw.youtube.commentsuite.events.AccountDeleteEvent;
 import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
 import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
+import io.mattw.youtube.commentsuite.util.StringMask;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -21,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
@@ -130,7 +130,7 @@ public class Settings implements Initializable {
         submitAuthCode.setOnAction(ae -> new Thread(() -> {
             runLater(() -> loadingIndicator.setVisible(true));
             String code = authCode.getText();
-            logger.debug("Attemping Sign-In [authCode={}]", code);
+            logger.debug("Attemping Sign-In [authCode={}]", () -> StringMask.maskHalf(code));
             try {
                 YouTubeAccount account = oAuth2Manager.addAccount(code);
 

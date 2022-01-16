@@ -1,6 +1,6 @@
 package io.mattw.youtube.commentsuite.oauth2;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import io.mattw.youtube.commentsuite.util.StringMask;
 
 import java.io.Serializable;
 
@@ -43,8 +43,13 @@ public class OAuth2Tokens implements Serializable {
         this.expires_in = expires_in;
     }
 
+    @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this);
+        return "OAuth2Tokens{" +
+                "access_token='" + StringMask.maskHalf(access_token) + '\'' +
+                ", token_type='" + token_type + '\'' +
+                ", refresh_token='" + StringMask.maskHalf(refresh_token) + '\'' +
+                ", expires_in=" + expires_in +
+                '}';
     }
-
 }
