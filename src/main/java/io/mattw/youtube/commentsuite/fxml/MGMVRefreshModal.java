@@ -21,6 +21,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -71,7 +72,7 @@ public class MGMVRefreshModal extends HBox {
     @FXML private ComboBox<RefreshCommentPages> refreshReplyPages;
     @FXML private CheckBox smartCommentPages;
     @FXML private CheckBox updateIgnore;
-    //@FXML private HBox reviewOption;
+    @FXML private Spinner<Integer> maxRetryAttempts;
 
     @FXML private HBox warningsPane;
     @FXML private Label warnings;
@@ -122,6 +123,10 @@ public class MGMVRefreshModal extends HBox {
             refreshCommentOrder.setItems(FXCollections.observableArrayList(RefreshCommentOrder.values()));
             refreshReplyPages.setItems(FXCollections.observableArrayList(RefreshCommentPages.values()));
             refreshReviewPages.setValue(RefreshCommentPages.ALL);
+            maxRetryAttempts.focusedProperty().addListener((s, ov, nv) -> {
+                if (nv) return;
+                commitEditorText(maxRetryAttempts);
+            });
 
             refreshStyle.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
                 logger.debug("Style {}", nv);
@@ -138,6 +143,8 @@ public class MGMVRefreshModal extends HBox {
             RefreshOptions refreshOptions = configData.getRefreshOptions();
             smartCommentPages.setSelected(refreshOptions.isCommentPagesSmart());
             updateIgnore.setSelected(refreshOptions.isUpdateCommentsChannels());
+            logger.debug(refreshOptions.getMaxRetryAttempts());
+            maxRetryAttempts.getValueFactory().setValue(refreshOptions.getMaxRetryAttempts());
             if (refreshOptions.getStyle() == CUSTOM) {
                 refreshStyle.setValue(CUSTOM);
                 refreshTimeframe.setValue(refreshOptions.getTimeframe());
@@ -210,6 +217,10 @@ public class MGMVRefreshModal extends HBox {
                     options.setReviewPages(refreshReviewPages.getValue());
                     options.setReplyPages(refreshReplyPages.getValue());
                     options.setUpdateCommentsChannels(updateIgnore.isSelected());
+                    options.setMaxRetryAttempts(maxRetryAttempts.getValue());
+
+                    logger.debug(options);
+                    logger.debug(maxRetryAttempts.getValue());
 
                     configData.setRefreshOptions(options);
                     configFile.save();
@@ -409,4 +420,18 @@ public class MGMVRefreshModal extends HBox {
             }
         });
     }
+
+    private <T> void commitEditorText(Spinner<T> spinner) {
+        if (!spinner.isEditable()) return;
+        String text = spinner.getEditor().getText();
+        SpinnerValueFactory<T> valueFactory = spinner.getValueFactory();
+        if (valueFactory != null) {
+            StringConverter<T> converter = valueFactory.getConverter();
+            if (converter != null) {
+                T value = converter.fromString(text);
+                valueFactory.setValue(value);
+            }
+        }
+    }
+
 }

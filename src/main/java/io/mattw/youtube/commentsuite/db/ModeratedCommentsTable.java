@@ -94,7 +94,7 @@ public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {
     }
 
     private void insert(List<YouTubeComment> objects, String insertSql) throws SQLException {
-        try (PreparedStatement ps = preparedStatement(INSERT_OR_MODERATED_COMMENTS.toString())) {
+        try (PreparedStatement ps = preparedStatement(insertSql)) {
             for (YouTubeComment ct : objects) {
                 ps.setString(1, ct.getId());
                 ps.setString(2, ct.getChannelId());

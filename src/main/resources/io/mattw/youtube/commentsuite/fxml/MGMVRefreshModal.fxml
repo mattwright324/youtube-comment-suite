@@ -53,6 +53,15 @@
                     Overwrite comments and channels if already downloaded
                 </Label>
                 <CheckBox fx:id="updateIgnore" GridPane.rowIndex="6" GridPane.columnIndex="1" />
+
+                <Label GridPane.rowIndex="7" GridPane.columnIndex="0" styleClass="refreshLabel, h42">
+                    Comment threads maximum retry attempts
+                </Label>
+                <Spinner fx:id="maxRetryAttempts" GridPane.rowIndex="7" GridPane.columnIndex="1" editable="true">
+                    <valueFactory>
+                        <SpinnerValueFactory.IntegerSpinnerValueFactory min="0" max="999" initialValue="5" amountToStepBy="1"/>
+                    </valueFactory>
+                </Spinner>
             </GridPane>
         </VBox>
         <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"

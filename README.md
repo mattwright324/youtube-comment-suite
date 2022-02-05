@@ -20,7 +20,7 @@ YouTube creators and more.
 * Cross-platform using Java 8 and JavaFX
 * Include multiple channels, playlists, and videos in a single group.
 * Search for comments by video, type, username, keyword, length, and date.
-* Export search results to handier and more consumable JSON format.
+* Export search results to handier and more consumable CSV or JSON formats.
 * Display stats about videos: publishes per week, most popular, most disliked, most commented, and disabled.
 * Display stats about comments: posts per week, most active posters, most popular posters.
 * Option to save thumbnails and profiles for archival and offline viewing.
@@ -60,7 +60,7 @@ program? [Check out the Wiki!](https://github.com/mattwright324/youtube-comment-
 ## Building
 
 Refer to [BUILD.md](https://github.com/mattwright324/youtube-comment-suite/blob/master/BUILD.md)
-for instructions on how to build and run `youtube-comment-suite` from source.
+for instructions on how to build and run from source.
 
 ## Contributing
 

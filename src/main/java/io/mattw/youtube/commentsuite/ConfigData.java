@@ -4,6 +4,7 @@ import io.mattw.youtube.commentsuite.events.AccountAddEvent;
 import io.mattw.youtube.commentsuite.events.AccountDeleteEvent;
 import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import io.mattw.youtube.commentsuite.refresh.RefreshOptions;
+import io.mattw.youtube.commentsuite.util.StringMask;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -135,4 +136,19 @@ public class ConfigData implements Serializable {
         return isCustomApiKey() ? getYoutubeApiKey() : DEFAULT_API_KEY;
     }
 
+    @Override
+    public String toString() {
+        return "ConfigData{" +
+                "accounts=" + accounts +
+                ", archiveThumbs=" + archiveThumbs +
+                ", autoLoadStats=" + autoLoadStats +
+                ", customApiKey=" + customApiKey +
+                ", fastGroupAdd=" + fastGroupAdd +
+                ", filterDuplicatesOnCopy=" + filterDuplicatesOnCopy +
+                ", grabHeldForReview=" + grabHeldForReview +
+                ", prefixReplies=" + prefixReplies +
+                ", refreshOptions=" + refreshOptions +
+                ", youtubeApiKey='" + StringMask.maskHalf(youtubeApiKey) + '\'' +
+                '}';
+    }
 }
