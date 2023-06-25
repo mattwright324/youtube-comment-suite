@@ -219,9 +219,6 @@ public class MGMVRefreshModal extends HBox {
                     options.setUpdateCommentsChannels(updateIgnore.isSelected());
                     options.setMaxRetryAttempts(maxRetryAttempts.getValue());
 
-                    logger.debug(options);
-                    logger.debug(maxRetryAttempts.getValue());
-
                     configData.setRefreshOptions(options);
                     configFile.save();
 

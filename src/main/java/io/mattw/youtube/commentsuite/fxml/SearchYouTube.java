@@ -216,7 +216,7 @@ public class SearchYouTube implements Initializable {
             form.setDisable(true);
         });
         try {
-            final String encodedText = URLEncoder.encode(text, "UTF-8");
+            final String encodedText = text.replaceAll("\\|", "%7C");
             final String searchType = types[resultType];
 
             if (pageToken.equals(TOKEN_FOO)) {
