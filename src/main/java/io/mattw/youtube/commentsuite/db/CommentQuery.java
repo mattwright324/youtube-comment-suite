@@ -1,6 +1,5 @@
 package io.mattw.youtube.commentsuite.db;
 
-import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,7 +11,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static io.mattw.youtube.commentsuite.db.CommentQuery.CommentsType.*;
 
@@ -20,24 +18,17 @@ import static io.mattw.youtube.commentsuite.db.CommentQuery.CommentsType.*;
  * Queries the database for comments.
  *
  */
-public class CommentQuery implements Serializable, Exportable {
+public class CommentQuery implements Serializable {
 
-    private static final transient Logger logger = LogManager.getLogger();
+    private static final Logger logger = LogManager.getLogger();
     private final transient CommentDatabase database;
 
-    // We don't want these in export file.
-    private transient Group group;
-    private transient Optional<GroupItem> groupItem = Optional.empty();
-    private transient Optional<List<YouTubeVideo>> videos = Optional.empty();
-    private transient int pageSize = 500;
-    private transient int pageNum = 0;
-    private transient Map<String, Object> queryParams = new HashMap<>();
-
-    // Formatted values for export file.
-    private String withGroup;
-    private String groupLastRefreshed;
-    private String withGroupItem;
-    private String withVideos;
+    private Group group;
+    private Optional<GroupItem> groupItem = Optional.empty();
+    private Optional<List<YouTubeVideo>> videos = Optional.empty();
+    private int pageSize = 500;
+    private int pageNum = 0;
+    private Map<String, Object> queryParams = new HashMap<>();
 
     // Search params
     private Order order;
@@ -228,29 +219,6 @@ public class CommentQuery implements Serializable, Exportable {
         return comments;
     }
 
-    /**
-     * Returns a list of unique videoIds relevant to a search for export.
-     * <p>
-     * {@link io.mattw.youtube.commentsuite.fxml.SCExportModal}
-     */
-    public Set<YouTubeVideo> getUniqueVideos() throws SQLException {
-        Objects.requireNonNull(group);
-
-        Set<YouTubeVideo> items = new HashSet<>();
-
-        if (videos.isPresent()) {
-            items.addAll(videos.get());
-        } else {
-            if (groupItem.isPresent()) {
-                items.addAll(database.videos().byGroupItem(groupItem.get()));
-            } else {
-                items.addAll(database.videos().byGroup(group));
-            }
-        }
-
-        return items;
-    }
-
     public Group getGroup() {
         return group;
     }
@@ -370,47 +338,6 @@ public class CommentQuery implements Serializable, Exportable {
     public CommentQuery setPageNum(int pageNum) {
         this.pageNum = pageNum;
         return this;
-    }
-
-    public CommentQuery duplicate() {
-        return database.commentQuery()
-                .setGroup(this.getGroup())
-                .setGroupItem(this.getGroupItem())
-                .setCommentsType(this.getCommentsType())
-                .setVideos(this.getVideos())
-                .setNameLike(this.getNameLike())
-                .setOrder(this.getOrder())
-                .setTextLike(this.getTextLike())
-                .setDateFrom(this.getDateFrom())
-                .setDateTo(this.getDateTo())
-                .setHasTags(this.getHasTags())
-                .setTotalResults(this.getTotalResults());
-    }
-
-    @Override
-    public void prepForExport() {
-        if(group != null) {
-            this.withGroup = String.format("%s / %s", group.getGroupId(), group.getName());
-
-            long lastRefreshed = database.getLastChecked(this.getGroup());
-
-            this.groupLastRefreshed =
-                    lastRefreshed == 0 ?
-                            "never refreshed" : DateUtils.epochMillisToDateTime(lastRefreshed).toString();
-        }
-
-        if (groupItem.isPresent()) {
-            GroupItem item = groupItem.get();
-
-            this.withGroupItem = String.format("%s / %s", item.getId(), item.getDisplayName());
-        } else {
-            this.withGroupItem = "All Item(s)";
-        }
-
-        this.withVideos = videos.map(youTubeVideos -> youTubeVideos.stream()
-                .map(YouTubeVideo::getId)
-                .collect(Collectors.joining(",")))
-                .orElse("All Video(s)");
     }
 
     public enum Order {

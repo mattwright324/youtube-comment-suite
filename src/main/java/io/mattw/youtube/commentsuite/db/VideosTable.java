@@ -24,7 +24,6 @@ public class VideosTable extends TableHelper<YouTubeVideo> {
                 .setRefreshedOn(resultSet.getLong("grab_date"))
                 .setComments(resultSet.getLong("total_comments"))
                 .setLikes(resultSet.getLong("total_likes"))
-                .setDislikes(resultSet.getLong("total_dislikes"))
                 .setViewCount(resultSet.getLong("total_views"))
                 .setResponseCode(resultSet.getInt("http_code"));
     }
@@ -85,7 +84,7 @@ public class VideosTable extends TableHelper<YouTubeVideo> {
                 ps.setLong(6, video.getComments());
                 ps.setLong(7, video.getViewCount());
                 ps.setLong(8, video.getLikes());
-                ps.setLong(9, video.getDislikes());
+                ps.setLong(9, 0);
                 ps.setString(10, video.getDescription());
                 ps.setString(11, video.getThumbUrl());
                 ps.setInt(12, video.getResponseCode());

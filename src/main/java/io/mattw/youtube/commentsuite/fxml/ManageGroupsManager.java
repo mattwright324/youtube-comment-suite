@@ -64,14 +64,11 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private final Image save = ImageLoader.SAVE.getImage();
 
     private static final String STAT_TOTAL_COMMENTS = "STAT_TOTAL_COMMENTS";
-    private static final String STAT_GRABBED_COMMENTS = "STAT_GRABBED_COMMENTS";
-    private static final String STAT_MODERATED_COMMENTS = "STAT_MODERATED_COMMENTS";
     private static final String STAT_TOTAL_LIKES = "STAT_TOTAL_LIKES";
     private static final String STAT_UNIQUE_VIEWERS = "STAT_UNIQUE_VIEWERS";
     private static final String STAT_TOTAL_VIDEOS = "STAT_TOTAL_VIDEOS";
     private static final String STAT_TOTAL_VIEWS = "STAT_TOTAL_VIEWS";
     private static final String STAT_VIDEO_LIKES = "STAT_VIDEO_LIKES";
-    private static final String STAT_VIDEO_DISLIKES = "STAT_VIDEO_DISLIKES";
     private static final String STAT_LIKE_RATIO = "STAT_LIKE_RATIO";
     private static final String STAT_RATIO_NORM = "STAT_RATIO_NORM";
 
@@ -102,9 +99,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
     @FXML private LineChart<String, Number> commentsLineChart, videosLineChart;
     private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
-//    @FXML private Label totalComments, grabbedComments, totalLikes, totalViewers, totalVideos, totalViews, totalVideoLikes, totalVideoDislikes,
-//            likeDislikeRatio, normalizedRatio;
-    @FXML private ListView<MGMVStatItem> popularVideosList, dislikedVideosList, commentedVideosList,
+    @FXML private ListView<MGMVStatItem> popularVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
     @FXML private GridPane commentStatPane, videoStatPane;
 
@@ -142,8 +137,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
         int cIndex = 1, vIndex = 1;
         createGridRow(commentStatPane, STAT_TOTAL_COMMENTS, cIndex++, "Total Comments");
-        createGridRow(commentStatPane, STAT_GRABBED_COMMENTS, cIndex++, "Grabbed Comments");
-        createGridRow(commentStatPane, STAT_MODERATED_COMMENTS, cIndex++, "Moderated Comments");
         createGridRow(commentStatPane, STAT_TOTAL_LIKES, cIndex++, "Total Likes");
         statLabel.get(STAT_TOTAL_LIKES).setStyle("-fx-text-fill:cornflowerblue");
         createGridRow(commentStatPane, STAT_UNIQUE_VIEWERS, cIndex++, "Unique Viewers");
@@ -151,10 +144,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         createGridRow(videoStatPane, STAT_TOTAL_VIEWS, vIndex++, "Total Views");
         createGridRow(videoStatPane, STAT_VIDEO_LIKES, vIndex++, "Total Video Likes");
         statLabel.get(STAT_VIDEO_LIKES).setStyle("-fx-text-fill:cornflowerblue");
-        createGridRow(videoStatPane, STAT_VIDEO_DISLIKES, vIndex++, "Total Video Dislikes");
-        statLabel.get(STAT_VIDEO_DISLIKES).setStyle("-fx-text-fill:orangered");
-        createGridRow(videoStatPane, STAT_LIKE_RATIO, vIndex++, "Like:Dislike Ratio");
-        createGridRow(videoStatPane, STAT_RATIO_NORM, vIndex++, "Normalized Ratio");
 
         editIcon.setImage(edit);
         closeIcon.setImage(close);
@@ -472,30 +461,8 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 })
                 .collect(Collectors.toList());
 
-        final long gcd = gcd(groupStats.getTotalLikes(), groupStats.getTotalDislikes());
-        final long gcdLikes = gcd == 0 ? 0 : groupStats.getTotalLikes() / gcd;
-        final long gcdDislikes = gcd == 0 ? 0 : groupStats.getTotalDislikes() / gcd;
-        final String gcdStyle = gcdLikes > gcdDislikes ? "cornflowerblue" : "orangered";
-
-        final long nLikes, nDislikes;
-        if (gcd != 0) {
-            if (gcdLikes > gcdDislikes) {
-                nLikes = gcdLikes / Math.max(1, gcdDislikes);
-                nDislikes = 1;
-            } else {
-                nLikes = 1;
-                nDislikes = gcdDislikes / Math.max(1, gcdLikes);
-            }
-        } else {
-            nLikes = 0;
-            nDislikes = 0;
-        }
-
         final List<MGMVStatItem> popularVideos = groupStats.getMostViewed().stream()
                 .map(video -> new MGMVStatItem(video, video.getViewCount(), "views"))
-                .collect(Collectors.toList());
-        final List<MGMVStatItem> dislikedVideos = groupStats.getMostDisliked().stream()
-                .map(video -> new MGMVStatItem(video, video.getDislikes(), "dislikes"))
                 .collect(Collectors.toList());
         final List<MGMVStatItem> commentedVideos = groupStats.getMostCommented().stream()
                 .map(video -> new MGMVStatItem(video, video.getComments(), "comments"))
@@ -512,14 +479,10 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
                 .collect(Collectors.toList());
 
         final long comments = groupStats.getTotalComments();
-        final long grabbed = groupStats.getTotalGrabbedComments();
-        final double percentGrabbed = 100 * (grabbed / (comments * 1d));
 
         runLater(() -> {
             commentsLineChartData.getData().addAll(commentChartData);
             statLabel.get(STAT_TOTAL_COMMENTS).setText(String.format("%,d", comments));
-            statLabel.get(STAT_GRABBED_COMMENTS).setText(String.format("%,d (%,.2f%%)", grabbed, percentGrabbed));
-            statLabel.get(STAT_MODERATED_COMMENTS).setText(String.format("%,d", groupStats.getTotalModeratedComments()));
             statLabel.get(STAT_TOTAL_LIKES).setText(String.format("+%,d", groupStats.getTotalCommentLikes()));
             statLabel.get(STAT_UNIQUE_VIEWERS).setText(String.format("%,d", groupStats.getUniqueViewers()));
 
@@ -527,15 +490,9 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             statLabel.get(STAT_TOTAL_VIDEOS).setText(String.format("%,d", groupStats.getTotalVideos()));
             statLabel.get(STAT_TOTAL_VIEWS).setText(String.format("%,d", groupStats.getTotalViews()));
             statLabel.get(STAT_VIDEO_LIKES).setText(String.format("+%,d", groupStats.getTotalLikes()));
-            statLabel.get(STAT_VIDEO_DISLIKES).setText(String.format("-%,d", groupStats.getTotalDislikes()));
-            statLabel.get(STAT_LIKE_RATIO).setText(String.format("+%,d : -%,d", gcdLikes, gcdDislikes));
-            statLabel.get(STAT_LIKE_RATIO).setStyle(String.format("-fx-text-fill:%s", gcdStyle));
-            statLabel.get(STAT_RATIO_NORM).setText(String.format("+%,d : -%,d", nLikes, nDislikes));
-            statLabel.get(STAT_RATIO_NORM).setStyle(String.format("-fx-text-fill:%s", gcdStyle));
             generalPane.setDisable(false);
 
             popularVideosList.getItems().addAll(popularVideos);
-            dislikedVideosList.getItems().addAll(dislikedVideos);
             commentedVideosList.getItems().addAll(commentedVideos);
             disabledVideosList.getItems().addAll(disabledVideos);
             videoPane.setDisable(false);
@@ -655,7 +612,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
 
             Stream.of(generalPane, videoPane, viewerPane)
                     .forEach(pane -> pane.setDisable(true));
-            Stream.of(popularVideosList, dislikedVideosList, commentedVideosList,
+            Stream.of(popularVideosList, commentedVideosList,
                     disabledVideosList, popularViewersList, activeViewersList)
                     .forEach(list -> list.getItems().clear());
         });

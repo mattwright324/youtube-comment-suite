@@ -82,9 +82,6 @@
                                 <Label text="Most Popular Videos (top 10)" styleClass="font18" />
                                 <ListView fx:id="popularVideosList" minHeight="300" maxHeight="300" />
 
-                                <Label text="Most Disliked Videos (top 10)" styleClass="font18" />
-                                <ListView fx:id="dislikedVideosList" minHeight="300" maxHeight="300" />
-
                                 <Label text="Most Commented Videos (top 10)" styleClass="font18" />
                                 <ListView fx:id="commentedVideosList" minHeight="300" maxHeight="300" />
 
@@ -105,15 +102,6 @@
                             </VBox>
                         </ScrollPane>
                     </TitledPane>
-                    <!-- TODO: Video and Viewer Query -->
-                    <!--<TitledPane text="Video Query">
-                        <Label text="Search and sort the videos in this group."/>
-                        <fx:include source="ManageGroupsManagerVideoQuery.fxml"
-                    </TitledPane>
-                    <TitledPane text="Viewer Query">
-                        <Label text="Search and sort the commenting viewers in this group. "/>
-                        <fx:include source="ManageGroupsManagerViewerQuery.fxml"
-                    </TitledPane>-->
                 </panes>
             </Accordion>
         </HBox>

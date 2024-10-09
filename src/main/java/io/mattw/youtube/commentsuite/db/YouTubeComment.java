@@ -21,7 +21,7 @@ import java.util.Optional;
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-public class YouTubeComment implements Linkable, Exportable {
+public class YouTubeComment implements Linkable {
 
     public static final Logger logger = LogManager.getLogger();
 
@@ -38,22 +38,6 @@ public class YouTubeComment implements Linkable, Exportable {
     private String parentId;
     private ModerationStatus moderationStatus;
     private List<String> tags;
-
-    // Field(s) used just for export to make things pretty.
-    private YouTubeChannel author;
-
-    @Override
-    public void prepForExport() {
-        commentDate = publishedDateTime.toString();
-    }
-
-    public static final String[] CSV_HEADER = {"id", "parentId", "videoId", "channelId", "channelName", "channelThumb", "commentDate", "commentText", "likes", "isReply", "replyCount", "tags"};
-
-    public Object[] getCsvRow() {
-        return new Object[]{id, parentId, videoId, author.getId(), author.getTitle(), author.getThumbUrl(), commentDate, commentText.replaceAll("[\r\n]*", ""),
-                likes, isReply, replyCount == -1 ? "" : replyCount, tags == null ? "" : tags.toString()
-        };
-    }
 
     public YouTubeChannel getChannel() {
         return CommentSuite.getDatabase().channels().getOrNull(channelId);
@@ -179,19 +163,6 @@ public class YouTubeComment implements Linkable, Exportable {
 
     public YouTubeComment setModerationStatus(ModerationStatus moderationStatus) {
         this.moderationStatus = moderationStatus;
-        return this;
-    }
-
-    public YouTubeChannel getAuthor() {
-        return author;
-    }
-
-    /**
-     * Overwrite channelId as null when set because it will be on the channel object for export.
-     */
-    public YouTubeComment setAuthor(YouTubeChannel author) {
-        this.channelId = null;
-        this.author = author;
         return this;
     }
 

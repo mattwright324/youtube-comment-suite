@@ -5,9 +5,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
 import com.google.common.eventbus.EventBus;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
-import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
-import io.mattw.youtube.commentsuite.util.IpApiProvider;
-import io.mattw.youtube.commentsuite.util.Location;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -33,11 +30,9 @@ public class CommentSuite extends Application {
 
     private static final ConfigFile<ConfigData> config = new ConfigFile<>("commentsuite.json", new ConfigData());
     private static final EventBus eventBus = new EventBus();
-    private static final Location<IpApiProvider, IpApiProvider.Location> location = new Location<>(new IpApiProvider(), IpApiProvider.Location.class);
 
     private static CommentDatabase database;
     private static YouTube youTube;
-    private static OAuth2Manager oauth2Manager;
     private static final Properties properties = new Properties();
 
     public static void main(String[] args) {
@@ -57,7 +52,6 @@ public class CommentSuite extends Application {
                     .setApplicationName("youtube-comment-suite")
                     .build();
             database = new CommentDatabase("commentsuite.sqlite3");
-            oauth2Manager = new OAuth2Manager();
             try (InputStream is = CommentSuite.class.getResourceAsStream("/application.properties")) {
                 properties.load(is);
             }
@@ -101,14 +95,6 @@ public class CommentSuite extends Application {
 
     public static EventBus getEventBus() {
         return eventBus;
-    }
-
-    public static Location<IpApiProvider, IpApiProvider.Location> getLocation() {
-        return location;
-    }
-
-    public static OAuth2Manager getOauth2Manager() {
-        return oauth2Manager;
     }
 
     public static CommentDatabase getDatabase() {

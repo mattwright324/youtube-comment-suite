@@ -12,9 +12,6 @@ import io.mattw.youtube.commentsuite.db.CommentDatabase;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.db.YouTubeVideo;
-import io.mattw.youtube.commentsuite.oauth2.OAuth2Manager;
-import io.mattw.youtube.commentsuite.oauth2.OAuth2Tokens;
-import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import io.mattw.youtube.commentsuite.util.ExecutorGroup;
 import io.mattw.youtube.commentsuite.util.StringTuple;
 import org.apache.logging.log4j.Level;
@@ -42,7 +39,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
     private final CommentDatabase database;
     private final ModerationStatus moderationStatus;
     private final ConfigData configData = CommentSuite.getConfig().getDataObject();
-    private final OAuth2Manager oAuth2Manager = CommentSuite.getOauth2Manager();
 
     public CommentThreadProducer(final RefreshOptions options, final RefreshCommentPages pages) {
         this(options, pages, PUBLISHED);
@@ -59,31 +55,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
     @Override
     public void startProducing() {
         executorGroup.submitAndShutdown(this::produce);
-    }
-
-    private String getOauthToken(String channelId) {
-        if (moderationStatus == PUBLISHED) {
-            return null;
-        }
-
-        return Optional.ofNullable(configData.getAccount(channelId))
-                .map(YouTubeAccount::getTokens)
-                .map(OAuth2Tokens::getAccessToken)
-                .orElse(null);
-    }
-
-    private void refreshOauth2(final String channelId) {
-        if (moderationStatus == PUBLISHED) {
-            return;
-        }
-
-        logger.debug("Refreshing OAuth2 Tokens for {}", channelId);
-
-        try {
-            oAuth2Manager.getNewAccessToken(configData.getAccount(channelId));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void produce() {
@@ -105,12 +76,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
             logger.debug(video);
 
-            if (moderationStatus != PUBLISHED && !configData.isSignedIn(video.getChannelId())) {
-                logger.warn("Authorization required for {} commentThreads on {} but not signed in", moderationStatus, video.getId());
-                awaitMillis(100);
-                continue;
-            }
-
             send(video.getChannelId());
 
             int attempt = 1;
@@ -125,11 +90,9 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                     do {
                         logger.info("{} Try #{} {} {}", moderationStatus, attempt, video.getId(), video.getTitle());
 
-                        final String oauthToken = getOauthToken(video.getChannelId());
                         response = youTube.commentThreads()
                                 .list("snippet,replies")
                                 .setKey(CommentSuite.getYouTubeApiKey())
-                                .setOauthToken(oauthToken)
                                 .setVideoId(video.getId())
                                 .setMaxResults(100L)
                                 .setOrder(options.getCommentOrder().name())
@@ -274,24 +237,6 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                         video.getId());
 
                                 sendMessage(Level.ERROR, authQuotaMsg);
-                                awaitMillis(15000);
-
-                                attempt++;
-                                break;
-
-                            case "authError":
-                                final String authMsg = String.format("[%s/%s] Authorization failed [videoId=%s]",
-                                        attempt,
-                                        maxAttempts,
-                                        video.getId());
-
-                                sendMessage(Level.WARN, authMsg);
-                                sendMessage(Level.WARN, "Trying to refresh Oauth2 access token");
-
-                                refreshOauth2(video.getChannelId());
-
-                                // For some reason without a few seconds wait the 'Auth Quota Exceeded'
-                                // error above will occur on the next request despite using the new token.
                                 awaitMillis(15000);
 
                                 attempt++;

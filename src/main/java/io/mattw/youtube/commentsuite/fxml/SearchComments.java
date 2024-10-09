@@ -48,10 +48,10 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private VBox contextPane, resultsPane, queryPane;
     @FXML private ImageView videoThumb, authorThumb, toggleContextIcon, toggleQueryIcon;
     @FXML private ImageView firstPageIcon, prevPageIcon, nextPageIcon, lastPageIcon;
-    @FXML private ImageView likesIcon, dislikesIcon;
+    @FXML private ImageView likesIcon;
     @FXML private TextField videoTitle, author;
     @FXML private Label toggleContext, toggleQuery;
-    @FXML private Label videoViews, videoLikes, videoDislikes;
+    @FXML private Label videoViews, videoLikes;
     @FXML private TextArea videoDescription;
 
     @FXML private ImageView browserIcon;
@@ -71,11 +71,10 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private ComboBox<CommentQuery.Order> comboOrderBy;
     @FXML private TextField nameLike, commentLike, hasTags;
     @FXML private DatePicker dateFrom, dateTo;
-    @FXML private Button btnSearch, btnClear, btnSelectTags, btnExport;
+    @FXML private Button btnSearch, btnClear, btnSelectTags;
 
     @FXML private OverlayModal<SCVideoSelectModal> videoSelectModal;
     @FXML private OverlayModal<SCShowMoreModal> showMoreModal;
-    @FXML private OverlayModal<SCExportModal> exportModal;
     @FXML private OverlayModal<SCManageTagsModal> tagsModal;
     @FXML private OverlayModal<SCSelectTagsModal> selectTagsModal;
 
@@ -134,7 +133,6 @@ public class SearchComments implements Initializable, ImageCache {
         lastPageIcon.setImage(ImageLoader.ANGLE_DOUBLE_RIGHT.getImage());
 
         likesIcon.setImage(ImageLoader.THUMBS_UP.getImage());
-        dislikesIcon.setImage(ImageLoader.THUMBS_DOWN.getImage());
 
         videoThumb.setImage(ImageLoader.VIDEO_PLACEHOLDER.getImage());
         authorThumb.setImage(ImageCache.toLetterAvatar('m'));
@@ -346,22 +344,6 @@ public class SearchComments implements Initializable, ImageCache {
         SCShowMoreModal scShowMoreModal = new SCShowMoreModal();
         showMoreModal.setContent(scShowMoreModal);
         scShowMoreModal.getBtnClose().setOnAction(ae -> showMoreModal.setVisible(false));
-        scShowMoreModal.replyModeProperty().addListener((o, ov, nv) -> runLater(() ->
-                showMoreModal.getModalContainer().setMaxWidth(420 * (nv ? 2 : 1))
-        ));
-
-        SCExportModal scExportModal = new SCExportModal();
-        exportModal.setContent(scExportModal);
-        scExportModal.getBtnClose().setOnAction(ae -> exportModal.setVisible(false));
-        btnExport.setOnAction(ae -> {
-            scExportModal.cleanUp();
-            scExportModal.withQuery(commentQuery);
-            exportModal.setVisible(true);
-        });
-        exportModal.visibleProperty().addListener((cl) -> {
-            scExportModal.getBtnClose().setCancelButton(exportModal.isVisible());
-            scExportModal.getBtnSubmit().setDefaultButton(exportModal.isVisible());
-        });
 
         tagsIcon.setImage(ImageLoader.TAGS.getImage());
         ImageView tagsIcon2 = new ImageView(tagsIcon.getImage());
@@ -407,7 +389,6 @@ public class SearchComments implements Initializable, ImageCache {
             runLater(() -> {
                 videoTitle.setText(video.getTitle());
                 videoLikes.setText(readableNumber(video.getLikes()));
-                videoDislikes.setText(readableNumber(video.getDislikes()));
                 videoViews.setText(String.format("%s views", readableNumber(video.getViewCount())));
                 videoDescription.setText(String.format("Published %s • %s",
                         formatter.format(DateUtils.epochMillisToDateTime(video.getPublished())),
@@ -568,8 +549,6 @@ public class SearchComments implements Initializable, ImageCache {
             resultsList.getItems().addAll(commentListItems);
             maxPageProperty.setValue(commentQuery.getPageCount());
 
-            btnExport.setDisable(commentQuery.getTotalResults() == 0);
-
             paginationPane.setManaged(!treeMode);
             paginationPane.setVisible(!treeMode);
 
@@ -607,32 +586,18 @@ public class SearchComments implements Initializable, ImageCache {
                 comment.getId());
 
         selectListItem(listItem);
-        openReplyModal(comment, false);
+        openShowMoreModal(comment);
         showListItemContext(listItem);
     }
 
-    @Subscribe
-    private void replyEvent(final ReplyEvent replyEvent) {
-        final SearchCommentsListItem listItem = replyEvent.getCommentListItem();
-        final YouTubeComment comment = listItem.getComment();
-
-        logger.debug("Showing reply window for commment [videoId={},commentId={}]",
-                comment.getVideoId(),
-                comment.getId());
-
-        selectListItem(listItem);
-        openReplyModal(comment, true);
-        showListItemContext(listItem);
-    }
-
-    private void openReplyModal(final YouTubeComment comment, final boolean replyMode) {
+    private void openShowMoreModal(final YouTubeComment comment) {
         runLater(() -> {
             showMoreModal.setVisible(true);
             showMoreModal.setManaged(true);
 
             SCShowMoreModal modalContent = showMoreModal.getContent();
             modalContent.cleanUp();
-            modalContent.loadComment(comment, replyMode);
+            modalContent.loadComment(comment);
         });
     }
 

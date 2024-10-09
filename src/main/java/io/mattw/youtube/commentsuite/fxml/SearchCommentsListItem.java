@@ -42,7 +42,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     @FXML private Label date;
     @FXML private Label type;
     @FXML private Label likes;
-    @FXML private Hyperlink showMore, viewTree, reply;
+    @FXML private Hyperlink showMore, viewTree;
     @FXML private HBox systemTagsPane, userTagsPane;
 
     private final BrowserUtil browserUtil = new BrowserUtil();
@@ -107,8 +107,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         }
 
         if (status != null && status != PUBLISHED && comment.getPublishedDateTime().isBefore(DAYS_AGO_60)) {
-            reply.setManaged(false);
-            reply.setVisible(false);
             viewTree.setManaged(false);
             viewTree.setVisible(false);
             showReplyBtn = false;
@@ -116,10 +114,8 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         }
 
         reloadUserTags();
-        determineHideReply();
 
         showMore.setOnAction(ae -> eventBus.post(new ShowMoreEvent(this)));
-        reply.setOnAction(ae -> eventBus.post(new ReplyEvent(this)));
         viewTree.setOnAction(ae -> eventBus.post(new ViewTreeEvent(this)));
     }
 
@@ -131,25 +127,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         final Label tag = new Label(text);
         tag.getStyleClass().addAll("textMuted", "tag");
         runLater(() -> pane.getChildren().add(tag));
-    }
-
-    private void determineHideReply() {
-        final boolean display = !configData.getAccounts().isEmpty() && showReplyBtn;
-
-        runLater(() -> {
-            reply.setManaged(display);
-            reply.setVisible(display);
-        });
-    }
-
-    @Subscribe
-    public void accountAddEvent(final AccountAddEvent accountAddEvent) {
-        determineHideReply();
-    }
-
-    @Subscribe
-    public void accountDeleteEvent(final AccountDeleteEvent accountDeleteEvent) {
-        determineHideReply();
     }
 
     @Subscribe
@@ -198,6 +175,5 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     public void cleanUp() {
         showMore.setOnAction(null);
         viewTree.setOnAction(null);
-        reply.setOnAction(null);
     }
 }

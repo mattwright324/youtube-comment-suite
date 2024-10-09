@@ -20,11 +20,9 @@ YouTube creators and more.
 * Cross-platform using Java 8 and JavaFX
 * Include multiple channels, playlists, and videos in a single group.
 * Search for comments by video, type, username, keyword, length, and date.
-* Export search results to handier and more consumable CSV or JSON formats.
-* Display stats about videos: publishes per week, most popular, most disliked, most commented, and disabled.
+* Display stats about videos: publishes per week, most popular, most commented, and disabled.
 * Display stats about comments: posts per week, most active posters, most popular posters.
 * Option to save thumbnails and profiles for archival and offline viewing.
-* Sign in to multiple YouTube accounts and choose which to reply with.
 * View video context when selecting a comment.
 
 ## Install

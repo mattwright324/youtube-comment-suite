@@ -10,11 +10,9 @@ public class GroupStats {
     private long totalViews = 0;
     private long totalVideos = 0;
     private long totalLikes = 0;
-    private long totalDislikes = 0;
     private long totalComments = 0;
     private long uniqueViewers = 0;
     private List<YouTubeVideo> mostCommented = new ArrayList<>();
-    private List<YouTubeVideo> mostDisliked = new ArrayList<>();
     private List<YouTubeVideo> mostViewed = new ArrayList<>();
     private List<YouTubeVideo> commentsDisabled = new ArrayList<>();
     private Map<Long, Long> weeklyUploadHistogram = new LinkedHashMap<>();
@@ -50,14 +48,6 @@ public class GroupStats {
         this.totalLikes = totalLikes;
     }
 
-    public long getTotalDislikes() {
-        return totalDislikes;
-    }
-
-    public void setTotalDislikes(long totalDislikes) {
-        this.totalDislikes = totalDislikes;
-    }
-
     public long getTotalComments() {
         return totalComments;
     }
@@ -81,14 +71,6 @@ public class GroupStats {
 
     public void setMostCommented(List<YouTubeVideo> mostCommented) {
         this.mostCommented = mostCommented;
-    }
-
-    public List<YouTubeVideo> getMostDisliked() {
-        return mostDisliked;
-    }
-
-    public void setMostDisliked(List<YouTubeVideo> mostDisliked) {
-        this.mostDisliked = mostDisliked;
     }
 
     public List<YouTubeVideo> getMostViewed() {
@@ -169,10 +151,8 @@ public class GroupStats {
                 "totalViews=" + totalViews +
                 ", totalVideos=" + totalVideos +
                 ", totalLikes=" + totalLikes +
-                ", totalDislikes=" + totalDislikes +
                 ", totalComments=" + totalComments +
                 ", mostCommented=" + mostCommented +
-                ", mostDisliked=" + mostDisliked +
                 ", mostViewed=" + mostViewed +
                 ", commentsDisabled=" + commentsDisabled +
                 ", weeklyUploadHistogram=" + weeklyUploadHistogram +
