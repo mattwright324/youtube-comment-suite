@@ -117,6 +117,7 @@ public class GroupRefresh extends Thread implements RefreshInterface {
         replyProducer.setMessageFunc(this::postMessage);
 
         channelProducer.produceTo(channelConsumer, YouTubeChannel.class);
+        channelProducer.keepAliveWith(commentThreadProducer);
         channelProducer.setStartProduceOnFirstAccept(true);
         channelProducer.setMessageFunc(this::postMessage);
 
