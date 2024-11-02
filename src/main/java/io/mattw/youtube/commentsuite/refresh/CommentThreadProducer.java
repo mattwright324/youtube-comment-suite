@@ -25,8 +25,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
-
 public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
     private static final Logger logger = LogManager.getLogger();
@@ -37,17 +35,10 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
     private final RefreshCommentPages pages;
     private final YouTube youTube;
     private final CommentDatabase database;
-    private final ModerationStatus moderationStatus;
-    private final ConfigData configData = CommentSuite.getConfig().getDataObject();
 
     public CommentThreadProducer(final RefreshOptions options, final RefreshCommentPages pages) {
-        this(options, pages, PUBLISHED);
-    }
-
-    public CommentThreadProducer(final RefreshOptions options, final RefreshCommentPages pages, final ModerationStatus moderationStatus) {
         this.options = options;
         this.pages = pages;
-        this.moderationStatus = moderationStatus;
         this.youTube = CommentSuite.getYouTube();
         this.database = CommentSuite.getDatabase();
     }
@@ -59,13 +50,13 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
     private void produce() {
         if (pages == RefreshCommentPages.NONE) {
-            logger.debug("Skipping CommentThreadProducer {} pages=NONE", moderationStatus);
+            logger.debug("Skipping CommentThreadProducer pages=NONE");
             addProcessed(getBlockingQueue().size());
             getBlockingQueue().clear();
             return;
         }
 
-        logger.debug("Starting CommentThreadProducer {}", moderationStatus);
+        logger.debug("Starting CommentThreadProducer");
 
         while (shouldKeepAlive()) {
             final YouTubeVideo video = getBlockingQueue().poll();
@@ -88,7 +79,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
             do {
                 try {
                     do {
-                        logger.info("{} Try #{} {} {}", moderationStatus, attempt, video.getId(), video.getTitle());
+                        logger.info("Try #{} {} {}", attempt, video.getId(), video.getTitle());
 
                         response = youTube.commentThreads()
                                 .list("snippet,replies")
@@ -97,16 +88,11 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                                 .setMaxResults(100L)
                                 .setOrder(options.getCommentOrder().name())
                                 .setPageToken(pageToken)
-                                .setModerationStatus(moderationStatus.getApiValue())
                                 .execute();
 
                         getEstimatedQuota().incrementAndGet();
 
                         pageToken = response.getNextPageToken();
-
-                        if (moderationStatus != PUBLISHED) {
-                            logger.debug(response);
-                        }
 
                         try {
                             // Maybe comments were re-enabled if we got a 403 in the past.
@@ -136,68 +122,41 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         sendCollection(channels, YouTubeChannel.class);
 
                         // Published-thread replies work differently from moderated/review-thread replies
-                        if (moderationStatus == PUBLISHED) {
-                            // May or may not get all replies back, published threads should have up to 5 replies
-                            final List<Comment> someReplies = items.stream()
-                                    .flatMap(thread -> Optional.ofNullable(thread.getReplies())
-                                            .map(CommentThreadReplies::getComments)
-                                            .map(Collection::stream)
-                                            .orElse(Stream.empty()))
-                                    .collect(Collectors.toList());
+                        // May or may not get all replies back, published threads should have up to 5 replies
+                        final List<Comment> someReplies = items.stream()
+                                .flatMap(thread -> Optional.ofNullable(thread.getReplies())
+                                        .map(CommentThreadReplies::getComments)
+                                        .map(Collection::stream)
+                                        .orElse(Stream.empty()))
+                                .collect(Collectors.toList());
 
-                            final List<YouTubeComment> someReplyComments = someReplies.stream()
-                                    .map(reply -> YouTubeComment.from(reply, video.getId()))
-                                    .filter(Optional::isPresent)
-                                    .map(Optional::get)
-                                    .collect(Collectors.toList());
-                            sendCollection(someReplyComments, YouTubeComment.class);
+                        final List<YouTubeComment> someReplyComments = someReplies.stream()
+                                .map(reply -> YouTubeComment.from(reply, video.getId()))
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
+                                .collect(Collectors.toList());
+                        sendCollection(someReplyComments, YouTubeComment.class);
 
-                            final List<YouTubeChannel> someReplyChannels = someReplies.stream()
-                                    .map(YouTubeChannel::from)
-                                    .filter(Optional::isPresent)
-                                    .map(Optional::get)
-                                    .filter(distinctByKey(YouTubeChannel::getId))
-                                    .collect(Collectors.toList());
-                            sendCollection(someReplyChannels, YouTubeChannel.class);
+                        final List<YouTubeChannel> someReplyChannels = someReplies.stream()
+                                .map(YouTubeChannel::from)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
+                                .filter(distinctByKey(YouTubeChannel::getId))
+                                .collect(Collectors.toList());
+                        sendCollection(someReplyChannels, YouTubeChannel.class);
 
-                            // Pass on the commentThreads that we couldn't get all replies from (threads with more than 5 replies)
-                            final List<StringTuple> replyThreads = items.stream()
-                                    .filter(thread -> !thread.getSnippet().getTotalReplyCount().equals(Optional.ofNullable(thread.getReplies())
-                                                    .map(CommentThreadReplies::getComments)
-                                                    .map(List::size)
-                                                    .map(Long::valueOf)
-                                                    .orElse(0L)))
-                                    .map(thread -> new StringTuple(thread.getId(), video.getId()))
-                                    .collect(Collectors.toList());
-                            sendCollection(replyThreads, StringTuple.class);
-                        }
+                        // Pass on the commentThreads that we couldn't get all replies from (threads with more than 5 replies)
+                        final List<StringTuple> replyThreads = items.stream()
+                                .filter(thread -> !thread.getSnippet().getTotalReplyCount().equals(Optional.ofNullable(thread.getReplies())
+                                                .map(CommentThreadReplies::getComments)
+                                                .map(List::size)
+                                                .map(Long::valueOf)
+                                                .orElse(0L)))
+                                .map(thread -> new StringTuple(thread.getId(), video.getId()))
+                                .collect(Collectors.toList());
+                        sendCollection(replyThreads, StringTuple.class);
 
-                        // Unclear on the max replies returned for moderated/review replies, does it return all?
-                        if (moderationStatus != PUBLISHED) {
-                            final List<Comment> threadReplies = items.stream()
-                                    .map(CommentThread::getReplies)
-                                    .map(CommentThreadReplies::getComments)
-                                    .flatMap(List::stream)
-                                    .collect(Collectors.toList());
-
-                            final List<YouTubeComment> replies = threadReplies.stream()
-                                    .map(comment -> YouTubeComment.from(comment, video.getId()))
-                                    .filter(Optional::isPresent)
-                                    .map(Optional::get)
-                                    .collect(Collectors.toList());
-
-                            sendCollection(replies, YouTubeComment.class);
-
-                            final List<YouTubeChannel> channels2 = threadReplies.stream()
-                                    .filter(distinctByKey(Comment::getId))
-                                    .map(YouTubeChannel::from)
-                                    .filter(Optional::isPresent)
-                                    .map(Optional::get)
-                                    .collect(Collectors.toList());
-                            sendCollection(channels2, YouTubeChannel.class);
-                        }
-
-                        if (moderationStatus == PUBLISHED && RefreshCommentOrder.TIME == options.getCommentOrder() && options.isCommentPagesSmart()) {
+                        if (RefreshCommentOrder.TIME == options.getCommentOrder() && options.isCommentPagesSmart()) {
                             final List<String> threadIds = comments.stream()
                                     .map(YouTubeComment::getId)
                                     .collect(Collectors.toList());
@@ -210,7 +169,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
                         awaitMillis(50);
                     } while (pageToken != null && page++ < pages.getPageCount() && isNotHardShutdown());
 
-                    logger.info("{} Completed {} {}", moderationStatus, video.getId(), video.getTitle());
+                    logger.info("Completed {} {}", video.getId(), video.getTitle());
 
                     break;
                 } catch (Exception e) {
@@ -226,21 +185,8 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
 
                         switch (reasonCode) {
                             case "quotaExceeded":
-                                if (moderationStatus == PUBLISHED) {
-                                    sendMessage(Level.FATAL, "API Quota Exceeded");
-                                    break threadLoop;
-                                }
-
-                                final String authQuotaMsg = String.format("[%s/%s] Auth Quota Exceeded  [videoId=%s]",
-                                        attempt,
-                                        maxAttempts,
-                                        video.getId());
-
-                                sendMessage(Level.ERROR, authQuotaMsg);
-                                awaitMillis(15000);
-
-                                attempt++;
-                                break;
+                                sendMessage(Level.FATAL, "API Quota Exceeded");
+                                break threadLoop;
 
                             case "commentsDisabled":
                                 final String disableMsg = String.format("Comments Disabled [videoId=%s]", video.getId());
@@ -283,7 +229,7 @@ public class CommentThreadProducer extends ConsumerMultiProducer<YouTubeVideo> {
             awaitMillis(500);
         }
 
-        logger.debug("Ending CommentThreadProducer " + moderationStatus);
+        logger.debug("Ending CommentThreadProducer");
     }
 
     @Override

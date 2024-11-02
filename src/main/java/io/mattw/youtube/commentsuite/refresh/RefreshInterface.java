@@ -30,10 +30,6 @@ public interface RefreshInterface {
 
     LongProperty totalCommentsProperty();
 
-    LongProperty newModeratedProperty();
-
-    LongProperty totalModeratedProperty();
-
     LongProperty newViewersProperty();
 
     LongProperty totalViewersProperty();

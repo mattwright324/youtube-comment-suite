@@ -9,7 +9,6 @@ import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.events.*;
-import io.mattw.youtube.commentsuite.refresh.ModerationStatus;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.fxml.FXML;
@@ -28,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
 import static javafx.application.Platform.runLater;
 
 public class SearchCommentsListItem extends HBox implements Cleanable {
@@ -85,11 +83,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             }
         }
 
-        final ModerationStatus status = comment.getModerationStatus();
-        if (status != null && status != PUBLISHED) {
-            this.getStyleClass().add(status.getApiValue());
-        }
-
         if (comment.isReply()) {
             this.getStyleClass().add("reply");
             type.setText("Reply");
@@ -100,17 +93,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         } else {
             likes.setVisible(false);
             likes.setManaged(false);
-        }
-
-        if (status != null && status != PUBLISHED) {
-            addTag(systemTagsPane, status.getApiValue());
-        }
-
-        if (status != null && status != PUBLISHED && comment.getPublishedDateTime().isBefore(DAYS_AGO_60)) {
-            viewTree.setManaged(false);
-            viewTree.setVisible(false);
-            showReplyBtn = false;
-            addTag(systemTagsPane, "past-60-days");
         }
 
         reloadUserTags();

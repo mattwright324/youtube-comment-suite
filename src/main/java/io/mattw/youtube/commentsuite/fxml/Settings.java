@@ -36,7 +36,6 @@ public class Settings implements Initializable {
     @FXML private VBox vboxSettings;
     @FXML private Button btnClose;
     @FXML private ImageView closeIcon;
-    @FXML private CheckBox prefixReply;
     @FXML private CheckBox autoLoadStats;
     @FXML private CheckBox downloadThumbs;
     @FXML private CheckBox customKey;
@@ -64,7 +63,6 @@ public class Settings implements Initializable {
         CommentSuite.getEventBus().register(this);
 
         autoLoadStats.setSelected(configData.isAutoLoadStats());
-        prefixReply.setSelected(configData.isPrefixReplies());
         downloadThumbs.setSelected(configData.isArchiveThumbs());
         customKey.setSelected(configData.isCustomApiKey());
         youtubeApiKey.setText(configData.getYoutubeApiKey());
@@ -81,7 +79,6 @@ public class Settings implements Initializable {
             data.setAutoLoadStats(autoLoadStats.isSelected());
             data.setCustomApiKey(customKey.isSelected());
             data.setFilterDuplicatesOnCopy(filterDuplicatesOnCopy.isSelected());
-            data.setPrefixReplies(prefixReply.isSelected());
             data.setYoutubeApiKey(youtubeApiKey.getText());
 
             config.setDataObject(data);
@@ -95,9 +92,6 @@ public class Settings implements Initializable {
         youtubeApiKey.disableProperty().bind(customKey.selectedProperty().not());
 
         githubIcon.setImage(ImageLoader.GITHUB.getImage());
-
-        // TODO: Provide direct link to revoke access
-        // https://myaccount.google.com/permissions
 
         btnClean.setOnAction(ae -> new Thread(() -> {
             runLater(() -> {

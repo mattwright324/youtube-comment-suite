@@ -63,7 +63,11 @@ public class ChannelConsumer extends ConsumerMultiProducer<YouTubeChannel> {
             insertChannels(channels);
         }
 
-        logger.debug("Ending ChannelConsumer {}", shouldKeepAlive());
+        logger.debug("Ending ChannelConsumer shouldKeepAlive={} blockingQueueSize={} anyKeepAlive={} anyStillWorking={}",
+                shouldKeepAlive(),
+                getBlockingQueue().size(),
+                getKeepAliveWith().stream().anyMatch(ConsumerMultiProducer::shouldKeepAlive),
+                getKeepAliveWith().stream().map(ConsumerMultiProducer::getExecutorGroup).anyMatch(ExecutorGroup::isStillWorking));
     }
 
     private void insertChannels(final List<YouTubeChannel> channels) {

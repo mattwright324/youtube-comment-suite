@@ -15,8 +15,6 @@ public class ConfigData implements Serializable {
     private boolean customApiKey = false;
     private boolean fastGroupAdd = false;
     private boolean filterDuplicatesOnCopy = true;
-    private boolean grabHeldForReview = false;
-    private boolean prefixReplies = true;
     private RefreshOptions refreshOptions = new RefreshOptions();
     private String youtubeApiKey = DEFAULT_API_KEY;
 
@@ -60,22 +58,6 @@ public class ConfigData implements Serializable {
         this.filterDuplicatesOnCopy = filterDuplicatesOnCopy;
     }
 
-    public boolean isGrabHeldForReview() {
-        return grabHeldForReview;
-    }
-
-    public void setGrabHeldForReview(boolean grabHeldForReview) {
-        this.grabHeldForReview = grabHeldForReview;
-    }
-
-    public boolean isPrefixReplies() {
-        return prefixReplies;
-    }
-
-    public void setPrefixReplies(boolean prefixReplies) {
-        this.prefixReplies = prefixReplies;
-    }
-
     public RefreshOptions getRefreshOptions() {
         return refreshOptions;
     }
@@ -104,8 +86,6 @@ public class ConfigData implements Serializable {
                 ", customApiKey=" + customApiKey +
                 ", fastGroupAdd=" + fastGroupAdd +
                 ", filterDuplicatesOnCopy=" + filterDuplicatesOnCopy +
-                ", grabHeldForReview=" + grabHeldForReview +
-                ", prefixReplies=" + prefixReplies +
                 ", refreshOptions=" + refreshOptions +
                 ", youtubeApiKey='" + StringMask.maskHalf(youtubeApiKey) + '\'' +
                 '}';

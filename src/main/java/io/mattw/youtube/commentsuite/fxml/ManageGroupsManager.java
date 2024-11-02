@@ -1,8 +1,8 @@
 package io.mattw.youtube.commentsuite.fxml;
 
 import com.google.common.eventbus.Subscribe;
-import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.CommentSuite;
+import io.mattw.youtube.commentsuite.ConfigData;
 import io.mattw.youtube.commentsuite.ImageCache;
 import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.CommentDatabase;
@@ -52,7 +52,6 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
  * Manages a specific group; refreshing, stats, renaming, deletion, adding group items, etc.
  * <p>
  * Loads template FXML and displays info from database.
- *
  */
 public class ManageGroupsManager extends StackPane implements ImageCache, Cleanable {
 
@@ -69,8 +68,6 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private static final String STAT_TOTAL_VIDEOS = "STAT_TOTAL_VIDEOS";
     private static final String STAT_TOTAL_VIEWS = "STAT_TOTAL_VIEWS";
     private static final String STAT_VIDEO_LIKES = "STAT_VIDEO_LIKES";
-    private static final String STAT_LIKE_RATIO = "STAT_LIKE_RATIO";
-    private static final String STAT_RATIO_NORM = "STAT_RATIO_NORM";
 
     private final Group group;
     private final CommentDatabase database;
@@ -79,32 +76,55 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
     private final Map<String, Label> statLabel = new HashMap<>();
     private ChangeListener<Font> fontListener;
 
-    @FXML private OverlayModal<MGMVRefreshModal> refreshModal;
-    @FXML private OverlayModal<MGMVDeleteGroupModal> deleteModal;
-    @FXML private OverlayModal<MGMVAddItemModal> addItemModal;
-    @FXML private OverlayModal<MGMVRemoveSelectedModal> removeItemModal;
-    @FXML private OverlayModal<MGMVRemoveAllModal> removeAllModal;
-    @FXML private Button btnAddItem;
-    @FXML private Button btnRemoveItems;
-    @FXML private Button btnRemoveAll;
-    @FXML private ListView<MGMVGroupItemView> groupItemList;
+    private Duration latestDiff = Duration.ZERO;
 
-    @FXML private TextField groupTitle;
-    @FXML private ImageView editIcon, closeIcon;
-    @FXML private Hyperlink rename, renameCancel;
-    @FXML private Button btnRefresh;
-    @FXML private Button btnReload;
-    @FXML private Button btnDelete;
-    @FXML private Label refreshStatus;
+    @FXML
+    private OverlayModal<MGMVRefreshModal> refreshModal;
+    @FXML
+    private OverlayModal<MGMVDeleteGroupModal> deleteModal;
+    @FXML
+    private OverlayModal<MGMVAddItemModal> addItemModal;
+    @FXML
+    private OverlayModal<MGMVRemoveSelectedModal> removeItemModal;
+    @FXML
+    private OverlayModal<MGMVRemoveAllModal> removeAllModal;
+    @FXML
+    private Button btnAddItem;
+    @FXML
+    private Button btnRemoveItems;
+    @FXML
+    private Button btnRemoveAll;
+    @FXML
+    private ListView<MGMVGroupItemView> groupItemList;
 
-    @FXML private LineChart<String, Number> commentsLineChart, videosLineChart;
+    @FXML
+    private TextField groupTitle;
+    @FXML
+    private ImageView editIcon, closeIcon;
+    @FXML
+    private Hyperlink rename, renameCancel;
+    @FXML
+    private Button btnRefresh;
+    @FXML
+    private Button btnReload;
+    @FXML
+    private Button btnDelete;
+    @FXML
+    private Label refreshStatus;
+
+    @FXML
+    private LineChart<String, Number> commentsLineChart, videosLineChart;
     private LineChart.Series<String, Number> commentsLineChartData, videosLineChartData;
-    @FXML private ListView<MGMVStatItem> popularVideosList, commentedVideosList,
+    @FXML
+    private ListView<MGMVStatItem> popularVideosList, commentedVideosList,
             disabledVideosList, popularViewersList, activeViewersList;
-    @FXML private GridPane commentStatPane, videoStatPane;
+    @FXML
+    private GridPane commentStatPane, videoStatPane;
 
-    @FXML private Accordion accordion;
-    @FXML private TitledPane generalPane, videoPane, viewerPane;
+    @FXML
+    private Accordion accordion;
+    @FXML
+    private TitledPane generalPane, videoPane, viewerPane;
 
     public ManageGroupsManager(final Group group) throws IOException {
         logger.debug("Initialize for Group [id={},name={}]", group.getGroupId(), group.getName());
@@ -267,7 +287,7 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         /*
           Refresh Modal
          */
-        MGMVRefreshModal mgmvRefresh = new MGMVRefreshModal(group);
+        MGMVRefreshModal mgmvRefresh = new MGMVRefreshModal(this, group);
         refreshModal.setContent(mgmvRefresh);
         btnRefresh.setOnAction(ae -> runLater(() -> {
             mgmvRefresh.reset();
@@ -556,28 +576,25 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
         dataPoint.setNode(node);
     }
 
-    private long gcd(long p, long q) {
-        if (q == 0) {
-            return p;
-        } else {
-            return gcd(q, p % q);
-        }
-    }
-
     private void updateLastRefreshed() {
         long timestamp = database.getLastChecked(this.group);
+        final LocalDateTime dateTime = DateUtils.epochMillisToDateTime(timestamp);
+        latestDiff = Duration.between(dateTime, LocalDateTime.now());
+        final String formattedTimestamp = timestamp == 0 ? "never refreshed" : timeSince(latestDiff);
 
-        final String formattedTimestamp =
-                timestamp == 0 ? "never refreshed" : timeSince(timestamp);
+        runLater(() -> {
+            refreshStatus.setText(formattedTimestamp);
 
-        runLater(() -> refreshStatus.setText(formattedTimestamp));
+            MGMVRefreshModal mgmvRefresh = refreshModal.getContent();
+            mgmvRefresh.getBtnDelete().setOnAction(e -> btnDelete.fire());
+
+            if (latestDiff.toDays() >= 30 && !groupItemList.getItems().isEmpty() && !refreshModal.isVisible()) {
+                btnRefresh.fire();
+            }
+        });
     }
 
-    private String timeSince(final long timestamp) {
-        final LocalDateTime dateTime = DateUtils.epochMillisToDateTime(timestamp);
-
-        final Duration diff = Duration.between(dateTime, LocalDateTime.now());
-
+    private String timeSince(final Duration diff) {
         if (diff.minusSeconds(60).isNegative()) {
             return "just now";
         } else if (diff.minusMinutes(60).isNegative()) {
@@ -613,8 +630,16 @@ public class ManageGroupsManager extends StackPane implements ImageCache, Cleana
             Stream.of(generalPane, videoPane, viewerPane)
                     .forEach(pane -> pane.setDisable(true));
             Stream.of(popularVideosList, commentedVideosList,
-                    disabledVideosList, popularViewersList, activeViewersList)
+                            disabledVideosList, popularViewersList, activeViewersList)
                     .forEach(list -> list.getItems().clear());
         });
+    }
+
+    public Duration getLatestDiff() {
+        return latestDiff;
+    }
+
+    public ListView<MGMVGroupItemView> getGroupItemList() {
+        return groupItemList;
     }
 }

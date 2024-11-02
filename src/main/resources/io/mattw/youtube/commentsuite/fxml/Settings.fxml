@@ -32,7 +32,6 @@
                         <Insets right="10" left="10" top="10" bottom="10"/>
                     </padding>
                     <Label text="General" styleClass="sectionTitle, bold" maxWidth="Infinity"/>
-                    <CheckBox fx:id="prefixReply" text="Prefix @Username when replying to comments." selected="true"/>
                     <CheckBox fx:id="autoLoadStats" text="Auto-load group details in group manager." selected="true"/>
                     <CheckBox fx:id="downloadThumbs" text="Download images when loaded (Offline/Archival)."/>
                     <CheckBox fx:id="filterDuplicatesOnCopy" text="Filter duplicates on comment context copy options"

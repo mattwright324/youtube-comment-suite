@@ -10,7 +10,7 @@
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="io.mattw.youtube.commentsuite.fxml.Main"
            alignment="TOP_CENTER"
-           prefWidth="1000.0" prefHeight="750.0">
+           prefWidth="1000.0" prefHeight="650.0">
     <fx:define>
         <fx:include fx:id="searchComments" source="SearchComments.fxml" />
         <fx:include fx:id="manageGroups" source="ManageGroups.fxml" />

@@ -48,7 +48,6 @@ public class SearchComments implements Initializable, ImageCache {
     @FXML private VBox contextPane, resultsPane, queryPane;
     @FXML private ImageView videoThumb, authorThumb, toggleContextIcon, toggleQueryIcon;
     @FXML private ImageView firstPageIcon, prevPageIcon, nextPageIcon, lastPageIcon;
-    @FXML private ImageView likesIcon;
     @FXML private TextField videoTitle, author;
     @FXML private Label toggleContext, toggleQuery;
     @FXML private Label videoViews, videoLikes;
@@ -131,8 +130,6 @@ public class SearchComments implements Initializable, ImageCache {
         prevPageIcon.setImage(ImageLoader.ANGLE_LEFT.getImage());
         nextPageIcon.setImage(ImageLoader.ANGLE_RIGHT.getImage());
         lastPageIcon.setImage(ImageLoader.ANGLE_DOUBLE_RIGHT.getImage());
-
-        likesIcon.setImage(ImageLoader.THUMBS_UP.getImage());
 
         videoThumb.setImage(ImageLoader.VIDEO_PLACEHOLDER.getImage());
         authorThumb.setImage(ImageCache.toLetterAvatar('m'));
@@ -388,7 +385,7 @@ public class SearchComments implements Initializable, ImageCache {
             final Image vThumb = video.findOrGetThumb();
             runLater(() -> {
                 videoTitle.setText(video.getTitle());
-                videoLikes.setText(readableNumber(video.getLikes()));
+                videoLikes.setText(readableNumber(video.getLikes()) + " likes");
                 videoViews.setText(String.format("%s views", readableNumber(video.getViewCount())));
                 videoDescription.setText(String.format("Published %s • %s",
                         formatter.format(DateUtils.epochMillisToDateTime(video.getPublished())),
