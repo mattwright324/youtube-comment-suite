@@ -25,7 +25,7 @@
                 <ComboBox fx:id="refreshTimeframe" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
                 <Label GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="refreshLabel, h42">
-                    Grab published comment threads for API-page(s) of up to 100 per page
+                    Grab comment threads for API-page(s) of up to 100 per page
                 </Label>
                 <ComboBox fx:id="refreshCommentPages" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
@@ -44,11 +44,6 @@
                 </Label>
                 <ComboBox fx:id="refreshReplyPages" GridPane.rowIndex="4" GridPane.columnIndex="1" />
 
-                <Label GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="refreshLabel, h42">
-                    Grab held-for-review comments and replies for API-page(s) of up to 100 per page
-                </Label>
-                <ComboBox fx:id="refreshReviewPages" GridPane.rowIndex="5" GridPane.columnIndex="1" />
-
                 <Label GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="refreshLabel, h42">
                     Overwrite comments and channels if already downloaded
                 </Label>
@@ -64,6 +59,9 @@
                 </Spinner>
             </GridPane>
         </VBox>
+        <fx:include fx:id="apiTermsAlert" source="AlertLabel.fxml" styleClass="alertWarning"
+                    alignment="CENTER"
+                    text="YouTube Terms requires data refresh past 30 days" />
         <fx:include fx:id="alert" source="AlertLabel.fxml" styleClass="alertWarning"
                     alignment="CENTER"
                     text="Warning: this could take a while!" />
@@ -91,6 +89,7 @@
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
             <Button fx:id="btnStart" styleClass="btnPrimary" text="Start" />
+            <Button fx:id="btnDelete" styleClass="btnDanger" text="Delete Group" visible="false" managed="false" />
         </HBox>
     </VBox>
     <ListView fx:id="errorList" visible="false" managed="false"

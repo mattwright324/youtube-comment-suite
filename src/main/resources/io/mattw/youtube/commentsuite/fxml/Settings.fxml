@@ -16,34 +16,6 @@
         <ImageView fx:id="closeIcon" fitHeight="25" fitWidth="25"/>
     </fx:define>
     <HBox alignment="CENTER_RIGHT">
-        <VBox fx:id="vboxSignIn" managed="false" visible="false" styleClass="overlayMenu" alignment="TOP_CENTER"
-              maxWidth="420" prefWidth="420">
-            <HBox alignment="CENTER_RIGHT">
-                <padding>
-                    <Insets right="10" left="10"/>
-                </padding>
-                <Label text="YouTube Sign-In" styleClass="bold" maxHeight="35" minHeight="35" HBox.hgrow="ALWAYS"
-                       maxWidth="Infinity"/>
-                <ProgressIndicator fx:id="loadingIndicator" maxWidth="30" maxHeight="30"/>
-            </HBox>
-            <Label styleClass="dividerDangerLight" maxWidth="Infinity" maxHeight="4" minHeight="4"/>
-            <VBox spacing="5">
-                <padding>
-                    <Insets right="10" left="10" top="10"/>
-                </padding>
-                <Label text="Authorization Code"/>
-                <TextField fx:id="authCode"/>
-                <Button fx:id="submitAuthCode" styleClass="btnPrimary" text="Submit"/>
-                <Label wrapText="true"
-                       text="Login using the opened link in your default browser then paste the authorization code back here to complete the sign-in process."/>
-            </VBox>
-            <HBox alignment="CENTER_RIGHT">
-                <padding>
-                    <Insets right="10" left="10" top="10" bottom="10"/>
-                </padding>
-                <Button fx:id="btnExitSignIn" styleClass="btn, btnSecondary" text="Close"/>
-            </HBox>
-        </VBox>
         <VBox fx:id="vboxSettings" styleClass="overlayMenu" alignment="TOP_CENTER" maxWidth="420" prefWidth="420">
             <HBox alignment="CENTER_RIGHT">
                 <padding>
@@ -60,19 +32,12 @@
                         <Insets right="10" left="10" top="10" bottom="10"/>
                     </padding>
                     <Label text="General" styleClass="sectionTitle, bold" maxWidth="Infinity"/>
-                    <CheckBox fx:id="prefixReply" text="Prefix @Username when replying to comments." selected="true"/>
                     <CheckBox fx:id="autoLoadStats" text="Auto-load group details in group manager." selected="true"/>
                     <CheckBox fx:id="downloadThumbs" text="Download images when loaded (Offline/Archival)."/>
                     <CheckBox fx:id="filterDuplicatesOnCopy" text="Filter duplicates on comment context copy options"
                               selected="true"/>
                     <CheckBox fx:id="customKey" text="Custom YouTube API key:"/>
                     <TextField fx:id="youtubeApiKey" disable="true" text="AIzaSyD9SzQFnmOn08ESZC-7gIhnHWVn0asfrKQ"/>
-                    <Label/>
-
-                    <Label text="YouTube Accounts" styleClass="sectionTitle, bold" maxWidth="Infinity"/>
-                    <Button fx:id="btnAddAccount" styleClass="btn, btnLight" text="Add Account"/>
-                    <ListView fx:id="accountList" maxHeight="150" minHeight="150"/>
-                    <CheckBox fx:id="grabHeldForReview" text="Grab held-for-review comments on refresh"/>
                     <Label/>
 
                     <Label text="Maintenance" styleClass="sectionTitle, bold" maxWidth="Infinity"/>

@@ -105,7 +105,7 @@ public class ModeratedCommentsTable extends TableHelper<YouTubeComment> {
                 ps.setLong(7, ct.getReplyCount());
                 ps.setBoolean(8, ct.isReply());
                 ps.setString(9, ct.getParentId());
-                ps.setString(10, ct.getModerationStatus().name());
+                ps.setString(10, ct.getModerationStatus());
                 ps.addBatch();
             }
             ps.executeBatch();

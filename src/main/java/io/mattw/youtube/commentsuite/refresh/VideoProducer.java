@@ -24,8 +24,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.HELD_FOR_REVIEW;
-
 public class VideoProducer extends ConsumerMultiProducer<String> {
 
     private static final Logger logger = LogManager.getLogger();
@@ -122,17 +120,6 @@ public class VideoProducer extends ConsumerMultiProducer<String> {
         }
 
         sendCollection(videos, YouTubeVideo.class);
-
-        if (configData.isGrabHeldForReview()) {
-            final List<YouTubeVideo> videosMine = videos.stream()
-                    .filter(video -> configData.isSignedIn(video.getChannelId()))
-                    .collect(Collectors.toList());
-
-            logger.debug("Video(s) matches a signed in account {}",
-                    videosMine.stream().map(YouTubeVideo::getId).collect(Collectors.toList()));
-
-            sendCollection(videosMine, YouTubeVideo.class, HELD_FOR_REVIEW.name());
-        }
     }
 
     @Override

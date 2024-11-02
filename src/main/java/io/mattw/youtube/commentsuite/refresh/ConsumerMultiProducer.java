@@ -240,6 +240,10 @@ public abstract class ConsumerMultiProducer<C> {
         return blockingQueue;
     }
 
+    public List<ConsumerMultiProducer<?>> getKeepAliveWith() {
+        return keepAliveWith;
+    }
+
     public boolean isStartProduceOnFirstAccept() {
         return startProduceOnFirstAccept;
     }

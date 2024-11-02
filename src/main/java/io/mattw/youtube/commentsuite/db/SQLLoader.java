@@ -36,7 +36,6 @@ public enum SQLLoader {
     GET_GROUP_ACTIVE_VIEWERS("dql_get_group_active_viewers.sql"),
     GET_GROUP_COMMENTED_VIDEOS("dql_get_group_commented_videos.sql"),
     GET_GROUP_DISABLED_VIDEOS("dql_get_group_disabled_videos.sql"),
-    GET_GROUP_DISLIKED_VIDEOS("dql_get_group_disliked_videos.sql"),
     GET_GROUP_LAST_CHECKED("dql_get_group_last_checked.sql"),
     GET_GROUP_POPULAR_VIDEOS("dql_get_group_popular_videos.sql"),
     GET_GROUP_POPULAR_VIEWERS("dql_get_group_popular_viewers.sql"),

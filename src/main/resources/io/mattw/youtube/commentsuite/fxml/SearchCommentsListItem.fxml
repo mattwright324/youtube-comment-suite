@@ -27,7 +27,6 @@
             <Label fx:id="likes" styleClass="commentLikes" />
             <Hyperlink fx:id="showMore" text="Show more" />
             <Hyperlink fx:id="viewTree" visible="false" managed="false" text="View Thread" />
-            <Hyperlink fx:id="reply" visible="false" managed="false" text="Reply" />
             <HBox fx:id="systemTagsPane" spacing="10" alignment="CENTER_LEFT">
 
             </HBox>

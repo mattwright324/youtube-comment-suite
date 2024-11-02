@@ -2,7 +2,6 @@ package io.mattw.youtube.commentsuite.db;
 
 import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.model.*;
-import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,7 +12,7 @@ import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 
-public class YouTubeVideo implements Linkable, HasImage, Exportable {
+public class YouTubeVideo implements Linkable, HasImage {
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -30,18 +29,7 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
     private long viewCount;
     private long comments;
     private long likes;
-    private long dislikes;
     private int responseCode;
-
-    // Field(s) used just for export
-    private YouTubeChannel author;
-
-    public static final String[] CSV_HEADER = {"id", "channelId", "title", "thumbUrl", "description", "publishDate", "viewCount", "comments", "likes", "dislikes", "responseCode"};
-
-    public Object[] getCsvRow() {
-        return new Object[] {id, author.getId(), title, thumbUrl, description.replaceAll("([\r]?\n)+", "<br>"),
-                publishDate, viewCount, comments, likes, dislikes, responseCode};
-    }
 
     @Override
     public String getId() {
@@ -162,15 +150,6 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
         return this;
     }
 
-    public long getDislikes() {
-        return dislikes;
-    }
-
-    public YouTubeVideo setDislikes(long dislikes) {
-        this.dislikes = dislikes;
-        return this;
-    }
-
     public int getResponseCode() {
         return responseCode;
     }
@@ -178,21 +157,6 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
     public YouTubeVideo setResponseCode(int responseCode) {
         this.responseCode = responseCode;
         return this;
-    }
-
-    public YouTubeChannel getAuthor() {
-        return author;
-    }
-
-    public YouTubeVideo setAuthor(YouTubeChannel author) {
-        this.author = author;
-        return this;
-    }
-
-    @Override
-    public void prepForExport() {
-        publishDate = DateUtils.epochMillisToDateTime(published).toString();
-        refreshedOnDate = DateUtils.epochMillisToDateTime(refreshedOn).toString();
     }
 
     @Override
@@ -233,9 +197,6 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
         final long likes = statistics.map(VideoStatistics::getLikeCount)
                 .orElse(BigInteger.ZERO)
                 .longValue();
-        final long dislikes = statistics.map(VideoStatistics::getDislikeCount)
-                .orElse(BigInteger.ZERO)
-                .longValue();
         final long commentCount = statistics.map(VideoStatistics::getCommentCount)
                 .orElse(BigInteger.ZERO)
                 .longValue();
@@ -255,7 +216,6 @@ public class YouTubeVideo implements Linkable, HasImage, Exportable {
                 .setPublished(published)
                 .setViewCount(viewCount)
                 .setLikes(likes)
-                .setDislikes(dislikes)
                 .setComments(commentCount)
                 .setRefreshedOn(System.currentTimeMillis())
         );

@@ -11,7 +11,6 @@ module mattw.youtube.commentsuite {
     requires javafx.web;
     requires org.apache.commons.text;
     requires org.apache.logging.log4j;
-    requires org.jsoup;
     requires sqlite.jdbc;
     requires youtube.data.list.mod;
     opens mattw.youtube.commentsuite to javafx.fxml;

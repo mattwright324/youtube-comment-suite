@@ -244,7 +244,6 @@ public class CommentDatabase implements Closeable {
                     stats.setTotalVideos(rs.getLong("total_videos"));
                     stats.setTotalViews(rs.getLong("total_views"));
                     stats.setTotalLikes(rs.getLong("total_likes"));
-                    stats.setTotalDislikes(rs.getLong("total_dislikes"));
                     stats.setTotalComments(rs.getLong("total_comments"));
                 }
             }
@@ -258,7 +257,6 @@ public class CommentDatabase implements Closeable {
             }
         }
         stats.setMostViewed(this.getMostPopularVideos(group, 10));
-        stats.setMostDisliked(this.getMostDislikedVideos(group, 10));
         stats.setMostCommented(this.getMostCommentedVideos(group, 10));
         stats.setCommentsDisabled(this.getDisabledVideos(group, 25));
         stats.setWeeklyUploadHistogram(this.getWeekByWeekVideoHistogram(group));
@@ -333,14 +331,6 @@ public class CommentDatabase implements Closeable {
 
     private List<YouTubeVideo> getMostPopularVideos(Group group, int limit) throws SQLException {
         try (PreparedStatement ps = sqlite.prepareStatement(GET_GROUP_POPULAR_VIDEOS.toString())) {
-            ps.setString(1, group.getGroupId());
-            ps.setInt(2, limit);
-            return videos.toList(ps);
-        }
-    }
-
-    private List<YouTubeVideo> getMostDislikedVideos(Group group, int limit) throws SQLException {
-        try (PreparedStatement ps = sqlite.prepareStatement(GET_GROUP_DISLIKED_VIDEOS.toString())) {
             ps.setString(1, group.getGroupId());
             ps.setInt(2, limit);
             return videos.toList(ps);

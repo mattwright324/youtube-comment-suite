@@ -21,15 +21,13 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
     private final ExecutorGroup executorGroup = new ExecutorGroup(10);
 
     private final RefreshOptions options;
-    private final boolean moderated;
     private final CommentDatabase database;
 
     private AtomicLong totalComments = new AtomicLong();
     private AtomicLong newComments = new AtomicLong();
 
-    public CommentConsumer(final RefreshOptions options, final boolean moderated) {
+    public CommentConsumer(final RefreshOptions options) {
         this.options = options;
-        this.moderated = moderated;
         this.database = CommentSuite.getDatabase();
     }
 
@@ -39,7 +37,7 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
     }
 
     private void produce() {
-        logger.debug("Starting CommentConsumer " + moderated);
+        logger.debug("Starting CommentConsumer");
 
         final ElapsedTime elapsedTime = new ElapsedTime();
         final List<YouTubeComment> comments = new ArrayList<>();
@@ -63,48 +61,25 @@ public class CommentConsumer extends ConsumerMultiProducer<YouTubeComment> {
             insertComments(comments);
         }
 
-        logger.debug("Ending CommentConsumer " + moderated);
+        logger.debug("Ending CommentConsumer");
     }
 
     private void insertComments(final List<YouTubeComment> comments) {
         try {
-            if (moderated) {
-                logger.debug("Inserting moderated comments {}", comments.size());
-            }
-
-            comments.removeIf(comment -> moderated
-                    && (comment.getModerationStatus() == null ||
-                    comment.getModerationStatus() == ModerationStatus.PUBLISHED));
-
             final List<String> commentIds = comments.stream()
                     .map(YouTubeComment::getId)
                     .collect(Collectors.toList());
 
             totalComments.addAndGet(comments.size());
+            newComments.addAndGet(database.countCommentsNotExisting(commentIds));
 
-            if (moderated) {
-                newComments.addAndGet(database.countModeratedCommentsNotExisting(commentIds));
-
-                comments.removeIf(comment -> comment.getModerationStatus() == null || comment.getModerationStatus() == ModerationStatus.PUBLISHED);
-
-                if (options.isUpdateCommentsChannels()) {
-                    database.moderatedComments().updateAll(comments);
-                } else {
-                    database.moderatedComments().insertAll(comments);
-                }
-
-                logger.debug("Inserted moderated comments {}", comments.size());
+            if (options.isUpdateCommentsChannels()) {
+                database.comments().updateAll(comments);
             } else {
-                newComments.addAndGet(database.countCommentsNotExisting(commentIds));
-
-                if (options.isUpdateCommentsChannels()) {
-                    database.comments().updateAll(comments);
-                } else {
-                    database.comments().insertAll(comments);
-                }
-
-                logger.debug("Inserted comments {}", comments.size());
+                database.comments().insertAll(comments);
             }
+
+            logger.debug("Inserted comments {}", comments.size());
 
             comments.clear();
         } catch (SQLException e) {

@@ -21,23 +21,8 @@
                       editable="false"
                       wrapText="true" />
         </VBox>
-        <VBox fx:id="replyPane" spacing="10" maxWidth="500"
-            managed="false" visible="false">
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <ImageView fx:id="accountThumb" fitWidth="30" fitHeight="30" />
-                <ComboBox fx:id="comboAccountSelect">
-                    <tooltip><Tooltip wrapText="true" maxWidth="300" text="Select an account to reply with." /></tooltip>
-                </ComboBox>
-            </HBox>
-            <TextArea fx:id="replyText"
-                      promptText="Write your reply here..."
-                      wrapText="true" />
-            <CheckBox fx:id="openReply" text="Open your reply in the browser." />
-        </VBox>
     </HBox>
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button fx:id="btnClose" styleClass="btnLight" text="Close" />
-        <Button fx:id="btnSubmit" styleClass="btnSecondary" text="Make Reply" />
-        <Button fx:id="btnReply" styleClass="btnPrimary" text="Send Reply" disable="true" />
     </HBox>
 </fx:root>

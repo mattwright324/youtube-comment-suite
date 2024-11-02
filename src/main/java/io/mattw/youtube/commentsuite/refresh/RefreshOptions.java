@@ -12,7 +12,6 @@ public class RefreshOptions {
     private boolean commentPagesSmart = true;
     private RefreshCommentOrder commentOrder = style.getCommentOrder();
     private RefreshCommentPages replyPages = style.getReplyPages();
-    private RefreshCommentPages reviewPages = RefreshCommentPages.ALL;
     private boolean updateCommentsChannels = true;
     private int maxRetryAttempts = 5;
 
@@ -67,15 +66,6 @@ public class RefreshOptions {
 
     public RefreshOptions setReplyPages(RefreshCommentPages replyPages) {
         this.replyPages = replyPages;
-        return this;
-    }
-
-    public RefreshCommentPages getReviewPages() {
-        return reviewPages;
-    }
-
-    public RefreshOptions setReviewPages(RefreshCommentPages reviewPages) {
-        this.reviewPages = reviewPages;
         return this;
     }
 

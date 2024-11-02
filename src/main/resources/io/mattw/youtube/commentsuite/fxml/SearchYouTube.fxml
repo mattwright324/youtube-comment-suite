@@ -12,48 +12,15 @@
            alignment="TOP_CENTER"
            fx:controller="io.mattw.youtube.commentsuite.fxml.SearchYouTube">
     <fx:define>
-        <ImageView fx:id="geoIcon" fitHeight="18" fitWidth="18" />
         <ImageView fx:id="searchIcon" fitHeight="18" fitWidth="18" />
     </fx:define>
     <VBox maxHeight="Infinity" alignment="TOP_CENTER" spacing="10">
         <padding><Insets topRightBottomLeft="10" /></padding>
         <HBox fx:id="form" alignment="CENTER_LEFT" spacing="10">
-            <ComboBox fx:id="searchType" value="Normal" styleClass="control">
-                <items>
-                    <FXCollections fx:factory="observableArrayList">
-                        <String fx:value="Normal" />
-                        <String fx:value="Location" />
-                    </FXCollections>
-                </items>
-            </ComboBox>
             <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
                 <TextField fx:id="searchText" promptText="Search" styleClass="control, noRadiusRight" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
                 <Button fx:id="submit" styleClass="btn, btnLight, control, noRadiusLeft" graphic="$searchIcon" />
             </HBox>
-            <HBox fx:id="locationBox" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" visible="false" managed="false">
-                <TextField fx:id="searchLocation" promptText="40.7058253,-74.1180864" styleClass="control, noRadiusRight" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
-                <Button fx:id="geolocate" styleClass="btn, btnLight, control, noRadiusLeft" graphic="$geoIcon" />
-            </HBox>
-            <ComboBox fx:id="searchRadius" value="5km" styleClass="control">
-                <items>
-                    <FXCollections fx:factory="observableArrayList">
-                        <String fx:value="1km" />
-                        <String fx:value="2km" />
-                        <String fx:value="5km" />
-                        <String fx:value="10km" />
-                        <String fx:value="20km" />
-                        <String fx:value="25km" />
-                        <String fx:value="50km" />
-                        <String fx:value="75km" />
-                        <String fx:value="100km" />
-                        <String fx:value="200km" />
-                        <String fx:value="250km" />
-                        <String fx:value="500km" />
-                        <String fx:value="750km" />
-                        <String fx:value="1000km" />
-                    </FXCollections>
-                </items>
-            </ComboBox>
             <ComboBox fx:id="searchOrder" value="Relevance" styleClass="control">
                 <items>
                     <FXCollections fx:factory="observableArrayList">

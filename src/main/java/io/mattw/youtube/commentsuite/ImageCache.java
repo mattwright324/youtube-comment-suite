@@ -2,7 +2,6 @@ package io.mattw.youtube.commentsuite;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.mattw.youtube.commentsuite.oauth2.YouTubeAccount;
 import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,10 +85,6 @@ public interface ImageCache {
             }
         }
         return image;
-    }
-
-    static Image findOrGetImage(final YouTubeAccount account) {
-        return findOrGetImage(account.getChannelId(), account.getThumbUrl());
     }
 
     static boolean hasImageCached(final String id) {

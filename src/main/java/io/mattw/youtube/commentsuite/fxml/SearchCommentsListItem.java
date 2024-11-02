@@ -9,7 +9,6 @@ import io.mattw.youtube.commentsuite.ImageLoader;
 import io.mattw.youtube.commentsuite.db.YouTubeChannel;
 import io.mattw.youtube.commentsuite.db.YouTubeComment;
 import io.mattw.youtube.commentsuite.events.*;
-import io.mattw.youtube.commentsuite.refresh.ModerationStatus;
 import io.mattw.youtube.commentsuite.util.BrowserUtil;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import javafx.fxml.FXML;
@@ -28,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import static io.mattw.youtube.commentsuite.refresh.ModerationStatus.PUBLISHED;
 import static javafx.application.Platform.runLater;
 
 public class SearchCommentsListItem extends HBox implements Cleanable {
@@ -42,7 +40,7 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     @FXML private Label date;
     @FXML private Label type;
     @FXML private Label likes;
-    @FXML private Hyperlink showMore, viewTree, reply;
+    @FXML private Hyperlink showMore, viewTree;
     @FXML private HBox systemTagsPane, userTagsPane;
 
     private final BrowserUtil browserUtil = new BrowserUtil();
@@ -85,11 +83,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             }
         }
 
-        final ModerationStatus status = comment.getModerationStatus();
-        if (status != null && status != PUBLISHED) {
-            this.getStyleClass().add(status.getApiValue());
-        }
-
         if (comment.isReply()) {
             this.getStyleClass().add("reply");
             type.setText("Reply");
@@ -102,24 +95,9 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
             likes.setManaged(false);
         }
 
-        if (status != null && status != PUBLISHED) {
-            addTag(systemTagsPane, status.getApiValue());
-        }
-
-        if (status != null && status != PUBLISHED && comment.getPublishedDateTime().isBefore(DAYS_AGO_60)) {
-            reply.setManaged(false);
-            reply.setVisible(false);
-            viewTree.setManaged(false);
-            viewTree.setVisible(false);
-            showReplyBtn = false;
-            addTag(systemTagsPane, "past-60-days");
-        }
-
         reloadUserTags();
-        determineHideReply();
 
         showMore.setOnAction(ae -> eventBus.post(new ShowMoreEvent(this)));
-        reply.setOnAction(ae -> eventBus.post(new ReplyEvent(this)));
         viewTree.setOnAction(ae -> eventBus.post(new ViewTreeEvent(this)));
     }
 
@@ -131,25 +109,6 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
         final Label tag = new Label(text);
         tag.getStyleClass().addAll("textMuted", "tag");
         runLater(() -> pane.getChildren().add(tag));
-    }
-
-    private void determineHideReply() {
-        final boolean display = !configData.getAccounts().isEmpty() && showReplyBtn;
-
-        runLater(() -> {
-            reply.setManaged(display);
-            reply.setVisible(display);
-        });
-    }
-
-    @Subscribe
-    public void accountAddEvent(final AccountAddEvent accountAddEvent) {
-        determineHideReply();
-    }
-
-    @Subscribe
-    public void accountDeleteEvent(final AccountDeleteEvent accountDeleteEvent) {
-        determineHideReply();
     }
 
     @Subscribe
@@ -198,6 +157,5 @@ public class SearchCommentsListItem extends HBox implements Cleanable {
     public void cleanUp() {
         showMore.setOnAction(null);
         viewTree.setOnAction(null);
-        reply.setOnAction(null);
     }
 }

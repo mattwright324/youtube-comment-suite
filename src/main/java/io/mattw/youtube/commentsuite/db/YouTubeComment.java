@@ -6,7 +6,6 @@ import com.google.api.services.youtube.model.CommentSnippet;
 import com.google.api.services.youtube.model.CommentThread;
 import com.google.api.services.youtube.model.CommentThreadSnippet;
 import io.mattw.youtube.commentsuite.CommentSuite;
-import io.mattw.youtube.commentsuite.refresh.ModerationStatus;
 import io.mattw.youtube.commentsuite.util.DateUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -21,7 +20,7 @@ import java.util.Optional;
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-public class YouTubeComment implements Linkable, Exportable {
+public class YouTubeComment implements Linkable {
 
     public static final Logger logger = LogManager.getLogger();
 
@@ -36,24 +35,8 @@ public class YouTubeComment implements Linkable, Exportable {
     private long likes, replyCount;
     private boolean isReply;
     private String parentId;
-    private ModerationStatus moderationStatus;
+    private final String moderationStatus = "published";
     private List<String> tags;
-
-    // Field(s) used just for export to make things pretty.
-    private YouTubeChannel author;
-
-    @Override
-    public void prepForExport() {
-        commentDate = publishedDateTime.toString();
-    }
-
-    public static final String[] CSV_HEADER = {"id", "parentId", "videoId", "channelId", "channelName", "channelThumb", "commentDate", "commentText", "likes", "isReply", "replyCount", "tags"};
-
-    public Object[] getCsvRow() {
-        return new Object[]{id, parentId, videoId, author.getId(), author.getTitle(), author.getThumbUrl(), commentDate, commentText.replaceAll("[\r\n]*", ""),
-                likes, isReply, replyCount == -1 ? "" : replyCount, tags == null ? "" : tags.toString()
-        };
-    }
 
     public YouTubeChannel getChannel() {
         return CommentSuite.getDatabase().channels().getOrNull(channelId);
@@ -168,31 +151,8 @@ public class YouTubeComment implements Linkable, Exportable {
         return this;
     }
 
-    public ModerationStatus getModerationStatus() {
+    public String getModerationStatus() {
         return moderationStatus;
-    }
-
-    public YouTubeComment setModerationStatus(String moderationStatus) {
-        this.moderationStatus = ModerationStatus.fromName(moderationStatus);
-        return this;
-    }
-
-    public YouTubeComment setModerationStatus(ModerationStatus moderationStatus) {
-        this.moderationStatus = moderationStatus;
-        return this;
-    }
-
-    public YouTubeChannel getAuthor() {
-        return author;
-    }
-
-    /**
-     * Overwrite channelId as null when set because it will be on the channel object for export.
-     */
-    public YouTubeComment setAuthor(YouTubeChannel author) {
-        this.channelId = null;
-        this.author = author;
-        return this;
     }
 
     public List<String> getTags() {
@@ -265,9 +225,6 @@ public class YouTubeComment implements Linkable, Exportable {
                 .map(Comment::getSnippet);
         final String commentText = snippet.map(CommentSnippet::getTextDisplay).orElse(null);
         final long likes = snippet.map(CommentSnippet::getLikeCount).orElse(0L);
-        final ModerationStatus moderationStatus = snippet.map(CommentSnippet::getModerationStatus)
-                .map(ModerationStatus::fromApiValue)
-                .orElse(ModerationStatus.PUBLISHED);
         final String parentId = snippet.map(CommentSnippet::getParentId).orElse(null);
         final String channelId = snippet.map(CommentSnippet::getAuthorChannelId)
                 .map(YouTubeChannel::getChannelIdFromObject)
@@ -287,7 +244,6 @@ public class YouTubeComment implements Linkable, Exportable {
                 .setCommentText(commentText)
                 .setPublished(published)
                 .setLikes(likes)
-                .setModerationStatus(moderationStatus)
                 .setParentId(parentId)
                 .setChannelId(channelId)
                 .setVideoId(video)
